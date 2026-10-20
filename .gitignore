@@ -1,0 +1,16 @@
+node_modules/
+.DS_Store
+*.log
+
+# Cloudflare local state ба нууц утгууд
+api/.wrangler/
+api/.dev.vars
+api/.dev.vars.*
+!api/.dev.vars.example
+
+# Expo
+mobile/.expo/
+mobile/dist/
+mobile/.env
+mobile/.env.local
+api/worker-configuration.d.ts
