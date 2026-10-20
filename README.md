@@ -47,6 +47,19 @@ npm install
 
 ## 3. Демо ажиллуулах
 
+### VS Code-оор (хамгийн хялбар)
+
+1. Төслийг нээнэ: `code /Users/tugs/Desktop/surgalt` (эсвэл File → Open Folder). "Trust" гэж асуувал зөвшөөрнө.
+2. `Cmd+Shift+P` → **Tasks: Run Task** → **Демо эхлүүлэх**. Доод panel-д "API сервер", "Expo (QR код)"
+   хоёр terminal зэрэг нээгдэнэ.
+3. "Expo (QR код)" terminal дахь QR-ийг утсаараа уншуулна.
+4. Зогсоохдоо terminal бүрт `Ctrl+C` (эсвэл `Cmd+Shift+P` → **Tasks: Terminate Task**).
+
+`.vscode/settings.json` энэ төслийн terminal-уудыг Node 24-тэй болгодог тул гараар terminal нээж доорх
+командуудыг ажиллуулж ч болно. Бусад task: "Бот тоглогч", "Асуултын сан сэргээх", "Шалгалт".
+
+### Terminal-аар
+
 Гурван terminal (бүгдэд нь эхлээд дээрх `export PATH=...`):
 
 **1) API**

@@ -1,0 +1,7 @@
+{
+  // Энэ төслийн terminal-ууд Homebrew-ийн Node 24-ийг ашиглана (системийн Node 20 хэтэрхий хуучин).
+  "terminal.integrated.env.osx": {
+    "PATH": "/opt/homebrew/opt/node@24/bin:${env:PATH}"
+  },
+  "typescript.tsdk": "mobile/node_modules/typescript/lib"
+}

@@ -1,0 +1,64 @@
+{
+  // Cmd+Shift+P → "Tasks: Run Task" → "Демо эхлүүлэх" (API + Expo QR зэрэг асна).
+  "version": "2.0.0",
+  "options": {
+    "env": { "PATH": "/opt/homebrew/opt/node@24/bin:${env:PATH}" }
+  },
+  "tasks": [
+    {
+      "label": "Демо эхлүүлэх",
+      "dependsOn": ["API сервер", "Expo (QR код)"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
+      "label": "API сервер",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": { "cwd": "${workspaceFolder}/api" },
+      "isBackground": true,
+      "presentation": { "panel": "dedicated", "group": "demo", "reveal": "always" },
+      "problemMatcher": {
+        "owner": "wrangler",
+        "pattern": { "regexp": "^__never_matches__$" },
+        "background": { "activeBegins": true, "beginsPattern": "wrangler", "endsPattern": "Ready on" }
+      }
+    },
+    {
+      "label": "Expo (QR код)",
+      "type": "shell",
+      "command": "npx expo start -c",
+      "options": { "cwd": "${workspaceFolder}/mobile" },
+      "isBackground": true,
+      "presentation": { "panel": "dedicated", "group": "demo", "reveal": "always", "focus": true },
+      "problemMatcher": {
+        "owner": "expo",
+        "pattern": { "regexp": "^__never_matches__$" },
+        "background": { "activeBegins": true, "beginsPattern": "Starting project", "endsPattern": "Logs for your project will appear below" }
+      }
+    },
+    {
+      "label": "Бот тоглогч (сорилт хүлээн авна)",
+      "type": "shell",
+      "command": "npm run bot",
+      "options": { "cwd": "${workspaceFolder}/api" },
+      "presentation": { "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Асуултын сан сэргээх (questions:import)",
+      "type": "shell",
+      "command": "npm run questions:import",
+      "options": { "cwd": "${workspaceFolder}/api" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Шалгалт (typecheck + тест)",
+      "type": "shell",
+      "command": "npm run typecheck && npm test && cd ../mobile && npm run typecheck",
+      "options": { "cwd": "${workspaceFolder}/api" },
+      "group": "test",
+      "problemMatcher": ["$tsc"]
+    }
+  ]
+}
