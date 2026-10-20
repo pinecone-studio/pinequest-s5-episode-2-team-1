@@ -80,3 +80,12 @@ export const GAME = {
     PASSWORD_MAX: 72,
   },
 } as const;
+
+/** Бүртгүүлэхэд өмсгөх үнэгүй (price = 0) эд зүйлс. */
+export const DEFAULT_EQUIPPED = {
+  skin: 'skin_light',
+  hair: 'hair_short_black',
+  top: 'top_tshirt_blue',
+  bottom: 'bottom_pants_navy',
+  shoes: 'shoes_sneakers_white',
+} as const;

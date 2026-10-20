@@ -4,6 +4,7 @@ import type { HealthResponse } from '../../shared/types';
 import { ubDay } from './domain/time';
 import type { AppEnv } from './env';
 import { errorHandler } from './lib/errors';
+import { authRoutes, meRoutes } from './routes/auth';
 
 export { DuelRoom } from './duel/DuelRoom';
 
@@ -19,5 +20,8 @@ app.get('/health', async (c) => {
   const now = Date.now();
   return c.json<HealthResponse>({ ok: true, time: now, day: ubDay(now), questions: row?.n ?? 0 });
 });
+
+app.route('/auth', authRoutes);
+app.route('/me', meRoutes);
 
 export default app;

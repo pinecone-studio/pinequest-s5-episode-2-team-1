@@ -82,7 +82,7 @@ export async function api<T>(path: string, opts: { method?: string; body?: unkno
   }
   if (!res.ok) {
     const code = (data as ApiErrorBody | null)?.error?.code ?? 'INTERNAL';
-    if (res.status === 401) onUnauthorized?.();
+    if (res.status === 401 && authToken) onUnauthorized?.();
     throw new ApiError(res.status, code, errorMessages[code] ?? errorMessages.INTERNAL);
   }
   return data as T;
