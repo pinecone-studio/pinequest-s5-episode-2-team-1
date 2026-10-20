@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<title>Хичээл</title>
+<!-- design-canvas runtime removed: {{hole}} values come from renderVals() in the script at the bottom; <sc-if>/<sc-for> are template conditionals/loops -->
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&amp;family=Pixelify+Sans:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+.px{image-rendering:pixelated;image-rendering:crisp-edges}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.bob{animation:bob 1.8s ease-in-out infinite}
+@media (prefers-reduced-motion: reduce){.bob{animation:none}}
+.opt:focus-visible{outline:3px solid #7A5CF5;outline-offset:2px}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #EFEEE9; font-family: 'Onest', system-ui, sans-serif; color: #19152E;">
+  <div style="position: absolute; left: 0; right: 0; top: 0; height: 446px; background: #CBCAC1; border-radius: 0 0 36px 36px;">
+    <a href="04-path.html" aria-label="Хичээлээс гарах" style="position: absolute; left: 20px; top: 50px; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></a>
+    <div style="position: absolute; right: 20px; top: 54px; height: 36px; box-sizing: border-box; padding: 0 12px 0 9px; border-radius: 999px; background: #FFFFFF; display: flex; align-items: center; gap: 6px;">
+      <img class="px" src="/sprites/icon_heart.png" alt="Амь" style="width: 20px; height: 20px;">
+      <span style="font-family: 'Pixelify Sans', monospace; font-weight: 700; font-size: 16px;">5</span>
+    </div>
+
+    <div style="position: absolute; left: 34px; top: 120px; max-width: 128px; box-sizing: border-box; padding: 11px 14px; background: #FFFFFF; border-radius: 20px 20px 4px 20px; font-size: 15px; line-height: 1.25; font-weight: 700;">{{bubble}}</div>
+    <div style="position: absolute; left: {{bearLeft}}px; top: {{bearTop}}px;">
+      <img class="px bob" src="{{bearSrc}}" alt="{{bearAlt}}" style="display: block; width: {{bearW}}px; height: {{bearH}}px;">
+    </div>
+
+    <div style="position: absolute; left: 24px; right: 24px; top: 402px; display: flex; align-items: center; gap: 10px;">
+      <div style="flex: 1; height: 12px; border-radius: 6px; background: #FFFFFF;"><div style="width: 70%; height: 12px; border-radius: 6px; background: #D4F55E;"></div></div>
+      <span style="font-family: 'Pixelify Sans', monospace; font-weight: 700; font-size: 16px; color: #FFFFFF;">7/10</span>
+    </div>
+  </div>
+
+  <div style="position: absolute; left: 24px; right: 24px; top: 474px; display: flex; flex-direction: column; gap: 6px;">
+    <div style="font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #5E5A6E;">Бутархай · Асуулт 7</div>
+    <div style="font-size: 36px; font-weight: 600; letter-spacing: -1px;">3/4 + 1/8 = ?</div>
+    <div style="font-size: 15px; font-weight: 500; color: #5E5A6E;">Нийлбэрийг хамгийн энгийн хэлбэрээр сонго.</div>
+  </div>
+
+  <div style="position: absolute; left: 24px; right: 24px; top: 600px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;">
+    <sc-for list="{{options}}" as="o" hint-placeholder-count="4">
+      <button type="button" class="opt" onClick="{{o.pick}}" aria-pressed="{{o.pressed}}" style="height: 60px; border-radius: 20px; border: 2px solid {{o.border}}; background: {{o.bg}}; color: #19152E; font-family: 'Onest', sans-serif; font-size: 20px; font-weight: 600; cursor: pointer;">{{o.label}}</button>
+    </sc-for>
+  </div>
+
+  <div style="position: absolute; left: 24px; right: 24px; top: 744px; display: flex; flex-direction: column; gap: 8px;">
+    <a href="06-lesson-complete.html" style="height: 60px; border-radius: 999px; background: {{ctaBg}}; color: {{ctaFg}}; font-size: 16px; font-weight: 700; letter-spacing: 0.08em; text-decoration: none; display: flex; align-items: center; justify-content: center;">{{cta}}</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { picked: null }; }
+  renderVals() {
+    const correct = '7/8';
+    const picked = this.state.picked;
+    const labels = ['7/8', '4/12', '1 1/8', '5/8'];
+    const options = labels.map((label) => {
+      const sel = picked === label;
+      let bg = '#FFFFFF', border = '#DDDAD1';
+      if (sel && label === correct) { bg = '#D4F55E'; border = '#19152E'; }
+      else if (sel) { bg = '#F2CDE0'; border = '#19152E'; }
+      return { label, bg, border, pressed: sel ? 'true' : 'false', pick: () => this.setState({ picked: label }) };
+    });
+    const right = picked === correct, wrong = picked && !right;
+    const bear = right
+      ? { src: '/sprites/bear_cheer_scarf.png', w: 180, h: 252, left: 180, top: 120, alt: 'Зөв хариултад баярласан баавгай', bubble: 'Зөв! +10 XP' }
+      : wrong
+        ? { src: '/sprites/bear_tired_scarf.png', w: 164, h: 280, left: 186, top: 92, alt: 'Буруу хариултад гунигласан баавгай', bubble: 'Хуваарийг нь эхлээд тэнцүүл.' }
+        : { src: '/sprites/outfit_glasses.png', w: 164, h: 280, left: 186, top: 92, alt: 'Нүдний шилтэй, бодож буй баавгай', bubble: 'Хмм… хамт бодъё.' };
+    return {
+      options,
+      bearSrc: bear.src, bearW: bear.w, bearH: bear.h, bearLeft: bear.left, bearTop: bear.top, bearAlt: bear.alt, bubble: bear.bubble,
+      cta: right ? 'ҮРГЭЛЖЛҮҮЛЭХ' : 'ШАЛГАХ',
+      ctaBg: right ? '#D4F55E' : '#22106E',
+      ctaFg: right ? '#19152E' : '#FFFFFF'
+    };
+  }
+}
+</script>
+</body>
+</html>

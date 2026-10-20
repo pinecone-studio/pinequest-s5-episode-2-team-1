@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<title>Сурах зам</title>
+<!-- design-canvas runtime removed: {{hole}} values come from renderVals() in the script at the bottom; <sc-if>/<sc-for> are template conditionals/loops -->
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&amp;family=Pixelify+Sans:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+.px{image-rendering:pixelated;image-rendering:crisp-edges}
+@keyframes hop{0%,40%,100%{transform:translateY(0) scale(1,1)}46%{transform:translateY(2px) scale(1.06,.92)}56%{transform:translateY(-22px) scale(.95,1.06)}66%{transform:translateY(0) scale(1.07,.92)}72%{transform:translateY(0) scale(1,1)}}
+@keyframes blink{0%,88%,94%,100%{opacity:0}89%,93%{opacity:1}}
+@keyframes ring{0%,100%{opacity:.45;transform:scale(1)}50%{opacity:1;transform:scale(1.08)}}
+@keyframes arrow{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes wiggle{0%,70%,100%{transform:rotate(0)}76%{transform:rotate(-8deg)}82%{transform:rotate(8deg)}88%{transform:rotate(-5deg)}94%{transform:rotate(3deg)}}
+@keyframes sway{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+@keyframes driftA{0%{transform:translateX(-90px)}100%{transform:translateX(470px)}}
+@keyframes driftB{0%{transform:translateX(420px)}100%{transform:translateX(-80px)}}
+@keyframes flap{0%{background-position:0 0}100%{background-position:-28px 0}}
+@keyframes flyA{0%{transform:translate(0,0)}25%{transform:translate(40px,-30px)}50%{transform:translate(90px,-10px)}75%{transform:translate(50px,20px)}100%{transform:translate(0,0)}}
+@keyframes flyB{0%{transform:translate(0,0)}33%{transform:translate(-50px,-24px)}66%{transform:translate(-20px,26px)}100%{transform:translate(0,0)}}
+@keyframes twinkle{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.2;transform:scale(.5)}}
+.hop{animation:hop 2.8s ease-in-out infinite;transform-origin:50% 100%}
+.blink{animation:blink 3.6s steps(1) infinite}
+.ring{animation:ring 1.6s ease-in-out infinite}
+.arrow{animation:arrow 1s steps(2) infinite}
+.bob{animation:bob 1.6s steps(4) infinite}
+.wiggle{animation:wiggle 3s ease-in-out infinite;transform-origin:50% 100%}
+.sway{animation:sway 2.4s ease-in-out infinite;transform-origin:50% 100%}
+.cloudA{animation:driftA 38s linear infinite}
+.cloudB{animation:driftB 52s linear infinite}
+.bfly{width:14px;height:10px;background:url(/sprites/map_butterfly_sheet.png) 0 0/28px 10px no-repeat;image-rendering:pixelated;animation:flap .32s steps(2) infinite}
+.flyA{animation:flyA 9s ease-in-out infinite}
+.flyB{animation:flyB 7s ease-in-out infinite}
+.tw{animation:twinkle 1.6s ease-in-out infinite}
+.tw2{animation:twinkle 1.6s ease-in-out .8s infinite}
+@media (prefers-reduced-motion: reduce){.hop,.blink,.ring,.arrow,.bob,.wiggle,.sway,.cloudA,.cloudB,.bfly,.flyA,.flyB,.tw,.tw2{animation:none}}
+.cta:focus-visible{outline:3px solid #7A5CF5;outline-offset:2px}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #E6EFE3; font-family: 'Onest', system-ui, sans-serif; color: #19152E;">
+  <img class="px" src="/sprites/map_unit1.png" alt="Нарс модтой ойн дундуур зигзаг хэлбэрээр дээшилсэн pixel чулуун зам" style="position: absolute; left: 0; top: 0; width: 390px; height: 760px;">
+
+  <div class="cloudA" style="position: absolute; left: 0; top: 150px; opacity: 0.92;"><img class="px" src="/sprites/map_cloud_a.png" alt="" style="display: block; width: 64px; height: 22px;"></div>
+  <div class="cloudB" style="position: absolute; left: 0; top: 300px; opacity: 0.85;"><img class="px" src="/sprites/map_cloud_b.png" alt="" style="display: block; width: 48px; height: 22px;"></div>
+
+  <div style="position: absolute; left: 312px; top: 170px; height: 28px; box-sizing: border-box; padding: 0 10px; border-radius: 999px; background: #FFFFFF; display: flex; align-items: center; font-size: 12px; font-weight: 700; color: #5E5A6E;">2-р бүлэг</div>
+
+  <div class="bob" style="position: absolute; left: 110px; top: 240px; width: 38px; height: 38px;"><img class="px" src="/sprites/map_qblock.png" alt="Хэцүү сорил: асуултын тэмдэгтэй алтан хайрцаг" style="display: block; width: 38px; height: 38px;"></div>
+  <img class="px tw" src="/sprites/icon_star.png" alt="" style="position: absolute; left: 150px; top: 230px; width: 18px; height: 18px;">
+  <div style="position: absolute; left: 8px; top: 236px; width: 92px; box-sizing: border-box; padding: 7px 9px; border-radius: 12px; background: #19152E; color: #FFFFFF; font-size: 12px; line-height: 1.25; font-weight: 700;">Хэцүү сорил<br><span style="color: #F3F66C;">Ховор item!</span></div>
+
+  <div class="wiggle" style="position: absolute; left: 254px; top: 348px; width: 40px; height: 38px;"><img class="px" src="/sprites/map_gift.png" alt="Бэлгийн хайрцаг" style="display: block; width: 40px; height: 38px;"></div>
+  <img class="px tw2" src="/sprites/icon_star.png" alt="" style="position: absolute; left: 292px; top: 340px; width: 18px; height: 18px;">
+  <div style="position: absolute; left: 302px; top: 362px; height: 28px; box-sizing: border-box; padding: 0 9px 0 6px; border-radius: 999px; background: #FFFFFF; display: flex; align-items: center; gap: 4px;"><img class="px" src="/sprites/icon_coin.png" alt="" style="width: 14px; height: 14px;"><span style="font-family: 'Pixelify Sans', monospace; font-size: 13px; font-weight: 700;">+50</span></div>
+
+  <img class="px ring" src="/sprites/map_ring.png" alt="" style="position: absolute; left: 84px; top: 464px; width: 88px; height: 44px;">
+  <img class="px arrow" src="/sprites/map_arrow.png" alt="" style="position: absolute; left: 117px; top: 336px; width: 22px; height: 20px;">
+  <div class="hop" style="position: absolute; left: 94px; top: 368px; width: 68px; height: 122px;">
+    <img class="px" src="/sprites/map_bear.png" alt="Ороолттой pixel баавгай одоогийн хичээл дээр зогсож байна" style="position: absolute; left: 0; top: 0; width: 68px; height: 122px;">
+    <img class="px blink" src="/sprites/map_bear_blink.png" alt="" style="position: absolute; left: 0; top: 0; width: 68px; height: 122px;">
+  </div>
+
+  <div class="sway" style="position: absolute; left: 256px; top: 550px; width: 36px; height: 44px;"><img class="px" src="/sprites/map_sapling.png" alt="Ургаж буй нарсны нахиа" style="display: block; width: 36px; height: 44px;"></div>
+  <div style="position: absolute; left: 298px; top: 562px; height: 28px; box-sizing: border-box; padding: 0 10px; border-radius: 999px; background: #19152E; color: #D4F55E; display: flex; align-items: center; font-size: 12px; font-weight: 700;">Нахиа ургалаа</div>
+
+  <div class="flyA" style="position: absolute; left: 34px; top: 600px;"><div class="bfly"></div></div>
+  <div class="flyB" style="position: absolute; left: 330px; top: 440px;"><div class="bfly"></div></div>
+
+  <div style="position: absolute; left: 20px; right: 20px; top: 50px; display: flex; align-items: center; gap: 8px;">
+    <a href="08-calendar.html" aria-label="Профайл ба хуанли" style="width: 44px; height: 44px; flex: none; border-radius: 50%; background: #7A5CF5; border: 2px solid #FFFFFF; box-sizing: border-box; overflow: hidden; display: flex; align-items: flex-end; justify-content: center;">
+      <img class="px" src="/sprites/head_idle.png" alt="" style="width: 44px; height: 38px;">
+    </a>
+    <div style="height: 40px; box-sizing: border-box; padding: 0 12px 0 9px; border-radius: 999px; background: #FFFFFF; display: flex; align-items: center; gap: 7px;">
+      <img class="px" src="/sprites/icon_star.png" alt="XP" style="width: 20px; height: 20px;">
+      <div style="display: flex; flex-direction: column; gap: 3px;">
+        <span style="font-family: 'Pixelify Sans', monospace; font-weight: 700; font-size: 14px; line-height: 1;">920<span style="color: #8A8696;">/1000</span></span>
+        <div style="width: 66px; height: 4px; border-radius: 2px; background: #E6E3F5;"><div style="width: 61px; height: 4px; border-radius: 2px; background: #7A5CF5;"></div></div>
+      </div>
+    </div>
+    <div style="flex: 1;"></div>
+    <div style="height: 40px; box-sizing: border-box; padding: 0 11px 0 9px; border-radius: 999px; background: #FFFFFF; display: flex; align-items: center; gap: 5px;">
+      <img class="px" src="/sprites/icon_flame.png" alt="Streak" style="width: 20px; height: 20px;">
+      <span style="font-family: 'Pixelify Sans', monospace; font-weight: 700; font-size: 15px;">12</span>
+    </div>
+    <div style="height: 40px; box-sizing: border-box; padding: 0 11px 0 9px; border-radius: 999px; background: #FFFFFF; display: flex; align-items: center; gap: 5px;">
+      <img class="px" src="/sprites/icon_coin.png" alt="Coin" style="width: 20px; height: 20px;">
+      <span style="font-family: 'Pixelify Sans', monospace; font-weight: 700; font-size: 15px;">860</span>
+    </div>
+  </div>
+
+  <div style="position: absolute; left: 20px; right: 20px; top: 104px; display: flex; align-items: center; gap: 8px;">
+    <button type="button" style="height: 36px; padding: 0 12px 0 14px; border: 0; border-radius: 999px; background: #FFFFFF; color: #19152E; font-family: 'Onest', sans-serif; font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer;">Математик<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#19152E" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+    <div style="height: 30px; box-sizing: border-box; padding: 0 11px; border-radius: 999px; background: #D4F55E; display: flex; align-items: center; font-size: 12px; font-weight: 800; letter-spacing: 0.06em;">ТҮВШИН 3</div>
+  </div>
+
+  <div style="position: absolute; left: 20px; right: 20px; top: 672px; height: 72px; box-sizing: border-box; padding: 0 12px 0 14px; border-radius: 24px; background: #FFFFFF; border: 2px solid #19152E; box-shadow: 0 4px 0 #19152E; display: flex; align-items: center; gap: 12px;">
+    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px;">
+      <span style="font-size: 12px; font-weight: 700; color: #5E5A6E;">1-р бүлэг · Бутархай тоо · 3/6</span>
+      <span style="font-size: 17px; font-weight: 700; letter-spacing: -0.3px;">Бутархай нэмэх</span>
+    </div>
+    <a href="05-lesson.html" class="cta" style="flex: none; height: 48px; padding: 0 16px 0 14px; border-radius: 999px; background: #F3F66C; color: #19152E; font-size: 15px; font-weight: 800; text-decoration: none; display: flex; align-items: center; gap: 8px; border: 2px solid #19152E;"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l13-7.5z" fill="#19152E"/></svg>Эхлэх</a>
+  </div>
+
+  <nav aria-label="Үндсэн цэс" style="position: absolute; left: 0; right: 0; bottom: 0; height: 86px; box-sizing: border-box; padding: 6px 12px 20px; background: #FFFFFF; border-top: 2px solid #E6E4DD; border-radius: 28px 28px 0 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center;">
+    <a href="03-home.html" aria-label="Нүүр" style="height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;"><img class="px" src="/sprites/nav_home_off.png" alt="" style="width: 40px; height: 36px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: transparent;"></span></a>
+    <a href="04-path.html" aria-label="Сурах зам" aria-current="page" style="height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;"><img class="px" src="/sprites/nav_path_on.png" alt="" style="width: 40px; height: 40px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #19152E;"></span></a>
+    <a href="07-shop.html" aria-label="Дэлгүүр" style="height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;"><img class="px" src="/sprites/nav_shop_off.png" alt="" style="width: 44px; height: 38px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: transparent;"></span></a>
+    <a href="07-shop.html" aria-label="Цүнх" style="height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;"><img class="px" src="/sprites/nav_bag_off.png" alt="" style="width: 40px; height: 40px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: transparent;"></span></a>
+    <a href="09-bear-states-board.html" aria-label="Баг" style="height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;"><img class="px" src="/sprites/nav_crew_off.png" alt="" style="width: 40px; height: 40px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: transparent;"></span></a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

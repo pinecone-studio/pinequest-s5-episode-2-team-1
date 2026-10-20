@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<title>Дэлгүүр</title>
+<!-- design-canvas runtime removed: {{hole}} values come from renderVals() in the script at the bottom; <sc-if>/<sc-for> are template conditionals/loops -->
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&amp;family=Pixelify+Sans:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+.px{image-rendering:pixelated;image-rendering:crisp-edges}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.bob{animation:bob 1.6s ease-in-out infinite}
+.stage{transition:background-color .35s ease}
+@media (prefers-reduced-motion: reduce){.bob{animation:none}.stage{transition:none}}
+.card:focus-visible,.seg:focus-visible{outline:3px solid #7A5CF5;outline-offset:2px}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #EFEEE9; font-family: 'Onest', system-ui, sans-serif; color: #19152E;">
+  <div style="position: absolute; left: 20px; right: 20px; top: 50px; display: flex; align-items: flex-start; justify-content: space-between;">
+    <div style="display: flex; flex-direction: column; gap: 4px;">
+      <div style="font-size: 32px; line-height: 1; font-weight: 600; letter-spacing: -1px;">Дэлгүүр</div>
+      <div style="font-size: 14px; font-weight: 500; color: #5E5A6E;">Баавгайдаа дэвсгэр, хувцас сонго</div>
+    </div>
+    <div style="height: 44px; box-sizing: border-box; padding: 0 12px 0 10px; border-radius: 999px; background: #FFFFFF; display: flex; align-items: center; gap: 6px;">
+      <img class="px" src="/sprites/icon_coin.png" alt="Coin" style="width: 22px; height: 22px;">
+      <span style="font-family: 'Pixelify Sans', monospace; font-weight: 700; font-size: 17px;">860</span>
+    </div>
+  </div>
+
+  <div class="stage" style="position: absolute; left: 20px; top: 132px; width: 350px; height: 290px; border-radius: 32px; background: {{stageBg}}; overflow: hidden;">
+    <div style="position: absolute; left: 65px; top: 30px; width: 220px; height: 220px; border-radius: 50%; background: {{halo}};"></div>
+    <div style="position: absolute; left: 111px; top: 266px; width: 128px; height: 14px; border-radius: 50%; background: #19152E; opacity: 0.15;"></div>
+    <img class="px bob" src="{{bearSrc}}" alt="{{bearAlt}}" style="position: absolute; left: 93px; top: -2px; width: 164px; height: 280px;">
+    <div style="position: absolute; left: 14px; top: 14px; height: 32px; box-sizing: border-box; padding: 0 12px; border-radius: 999px; background: #FFFFFF; display: flex; align-items: center; font-size: 13px; font-weight: 700;">{{previewName}}</div>
+    <button type="button" disabled="{{actionDisabled}}" style="position: absolute; right: 14px; bottom: 14px; height: 44px; padding: 0 16px; border: 0; border-radius: 999px; background: {{actionBg}}; color: {{actionFg}}; font-family: 'Onest', sans-serif; font-size: 14px; font-weight: 700;">{{action}}</button>
+  </div>
+
+  <div role="tablist" aria-label="Ангилал" style="position: absolute; left: 20px; right: 20px; top: 438px; height: 46px; box-sizing: border-box; padding: 4px; border-radius: 999px; background: #FFFFFF; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px;">
+    <button type="button" role="tab" class="seg" aria-selected="{{bgSelected}}" onClick="{{showBg}}" style="border: 0; border-radius: 999px; background: {{bgTabBg}}; color: {{bgTabFg}}; font-family: 'Onest', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer;">Дэвсгэр</button>
+    <button type="button" role="tab" class="seg" aria-selected="{{outfitSelected}}" onClick="{{showOutfit}}" style="border: 0; border-radius: 999px; background: {{outfitTabBg}}; color: {{outfitTabFg}}; font-family: 'Onest', sans-serif; font-size: 14px; font-weight: 700; cursor: pointer;">Хувцас</button>
+  </div>
+
+  <sc-if value="{{isBgTab}}" hint-placeholder-val="{{ true }}">
+    <div style="position: absolute; left: 20px; right: 20px; top: 498px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px;">
+      <sc-for list="{{bgs}}" as="b" hint-placeholder-count="8">
+        <button type="button" class="card" onClick="{{b.pick}}" aria-pressed="{{b.pressed}}" aria-label="{{b.label}}" style="padding: 0; border: 0; background: transparent; display: flex; flex-direction: column; gap: 5px; text-align: left; cursor: pointer; font-family: 'Onest', sans-serif; color: #19152E;">
+          <span style="position: relative; display: block; width: 100%; height: 64px; box-sizing: border-box; border-radius: 18px; background: {{b.color}}; border: 3px solid {{b.ring}}; opacity: {{b.op}};">
+            <sc-if value="{{b.equipped}}" hint-placeholder-val="{{ false }}"><span style="position: absolute; right: 5px; top: 5px; width: 20px; height: 20px; border-radius: 50%; background: #19152E; display: flex; align-items: center; justify-content: center;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5 10 17.5 19 7"/></svg></span></sc-if>
+          </span>
+          <span style="font-size: 12px; font-weight: 700; padding-left: 2px;">{{b.name}}</span>
+          <span style="display: flex; align-items: center; gap: 3px; padding-left: 2px; font-size: 12px; font-weight: 600; color: {{b.statusColor}};"><sc-if value="{{b.showCoin}}" hint-placeholder-val="{{ true }}"><img class="px" src="/sprites/icon_coin.png" alt="" style="width: 12px; height: 12px;"></sc-if>{{b.status}}</span>
+        </button>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{isOutfitTab}}" hint-placeholder-val="{{ false }}">
+    <div style="position: absolute; left: 20px; right: 20px; top: 498px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px;">
+      <sc-for list="{{items}}" as="it" hint-placeholder-count="4">
+        <button type="button" class="card" onClick="{{it.pick}}" aria-pressed="{{it.pressed}}" style="height: 120px; box-sizing: border-box; padding: 0; border: 3px solid {{it.ring}}; border-radius: 24px; background: #FFFFFF; overflow: hidden; display: flex; flex-direction: column; text-align: left; cursor: pointer; font-family: 'Onest', sans-serif; color: #19152E;">
+          <span style="width: 100%; height: 62px; background: {{it.tile}}; display: flex; justify-content: center; overflow: hidden;">
+            <img class="px" src="{{it.src}}" alt="" style="width: 82px; height: 140px; flex: none; margin-top: {{it.imgTop}}px; opacity: {{it.op}};">
+          </span>
+          <span style="padding: 6px 12px; display: flex; flex-direction: column; gap: 3px;">
+            <span style="font-size: 14px; font-weight: 700;">{{it.name}}</span>
+            <span style="display: flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 600; color: {{it.statusColor}};"><sc-if value="{{it.showCoin}}" hint-placeholder-val="{{ true }}"><img class="px" src="/sprites/icon_coin.png" alt="" style="width: 14px; height: 14px;"></sc-if>{{it.status}}</span>
+          </span>
+        </button>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <nav aria-label="Үндсэн цэс" style="position: absolute; left: 0; right: 0; bottom: 0; height: 86px; box-sizing: border-box; padding: 6px 12px 20px; background: #FFFFFF; border-top: 2px solid #E6E4DD; border-radius: 28px 28px 0 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center;">
+    <a href="03-home.html" aria-label="Нүүр" style="height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;"><img class="px" src="/sprites/nav_home_off.png" alt="" style="width: 40px; height: 36px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: transparent;"></span></a>
+    <a href="04-path.html" aria-label="Сурах зам" style="height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;"><img class="px" src="/sprites/nav_path_off.png" alt="" style="width: 40px; height: 40px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: transparent;"></span></a>
+    <a href="07-shop.html" aria-label="Дэлгүүр" aria-current="page" style="height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;"><img class="px" src="/sprites/nav_shop_on.png" alt="" style="width: 44px; height: 38px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: #19152E;"></span></a>
+    <a href="07-shop.html" aria-label="Цүнх" style="height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;"><img class="px" src="/sprites/nav_bag_off.png" alt="" style="width: 40px; height: 40px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: transparent;"></span></a>
+    <a href="09-bear-states-board.html" aria-label="Баг" style="height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;"><img class="px" src="/sprites/nav_crew_off.png" alt="" style="width: 40px; height: 40px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: transparent;"></span></a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { tab: 'bg', selBg: 'Ягаан', selOutfit: 'gradcap' }; }
+  renderVals() {
+    const coins = 860;
+    const fmt = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    const BGS = [
+      { name: 'Нимбэг', color: '#F3F66C', price: 0, owned: true },
+      { name: 'Тал', color: '#A9D18E', price: 0, owned: true },
+      { name: 'Ягаан', color: '#F2CDE0', price: 60 },
+      { name: 'Хөх тэнгэр', color: '#9FD0F2', price: 60 },
+      { name: 'Лаванда', color: '#D9D2F2', price: 90 },
+      { name: 'Говь', color: '#EBCF9B', price: 90 },
+      { name: 'Улбар', color: '#F7A97E', price: 120 },
+      { name: 'Шөнө', color: '#22106E', price: 1000 }
+    ];
+    const OUT = [
+      { id: 'scarf', name: 'Монгол ороолт', src: '/sprites/outfit_scarf.png', price: 0, owned: true, tile: '#D4F55E', imgTop: -26 },
+      { id: 'glasses', name: 'Нүдний шил', src: '/sprites/outfit_glasses.png', price: 150, tile: '#AEDDF3', imgTop: -12 },
+      { id: 'gradcap', name: 'Төгсөгчийн малгай', src: '/sprites/outfit_gradcap.png', price: 300, tile: '#F3F66C', imgTop: 0 },
+      { id: 'headphones', name: 'Чихэвч', src: '/sprites/outfit_headphones.png', price: 1200, tile: '#D9D2F2', imgTop: -4 }
+    ];
+    const equippedBg = 'Нимбэг', equippedOutfit = 'scarf';
+    const { tab, selBg, selOutfit } = this.state;
+    const status = (d, equipped) => {
+      const locked = !d.owned && d.price > coins;
+      return {
+        locked,
+        text: equipped ? 'Сонгосон' : d.owned ? 'Таных' : locked ? fmt(d.price) + ' · хүрэхгүй' : fmt(d.price),
+        color: d.owned ? '#2F7A4C' : locked ? '#8A3A5C' : '#19152E',
+        showCoin: !d.owned
+      };
+    };
+    const bgs = BGS.map((d) => {
+      const st = status(d, d.name === equippedBg);
+      return { name: d.name, color: d.color, label: 'Дэвсгэр: ' + d.name, ring: d.name === selBg ? '#19152E' : 'transparent', pressed: d.name === selBg ? 'true' : 'false', op: st.locked ? 0.55 : 1, equipped: d.name === equippedBg, status: st.text, statusColor: st.color, showCoin: st.showCoin, pick: () => this.setState({ selBg: d.name }) };
+    });
+    const items = OUT.map((d) => {
+      const st = status(d, d.id === equippedOutfit);
+      return { name: d.name, src: d.src, tile: d.tile, imgTop: d.imgTop, ring: d.id === selOutfit ? '#7A5CF5' : '#FFFFFF', pressed: d.id === selOutfit ? 'true' : 'false', op: st.locked ? 0.55 : 1, status: st.text, statusColor: st.color, showCoin: st.showCoin, pick: () => this.setState({ selOutfit: d.id }) };
+    });
+    const isBg = tab === 'bg';
+    const bgDef = BGS.find((b) => b.name === (isBg ? selBg : equippedBg)) || BGS[0];
+    const outDef = OUT.find((o) => o.id === (isBg ? equippedOutfit : selOutfit)) || OUT[0];
+    const cur = isBg ? bgDef : outDef;
+    const curEquipped = isBg ? bgDef.name === equippedBg : outDef.id === equippedOutfit;
+    const curLocked = !cur.owned && cur.price > coins;
+    return {
+      bgs, items,
+      isBgTab: isBg, isOutfitTab: !isBg,
+      bgSelected: isBg ? 'true' : 'false', outfitSelected: isBg ? 'false' : 'true',
+      bgTabBg: isBg ? '#22106E' : 'transparent', bgTabFg: isBg ? '#FFFFFF' : '#19152E',
+      outfitTabBg: isBg ? 'transparent' : '#22106E', outfitTabFg: isBg ? '#19152E' : '#FFFFFF',
+      showBg: () => this.setState({ tab: 'bg' }),
+      showOutfit: () => this.setState({ tab: 'outfit' }),
+      stageBg: bgDef.color,
+      halo: bgDef.name === 'Шөнө' ? 'rgba(122,92,245,0.45)' : 'rgba(255,255,255,0.5)',
+      bearSrc: outDef.src,
+      bearAlt: 'Pixel баавгай: ' + outDef.name + ', ' + bgDef.name + ' дэвсгэр',
+      previewName: isBg ? bgDef.name + ' дэвсгэр' : outDef.name,
+      action: curEquipped ? 'Сонгосон' : cur.owned ? 'Сонгох' : curLocked ? 'Coin хүрэхгүй' : 'Авах · ' + fmt(cur.price),
+      actionBg: curEquipped ? '#FFFFFF' : curLocked ? '#DEDCD3' : '#22106E',
+      actionFg: curEquipped ? '#2F7A4C' : curLocked ? '#5E5A6E' : '#FFFFFF',
+      actionDisabled: curEquipped || curLocked
+    };
+  }
+}
+</script>
+</body>
+</html>

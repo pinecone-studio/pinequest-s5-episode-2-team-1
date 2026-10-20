@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<title>Баавгайн төлөв</title>
+<!-- design-canvas runtime removed: {{hole}} values come from renderVals() in the script at the bottom; <sc-if>/<sc-for> are template conditionals/loops -->
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&amp;family=Pixelify+Sans:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+.px{image-rendering:pixelated;image-rendering:crisp-edges}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px)}}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+@keyframes breathe{0%,100%{transform:scaleY(1)}50%{transform:scaleY(.975)}}
+@keyframes sway{0%,100%{transform:rotate(-3deg)}50%{transform:rotate(3deg)}}
+.float{animation:float 2.6s ease-in-out infinite}
+.bob{animation:bob 1.6s ease-in-out infinite}
+.breathe{animation:breathe 3s ease-in-out infinite;transform-origin:50% 100%}
+.sway{animation:sway 2.8s ease-in-out infinite;transform-origin:50% 100%}
+@media (prefers-reduced-motion: reduce){.float,.bob,.breathe,.sway{animation:none}}
+</style>
+</helmet>
+<div style="width: 1520px; height: 760px; box-sizing: border-box; padding: 44px 48px; background: #EFEEE9; font-family: 'Onest', system-ui, sans-serif; color: #19152E; display: flex; flex-direction: column; gap: 22px;">
+  <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 40px;">
+    <div style="display: flex; flex-direction: column; gap: 8px;">
+      <div style="font-size: 46px; font-weight: 600; letter-spacing: -1.5px; line-height: 1;">Баавгайн төлөв</div>
+      <div style="font-size: 17px; font-weight: 500; color: #5E5A6E; max-width: 760px; line-height: 1.4;">Төлөв нь энерги (0–100) ба streak-ээс шууд хамаарна. Хичээл хийх тусам баавгай гэрэлтэж хөвнө, алгасвал ядарч, нүдний доогуур хөхөрнө. Амралтын өдөр streak-ийг хамгаална.</div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px; width: 560px;">
+      <div style="display: grid; grid-template-columns: 2fr 3fr 3fr 2fr; gap: 4px;">
+        <div style="height: 14px; border-radius: 7px; background: #CBCAC1;"></div>
+        <div style="height: 14px; border-radius: 7px; background: #D9D2F2;"></div>
+        <div style="height: 14px; border-radius: 7px; background: #D4F55E;"></div>
+        <div style="height: 14px; border-radius: 7px; background: #F3F66C;"></div>
+      </div>
+      <div style="display: grid; grid-template-columns: 2fr 3fr 3fr 2fr; gap: 4px; font-family: 'Pixelify Sans', monospace; font-size: 13px; font-weight: 600; color: #5E5A6E;">
+        <span>0–19</span><span>20–49</span><span>50–79</span><span>80–100</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 20px; flex: 1;">
+    <div style="border-radius: 30px; background: #FFFFFF; padding: 14px; display: flex; flex-direction: column; gap: 12px;">
+      <div style="height: 300px; border-radius: 22px; background: #F3F66C; position: relative; overflow: hidden;">
+        <div style="position: absolute; left: 34px; top: 30px; width: 200px; height: 200px; border-radius: 50%; background: rgba(255,255,255,0.55);"></div>
+        <img class="px" src="/sprites/icon_star.png" alt="" style="position: absolute; left: 22px; top: 70px; width: 30px; height: 30px;">
+        <img class="px" src="/sprites/icon_coin.png" alt="" style="position: absolute; right: 22px; top: 170px; width: 26px; height: 26px;">
+        <img class="px float" src="/sprites/bear_cheer_scarf.png" alt="Гэрэлтэж хөвж буй баавгай" style="position: absolute; left: calc(50% - 90px); top: 24px; width: 180px; height: 252px;">
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between;"><span style="font-size: 22px; font-weight: 600; letter-spacing: -0.4px;">Гэрэлтэж байна</span><span style="font-family: 'Pixelify Sans', monospace; font-size: 14px; font-weight: 700; background: #19152E; color: #F3F66C; padding: 3px 9px; border-radius: 999px;">80+</span></div>
+      <div style="font-size: 14px; line-height: 1.4; color: #4A4658;">7+ өдөр дараалан сурсан. Агаарт хөвж, гараа өргөнө. Хэцүү сорилд ховор item унах магадлал өснө.</div>
+      <div style="margin-top: auto; font-size: 13px; line-height: 1.45; color: #19152E; background: #F4F3EF; border-radius: 14px; padding: 10px 12px;"><b>Animation:</b> хөвөх −16px · 2.6s loop, од гялбах, coin эргэлдэх</div>
+    </div>
+
+    <div style="border-radius: 30px; background: #FFFFFF; padding: 14px; display: flex; flex-direction: column; gap: 12px;">
+      <div style="height: 300px; border-radius: 22px; background: #D4F55E; position: relative; overflow: hidden;">
+        <div style="position: absolute; left: 34px; top: 30px; width: 200px; height: 200px; border-radius: 50%; background: rgba(255,255,255,0.5);"></div>
+        <img class="px bob" src="/sprites/bear_idle_scarf.png" alt="Ороолттой хэвийн баавгай" style="position: absolute; left: calc(50% - 82px); top: 8px; width: 164px; height: 280px;">
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between;"><span style="font-size: 22px; font-weight: 600; letter-spacing: -0.4px;">Сэргэлэн</span><span style="font-family: 'Pixelify Sans', monospace; font-size: 14px; font-weight: 700; background: #19152E; color: #D4F55E; padding: 3px 9px; border-radius: 999px;">50–79</span></div>
+      <div style="font-size: 14px; line-height: 1.4; color: #4A4658;">Өдөр бүр даалгавраа хийж байгаа. Нүдээ ирмэж, дарахад даллана.</div>
+      <div style="margin-top: auto; font-size: 13px; line-height: 1.45; color: #19152E; background: #F4F3EF; border-radius: 14px; padding: 10px 12px;"><b>Animation:</b> bob −5px · 1.6s, 4 секунд тутам blink</div>
+    </div>
+
+    <div style="border-radius: 30px; background: #FFFFFF; padding: 14px; display: flex; flex-direction: column; gap: 12px;">
+      <div style="height: 300px; border-radius: 22px; background: #D9D2F2; position: relative; overflow: hidden;">
+        <div style="position: absolute; left: 34px; top: 30px; width: 200px; height: 200px; border-radius: 50%; background: rgba(255,255,255,0.45);"></div>
+        <img class="px breathe" src="/sprites/bear_tired_scarf.png" alt="Ядарсан баавгай" style="position: absolute; left: calc(50% - 82px); top: 8px; width: 164px; height: 280px;">
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between;"><span style="font-size: 22px; font-weight: 600; letter-spacing: -0.4px;">Ядарсан</span><span style="font-family: 'Pixelify Sans', monospace; font-size: 14px; font-weight: 700; background: #19152E; color: #D9D2F2; padding: 3px 9px; border-radius: 999px;">20–49</span></div>
+      <div style="font-size: 14px; line-height: 1.4; color: #4A4658;">1–2 өдөр алгассан. Зовхи унжиж, нүдний доогуур бараан болно. 1 хичээл хийвэл сэргэнэ.</div>
+      <div style="margin-top: auto; font-size: 13px; line-height: 1.45; color: #19152E; background: #F4F3EF; border-radius: 14px; padding: 10px 12px;"><b>Animation:</b> удаан амьсгаа scaleY .975 · 3s, хөлс дусах</div>
+    </div>
+
+    <div style="border-radius: 30px; background: #FFFFFF; padding: 14px; display: flex; flex-direction: column; gap: 12px;">
+      <div style="height: 300px; border-radius: 22px; background: #CBCAC1; position: relative; overflow: hidden;">
+        <svg aria-hidden="true" width="84" height="63" viewBox="0 0 24 18" shape-rendering="crispEdges" style="position: absolute; right: 18px; top: 18px;"><rect x="6" y="2" width="8" height="2" fill="#8A8C94"/><rect x="4" y="4" width="14" height="2" fill="#8A8C94"/><rect x="2" y="6" width="20" height="4" fill="#8A8C94"/><rect x="4" y="10" width="16" height="2" fill="#73757D"/><rect x="6" y="13" width="1" height="2" fill="#7FC6EF"/><rect x="11" y="14" width="1" height="2" fill="#7FC6EF"/><rect x="16" y="13" width="1" height="2" fill="#7FC6EF"/><rect x="8" y="16" width="1" height="2" fill="#7FC6EF"/><rect x="14" y="16" width="1" height="2" fill="#7FC6EF"/></svg>
+        <img class="px sway" src="/sprites/bear_neglected_scarf.png" alt="Сүнсгүй болсон баавгай" style="position: absolute; left: calc(50% - 82px); top: 8px; width: 164px; height: 280px;">
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between;"><span style="font-size: 22px; font-weight: 600; letter-spacing: -0.4px;">Сүнсгүй</span><span style="font-family: 'Pixelify Sans', monospace; font-size: 14px; font-weight: 700; background: #19152E; color: #FFFFFF; padding: 3px 9px; border-radius: 999px;">0–19</span></div>
+      <div style="font-size: 14px; line-height: 1.4; color: #4A4658;">Streak тасарсан. Саарал болж, нүдний доогуур хөхөрч, шүлсээ гоожуулна. 2 хичээлээр сэргэнэ.</div>
+      <div style="margin-top: auto; font-size: 13px; line-height: 1.45; color: #19152E; background: #F4F3EF; border-radius: 14px; padding: 10px 12px;"><b>Animation:</b> найгах ±3° · 2.8s, үүлнээс бороо, desaturate 60%</div>
+    </div>
+
+    <div style="border-radius: 30px; background: #FFFFFF; padding: 14px; display: flex; flex-direction: column; gap: 12px;">
+      <div style="height: 300px; border-radius: 22px; background: #22106E; position: relative; overflow: hidden;">
+        <img class="px" src="/sprites/icon_star.png" alt="" style="position: absolute; left: 26px; top: 40px; width: 22px; height: 22px;">
+        <img class="px" src="/sprites/icon_star.png" alt="" style="position: absolute; right: 30px; top: 70px; width: 16px; height: 16px;">
+        <div style="position: absolute; right: 26px; top: 26px; font-family: 'Pixelify Sans', monospace; font-weight: 700; font-size: 24px; color: #FFFFFF;">Zz</div>
+        <img class="px breathe" src="/sprites/bear_sleep.png" alt="Хөнжил нөмөрч унтаж буй баавгай" style="position: absolute; left: calc(50% - 95px); top: 38px; width: 190px; height: 254px;">
+      </div>
+      <div style="display: flex; align-items: center; justify-content: space-between;"><span style="font-size: 22px; font-weight: 600; letter-spacing: -0.4px;">Амарч байна</span><span style="font-size: 12px; font-weight: 700; background: #19152E; color: #AEDDF3; padding: 4px 9px; border-radius: 999px;">Амралтын өдөр</span></div>
+      <div style="font-size: 14px; line-height: 1.4; color: #4A4658;">Долоо хоногт 1 амралт эсвэл «Streak хамгаалагч» item. Энэ өдөр энерги буурахгүй.</div>
+      <div style="margin-top: auto; font-size: 13px; line-height: 1.45; color: #19152E; background: #F4F3EF; border-radius: 14px; padding: 10px 12px;"><b>Animation:</b> унтах амьсгаа · 3s, Zz дээш хөвөх</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1520,"height":760}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
