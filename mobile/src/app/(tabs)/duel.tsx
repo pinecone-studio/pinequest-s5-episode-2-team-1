@@ -1,13 +1,17 @@
 import type { DuelResponse, DuelSummary, LobbyResponse, Subject } from '@shared/types';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
 import { api, errorText } from '@/api/client';
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
-import { Card, Chip, ErrorText, Muted, Screen, SectionTitle, Title } from '@/components/ui';
-import { colors, radius, spacing, subjectColors } from '@/constants/theme';
-import { S, subjectIcons, subjectNames } from '@/i18n/strings';
+import { Enter, PressScale, Sprite } from '@/components/pixel';
+import { CountPill } from '@/components/StatPill';
+import { Card, Chip, ErrorText, Muted, Screen, SectionTitle } from '@/components/ui';
+import { colors, fonts, radius, subjectTheme } from '@/constants/theme';
+import { type } from '@/constants/type';
+import { S, subjectNames } from '@/i18n/strings';
+import { usePixelBear } from '@/lib/mock/pixelBear';
 
 const SUBJECTS: Subject[] = ['math', 'mongolian', 'physics'];
 const POLL_MS = 3_000;
@@ -19,6 +23,7 @@ export default function DuelLobby() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
   const entered = useRef<number | null>(null);
+  const { coins } = usePixelBear();
 
   const load = useCallback(async () => {
     try {
@@ -82,7 +87,7 @@ export default function DuelLobby() {
   if (!lobby) {
     return (
       <Screen contentStyle={styles.center}>
-        <ActivityIndicator color={colors.primary} />
+        <ActivityIndicator color={colors.violet} />
         <ErrorText>{error}</ErrorText>
       </Screen>
     );
@@ -91,20 +96,28 @@ export default function DuelLobby() {
   const mine = lobby.mine;
   return (
     <Screen>
-      <Title>{S.duel.title}</Title>
-      <Muted>{S.duel.hint}</Muted>
-      <Text style={styles.points}>🪙 {S.duel.myPoints(lobby.points)}</Text>
+      <View style={styles.header}>
+        <View style={{ flex: 1, gap: 4 }}>
+          <Text accessibilityRole="header" style={type.h1}>
+            {S.duel.title}
+          </Text>
+          <Text style={type.small}>{S.duel.hint}</Text>
+        </View>
+        <CountPill icon="icon_coin_24x24" value={coins} label="Coin" />
+      </View>
 
       {mine ? (
-        <Card style={{ borderWidth: 2, borderColor: colors.primary }}>
+        <Card style={styles.mine}>
           <Text style={styles.cardTitle}>{mine.status === 'accepted' ? S.duel.inProgress : S.duel.mineTitle}</Text>
-          <Text style={styles.line}>
-            {subjectIcons[mine.subject]} {subjectNames[mine.subject]} · 🪙 {S.duel.stakeLabel(mine.stake)}
-          </Text>
+          <View style={styles.lineRow}>
+            <Text style={styles.line}>{subjectNames[mine.subject]} ·</Text>
+            <Sprite id="icon_coin_12x12" />
+            <Text style={styles.line}>{S.duel.stakeLabel(mine.stake)}</Text>
+          </View>
           {mine.status === 'open' ? (
             <>
               <View style={styles.waitingRow}>
-                <ActivityIndicator color={colors.primary} />
+                <ActivityIndicator color={colors.violet} />
                 <Muted>{S.duel.waitingAccept}</Muted>
               </View>
               <Button title={S.duel.cancel} variant="secondary" small loading={busy === 'cancel'} onPress={() => cancel(mine.id)} />
@@ -119,13 +132,7 @@ export default function DuelLobby() {
           <Text style={styles.label}>{S.duel.subject}</Text>
           <View style={styles.chips}>
             {SUBJECTS.map((s) => (
-              <Chip
-                key={s}
-                label={`${subjectIcons[s]} ${subjectNames[s]}`}
-                selected={subject === s}
-                color={subjectColors[s]}
-                onPress={() => setSubject(s)}
-              />
+              <Chip key={s} label={subjectNames[s]} selected={subject === s} onPress={() => setSubject(s)} />
             ))}
           </View>
           <Text style={styles.label}>{S.duel.stake}</Text>
@@ -140,11 +147,12 @@ export default function DuelLobby() {
                   onChangeText={(t) => setStakeText(t.replace(/[^0-9]/g, ''))}
                   keyboardType="number-pad"
                   maxLength={4}
-                  style={[styles.stakeInput, stakeInvalid && { borderColor: colors.danger, color: colors.danger }]}
+                  accessibilityLabel={S.duel.stake}
+                  style={[styles.stakeInput, stakeInvalid && { borderColor: colors.dangerText, color: colors.dangerText }]}
                 />
                 <StepButton label="+" onPress={() => changeStake(1)} />
               </View>
-              <Text style={[styles.hint, stakeInvalid && { color: colors.danger, fontWeight: '700' }]}>
+              <Text style={[styles.hint, stakeInvalid && { color: colors.dangerText, fontFamily: fonts.bold }]}>
                 {stakeInvalid && stake > max ? S.duel.stakeTooHigh(max) : S.duel.stakeMax(max)}
               </Text>
               <Button
@@ -162,9 +170,10 @@ export default function DuelLobby() {
 
       <SectionTitle>{S.duel.openTitle}</SectionTitle>
       {lobby.open.length === 0 ? <Muted>{S.duel.empty}</Muted> : null}
-      {lobby.open.map((d) => (
+      {lobby.open.map((d, i) => (
         <ChallengeCard
           key={d.id}
+          index={i}
           duel={d}
           canAfford={d.stake <= lobby.maxStake}
           disabled={!!mine || busy !== null}
@@ -178,19 +187,21 @@ export default function DuelLobby() {
 
 function StepButton({ label, onPress }: { label: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => [styles.step, pressed && { opacity: 0.7 }]} hitSlop={6}>
+    <PressScale accessibilityRole="button" accessibilityLabel={label === '+' ? 'Нэмэх' : 'Хасах'} onPress={onPress} style={styles.step} hitSlop={6}>
       <Text style={styles.stepText}>{label}</Text>
-    </Pressable>
+    </PressScale>
   );
 }
 
 function ChallengeCard({
+  index,
   duel,
   canAfford,
   disabled,
   loading,
   onAccept,
 }: {
+  index: number;
   duel: DuelSummary;
   canAfford: boolean;
   disabled: boolean;
@@ -198,61 +209,75 @@ function ChallengeCard({
   onAccept: () => void;
 }) {
   return (
-    <Card style={styles.challenge}>
-      <Avatar look={duel.creator.avatar} size={52} />
-      <View style={{ flex: 1, gap: 2 }}>
+    <Enter index={index} style={styles.challenge}>
+      <Avatar size={52} />
+      <View style={{ flex: 1, gap: 4 }}>
         <Text style={styles.name}>{duel.creator.username}</Text>
         <Muted>{S.duel.level(duel.creator.level)}</Muted>
-        <Text style={[styles.line, { color: subjectColors[duel.subject] }]}>
-          {subjectIcons[duel.subject]} {subjectNames[duel.subject]}
-        </Text>
+        <View style={[styles.subjectTag, { backgroundColor: subjectTheme[duel.subject].bg }]}>
+          <Text style={[styles.subjectTagText, { color: subjectTheme[duel.subject].fg }]}>{subjectNames[duel.subject]}</Text>
+        </View>
       </View>
-      <View style={{ alignItems: 'flex-end', gap: spacing.sm }}>
-        <Text style={styles.stake}>🪙 {duel.stake}</Text>
+      <View style={{ alignItems: 'flex-end', gap: 8 }}>
+        <View style={styles.lineRow}>
+          <Sprite id="icon_coin_24x24" />
+          <Text style={styles.stake}>{duel.stake}</Text>
+        </View>
         {canAfford ? (
           <Button title={S.duel.accept} small disabled={disabled} loading={loading} onPress={onAccept} />
         ) : (
           <Text style={styles.tooHigh}>{S.duel.tooHighForMe}</Text>
         )}
       </View>
-    </Card>
+    </Enter>
   );
 }
 
 const styles = StyleSheet.create({
   center: { flexGrow: 1, justifyContent: 'center', alignItems: 'center' },
-  points: { fontSize: 17, fontWeight: '800', color: colors.gold },
-  cardTitle: { fontSize: 18, fontWeight: '800', color: colors.text },
-  label: { fontSize: 14, fontWeight: '700', color: colors.muted },
-  line: { fontSize: 15, fontWeight: '700', color: colors.text },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  waitingRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  stakeRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  header: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  mine: { borderWidth: 3, borderColor: colors.violet },
+  cardTitle: { fontFamily: fonts.semibold, fontSize: 19, color: colors.ink },
+  label: { fontFamily: fonts.bold, fontSize: 12, letterSpacing: 0.8, textTransform: 'uppercase', color: colors.muted },
+  line: { fontFamily: fonts.semibold, fontSize: 15, color: colors.ink },
+  lineRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  waitingRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  stakeRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   step: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    backgroundColor: colors.primarySoft,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.paper,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  stepText: { fontSize: 26, fontWeight: '700', color: colors.primaryDark, lineHeight: 30 },
+  stepText: { fontFamily: fonts.semibold, fontSize: 26, lineHeight: 30, color: colors.ink },
   stakeInput: {
     flex: 1,
     minWidth: 0,
     textAlign: 'center',
-    fontSize: 24,
-    fontWeight: '800',
-    color: colors.text,
+    fontFamily: fonts.pixel,
+    fontSize: 26,
+    color: colors.ink,
     borderWidth: 2,
-    borderColor: colors.border,
+    borderColor: colors.line,
     borderRadius: radius.md,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.card,
+    paddingVertical: 8,
+    backgroundColor: colors.white,
   },
-  hint: { fontSize: 13, color: colors.muted },
-  challenge: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  name: { fontSize: 17, fontWeight: '800', color: colors.text },
-  stake: { fontSize: 18, fontWeight: '900', color: colors.gold },
-  tooHigh: { fontSize: 12, color: colors.danger, maxWidth: 110, textAlign: 'right' },
+  hint: { fontFamily: fonts.medium, fontSize: 13, color: colors.muted },
+  challenge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.white,
+    borderRadius: radius.card,
+    padding: 14,
+  },
+  name: { fontFamily: fonts.bold, fontSize: 17, color: colors.ink },
+  subjectTag: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 3, borderRadius: radius.pill },
+  subjectTagText: { fontFamily: fonts.bold, fontSize: 12 },
+  stake: { fontFamily: fonts.pixel, fontSize: 20, color: colors.ink },
+  tooHigh: { fontFamily: fonts.semibold, fontSize: 12, color: colors.dangerText, maxWidth: 110, textAlign: 'right' },
 });

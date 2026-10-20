@@ -1,21 +1,21 @@
-import { Link } from 'expo-router';
+import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, spacing } from '@/constants/theme';
+import { Button } from '@/components/Button';
+import { Sprite } from '@/components/pixel';
+import { colors } from '@/constants/theme';
+import { type } from '@/constants/type';
 import { S } from '@/i18n/strings';
 
 export default function NotFound() {
   return (
     <View style={styles.center}>
-      <Text style={styles.title}>{S.notFound}</Text>
-      <Link href="/" style={styles.link}>
-        {S.goHome}
-      </Link>
+      <Sprite id="bear_neglected_scarf_164x280" label="Төөрсөн баавгай" />
+      <Text style={type.h2}>{S.notFound}</Text>
+      <Button title={S.goHome} onPress={() => router.replace('/')} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.lg, backgroundColor: colors.bg },
-  title: { fontSize: 20, fontWeight: '800', color: colors.text },
-  link: { fontSize: 16, color: colors.primaryDark, fontWeight: '700' },
+  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24, backgroundColor: colors.paper },
 });
