@@ -4,7 +4,7 @@
 цуглуулна; дараалал (streak) өсөх тусам оноо нь үржинэ. Оноогоороо дүрдээ хувцас авч, ижил түвшний
 хүүхдүүдтэй бооцоотой real-time тулаан хийнэ.
 
-- `mobile/` — Expo SDK 58 (Expo Go), expo-router, TypeScript, react-native-svg, expo-secure-store
+- `mobile/` — Expo SDK 57 (Expo Go), expo-router, TypeScript, react-native-svg, expo-secure-store
 - `api/` — Cloudflare Workers (Hono) + D1 + Durable Objects (`DuelRoom`, WebSocket Hibernation)
 - `shared/types.ts` — API ба WebSocket-ийн гэрээ (хоёр тал `import type`-аар хуваалцана)
 
@@ -15,7 +15,7 @@
 
 ## 1. Шаардлага
 
-- **Node 24** (Expo 58, wrangler 4, Vitest 5 нь Node ≥ 22 шаарддаг). Энэ компьютер дээр Homebrew-ийн
+- **Node 24** (Expo 57, wrangler 4, Vitest 5 нь Node ≥ 22 шаарддаг). Энэ компьютер дээр Homebrew-ийн
   `node@24` суусан, системийн Node 20-д хүрэхгүй. Terminal бүрт эхлээд:
 
   ```bash
@@ -23,7 +23,7 @@
   ```
 
   Байнга ашиглах бол энэ мөрийг `~/.zshrc`-д нэмнэ.
-- Утсан дээр **Expo Go**-ийн хамгийн сүүлийн хувилбар (SDK 58).
+- Утсан дээр **Expo Go**-ийн хамгийн сүүлийн хувилбар (SDK 57).
 - Компьютер ба утаснууд **нэг Wi-Fi**-д байна.
 
 ## 2. Анх удаа тохируулах
@@ -147,6 +147,11 @@ npm run e2e
 1. Утас, компьютер нэг Wi-Fi-д байгаа эсэх (зочны Wi-Fi ихэвчлэн төхөөрөмжүүдийг хооронд нь хаадаг).
 2. macOS Firewall: System Settings → Network → Firewall, `node`/`workerd`-д ирэх холболтыг зөвшөөрнө.
 3. Утасны browser-оор `http://<IP>:8787/health` нээгдэж байгаа эсэх.
+4. Wi-Fi солих бүрт компьютерийн IP өөрчлөгдөнө: `npx expo start -c`-г дахин асаагаад шинэ QR-ийг
+   уншуулна (API-г дахин асаах шаардлагагүй). Expo буруу сүлжээний IP сонговол
+   `REACT_NATIVE_PACKAGER_HOSTNAME=<IP> npx expo start -c`.
+5. Expo Go "Project is incompatible" гэвэл утсан дээрх Expo Go-ийн SDK-тэй тааруулна
+   (одоо SDK 57): `npm install expo@~57.0.0 && npx expo install --fix`.
 
 **Нөөц хувилбар: workers.dev руу deploy** (Free plan хангалттай; DuelRoom нь SQLite-backed):
 
