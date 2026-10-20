@@ -1,7 +1,7 @@
 // Ажиллаж буй dev сервер дээр демо сценарийн гол урсгалыг автоматаар шалгана.
 //   npm run e2e                 # даалгавар, оноо, streak, хамгаалалт, өдрийн хязгаар, тулаан
-//   npm run e2e -- --only tasks # зөвхөн нэг хэсэг (tasks | duel)
-import type { MeResponse, TaskDto } from '../../shared/types';
+//   npm run e2e -- --only tasks # зөвхөн нэг хэсэг (tasks | shop | duel)
+import type { MeResponse, ShopResponse, TaskDto } from '../../shared/types';
 import { runDuelScenario } from './e2e-duel';
 import { check, doTask, expectError, failureCount, me, register } from './e2e-lib';
 import { ADMIN_TOKEN, arg, call } from './lib';
@@ -90,6 +90,29 @@ async function tasksScenario() {
   return { a, b };
 }
 
+async function shopScenario() {
+  console.log('\n— Дэлгүүр ба avatar');
+  const u = await register('shop_u', 7);
+  const shop = await call<ShopResponse>('GET', '/shop', { token: u.token });
+  check(shop.items.length >= 15 && shop.items.length <= 20, `Дэлгүүрт ${shop.items.length} эд зүйл`);
+  check(shop.items.some((i) => i.locked) && shop.items.some((i) => i.minLevel > 1), 'Зарим эд зүйл тодорхой шатнаас нээгдэнэ');
+  const tee = shop.items.find((i) => i.id === 'top_tshirt_red')!;
+  const bought = await call<ShopResponse>('POST', `/shop/${tee.id}/buy`, { token: u.token });
+  check(bought.me.points === 50 - tee.price, `Улаан футболк авахад ${tee.price} оноо хасагдана`, bought.me.points);
+  check(bought.me.equipped.top === tee.id && bought.me.avatar.top?.color === tee.style.color, 'Авмагц өмсөгдөж avatar өөрчлөгдөнө');
+  await expectError(call('POST', `/shop/${tee.id}/buy`, { token: u.token }), 'ALREADY_OWNED', 'Нэг эд зүйлийг дахин авахгүй');
+  await expectError(call('POST', '/shop/acc_crown/buy', { token: u.token }), 'ITEM_LOCKED', 'Шат хүрэхгүй бол түгжээтэй');
+  await call('POST', '/shop/hair_long_brown/buy', { token: u.token });
+  await expectError(call('POST', '/shop/acc_cap_red/buy', { token: u.token }), 'INSUFFICIENT_POINTS', 'Оноо хүрэлцэхгүй бол авахгүй');
+  const back = await call<MeResponse>('POST', '/avatar/equip', { token: u.token, body: { slot: 'top', itemId: 'top_tshirt_blue' } });
+  check(back.me.equipped.top === 'top_tshirt_blue' && back.me.equipped.hair === 'hair_long_brown', 'Үнэгүй цамцаа буцааж өмсөнө, үс хэвээр');
+  await expectError(
+    call('POST', '/avatar/equip', { token: u.token, body: { slot: 'accessory', itemId: 'acc_glasses' } }),
+    'NOT_OWNED',
+    'Аваагүй эд зүйлийг өмсөхгүй',
+  );
+}
+
 async function audit() {
   const r = await call<{ mismatches: unknown[] }>('GET', '/admin/audit', { admin: true });
   check(r.mismatches.length === 0, 'Бүх хэрэглэгчийн оноо = point_ledger-ийн нийлбэр', r.mismatches);
@@ -99,6 +122,7 @@ async function main() {
   if (!ADMIN_TOKEN) throw new Error('ADMIN_TOKEN олдсонгүй (api/.dev.vars)');
   const only = arg('only');
   if (!only || only === 'tasks') await tasksScenario();
+  if (!only || only === 'shop') await shopScenario();
   if (!only || only === 'duel') await runDuelScenario();
   console.log('\n— Ledger');
   await audit();
