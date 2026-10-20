@@ -55,6 +55,9 @@ Each question:
 - "correctIndex": 0-based index of the correct option; it must agree with "solution".
 - "explanation": 1–2 short sentences for the student explaining why the answer is correct (at most 200 characters).
 
+Never use Russian or English words (e.g. write "цэг", not "точка"); use the Mongolian school terms.
+For the Mongolian-language subject: only use grammar terms, idioms (хэлц) and proverbs whose standard meaning you are certain of, never invent them;
+every example sentence must be grammatical and meaningful; in spelling questions only the wrong options may contain misspellings.
 Before returning, proofread every Mongolian word for spelling and suffix (нөхцөл) errors, and make sure each explanation states the rule correctly.
 Only factual, curriculum-based content. No ambiguous questions, opinions, sensitive or political topics, or personal data.`;
 

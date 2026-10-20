@@ -10,6 +10,20 @@ const rawSchema = z.object({
 });
 
 const CYRILLIC = /[Ѐ-ӿ]/;
+/**
+ * Нэг үг дотор кирилл, латин холилдсон ("зохиolyn") нь LLM-ийн эвдэрсэн гаралт. Физикийн
+ * "Eп", "Eк" зэрэг богино тэмдэглэгээг зөвшөөрөхийн тулд 5+ үсэгтэй үгийг л шалгана.
+ */
+/** Кирилл, латин, грекээс өөр бичгийн үсэг (жишээ нь араб "ە") нь LLM-ийн эвдэрсэн гаралт. */
+function hasForeignScript(text: string): boolean {
+  return /(?![\p{Script=Cyrillic}\p{Script=Latin}\p{Script=Greek}])\p{L}/u.test(text);
+}
+
+function hasMixedScriptWord(text: string): boolean {
+  return (text.match(/[\p{L}]+/gu) ?? []).some(
+    (w) => w.length >= 5 && /[\u0400-\u04FF]/.test(w) && /[a-zA-Z]/.test(w),
+  );
+}
 const OPTION_PREFIX = /^\s*(?:[A-DА-Г]|[1-4])\s*[).:]\s+/;
 
 export interface Rejection {
@@ -59,6 +73,8 @@ function checkOne(raw: unknown): QuestionDraft | Rejection {
   if (!CYRILLIC.test(explanation)) return { reason: 'explanation not cyrillic', prompt };
   if (options.some((o) => o.length === 0 || o.length > 120)) return { reason: 'option length', prompt };
   if (new Set(options.map((o) => o.toLowerCase())).size !== 4) return { reason: 'duplicate options', prompt };
+  if ([prompt, explanation, ...options].some(hasMixedScriptWord)) return { reason: 'mixed script', prompt };
+  if ([prompt, explanation, ...options].some(hasForeignScript)) return { reason: 'foreign script', prompt };
 
   return { prompt, options, correctIndex: q.correctIndex, explanation };
 }

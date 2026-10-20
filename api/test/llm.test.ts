@@ -38,18 +38,25 @@ describe('validateDrafts', () => {
         good({ options: ['5', '5', '4', '3'] }),
         good({ prompt: 'What is 2 + 3?' }),
         good({ explanation: '' }),
+        good({ explanation: 'Уран зохиolyn төрөл.' }),
+        good({ options: ['5', '6', '4', '9 дахин ихсэнە'] }),
         { prompt: 'Асуулт?' },
         'string',
       ],
     });
     expect(drafts).toHaveLength(0);
-    expect(rejected).toHaveLength(8);
+    expect(rejected).toHaveLength(10);
   });
 
   it('багц доторх давхардлыг (зай, том жижиг үсэг ялгаагүй) хаяна', () => {
     const { drafts, rejected } = validateDrafts({ questions: [good(), good({ prompt: '2 + 3  хэдтэй ТЭНЦҮҮ вэ' })] });
     expect(drafts).toHaveLength(1);
     expect(rejected[0].reason).toBe('duplicate in batch');
+  });
+
+  it('физикийн "Eп", "Eк", грек α, Ω тэмдэглэгээг зөвшөөрнө', () => {
+    const { drafts } = validateDrafts([good({ explanation: 'Eп = m · g · h, sin α, R = 4 Ω тул 200 Ж.' })]);
+    expect(drafts).toHaveLength(1);
   });
 
   it('"A) " гэх мэт угтварыг сонголтоос авч хаяна', () => {
@@ -178,5 +185,20 @@ describe('Gemini REST', () => {
 
   it('түлхүүргүй бол дуудахгүй', async () => {
     await expect(geminiGenerate({ ...env, GEMINI_API_KEY: undefined }, 's', 'u')).rejects.toThrow(/GEMINI_API_KEY/);
+  });
+});
+
+describe('mathSignature (ижил бодлого таних)', () => {
+  it('үг хэллэг өөр ч ижил илэрхийлэл бол ижил', async () => {
+    const { mathSignature } = await import('../src/services/pool');
+    expect(mathSignature('2.4 : 0.6 + 1.5 үйлдлийг гүйцэтгээрэй.')).toBe(mathSignature('2.4 : 0.6 + 1.5 илэрхийллийн утгыг олоорой.'));
+    expect(mathSignature('5x - 8 = 22 тэгшитгэлийг бодоорой.')).toBe('5x-8=22');
+    expect(mathSignature('5x - 8 = 22 тэгшитгэлийг бодоорой.')).not.toBe(mathSignature('5x - 8 = 27 тэгшитгэлийг бодоорой.'));
+  });
+
+  it('тоогүй эсвэл хэт богино бол null (монгол хэлний асуулт, "16 ба 24")', async () => {
+    const { mathSignature } = await import('../src/services/pool');
+    expect(mathSignature('"Үнэнч" гэдэг үгтэй ойролцоо утгатай үг аль вэ?')).toBeNull();
+    expect(mathSignature('16 ба 24 тоонуудын ХИЕХ-ийг олоорой.')).toBeNull();
   });
 });

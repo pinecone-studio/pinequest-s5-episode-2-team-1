@@ -4,6 +4,18 @@ import { generateQuestions, pickProvider } from '../llm';
 import type { QuestionDraft } from '../llm/types';
 import { promptKey } from '../llm/validate';
 
+/**
+ * Тоо, хувьсагч, үйлдлийн дараалал ("5x-8=22", "2.4:0.6+1.5"). Үг хэллэг нь өөр ч бодлого нь ижил
+ * асуултыг (зэрэгцээ LLM дуудлагаас гарсан) таних зорилготой; тоогүй/богино бол null.
+ */
+export function mathSignature(prompt: string): string | null {
+  const sig = prompt
+    .replace(/-(?=[\u0400-\u04FF])/g, ' ') // "ХИЕХ-ийг", "5-ыг" гэх мэт нөхцөлийн зураас
+    .replace(/(\d)[.,](\d)/g, '$1§$2') // аравтын бутархайн цэгийг хадгална
+    .replace(/[^0-9a-zA-Z§+\-−*/:=·×²³()]/g, '');
+  return /\d/.test(sig) && sig.length >= 5 ? sig : null;
+}
+
 /** Давхардсаныг (tier, subject, prompt_key UNIQUE) чимээгүй алгасаж хадгална. */
 export async function insertDrafts(
   db: D1Database,
@@ -45,10 +57,11 @@ export async function generateAndStore(
   count: number,
   chunk: number = GAME.POOL.LLM_CHUNK,
 ): Promise<GenerateReport> {
-  const { results } = await env.DB.prepare('SELECT prompt FROM questions WHERE tier = ? AND subject = ? ORDER BY id DESC LIMIT 40')
+  const { results } = await env.DB.prepare('SELECT prompt FROM questions WHERE tier = ? AND subject = ? ORDER BY id DESC')
     .bind(tier, subject)
     .all<{ prompt: string }>();
-  const avoid = results.map((r) => r.prompt);
+  const avoid = results.slice(0, 40).map((r) => r.prompt);
+  const signatures = new Set(results.map((r) => mathSignature(r.prompt)).filter((x): x is string => x !== null));
 
   const sizes: number[] = [];
   for (let left = count; left > 0; left -= chunk) sizes.push(Math.min(chunk, left));
@@ -63,9 +76,16 @@ export async function generateAndStore(
     report.source = s.value.source;
     report.rejected += s.value.rejected.length;
     report.rejectReasons.push(...s.value.rejected.map((r) => r.reason));
-    const r = await insertDrafts(env.DB, tier, subject, s.value.drafts, s.value.source);
+    const fresh = s.value.drafts.filter((d) => {
+      const sig = mathSignature(d.prompt);
+      if (sig === null) return true;
+      if (signatures.has(sig)) return false;
+      signatures.add(sig);
+      return true;
+    });
+    const r = await insertDrafts(env.DB, tier, subject, fresh, s.value.source);
     report.inserted += r.inserted;
-    report.duplicates += r.duplicates;
+    report.duplicates += r.duplicates + (s.value.drafts.length - fresh.length);
   }
   return report;
 }

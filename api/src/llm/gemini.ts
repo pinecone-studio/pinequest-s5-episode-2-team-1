@@ -40,6 +40,17 @@ export interface GeminiDeps {
   baseDelayMs?: number;
 }
 
+/** Gemini-ийн алдааг товчилно: message + quotaId (жишээ нь ...PerDay...-FreeTier). */
+function describeError(status: number, body: string): string {
+  try {
+    const err = (JSON.parse(body) as { error?: { message?: string; details?: Array<{ violations?: Array<{ quotaId?: string }> }> } }).error;
+    const quotas = (err?.details ?? []).flatMap((d) => d.violations ?? []).map((v) => v.quotaId).filter(Boolean);
+    return `${err?.message?.split('\n')[0]?.slice(0, 200) ?? body.slice(0, 200)}${quotas.length ? ` [${quotas.join(', ')}]` : ''}`;
+  } catch {
+    return body.slice(0, 300) || `HTTP ${status}`;
+  }
+}
+
 function retryDelayMs(body: string): number | null {
   const m = body.match(/"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"/);
   return m ? Math.ceil(Number(m[1]) * 1000) : null;
@@ -51,6 +62,8 @@ async function postWithRetry(url: string, init: RequestInit, deps: Required<Gemi
     const res = await doFetch(url, init);
     if (!RETRYABLE.has(res.status) || attempt >= deps.attempts) return res;
     const body = await res.text();
+    // Өдрийн квот дууссан бол хүлээх утгагүй.
+    if (/PerDay/i.test(body)) return new Response(body, { status: res.status });
     const wait = Math.min(retryDelayMs(body) ?? deps.baseDelayMs * 2 ** (attempt - 1), 30_000);
     console.log(`[gemini] ${res.status}, ${wait}ms дараа дахин оролдоно (${attempt}/${deps.attempts})`);
     await new Promise((r) => setTimeout(r, wait));
@@ -87,10 +100,10 @@ export async function geminiGenerate(
       opts,
     );
     if (res.status === 400 && variants.length > 1) {
-      lastError = new LlmError('gemini', 400, (await res.text()).slice(0, 400));
+      lastError = new LlmError('gemini', 400, describeError(400, await res.text()));
       continue;
     }
-    if (!res.ok) throw new LlmError('gemini', res.status, (await res.text()).slice(0, 400));
+    if (!res.ok) throw new LlmError('gemini', res.status, `${model}: ${describeError(res.status, await res.text())}`);
 
     workingVariant = variant;
     const data = (await res.json()) as GeminiResponse;

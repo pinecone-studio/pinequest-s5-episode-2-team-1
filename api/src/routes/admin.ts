@@ -77,6 +77,25 @@ adminRoutes.get('/pool', async (c) => {
   return c.json({ provider: pickProvider(c.env), pool: results });
 });
 
+/** Идэвхтэй (flag-гүй) асуултуудыг export хийх (seed/questions.json-д хадгалж git-д оруулна). */
+adminRoutes.get('/export', async (c) => {
+  const { results } = await c.env.DB.prepare(
+    `SELECT tier, subject, prompt, options, correct_index, explanation, source
+     FROM questions WHERE flagged = 0 ORDER BY tier, subject, id`,
+  ).all<{ tier: number; subject: string; prompt: string; options: string; correct_index: number; explanation: string; source: string }>();
+  return c.json({
+    questions: results.map((r) => ({
+      tier: r.tier,
+      subject: r.subject,
+      prompt: r.prompt,
+      options: JSON.parse(r.options) as string[],
+      correctIndex: r.correct_index,
+      explanation: r.explanation,
+      source: r.source,
+    })),
+  });
+});
+
 /** duel-bot-ын `--accuracy` горимд: асуултын зөв хариу. */
 adminRoutes.get('/questions/:id', async (c) => {
   const row = await c.env.DB.prepare('SELECT id, correct_index FROM questions WHERE id = ?')
