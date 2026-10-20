@@ -83,6 +83,31 @@ adminRoutes.get('/questions/:id', async (c) => {
   return c.json({ id: row.id, correctIndex: row.correct_index });
 });
 
+/** Flag-ийг буцаах (e2e тестийн дараа, эсвэл андуурч дарсан үед). */
+adminRoutes.post('/questions/:id/unflag', async (c) => {
+  await c.env.DB.prepare('UPDATE questions SET flagged = 0, flagged_by = NULL WHERE id = ?').bind(parseId(c.req.param('id'))).run();
+  return c.json({ ok: true });
+});
+
+/** e2e-д "цаг хугацаа" дуурайх: хэрэглэгчийн streak/хамгаалалтын төлөвийг шууд тавина. */
+adminRoutes.post('/debug/users/:id/streak', async (c) => {
+  const body = await readBody(
+    c,
+    z.object({
+      streak: z.number().int().min(0),
+      lastDay: z.string().nullable(),
+      shieldHeld: z.number().int().min(0).max(1).default(0),
+      shieldBoughtDay: z.string().nullable().default(null),
+    }),
+  );
+  await c.env.DB.prepare(
+    'UPDATE users SET streak = ?, last_streak_day = ?, shield_held = ?, shield_bought_day = ?, shield_used_day = NULL WHERE id = ?',
+  )
+    .bind(body.streak, body.lastDay, body.shieldHeld, body.shieldBoughtDay, parseId(c.req.param('id')))
+    .run();
+  return c.json({ ok: true });
+});
+
 /** Оноо ба point_ledger-ийн нийлбэр зөрсөн хэрэглэгчид (e2e шалгалтад). */
 adminRoutes.get('/audit', async (c) => {
   const { results } = await c.env.DB.prepare(

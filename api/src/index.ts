@@ -6,6 +6,7 @@ import type { AppEnv } from './env';
 import { errorHandler } from './lib/errors';
 import { adminRoutes } from './routes/admin';
 import { authRoutes, meRoutes } from './routes/auth';
+import { questionRoutes, shieldRoutes, taskRoutes } from './routes/tasks';
 
 export { DuelRoom } from './duel/DuelRoom';
 
@@ -24,6 +25,9 @@ app.get('/health', async (c) => {
 
 app.route('/auth', authRoutes);
 app.route('/me', meRoutes);
+app.route('/tasks', taskRoutes);
+app.route('/questions', questionRoutes);
+app.route('/shield', shieldRoutes);
 app.route('/admin', adminRoutes);
 
 export default app;

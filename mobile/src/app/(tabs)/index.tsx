@@ -1,9 +1,11 @@
-import type { Subject } from '@shared/types';
+import type { MeResponse, Subject } from '@shared/types';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { api, errorText } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
 import { Avatar } from '@/components/Avatar';
+import { Button } from '@/components/Button';
 import { Stat } from '@/components/Stat';
 import { SubjectCard } from '@/components/SubjectCard';
 import { Card, Muted, ProgressBar, Screen, SectionTitle } from '@/components/ui';
@@ -14,8 +16,10 @@ import { confirm } from '@/lib/confirm';
 const SUBJECTS: Subject[] = ['math', 'mongolian', 'physics'];
 
 export default function HomeScreen() {
-  const { me, refreshMe, signOut } = useAuth();
+  const { me, refreshMe, signOut, setMe } = useAuth();
   const [refreshing, setRefreshing] = useState(false);
+  const [shieldBusy, setShieldBusy] = useState(false);
+  const [shieldError, setShieldError] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -27,6 +31,18 @@ export default function HomeScreen() {
     setRefreshing(true);
     await refreshMe();
     setRefreshing(false);
+  }
+
+  async function buyShield() {
+    setShieldBusy(true);
+    setShieldError('');
+    try {
+      setMe((await api<MeResponse>('/shield/buy', { method: 'POST' })).me);
+    } catch (e) {
+      setShieldError(errorText(e));
+    } finally {
+      setShieldBusy(false);
+    }
   }
 
   async function onLogout() {
@@ -80,6 +96,11 @@ export default function HomeScreen() {
         </View>
         <Muted>{me.shield.held ? S.home.shieldOn : S.home.shieldOff}</Muted>
         {me.shield.usedDay ? <Muted>{S.home.shieldUsed(me.shield.usedDay)}</Muted> : null}
+        {!me.shield.held && me.shield.nextBuyDay ? <Muted>{S.home.shieldCooldown(me.shield.nextBuyDay)}</Muted> : null}
+        {me.shield.canBuy && (
+          <Button title={S.home.shieldBuy(me.shield.price)} variant="secondary" small loading={shieldBusy} onPress={buyShield} />
+        )}
+        {shieldError ? <Muted>{shieldError}</Muted> : null}
       </Card>
 
       <SectionTitle>{S.home.subjectsTitle}</SectionTitle>

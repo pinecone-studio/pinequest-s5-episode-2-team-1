@@ -36,15 +36,16 @@ export class ApiError extends Error {
   }
 }
 
-let authToken: string | null = null;
-let onUnauthorized: (() => void) | null = null;
+// globalThis дээр хадгална: Fast Refresh модулийг дахин ажиллуулахад session алдагдахгүй.
+const session = ((globalThis as { __surgaltSession?: { token: string | null; onUnauthorized: (() => void) | null } }).__surgaltSession ??=
+  { token: null, onUnauthorized: null });
 
 export function setAuthToken(token: string | null) {
-  authToken = token;
+  session.token = token;
 }
 
 export function setUnauthorizedHandler(handler: (() => void) | null) {
-  onUnauthorized = handler;
+  session.onUnauthorized = handler;
 }
 
 export function errorText(e: unknown): string {
@@ -55,13 +56,14 @@ export function errorText(e: unknown): string {
 export async function api<T>(path: string, opts: { method?: string; body?: unknown } = {}): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  const tokenUsed = session.token;
   let res: Response;
   try {
     res = await fetch(API_URL + path, {
       method: opts.method ?? (opts.body === undefined ? 'GET' : 'POST'),
       headers: {
         'content-type': 'application/json',
-        ...(authToken ? { authorization: `Bearer ${authToken}` } : {}),
+        ...(tokenUsed ? { authorization: `Bearer ${tokenUsed}` } : {}),
       },
       body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
       signal: controller.signal,
@@ -82,7 +84,8 @@ export async function api<T>(path: string, opts: { method?: string; body?: unkno
   }
   if (!res.ok) {
     const code = (data as ApiErrorBody | null)?.error?.code ?? 'INTERNAL';
-    if (res.status === 401 && authToken) onUnauthorized?.();
+    // Зөвхөн одоогийн token татгалзагдсан бол гаргана (хуучин/хоосон token-той хүсэлт тооцохгүй).
+    if (res.status === 401 && tokenUsed && tokenUsed === session.token) session.onUnauthorized?.();
     throw new ApiError(res.status, code, errorMessages[code] ?? errorMessages.INTERNAL);
   }
   return data as T;
@@ -90,5 +93,5 @@ export async function api<T>(path: string, opts: { method?: string; body?: unkno
 
 /** DuelRoom-ын WebSocket хаяг. Браузерын WebSocket header дамжуулдаггүй тул token query-д. */
 export function wsUrl(path: string): string {
-  return `${API_URL.replace(/^http/, 'ws')}${path}?token=${encodeURIComponent(authToken ?? '')}`;
+  return `${API_URL.replace(/^http/, 'ws')}${path}?token=${encodeURIComponent(session.token ?? '')}`;
 }

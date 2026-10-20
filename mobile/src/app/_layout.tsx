@@ -49,9 +49,11 @@ function RootNavigator() {
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.bg } }}>
       <Stack.Protected guard={signedIn}>
         <Stack.Screen name="(tabs)" />
+        <Stack.Screen name="task/[subject]" />
       </Stack.Protected>
       <Stack.Protected guard={!signedIn}>
-        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="login" />
+        <Stack.Screen name="register" />
       </Stack.Protected>
     </Stack>
   );
