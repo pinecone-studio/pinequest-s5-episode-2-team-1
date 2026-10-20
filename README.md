@@ -15,59 +15,57 @@
 
 ## 1. Шаардлага
 
-- **Node 24** (Expo 57, wrangler 4, Vitest 5 нь Node ≥ 22 шаарддаг). Энэ компьютер дээр Homebrew-ийн
-  `node@24` суусан, системийн Node 20-д хүрэхгүй. Terminal бүрт эхлээд:
+- **Node 24** (Expo 57, wrangler 4, Vitest 5 нь Node ≥ 22 шаарддаг). `node -v` → `v24.x` байх ёстой.
+  - macOS + Homebrew: `brew install node@24`, дараа нь `~/.zshrc`-д PATH нэмнэ (Apple Silicon:
+    `/opt/homebrew/opt/node@24/bin`, Intel: `/usr/local/opt/node@24/bin`):
 
-  ```bash
-  export PATH="/opt/homebrew/opt/node@24/bin:$PATH"
-  ```
+    ```bash
+    echo 'export PATH="/opt/homebrew/opt/node@24/bin:$PATH"' >> ~/.zshrc
+    ```
 
-  Байнга ашиглах бол энэ мөрийг `~/.zshrc`-д нэмнэ.
-- Утсан дээр **Expo Go**-ийн хамгийн сүүлийн хувилбар (SDK 57).
+  - nvm ашигладаг бол repo дотор `nvm install && nvm use` (`.nvmrc` = 24).
+- Утсан дээр **Expo Go** (SDK 57-г дэмждэг хувилбар).
 - Компьютер ба утаснууд **нэг Wi-Fi**-д байна.
 
-## 2. Анх удаа тохируулах
+## 2. Анх удаа тохируулах (clone хийсний дараа)
 
 ```bash
-cd api
-npm install
-cp .dev.vars.example .dev.vars
+git clone https://github.com/pinecone-studio/pinequest-s5-episode-2-team-1.git
 ```
-
-- **Gemini түлхүүр:** repo-ийн root дээрх `.env.local` файлд `GEMINI_API_KEY=...` гэж бичнэ (эсвэл
-  `api/.dev.vars`-д). Үнэгүй түлхүүрийг https://aistudio.google.com/apikey -оос авна. `npm run dev`
-  эхлээд `api/.dev.vars`-ийг, дараа нь `../.env.local`-ийг уншина; хоёулаа git-д орохгүй.
-- `api/.dev.vars` дотор `ADMIN_TOKEN=` — дурын урт санамсаргүй мөр (seed скрипт, бот ашиглана).
 
 ```bash
-npm run db:migrate
-cd ../mobile
-npm install
+cd pinequest-s5-episode-2-team-1/api && npm install && cp .dev.vars.example .dev.vars && npm run db:migrate
 ```
+
+```bash
+cd ../mobile && npm install
+```
+
+- `api/.dev.vars` дотор `ADMIN_TOKEN=` — дурын урт санамсаргүй мөр (seed, бот, асуулт import хийхэд).
+- **Gemini түлхүүр (заавал биш):** repo-ийн root дээр `.env.local` файл үүсгэж `GEMINI_API_KEY=...` гэж
+  бичнэ (эсвэл `api/.dev.vars`-д). Үнэгүй түлхүүрийг https://aistudio.google.com/apikey -оос авна.
+  Түлхүүргүй ч апп `api/seed/questions.json`-ийн шалгасан 315 асуултаар бүрэн ажиллана.
+  `npm run dev` эхлээд `api/.dev.vars`-ийг, дараа нь `../.env.local`-ийг уншина; хоёулаа git-д орохгүй.
+- Анх асаасны дараа асуултын санг нэг удаа оруулна (доорх 3-р хэсгийн "Асуултын сан").
 
 ## 3. Демо ажиллуулах
 
 ### VS Code-оор (хамгийн хялбар)
 
-1. Төслийг нээнэ: `code /Users/tugs/Desktop/surgalt` (эсвэл File → Open Folder). "Trust" гэж асуувал зөвшөөрнө.
+1. Repo-ийн root хавтсыг нээнэ: `code .` (эсвэл File → Open Folder). "Trust" гэж асуувал зөвшөөрнө.
 2. `Cmd+Shift+P` → **Tasks: Run Task** → **Демо эхлүүлэх**. Доод panel-д "API сервер", "Expo (QR код)"
    хоёр terminal зэрэг нээгдэнэ.
 3. "Expo (QR код)" terminal дахь QR-ийг утсаараа уншуулна.
 4. Зогсоохдоо terminal бүрт `Ctrl+C` (эсвэл `Cmd+Shift+P` → **Tasks: Terminate Task**).
 
-Task бүр Node 24-ийг өөрөө тохируулдаг. Харин VS Code-д **гараар нээсэн terminal** macOS-ийн login shell
-тул `/etc/zprofile` (path_helper) PATH-ийг дахин эрэмбэлж системийн Node 20-ийг сонгоно ("Wrangler requires
-at least Node.js v22"). Нэг удаа доорх мөрийг `~/.zshrc`-д нэмээд terminal-аа шинээр нээнэ:
-
-```bash
-echo 'export PATH="/opt/homebrew/opt/node@24/bin:$PATH"' >> ~/.zshrc
-```
-
-Шалгах: `node -v` → `v24.x`. Бусад task: "Бот тоглогч", "Асуултын сан сэргээх", "Шалгалт".
+Task бүр Homebrew-ийн Node 24-ийг өөрөө PATH-ийн урд тавьдаг. Харин VS Code-д **гараар нээсэн terminal**
+macOS-ийн login shell тул `/etc/zprofile` (path_helper) PATH-ийг дахин эрэмбэлж системийн хуучин Node-ийг
+сонгож болзошгүй ("Wrangler requires at least Node.js v22"). Ийм бол 1-р хэсгийн `~/.zshrc` мөрийг нэмээд
+terminal-аа шинээр нээнэ. Бусад task: "Бот тоглогч", "Асуултын сан сэргээх", "Шалгалт".
 
 ### Terminal-аар
 
-Гурван terminal (бүгдэд нь эхлээд дээрх `export PATH=...`):
+Гурван terminal (`node -v` → `v24.x` байх ёстой):
 
 **1) API**
 
@@ -80,7 +78,7 @@ npm run dev
 
 **2) Асуултын сан** (сервер ажиллаж байхад)
 
-Шалгаж цэвэрлэсэн 284 асуулт `api/seed/questions.json`-д git дотор хадгалагдсан. Local DB хоосон
+Шалгаж цэвэрлэсэн 315 асуулт `api/seed/questions.json`-д git дотор хадгалагдсан. Local DB хоосон
 бол (шинэ компьютер, `db:reset`-ийн дараа) нэг командаар сэргээнэ:
 
 ```bash
@@ -218,8 +216,9 @@ Free plan дээр нэвтрэхэд CPU хязгаарын алдаа (1102) �
   - Монгол хэлний (дүрэм, хэлц, зүйр үг) асуулт хамгийн эмзэг:
     - `3.8-flash`, `3.6-flash` ~10–20%-д алдаатай;
     - `3.5-flash-lite` тэн хагаст нь алдаатай байсан тул түүний монгол хэлний бүх асуултад flag тавьсан.
-  - Тиймээс Түвшин 2–3-ын монгол хэлний сан бага (12, 6). Квот сэргэхэд:
-    `npm run seed:questions -- --subject mongolian --model gemini-3.8-flash,gemini-3.6-flash`.
+  - Түвшин 3-ын монгол хэлэнд background нөхөлт `3.8-flash`-аар 40 асуулт нэмснээс шалгаад 31-ийг үлдээсэн
+    (37 болсон). Түвшин 2-ын монгол хэл бага хэвээр (12). Квот сэргэхэд:
+    `npm run seed:questions -- --subject mongolian --tier 2 --model gemini-3.8-flash,gemini-3.6-flash`.
 - Загвар JSON-д `solution` (бодолт)-ыг `correctIndex`-ээс өмнө бичнэ. Сервер дараахыг шалгаж хаяна:
   - schema-д таарахгүй, кирилл текстгүй, 4 ялгаатай сонголтгүй асуулт;
   - нэг үг дотор латин, кирилл холилдсон ("зохиolyn") эсвэл өөр бичгийн үсэг ("ە") орсон асуулт;

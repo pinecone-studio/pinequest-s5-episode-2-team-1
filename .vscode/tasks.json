@@ -12,7 +12,7 @@
     {
       "label": "API сервер",
       "type": "shell",
-      "command": "export PATH=/opt/homebrew/opt/node@24/bin:$PATH && npm run dev",
+      "command": "export PATH=/opt/homebrew/opt/node@24/bin:/usr/local/opt/node@24/bin:$PATH && npm run dev",
       "options": { "cwd": "${workspaceFolder}/api" },
       "isBackground": true,
       "presentation": { "panel": "dedicated", "group": "demo", "reveal": "always" },
@@ -25,7 +25,7 @@
     {
       "label": "Expo (QR код)",
       "type": "shell",
-      "command": "export PATH=/opt/homebrew/opt/node@24/bin:$PATH && npx expo start -c",
+      "command": "export PATH=/opt/homebrew/opt/node@24/bin:/usr/local/opt/node@24/bin:$PATH && npx expo start -c",
       "options": { "cwd": "${workspaceFolder}/mobile" },
       "isBackground": true,
       "presentation": { "panel": "dedicated", "group": "demo", "reveal": "always", "focus": true },
@@ -38,7 +38,7 @@
     {
       "label": "Бот тоглогч (сорилт хүлээн авна)",
       "type": "shell",
-      "command": "export PATH=/opt/homebrew/opt/node@24/bin:$PATH && npm run bot",
+      "command": "export PATH=/opt/homebrew/opt/node@24/bin:/usr/local/opt/node@24/bin:$PATH && npm run bot",
       "options": { "cwd": "${workspaceFolder}/api" },
       "presentation": { "panel": "dedicated" },
       "problemMatcher": []
@@ -46,14 +46,14 @@
     {
       "label": "Асуултын сан сэргээх (questions:import)",
       "type": "shell",
-      "command": "export PATH=/opt/homebrew/opt/node@24/bin:$PATH && npm run questions:import",
+      "command": "export PATH=/opt/homebrew/opt/node@24/bin:/usr/local/opt/node@24/bin:$PATH && npm run questions:import",
       "options": { "cwd": "${workspaceFolder}/api" },
       "problemMatcher": []
     },
     {
       "label": "Шалгалт (typecheck + тест)",
       "type": "shell",
-      "command": "export PATH=/opt/homebrew/opt/node@24/bin:$PATH && npm run typecheck && npm test && cd ../mobile && npm run typecheck",
+      "command": "export PATH=/opt/homebrew/opt/node@24/bin:/usr/local/opt/node@24/bin:$PATH && npm run typecheck && npm test && cd ../mobile && npm run typecheck",
       "options": { "cwd": "${workspaceFolder}/api" },
       "group": "test",
       "problemMatcher": ["$tsc"]

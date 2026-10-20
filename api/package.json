@@ -4,8 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev --ip 0.0.0.0 --port 8787 --env-file .dev.vars --env-file ../.env.local",
-    "dev:ai": "wrangler dev --env ai --ip 0.0.0.0 --port 8787 --env-file .dev.vars --env-file ../.env.local",
+    "dev": "node scripts/dev.mjs",
+    "dev:ai": "node scripts/dev.mjs --env ai",
     "deploy": "wrangler deploy",
     "cf-typegen": "wrangler types --strict-vars=false",
     "db:migrate": "wrangler d1 migrations apply DB --local",
