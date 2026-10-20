@@ -1,0 +1,34 @@
+{
+  "name": "surgalt-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:ai": "node scripts/dev.mjs --env ai",
+    "deploy": "wrangler deploy",
+    "cf-typegen": "wrangler types --strict-vars=false",
+    "db:migrate": "wrangler d1 migrations apply DB --local",
+    "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
+    "db:reset": "rm -rf .wrangler/state && npm run db:migrate",
+    "typecheck": "wrangler types --strict-vars=false >/dev/null && tsc --noEmit -p tsconfig.json && tsc --noEmit -p scripts/tsconfig.json",
+    "test": "vitest run",
+    "seed:questions": "tsx scripts/seed-questions.ts",
+    "seed:fixtures": "tsx scripts/seed-questions.ts --fixtures",
+    "questions:export": "tsx scripts/seed-questions.ts --export seed/questions.json",
+    "questions:import": "tsx scripts/seed-questions.ts --fixtures --file seed/questions.json",
+    "bot": "tsx scripts/duel-bot.ts",
+    "e2e": "tsx scripts/e2e.ts"
+  },
+  "dependencies": {
+    "hono": "^4.13.13",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.3",
+    "vitest": "^5.0.5",
+    "wrangler": "^4.151.2"
+  }
+}

@@ -1,0 +1,5 @@
+{
+  // Node 24: macOS-ийн login shell (/etc/zprofile → path_helper) PATH-ийг дахин эрэмбэлдэг тул
+  // terminal.integrated.env энд ажилладаггүй. ~/.zshrc-д export хийнэ (README → VS Code).
+  "typescript.tsdk": "mobile/node_modules/typescript/lib"
+}

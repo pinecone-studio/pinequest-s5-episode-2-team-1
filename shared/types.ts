@@ -1,0 +1,273 @@
+// API ба WebSocket-ийн гэрээ. api/ болон mobile/ хоёулаа зөвхөн `import type`-аар ашиглана
+// (runtime код энд байхгүй тул Metro энэ файлыг bundle хийх шаардлагагүй).
+
+export type Subject = 'math' | 'mongolian' | 'physics';
+export type Slot = 'skin' | 'hair' | 'top' | 'bottom' | 'shoes' | 'accessory';
+
+export interface ItemStyle {
+  shape: string;
+  color: string;
+  trim?: string;
+}
+/** Avatar зурахад хэрэгтэй бүх мэдээлэл: slot → style. */
+export type AvatarLook = Partial<Record<Slot, ItemStyle>>;
+/** slot → item id */
+export type Equipped = Partial<Record<Slot, string>>;
+
+export type ErrorCode =
+  | 'BAD_REQUEST'
+  | 'UNAUTHORIZED'
+  | 'FORBIDDEN'
+  | 'NOT_FOUND'
+  | 'INTERNAL'
+  | 'USERNAME_TAKEN'
+  | 'INVALID_CREDENTIALS'
+  | 'DAILY_LIMIT'
+  | 'NO_QUESTIONS'
+  | 'TASK_CLOSED'
+  | 'ALREADY_ANSWERED'
+  | 'INSUFFICIENT_POINTS'
+  | 'SHIELD_HELD'
+  | 'SHIELD_COOLDOWN'
+  | 'ITEM_LOCKED'
+  | 'ALREADY_OWNED'
+  | 'NOT_OWNED'
+  | 'STAKE_TOO_LOW'
+  | 'STAKE_TOO_HIGH'
+  | 'OPPONENT_STAKE_TOO_HIGH'
+  | 'DUEL_EXISTS'
+  | 'DUEL_TAKEN'
+  | 'DUEL_NOT_OPEN'
+  | 'WRONG_TIER'
+  | 'OWN_DUEL'
+  | 'LLM_UNAVAILABLE'
+  | 'LLM_FAILED';
+
+export interface ApiErrorBody {
+  error: { code: ErrorCode; message: string };
+}
+
+export interface HealthResponse {
+  ok: true;
+  time: number;
+  day: string;
+  questions: number;
+}
+
+// ---------- Хэрэглэгч ----------
+
+export interface ShieldStatus {
+  held: boolean;
+  price: number;
+  canBuy: boolean;
+  /** Яагаад авч болохгүй байгаа (canBuy=false үед). */
+  blockedBy: 'SHIELD_HELD' | 'SHIELD_COOLDOWN' | 'INSUFFICIENT_POINTS' | null;
+  /** Дахин авч болох өдөр (7 хоногийн хязгаар). */
+  nextBuyDay: string | null;
+  /** Хамгийн сүүлд хамгаалалт зарцуулагдаж хамгаалсан өдөр. */
+  usedDay: string | null;
+}
+
+export interface Me {
+  id: number;
+  username: string;
+  grade: number;
+  /** Ангийн түвшин 1–3 */
+  tier: number;
+  xp: number;
+  /** XP-ийн level ("Шат") */
+  level: number;
+  levelXp: number;
+  levelXpNeeded: number;
+  points: number;
+  streak: number;
+  streakDoneToday: boolean;
+  /** Дараагийн даалгаврын оноонд хэрэглэгдэх үржвэр. */
+  nextMultiplier: number;
+  todayTasks: number;
+  dailyLimit: number;
+  shield: ShieldStatus;
+  equipped: Equipped;
+  avatar: AvatarLook;
+  maxStake: number;
+  today: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  me: Me;
+}
+
+export interface MeResponse {
+  me: Me;
+}
+
+// ---------- Даалгавар ----------
+
+export interface TaskQuestion {
+  id: number;
+  prompt: string;
+  options: string[];
+  answered: boolean;
+}
+
+export interface TaskDto {
+  id: number;
+  subject: Subject;
+  status: 'in_progress' | 'completed';
+  questions: TaskQuestion[];
+  answeredCount: number;
+  correctCount: number;
+}
+
+export interface TaskResult {
+  correctCount: number;
+  total: number;
+  pointsGained: number;
+  xpGained: number;
+  multiplier: number;
+  streak: number;
+  shieldUsed: boolean;
+  levelBefore: number;
+  levelAfter: number;
+  me: Me;
+}
+
+export interface AnswerResponse {
+  correct: boolean;
+  correctIndex: number;
+  explanation: string;
+  finished: boolean;
+  result?: TaskResult;
+}
+
+export interface FlagResponse {
+  ok: true;
+  finished: boolean;
+  result?: TaskResult;
+}
+
+// ---------- Тулаан (REST) ----------
+
+export type DuelStatus = 'open' | 'accepted' | 'finished' | 'cancelled';
+
+export interface DuelPlayerDto {
+  id: number;
+  username: string;
+  level: number;
+  avatar: AvatarLook;
+}
+
+export interface DuelSummary {
+  id: number;
+  subject: Subject;
+  stake: number;
+  status: DuelStatus;
+  createdAt: number;
+  creator: DuelPlayerDto;
+  opponent: DuelPlayerDto | null;
+  winnerId: number | null;
+  endReason: string | null;
+  creatorScore: number | null;
+  opponentScore: number | null;
+}
+
+export interface LobbyResponse {
+  open: DuelSummary[];
+  /** Миний нээлттэй эсвэл явагдаж буй тулаан. */
+  mine: DuelSummary | null;
+  maxStake: number;
+  points: number;
+}
+
+export interface DuelResponse {
+  duel: DuelSummary;
+}
+
+// ---------- Дэлгүүр ----------
+
+export interface ShopItem {
+  id: string;
+  slot: Slot;
+  name: string;
+  price: number;
+  minLevel: number;
+  style: ItemStyle;
+  owned: boolean;
+  equipped: boolean;
+  locked: boolean;
+}
+
+export interface ShopResponse {
+  items: ShopItem[];
+  me: Me;
+}
+
+// ---------- Тулаан (WebSocket) ----------
+
+export type DuelPhase = 'waiting' | 'countdown' | 'question' | 'reveal' | 'finished' | 'cancelled';
+
+export interface WsPlayer {
+  id: number;
+  username: string;
+  avatar: AvatarLook;
+  connected: boolean;
+  score: number;
+}
+
+export interface WsQuestion {
+  /** 0-ээс эхэлсэн дугаар */
+  q: number;
+  total: number;
+  questionId: number;
+  prompt: string;
+  options: string[];
+  endsAt: number;
+}
+
+export interface RevealInfo {
+  q: number;
+  correctIndex: number;
+  explanation: string;
+  /** Энэ асуултыг авсан тоглогч, эсвэл null (хэн ч аваагүй). */
+  winnerId: number | null;
+  scores: Record<number, number>;
+}
+
+export interface DuelOutcome {
+  winnerId: number | null;
+  reason: 'score' | 'draw' | 'forfeit' | 'no_show' | 'stale';
+  scores: Record<number, number>;
+  /** Цэвэр өөрчлөлт: ялагч +stake, ялагдагч −stake, тэнцээ/цуцлалт 0. */
+  deltas: Record<number, number>;
+  /** Settle хийсний дараах оноо. */
+  points: Record<number, number>;
+}
+
+export type ClientMsg = { type: 'answer'; q: number; choice: number };
+
+export type ServerMsg =
+  | {
+      type: 'state';
+      phase: DuelPhase;
+      duelId: number;
+      subject: Subject;
+      stake: number;
+      players: WsPlayer[];
+      question: WsQuestion | null;
+      myAnswer: { choice: number; correct: boolean } | null;
+      reveal: RevealInfo | null;
+      /** Одоогийн үе шатын (эсвэл холбогдох) deadline. */
+      deadline: number | null;
+      outcome: DuelOutcome | null;
+      serverNow: number;
+    }
+  | { type: 'presence'; userId: number; connected: boolean }
+  | { type: 'countdown'; startsAt: number; serverNow: number }
+  | ({ type: 'question'; serverNow: number } & WsQuestion)
+  | { type: 'answer_result'; q: number; choice: number; correct: boolean }
+  | { type: 'opponent_answered'; q: number; correct: boolean }
+  | ({ type: 'reveal'; nextAt: number; serverNow: number } & RevealInfo)
+  | { type: 'finished'; outcome: DuelOutcome }
+  | { type: 'cancelled'; outcome: DuelOutcome }
+  | { type: 'error'; code: string };

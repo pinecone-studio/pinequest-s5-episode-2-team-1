@@ -1,0 +1,8 @@
+# `cp .dev.vars.example .dev.vars` хийгээд бөглөнө. .dev.vars git-д орохгүй.
+
+# Gemini-ийн үнэгүй түлхүүр: https://aistudio.google.com/apikey
+# (эсвэл repo-ийн root дээрх .env.local-д; `npm run dev` хоёуланг нь уншина)
+GEMINI_API_KEY=
+
+# Admin endpoint (/admin/*) болон seed скриптэд. Дурын урт санамсаргүй мөр.
+ADMIN_TOKEN=change-me

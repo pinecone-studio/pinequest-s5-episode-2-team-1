@@ -1,0 +1,76 @@
+// seed / bot / e2e скриптүүдийн нийтлэг туслах функцүүд (Node 24: fetch, WebSocket глобал).
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import type { ApiErrorBody } from '../../shared/types';
+
+const here = dirname(fileURLToPath(import.meta.url));
+
+/** `--name value` эсвэл `--name` (→ 'true') */
+export function arg(name: string, fallback?: string): string | undefined {
+  const i = process.argv.indexOf(`--${name}`);
+  if (i === -1) return fallback;
+  const v = process.argv[i + 1];
+  return v !== undefined && !v.startsWith('--') ? v : 'true';
+}
+
+export function flag(name: string): boolean {
+  return process.argv.includes(`--${name}`);
+}
+
+export function devVars(): Record<string, string> {
+  const p = join(here, '..', '.dev.vars');
+  if (!existsSync(p)) return {};
+  const out: Record<string, string> = {};
+  for (const line of readFileSync(p, 'utf8').split('\n')) {
+    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$/);
+    if (m) out[m[1]] = m[2].replace(/^["']|["']$/g, '');
+  }
+  return out;
+}
+
+export const API_URL = (arg('url') ?? process.env.API_URL ?? 'http://localhost:8787').replace(/\/$/, '');
+export const ADMIN_TOKEN = process.env.ADMIN_TOKEN ?? devVars().ADMIN_TOKEN;
+
+export class HttpError extends Error {
+  constructor(
+    readonly status: number,
+    readonly code: string,
+    message: string,
+  ) {
+    super(`${status} ${code}: ${message}`);
+  }
+}
+
+export async function call<T>(
+  method: string,
+  path: string,
+  opts: { token?: string; body?: unknown; admin?: boolean } = {},
+): Promise<T> {
+  const headers: Record<string, string> = { 'content-type': 'application/json' };
+  if (opts.token) headers.authorization = `Bearer ${opts.token}`;
+  if (opts.admin && ADMIN_TOKEN) headers['x-admin-token'] = ADMIN_TOKEN;
+  const res = await fetch(API_URL + path, {
+    method,
+    headers,
+    body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
+  });
+  const text = await res.text();
+  let data: unknown = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch {
+    data = null;
+  }
+  if (!res.ok) {
+    const e = (data as ApiErrorBody | null)?.error;
+    throw new HttpError(res.status, e?.code ?? 'HTTP', e?.message ?? text.slice(0, 200));
+  }
+  return data as T;
+}
+
+export function wsUrl(path: string, token: string): string {
+  return `${API_URL.replace(/^http/, 'ws')}${path}?token=${encodeURIComponent(token)}`;
+}
+
+export const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
