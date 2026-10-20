@@ -4,6 +4,7 @@ import type { HealthResponse } from '../../shared/types';
 import { ubDay } from './domain/time';
 import type { AppEnv } from './env';
 import { errorHandler } from './lib/errors';
+import { adminRoutes } from './routes/admin';
 import { authRoutes, meRoutes } from './routes/auth';
 
 export { DuelRoom } from './duel/DuelRoom';
@@ -23,5 +24,6 @@ app.get('/health', async (c) => {
 
 app.route('/auth', authRoutes);
 app.route('/me', meRoutes);
+app.route('/admin', adminRoutes);
 
 export default app;

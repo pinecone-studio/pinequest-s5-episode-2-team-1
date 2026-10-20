@@ -28,5 +28,30 @@
     "GEMINI_MODEL": "gemini-3.8-flash",
     "GEMINI_THINKING_LEVEL": "low",
     "WORKERS_AI_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+  },
+
+  // Workers AI binding local dev-д ч Cloudflare руу ханддаг тул нэвтрэлт (`npx wrangler login`)
+  // шаардана. Үндсэн орчныг нэвтрэлтгүй ажиллуулахын тулд тусад нь: `npm run dev:ai`.
+  "env": {
+    "ai": {
+      "ai": { "binding": "AI" },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "surgalt",
+          "database_id": "00000000-0000-0000-0000-000000000000",
+          "migrations_dir": "migrations"
+        }
+      ],
+      "durable_objects": {
+        "bindings": [{ "name": "DUEL_ROOM", "class_name": "DuelRoom" }]
+      },
+      "vars": {
+        "LLM_PROVIDER": "workers-ai",
+        "GEMINI_MODEL": "gemini-3.8-flash",
+        "GEMINI_THINKING_LEVEL": "low",
+        "WORKERS_AI_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+      }
+    }
   }
 }

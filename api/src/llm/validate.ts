@@ -1,0 +1,105 @@
+import { z } from 'zod';
+import type { QuestionDraft } from './types';
+
+const rawSchema = z.object({
+  prompt: z.string(),
+  options: z.array(z.string()),
+  solution: z.string().optional(),
+  correctIndex: z.number().int(),
+  explanation: z.string(),
+});
+
+const CYRILLIC = /[Ѐ-ӿ]/;
+const OPTION_PREFIX = /^\s*(?:[A-DА-Г]|[1-4])\s*[).:]\s+/;
+
+export interface Rejection {
+  reason: string;
+  prompt?: string;
+}
+
+/** Давхардал шалгах түлхүүр: жижиг үсэг, нэг зай, төгсгөлийн цэг тэмдэггүй. */
+export function promptKey(prompt: string): string {
+  return prompt
+    .normalize('NFC')
+    .toLowerCase()
+    .replace(/[«»"'“”„?!.,:;]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+const clean = (s: string) => s.normalize('NFC').replace(/\s+/g, ' ').trim();
+
+/** Fisher–Yates; LLM-ийн хариу нэг байрлалд төвлөрөхөөс (index bias) сэргийлнэ. */
+export function shuffleOptions(d: QuestionDraft, rng: () => number = Math.random): QuestionDraft {
+  const order = d.options.map((_, i) => i);
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  return {
+    ...d,
+    options: order.map((i) => d.options[i]),
+    correctIndex: order.indexOf(d.correctIndex),
+  };
+}
+
+function checkOne(raw: unknown): QuestionDraft | Rejection {
+  const parsed = rawSchema.safeParse(raw);
+  if (!parsed.success) return { reason: 'schema' };
+  const q = parsed.data;
+  const prompt = clean(q.prompt);
+  const explanation = clean(q.explanation);
+  const options = q.options.map((o) => clean(o).replace(OPTION_PREFIX, ''));
+
+  if (options.length !== 4) return { reason: 'options!=4', prompt };
+  if (q.correctIndex < 0 || q.correctIndex > 3) return { reason: 'correctIndex', prompt };
+  if (prompt.length < 8 || prompt.length > 300) return { reason: 'prompt length', prompt };
+  if (!CYRILLIC.test(prompt)) return { reason: 'prompt not cyrillic', prompt };
+  if (explanation.length < 5 || explanation.length > 300) return { reason: 'explanation length', prompt };
+  if (!CYRILLIC.test(explanation)) return { reason: 'explanation not cyrillic', prompt };
+  if (options.some((o) => o.length === 0 || o.length > 120)) return { reason: 'option length', prompt };
+  if (new Set(options.map((o) => o.toLowerCase())).size !== 4) return { reason: 'duplicate options', prompt };
+
+  return { prompt, options, correctIndex: q.correctIndex, explanation };
+}
+
+/**
+ * LLM-ийн JSON-ийг шалгана: буруу бүтэцтэй болон багц доторх давхардсан асуултыг хаяж,
+ * сонголтуудыг холино.
+ */
+export function validateDrafts(raw: unknown, rng: () => number = Math.random): { drafts: QuestionDraft[]; rejected: Rejection[] } {
+  const list: unknown = Array.isArray(raw) ? raw : (raw as { questions?: unknown } | null)?.questions;
+  if (!Array.isArray(list)) return { drafts: [], rejected: [{ reason: 'no questions array' }] };
+
+  const drafts: QuestionDraft[] = [];
+  const rejected: Rejection[] = [];
+  const seen = new Set<string>();
+  for (const item of list) {
+    const r = checkOne(item);
+    if ('reason' in r) {
+      rejected.push(r);
+      continue;
+    }
+    const key = promptKey(r.prompt);
+    if (seen.has(key)) {
+      rejected.push({ reason: 'duplicate in batch', prompt: r.prompt });
+      continue;
+    }
+    seen.add(key);
+    drafts.push(shuffleOptions(r, rng));
+  }
+  return { drafts, rejected };
+}
+
+/** ```json ... ``` хүрээ, урд хойд илүү текстийг алгасаж JSON уншина. */
+export function parseJsonLoose(text: string): unknown {
+  const trimmed = text.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    const start = trimmed.indexOf('{');
+    const end = trimmed.lastIndexOf('}');
+    if (start >= 0 && end > start) return JSON.parse(trimmed.slice(start, end + 1));
+    throw new Error('LLM response is not JSON');
+  }
+}
