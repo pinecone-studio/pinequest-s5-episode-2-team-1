@@ -127,7 +127,7 @@ describe('Gemini REST', () => {
       return new Response(JSON.stringify(okBody), { status: 200 });
     }) as unknown as typeof fetch;
 
-    const out = await geminiGenerate(env, 'SYS', 'USER', fake);
+    const out = await geminiGenerate(env, 'SYS', 'USER', { fetchImpl: fake });
     expect(out).toEqual({ questions: [good()] });
     expect(calls[0].url).toContain('/models/gemini-3.8-flash:generateContent');
     const headers = calls[0].init.headers as Record<string, string>;
@@ -148,14 +148,32 @@ describe('Gemini REST', () => {
       return new Response(JSON.stringify(okBody), { status: 200 });
     }) as unknown as typeof fetch;
 
-    await geminiGenerate(env, 's', 'u', fake);
-    await geminiGenerate(env, 's', 'u', fake);
+    await geminiGenerate(env, 's', 'u', { fetchImpl: fake });
+    await geminiGenerate(env, 's', 'u', { fetchImpl: fake });
     expect(seen).toEqual(['jsonSchema', 'responseFormat', 'responseFormat']);
   });
 
-  it('429 (квот) бол шууд алдаа', async () => {
-    const fake = (async () => new Response('RESOURCE_EXHAUSTED', { status: 429 })) as unknown as typeof fetch;
-    await expect(geminiGenerate(env, 's', 'u', fake)).rejects.toThrow(/429/);
+  it('429/503 бол retryDelay-ийг хүндэтгэж дахин оролдоно', async () => {
+    const statuses = [503, 429, 200];
+    let calls = 0;
+    const fake = (async () => {
+      const status = statuses[calls++];
+      if (status === 200) return new Response(JSON.stringify(okBody), { status });
+      return new Response(JSON.stringify({ error: { details: [{ retryDelay: '0.01s' }] } }), { status });
+    }) as unknown as typeof fetch;
+    const out = await geminiGenerate(env, 's', 'u', { fetchImpl: fake, baseDelayMs: 1 });
+    expect(out).toEqual({ questions: [good()] });
+    expect(calls).toBe(3);
+  });
+
+  it('оролдлого дуусвал 429-ийг алдаагаар буцаана', async () => {
+    let calls = 0;
+    const fake = (async () => {
+      calls++;
+      return new Response('RESOURCE_EXHAUSTED', { status: 429 });
+    }) as unknown as typeof fetch;
+    await expect(geminiGenerate(env, 's', 'u', { fetchImpl: fake, attempts: 2, baseDelayMs: 1 })).rejects.toThrow(/429/);
+    expect(calls).toBe(2);
   });
 
   it('түлхүүргүй бол дуудахгүй', async () => {

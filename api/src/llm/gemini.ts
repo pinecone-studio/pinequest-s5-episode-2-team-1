@@ -29,12 +29,42 @@ function generationConfig(variant: Variant, thinkingLevel: string | undefined) {
   }
 }
 
+// Free tier дээр 429 (минутын хязгаар) ба 503 ("high demand") түр зуур гардаг тул дахин оролдоно.
+const RETRYABLE = new Set([429, 500, 503]);
+
+export interface GeminiDeps {
+  fetchImpl?: typeof fetch;
+  /** Нийт оролдлого (анхдагч 3). */
+  attempts?: number;
+  /** Дахин оролдох суурь хүлээлт; хариунд retryDelay байвал түүнийг ашиглана. */
+  baseDelayMs?: number;
+}
+
+function retryDelayMs(body: string): number | null {
+  const m = body.match(/"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"/);
+  return m ? Math.ceil(Number(m[1]) * 1000) : null;
+}
+
+async function postWithRetry(url: string, init: RequestInit, deps: Required<GeminiDeps>): Promise<Response> {
+  const doFetch = deps.fetchImpl;
+  for (let attempt = 1; ; attempt++) {
+    const res = await doFetch(url, init);
+    if (!RETRYABLE.has(res.status) || attempt >= deps.attempts) return res;
+    const body = await res.text();
+    const wait = Math.min(retryDelayMs(body) ?? deps.baseDelayMs * 2 ** (attempt - 1), 30_000);
+    console.log(`[gemini] ${res.status}, ${wait}ms дараа дахин оролдоно (${attempt}/${deps.attempts})`);
+    await new Promise((r) => setTimeout(r, wait));
+  }
+}
+
 export async function geminiGenerate(
   env: Pick<Bindings, 'GEMINI_API_KEY' | 'GEMINI_MODEL' | 'GEMINI_THINKING_LEVEL'>,
   system: string,
   user: string,
-  fetchImpl: typeof fetch = fetch,
+  deps: GeminiDeps = {},
 ): Promise<unknown> {
+  // Workers-д fetch-ийг өөр объектын method болгож дуудвал "Illegal invocation" гардаг тул ороож өгнө.
+  const opts: Required<GeminiDeps> = { fetchImpl: (input, init) => fetch(input, init), attempts: 3, baseDelayMs: 4_000, ...deps };
   const key = env.GEMINI_API_KEY;
   if (!key) throw new LlmError('gemini', 0, 'GEMINI_API_KEY тохируулаагүй');
   const model = env.GEMINI_MODEL || 'gemini-3.8-flash';
@@ -43,15 +73,19 @@ export async function geminiGenerate(
 
   let lastError: LlmError | null = null;
   for (const variant of variants) {
-    const res = await fetchImpl(`${BASE}/${encodeURIComponent(model)}:generateContent`, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: system }] },
-        contents: [{ role: 'user', parts: [{ text: user }] }],
-        generationConfig: generationConfig(variant, thinkingLevel),
-      }),
-    });
+    const res = await postWithRetry(
+      `${BASE}/${encodeURIComponent(model)}:generateContent`,
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: system }] },
+          contents: [{ role: 'user', parts: [{ text: user }] }],
+          generationConfig: generationConfig(variant, thinkingLevel),
+        }),
+      },
+      opts,
+    );
     if (res.status === 400 && variants.length > 1) {
       lastError = new LlmError('gemini', 400, (await res.text()).slice(0, 400));
       continue;

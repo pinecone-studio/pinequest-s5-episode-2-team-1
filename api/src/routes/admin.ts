@@ -27,12 +27,15 @@ adminRoutes.post('/generate', async (c) => {
       subject: subjectSchema,
       count: z.number().int().min(1).max(40).default(10),
       chunk: z.number().int().min(1).max(10).default(GAME.POOL.LLM_CHUNK),
+      /** Энэ удаад өөр Gemini загвар ашиглах (seed скриптийн --model). */
+      model: z.string().regex(/^[a-z0-9.-]+$/).optional(),
     }),
   );
   if (!pickProvider(c.env)) {
-    throw new ApiError(503, 'LLM_UNAVAILABLE', 'GEMINI_API_KEY (.dev.vars) эсвэл `npm run dev:ai` (Workers AI) хэрэгтэй');
+    throw new ApiError(503, 'LLM_UNAVAILABLE', 'GEMINI_API_KEY (.env.local / .dev.vars) эсвэл `npm run dev:ai` (Workers AI) хэрэгтэй');
   }
-  const report = await generateAndStore(c.env, body.tier, body.subject, body.count, body.chunk);
+  const env = body.model ? { ...c.env, GEMINI_MODEL: body.model } : c.env;
+  const report = await generateAndStore(env, body.tier, body.subject, body.count, body.chunk);
   if (report.inserted === 0 && report.errors.length > 0) throw new ApiError(502, 'LLM_FAILED', report.errors[0]);
   return c.json(report);
 });

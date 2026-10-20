@@ -34,10 +34,10 @@ npm install
 cp .dev.vars.example .dev.vars
 ```
 
-`api/.dev.vars` дотор:
-
-- `GEMINI_API_KEY=` — https://aistudio.google.com/apikey -оос авсан үнэгүй түлхүүр (асуулт үүсгэхэд).
-- `ADMIN_TOKEN=` — дурын урт санамсаргүй мөр (seed скрипт, бот ашиглана).
+- **Gemini түлхүүр:** repo-ийн root дээрх `.env.local` файлд `GEMINI_API_KEY=...` гэж бичнэ (эсвэл
+  `api/.dev.vars`-д). Үнэгүй түлхүүрийг https://aistudio.google.com/apikey -оос авна. `npm run dev`
+  эхлээд `api/.dev.vars`-ийг, дараа нь `../.env.local`-ийг уншина; хоёулаа git-д орохгүй.
+- `api/.dev.vars` дотор `ADMIN_TOKEN=` — дурын урт санамсаргүй мөр (seed скрипт, бот ашиглана).
 
 ```bash
 npm run db:migrate
@@ -62,12 +62,14 @@ npm run dev
 
 ```bash
 cd api
+npm run seed:fixtures
 npm run seed:questions
 ```
 
-Gemini-ээр 9 хослол (3 түвшин × 3 хичээл) тус бүрт ~40 асуулт үүсгэнэ. Free tier-ийн минутын хязгаарт
-багтаахын тулд дараалан, завсартай явна (~10–15 мин). Хязгаар хэтэрвэл өөрөө хүлээгээд үргэлжилнэ.
-LLM-гүйгээр туршихад хослол бүрт 6 бэлэн асуулт оруулдаг `npm run seed:fixtures` бий.
+`seed:fixtures` хослол бүрт 6 бэлэн (гараар шалгасан) асуулт оруулна. `seed:questions` нь Gemini-ээр
+9 хослол (3 түвшин × 3 хичээл) тус бүрийг ~40 асуулт хүртэл нөхнө. Free tier дээр `gemini-3.8-flash`
+5 асуултад ~1.5 минут зарцуулдаг тул 3 хослолыг зэрэг ажиллуулж ~20 минут болно (`--parallel N`).
+Хязгаар хэтэрвэл (429/503) өөрөө хүлээгээд үргэлжилнэ.
 
 **3) Апп**
 
@@ -161,11 +163,12 @@ npm run deploy
 Seed (ADMIN_TOKEN-оо өөрийнхөөрөө, URL-аа deploy-ийн гаргасан хаягаар солино):
 
 ```bash
-ADMIN_TOKEN=... npm run seed:questions -- --url https://surgalt-api.<subdomain>.workers.dev
+ADMIN_TOKEN=... npm run seed:questions -- --url https://surgalt-api.<subdomain>.workers.dev --model gemini-3.5-flash-lite
 ```
 
 `mobile/.env`: `EXPO_PUBLIC_API_URL=https://surgalt-api.<subdomain>.workers.dev`. Утас Metro-д LAN-аар
-хүрэхгүй бол `npx expo start --tunnel`.
+хүрэхгүй бол `npx expo start --tunnel`. Deploy хийсэн Worker дээр background нөхөлт ~30 секундэд
+багтах ёстой тул `wrangler.jsonc`-д `GEMINI_MODEL`-ийг `gemini-3.5-flash-lite` болгох нь найдвартай.
 
 Free plan дээр нэвтрэхэд CPU хязгаарын алдаа (1102) гарвал `api/src/config/game.ts`-ийн
 `PBKDF2_ITERATIONS`-ийг багасгана; hash бүр өөрийн iteration-ийг хадгалдаг тул хуучин хэрэглэгчид
@@ -173,8 +176,12 @@ Free plan дээр нэвтрэхэд CPU хязгаарын алдаа (1102) �
 
 ## 7. LLM (асуулт үүсгэлт)
 
-- Provider: `LLM_PROVIDER` (`wrangler.jsonc` → `vars`). Хоосон бол `GEMINI_API_KEY` байвал Gemini
-  (`GEMINI_MODEL`, анхдагч `gemini-3.8-flash`), үгүй бол Workers AI.
+- Provider: `LLM_PROVIDER` (`wrangler.jsonc` → `vars`). Хоосон бол `GEMINI_API_KEY` байвал Gemini,
+  үгүй бол Workers AI.
+- Загвар: `GEMINI_MODEL`, анхдагч `gemini-3.8-flash`. 2026-10-20-ны туршилтаар монгол бичвэр нь
+  цэвэр гарсан ч free tier дээр удаан (~1.5 мин / 5 асуулт). `gemini-3.5-flash-lite` ~4 сек хурдан
+  ч хариу нь зөв байхад үсгийн алдаа, буруу дүрмийн тайлбар гарч байсан. Нэг удаа өөр загвараар seed
+  хийх бол `npm run seed:questions -- --model gemini-3.5-flash-lite`.
 - Workers AI local dev-д ч Cloudflare руу ханддаг тул `npx wrangler login` хийгээд `npm run dev:ai`.
 - Загвар JSON-д `solution` (бодолт)-ыг `correctIndex`-ээс өмнө бичнэ. Сервер schema, кирилл текст,
   4 ялгаатай сонголтыг шалгаж, давхардлыг хаяж, сонголтуудыг холино. Хадгалах бүтэц нь

@@ -55,6 +55,7 @@ Each question:
 - "correctIndex": 0-based index of the correct option; it must agree with "solution".
 - "explanation": 1–2 short sentences for the student explaining why the answer is correct (at most 200 characters).
 
+Before returning, proofread every Mongolian word for spelling and suffix (нөхцөл) errors, and make sure each explanation states the rule correctly.
 Only factual, curriculum-based content. No ambiguous questions, opinions, sensitive or political topics, or personal data.`;
 
 export function buildPrompt(

@@ -14,3 +14,8 @@ mobile/dist/
 mobile/.env
 mobile/.env.local
 api/worker-configuration.d.ts
+
+# Нууц түлхүүрүүд (Gemini гэх мэт)
+.env
+.env.local
+.env.*.local
