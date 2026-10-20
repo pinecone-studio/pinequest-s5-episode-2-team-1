@@ -25,9 +25,6 @@ M = {}
 for n in ICONS:
     M[n] = [1, 2, 3]
 M['icon_mystery_box'] = [2, 4]
-for n in ['home', 'path', 'shop', 'bag', 'crew']:
-    M[f'nav_{n}_on'] = [2]
-    M[f'nav_{n}_off'] = [2]
 for n in ['bear_idle_scarf', 'bear_tired_scarf', 'bear_neglected_scarf', 'bear_sleep']:
     M[n] = [2]
 M['bear_cheer_scarf'] = [2, 3]
@@ -47,6 +44,12 @@ for n in ['tile_stone_done', 'tile_stone_lock', 'tile_pedestal_cur', 'tile_pedes
           'tile_pedestal_myst', 'tile_pedestal_sapling']:
     M[n] = [2]
 M['map_base'] = [2]
+# v2 (Charlie маягийн) nav icon ба Нүүрний товчнууд: 20px эх, 30dp-ээр (1.5×) — нарийн pixel
+for n in ['home', 'tasks', 'path', 'shop', 'crew', 'bag']:
+    M[f'nav2_{n}_on'] = [(30, 30)]
+    M[f'nav2_{n}_off'] = [(30, 30)]
+M['btn_calendar'] = [(30, 30)]
+M['btn_honey'] = [(30, 30)]
 
 
 def resize(img: Image.Image, w: int, h: int) -> Image.Image:

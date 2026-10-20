@@ -19,9 +19,9 @@ export default function TabsLayout() {
       screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.paper } }}
     >
       <Tabs.Screen name="index" options={{ title: S.tabs.home }} />
+      <Tabs.Screen name="tasks" options={{ title: S.tabs.tasks }} />
       <Tabs.Screen name="path" options={{ title: S.tabs.path }} />
       <Tabs.Screen name="shop" options={{ title: S.tabs.shop }} />
-      <Tabs.Screen name="bag" options={{ title: S.tabs.bag }} />
       <Tabs.Screen name="duel" options={{ title: S.tabs.duel }} />
     </Tabs>
   );

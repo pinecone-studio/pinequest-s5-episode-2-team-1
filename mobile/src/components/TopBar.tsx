@@ -6,7 +6,7 @@ import { CountPill, XpPill } from '@/components/StatPill';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 
 /** Нүүр, Сурах зам дээрх дээд мөр: аватар (→ хуанли), XP, дараалал, coin. */
-export function TopBar({ xp = 'total', onMap }: { xp?: 'total' | 'level'; onMap?: boolean }) {
+export function TopBar({ xp = 'total', onMap }: { xp?: 'total' | 'level' | 'none'; onMap?: boolean }) {
   const { me } = useAuth();
   const { coins } = usePixelBear();
   if (!me) return null;
@@ -20,11 +20,13 @@ export function TopBar({ xp = 'total', onMap }: { xp?: 'total' | 'level'; onMap?
       >
         <Avatar size={48} border={onMap ? 2 : undefined} />
       </Pressable>
-      <XpPill
-        text={xp === 'total' ? `${me.xp} XP` : `${me.levelXp}/${me.levelXpNeeded}`}
-        value={me.levelXp}
-        max={me.levelXpNeeded}
-      />
+      {xp === 'none' ? null : (
+        <XpPill
+          text={xp === 'total' ? `${me.xp} XP` : `${me.levelXp}/${me.levelXpNeeded}`}
+          value={me.levelXp}
+          max={me.levelXpNeeded}
+        />
+      )}
       <View style={{ flex: 1 }} />
       <CountPill icon="icon_flame_24x24" value={me.streak} label="Дараалал" />
       <CountPill icon="icon_coin_24x24" value={coins} label="Coin" />

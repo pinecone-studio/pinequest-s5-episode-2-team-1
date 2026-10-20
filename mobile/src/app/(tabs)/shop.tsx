@@ -1,10 +1,11 @@
 import * as Haptics from 'expo-haptics';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { BgSwatch, type SwatchStatus } from '@/components/BgSwatch';
 import { OutfitCard } from '@/components/OutfitCard';
-import { PressScale } from '@/components/pixel';
+import { PressScale, Sprite } from '@/components/pixel';
 import { PreviewStage } from '@/components/PreviewStage';
 import { SegmentedTabs } from '@/components/SegmentedTabs';
 import { ShieldCard } from '@/components/ShieldCard';
@@ -103,7 +104,7 @@ export default function ShopScreen() {
   }
 
   return (
-    <Screen>
+    <Screen tabBar>
       <View style={styles.header}>
         <View style={{ flex: 1, gap: 4 }}>
           <Text accessibilityRole="header" style={type.h1}>
@@ -111,6 +112,9 @@ export default function ShopScreen() {
           </Text>
           <Text style={type.small}>{S.shop.subtitle}</Text>
         </View>
+        <PressScale accessibilityRole="button" accessibilityLabel={S.bag.title} onPress={() => router.push('/bag')} style={styles.bagBtn}>
+          <Sprite id="nav2_bag_on_30x30" />
+        </PressScale>
         <CountPill icon="icon_coin_24x24" value={bear.coins} label="Coin" />
       </View>
 
@@ -199,7 +203,8 @@ export default function ShopScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  header: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  bagBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', gap: 10 },
   action: { height: 44, paddingHorizontal: 16, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', minWidth: 96 },
   actionText: { fontFamily: fonts.bold, fontSize: 14 },

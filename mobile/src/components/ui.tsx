@@ -14,6 +14,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { type Edge, SafeAreaView } from 'react-native-safe-area-context';
+import { useTabBarSpace } from '@/components/BottomNav';
 import { colors, fonts, radius } from '@/constants/theme';
 import { type } from '@/constants/type';
 
@@ -25,6 +26,7 @@ export function Screen({
   contentStyle,
   background = colors.paper,
   edges = ['top', 'left', 'right'],
+  tabBar,
 }: {
   children: ReactNode;
   scroll?: boolean;
@@ -33,13 +35,17 @@ export function Screen({
   contentStyle?: ViewStyle;
   background?: string;
   edges?: Edge[];
+  /** Хөвдөг доод цэсний доор контент нуугдахгүй байх зай */
+  tabBar?: boolean;
 }) {
+  const barSpace = useTabBarSpace();
+  const bottom = tabBar ? { paddingBottom: barSpace + 16 } : null;
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: background }]} edges={edges}>
       <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {scroll ? (
           <ScrollView
-            contentContainerStyle={[styles.content, contentStyle]}
+            contentContainerStyle={[styles.content, bottom, contentStyle]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}
@@ -50,7 +56,7 @@ export function Screen({
             {children}
           </ScrollView>
         ) : (
-          <View style={[styles.content, styles.fill, contentStyle]}>{children}</View>
+          <View style={[styles.content, styles.fill, bottom, contentStyle]}>{children}</View>
         )}
       </KeyboardAvoidingView>
     </SafeAreaView>

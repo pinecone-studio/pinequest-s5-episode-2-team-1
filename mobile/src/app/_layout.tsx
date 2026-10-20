@@ -84,6 +84,7 @@ function RootNavigator() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="onboarding" />
         <Stack.Screen name="calendar" options={{ animation: 'slide_from_bottom' }} />
+        <Stack.Screen name="bag" />
         <Stack.Screen name="task/[subject]" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />
         <Stack.Screen name="duel/[id]" options={{ gestureEnabled: false }} />
       </Stack.Protected>

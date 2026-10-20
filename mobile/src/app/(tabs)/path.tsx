@@ -6,6 +6,7 @@ import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { useAuth } from '@/auth/AuthContext';
+import { useTabBarSpace } from '@/components/BottomNav';
 import { MAP_H, PathMap } from '@/components/PathMap';
 import { PressScale } from '@/components/pixel';
 import { TopBar } from '@/components/TopBar';
@@ -23,6 +24,7 @@ export default function PathScreen() {
   const { subject: savedSubject, setSubject } = usePixelBear();
   const subject: Subject = savedSubject ?? 'math';
   const insets = useSafeAreaInsets();
+  const barSpace = useTabBarSpace();
   const scroll = useRef<ScrollView>(null);
   const [viewH, setViewH] = useState(0);
   const [menu, setMenu] = useState(false);
@@ -40,11 +42,11 @@ export default function PathScreen() {
   const scrolledOnce = useRef(false);
   useEffect(() => {
     if (!viewH) return;
-    const total = MAP_H + CTA_SPACE;
+    const total = MAP_H + CTA_SPACE + barSpace;
     const y = Math.max(0, Math.min(total - viewH, NODES[current].y - viewH * 0.55));
     scroll.current?.scrollTo({ y, animated: scrolledOnce.current });
     scrolledOnce.current = true;
-  }, [current, viewH]);
+  }, [current, viewH, barSpace]);
 
   useEffect(() => {
     if (!note) return;
@@ -74,7 +76,7 @@ export default function PathScreen() {
       <ScrollView
         ref={scroll}
         onLayout={(e: LayoutChangeEvent) => setViewH(e.nativeEvent.layout.height)}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: CTA_SPACE + barSpace }]}
         showsVerticalScrollIndicator={false}
       >
         <PathMap current={current} subject={subject} onNodePress={onNode} />
@@ -120,12 +122,17 @@ export default function PathScreen() {
       </View>
 
       {note ? (
-        <Animated.View entering={FadeInDown.duration(200)} exiting={FadeOut.duration(150)} style={styles.toast} pointerEvents="none">
+        <Animated.View
+          entering={FadeInDown.duration(200)}
+          exiting={FadeOut.duration(150)}
+          style={[styles.toast, { bottom: barSpace + 96 }]}
+          pointerEvents="none"
+        >
           <Text style={styles.toastText}>{note}</Text>
         </Animated.View>
       ) : null}
 
-      <View style={styles.cta}>
+      <View style={[styles.cta, { bottom: barSpace + 12 }]}>
         <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
           <Text style={styles.ctaSmall} numberOfLines={1}>
             {S.path.chapter(1, subjectNames[subject], Math.min(current, NODE_COUNT), NODE_COUNT)}
@@ -147,7 +154,7 @@ export default function PathScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#D6E6C3' },
-  scrollContent: { alignItems: 'center', paddingBottom: CTA_SPACE },
+  scrollContent: { alignItems: 'center' },
   header: { position: 'absolute', left: 20, right: 20, gap: 10 },
   row2: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   dropdown: {

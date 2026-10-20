@@ -35,6 +35,7 @@ export const S = {
   },
   tabs: {
     home: 'Нүүр',
+    tasks: 'Даалгавар',
     path: 'Сурах зам',
     shop: 'Дэлгүүр',
     bag: 'Цүнх',
@@ -178,6 +179,20 @@ export const S = {
     buy: 'Авах',
     bought: (name: string) => `${name} — авч, сонгочихлоо!`,
     shieldTitle: 'Streak хамгаалагч',
+  },
+  tasks: {
+    title: 'Өнөөдрийн даалгавар',
+    today: 'ӨНӨӨДӨР',
+    progressLabel: (n: number, max: number) => `Өнөөдөр ${n}/${max} даалгавар`,
+    multiplier: (m: number) => `×${m.toFixed(1)} үржвэр`,
+    questions: (n: number) => `${n} асуулт`,
+    start: (subject: string) => `${subject}: даалгавар эхлэх`,
+  },
+  homeMin: {
+    level: (n: number) => `${n}-р шат`,
+    xpLabel: (cur: number, need: number) => `XP ${cur}/${need}`,
+    calendar: 'Хуанли ба профайл',
+    feed: 'Баавгайгаа хооллох: хичээл эхлэх',
   },
   welcome: {
     tagline: 'Өдөр бүр бага зэрэг сур. Баавгай чинь чамтай хамт өснө.',

@@ -95,7 +95,7 @@ export default function DuelLobby() {
 
   const mine = lobby.mine;
   return (
-    <Screen>
+    <Screen tabBar>
       <View style={styles.header}>
         <View style={{ flex: 1, gap: 4 }}>
           <Text accessibilityRole="header" style={type.h1}>
