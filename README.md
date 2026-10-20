@@ -255,3 +255,22 @@ mobile/src/components/     Avatar (SVG давхарга), товч, карт…
 
 Эцэг эхийн хяналт, чат, push мэдэгдэл, найз, leaderboard, App Store, admin panel. Нэвтрэх
 оролдлогын хязгаар, session-ий хугацаа, тулааны дахин тоглолт зэрэг production асуудлууд ч орхигдсон.
+
+## 10. Pixel Bear UI (дизайн)
+
+UI нь `docs/design/pixel-bear/` дахь дизайн дээр суурилна: `DESIGN.md` (токен, дүрэм, дэлгэц бүрийн тодорхойлолт),
+`reference/*.html` (дизайны яг markup), `sprites/` (pixel art эх файлууд).
+
+- **Sprite-ууд crisp байх:** RN-ийн `Image` томруулахдаа бүдгэрүүлдэг тул sprite бүрийг харагдах хэмжээгээр нь
+  1x/2x/3x нягтралд nearest-neighbor аргаар урьдчилан томруулсан (`mobile/assets/sprites/`). Шинэ sprite эсвэл хэмжээ
+  нэмэхдээ `mobile/scripts/build-sprites.py`-ийн жагсаалтад нэмээд `python3 mobile/scripts/build-sprites.py`
+  (Pillow хэрэгтэй) ажиллуулна. Энэ нь `mobile/src/sprites/index.ts`-ийг дахин үүсгэнэ;
+  `<Sprite id="icon_coin_24x24" />` гэж ашиглана.
+- **Фонт:** Onest (UI) ба Pixelify Sans (тоо), `@expo-google-fonts/*`-оор.
+- **Хөдөлгөөн:** `mobile/src/components/pixel/` (react-native-reanimated). Утасны "motion бууруулах" тохиргоо
+  асаалттай бол бүх animation зогсоно.
+- **Mock өгөгдөл:** дэвсгэр өнгө, ороолт/төгсөгчийн малгай, сонгосон хичээл backend-д байхгүй тул
+  `mobile/src/lib/mock/pixelBear.tsx`-д төхөөрөмж дээр хадгалагдана (Coin = серверийн оноо − mock зарцуулалт).
+  Нүдний шил, чихэвч нь серверийн бодит эд зүйл (`acc_glasses`, `acc_headphones`). Баавгайн төлөв, сурах замын
+  ахиц, хуанли нь серверийн бодит өгөгдлөөс (дараалал, XP, хамгаалалт) тооцоологдоно.
+- **Демо:** Нүүрний баавгайн stage дээр удаан дарвал 5 төлөвийг ээлжлэн харуулна (зөвхөн харагдац, хадгалагдахгүй).
