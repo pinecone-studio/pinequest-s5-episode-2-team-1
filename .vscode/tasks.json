@@ -1,9 +1,7 @@
 {
   // Cmd+Shift+P → "Tasks: Run Task" → "Демо эхлүүлэх" (API + Expo QR зэрэг асна).
+  // macOS-ийн login shell PATH-ийг дахин эрэмбэлдэг тул команд бүр Node 24-ийг өөрөө урд нь тавина.
   "version": "2.0.0",
-  "options": {
-    "env": { "PATH": "/opt/homebrew/opt/node@24/bin:${env:PATH}" }
-  },
   "tasks": [
     {
       "label": "Демо эхлүүлэх",
@@ -14,7 +12,7 @@
     {
       "label": "API сервер",
       "type": "shell",
-      "command": "npm run dev",
+      "command": "export PATH=/opt/homebrew/opt/node@24/bin:$PATH && npm run dev",
       "options": { "cwd": "${workspaceFolder}/api" },
       "isBackground": true,
       "presentation": { "panel": "dedicated", "group": "demo", "reveal": "always" },
@@ -27,7 +25,7 @@
     {
       "label": "Expo (QR код)",
       "type": "shell",
-      "command": "npx expo start -c",
+      "command": "export PATH=/opt/homebrew/opt/node@24/bin:$PATH && npx expo start -c",
       "options": { "cwd": "${workspaceFolder}/mobile" },
       "isBackground": true,
       "presentation": { "panel": "dedicated", "group": "demo", "reveal": "always", "focus": true },
@@ -40,7 +38,7 @@
     {
       "label": "Бот тоглогч (сорилт хүлээн авна)",
       "type": "shell",
-      "command": "npm run bot",
+      "command": "export PATH=/opt/homebrew/opt/node@24/bin:$PATH && npm run bot",
       "options": { "cwd": "${workspaceFolder}/api" },
       "presentation": { "panel": "dedicated" },
       "problemMatcher": []
@@ -48,14 +46,14 @@
     {
       "label": "Асуултын сан сэргээх (questions:import)",
       "type": "shell",
-      "command": "npm run questions:import",
+      "command": "export PATH=/opt/homebrew/opt/node@24/bin:$PATH && npm run questions:import",
       "options": { "cwd": "${workspaceFolder}/api" },
       "problemMatcher": []
     },
     {
       "label": "Шалгалт (typecheck + тест)",
       "type": "shell",
-      "command": "npm run typecheck && npm test && cd ../mobile && npm run typecheck",
+      "command": "export PATH=/opt/homebrew/opt/node@24/bin:$PATH && npm run typecheck && npm test && cd ../mobile && npm run typecheck",
       "options": { "cwd": "${workspaceFolder}/api" },
       "group": "test",
       "problemMatcher": ["$tsc"]

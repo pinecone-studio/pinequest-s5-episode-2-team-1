@@ -55,8 +55,15 @@ npm install
 3. "Expo (QR код)" terminal дахь QR-ийг утсаараа уншуулна.
 4. Зогсоохдоо terminal бүрт `Ctrl+C` (эсвэл `Cmd+Shift+P` → **Tasks: Terminate Task**).
 
-`.vscode/settings.json` энэ төслийн terminal-уудыг Node 24-тэй болгодог тул гараар terminal нээж доорх
-командуудыг ажиллуулж ч болно. Бусад task: "Бот тоглогч", "Асуултын сан сэргээх", "Шалгалт".
+Task бүр Node 24-ийг өөрөө тохируулдаг. Харин VS Code-д **гараар нээсэн terminal** macOS-ийн login shell
+тул `/etc/zprofile` (path_helper) PATH-ийг дахин эрэмбэлж системийн Node 20-ийг сонгоно ("Wrangler requires
+at least Node.js v22"). Нэг удаа доорх мөрийг `~/.zshrc`-д нэмээд terminal-аа шинээр нээнэ:
+
+```bash
+echo 'export PATH="/opt/homebrew/opt/node@24/bin:$PATH"' >> ~/.zshrc
+```
+
+Шалгах: `node -v` → `v24.x`. Бусад task: "Бот тоглогч", "Асуултын сан сэргээх", "Шалгалт".
 
 ### Terminal-аар
 

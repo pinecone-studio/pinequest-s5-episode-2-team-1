@@ -1,7 +1,5 @@
 {
-  // Энэ төслийн terminal-ууд Homebrew-ийн Node 24-ийг ашиглана (системийн Node 20 хэтэрхий хуучин).
-  "terminal.integrated.env.osx": {
-    "PATH": "/opt/homebrew/opt/node@24/bin:${env:PATH}"
-  },
+  // Node 24: macOS-ийн login shell (/etc/zprofile → path_helper) PATH-ийг дахин эрэмбэлдэг тул
+  // terminal.integrated.env энд ажилладаггүй. ~/.zshrc-д export хийнэ (README → VS Code).
   "typescript.tsdk": "mobile/node_modules/typescript/lib"
 }
