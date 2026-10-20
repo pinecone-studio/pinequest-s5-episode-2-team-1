@@ -1,62 +1,91 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, radius, spacing } from '@/constants/theme';
+import { StyleSheet, Text, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
+import { Pop, PressScale, Shake } from '@/components/pixel';
+import { colors, fonts, radius } from '@/constants/theme';
 
 export type OptionState = 'idle' | 'selected' | 'correct' | 'wrong' | 'dim';
 
 const LETTERS = ['А', 'Б', 'В', 'Г'];
 
-const look: Record<OptionState, { bg: string; border: string; text: string; badge: string; badgeText: string }> = {
-  idle: { bg: colors.card, border: colors.border, text: colors.text, badge: colors.primarySoft, badgeText: colors.primaryDark },
-  selected: { bg: colors.primarySoft, border: colors.primary, text: colors.text, badge: colors.primary, badgeText: colors.white },
-  correct: { bg: colors.successSoft, border: colors.success, text: colors.text, badge: colors.success, badgeText: colors.white },
-  wrong: { bg: colors.dangerSoft, border: colors.danger, text: colors.text, badge: colors.danger, badgeText: colors.white },
-  dim: { bg: colors.card, border: colors.border, text: colors.muted, badge: colors.primarySoft, badgeText: colors.muted },
+const look: Record<OptionState, { bg: string; border: string; text: string }> = {
+  idle: { bg: colors.white, border: '#DDDAD1', text: colors.ink },
+  selected: { bg: colors.lavender, border: colors.violet, text: colors.ink },
+  correct: { bg: colors.lime, border: colors.ink, text: colors.ink },
+  wrong: { bg: colors.pink, border: colors.ink, text: colors.ink },
+  dim: { bg: colors.white, border: '#DDDAD1', text: colors.muted },
 };
 
+/** Хариултын товч (05 · Хичээл): `grid` = 2×2 богино хариулт, үгүй бол урт хариултын мөр. */
 export function OptionButton({
   index,
   label,
   state,
   disabled,
   onPress,
+  grid,
 }: {
   index: number;
   label: string;
   state: OptionState;
   disabled?: boolean;
   onPress: () => void;
+  grid?: boolean;
 }) {
   const l = look[state];
   return (
-    <Pressable
-      accessibilityRole="button"
-      disabled={disabled}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.box,
-        { backgroundColor: l.bg, borderColor: l.border },
-        pressed && !disabled && { transform: [{ scale: 0.98 }] },
-      ]}
-    >
-      <View style={[styles.badge, { backgroundColor: l.badge }]}>
-        <Text style={[styles.letter, { color: l.badgeText }]}>{state === 'correct' ? '✓' : state === 'wrong' ? '✕' : LETTERS[index]}</Text>
-      </View>
-      <Text style={[styles.label, { color: l.text }]}>{label}</Text>
-    </Pressable>
+    <Shake trigger={state === 'wrong'} style={grid ? styles.gridCell : undefined}>
+      <Pop trigger={state === 'correct' || state === 'selected' ? state : null} from={0.92}>
+        <PressScale
+          accessibilityRole="button"
+          accessibilityLabel={`${LETTERS[index]}. ${label}`}
+          accessibilityState={{ disabled: !!disabled, selected: state === 'selected' }}
+          disabled={disabled}
+          onPress={onPress}
+          scaleTo={0.96}
+          style={[grid ? styles.gridBox : styles.rowBox, { backgroundColor: l.bg, borderColor: l.border }, state === 'dim' && { opacity: 0.55 }]}
+        >
+          {grid ? null : (
+            <View style={[styles.badge, { backgroundColor: state === 'idle' || state === 'dim' ? colors.paper : colors.white }]}>
+              {state === 'correct' || state === 'wrong' ? (
+                <Svg width={16} height={16} viewBox="0 0 24 24" fill="none" stroke={colors.ink} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
+                  <Path d={state === 'correct' ? 'M5 12.5 10 17.5 19 7' : 'M6 6l12 12M18 6 6 18'} />
+                </Svg>
+              ) : (
+                <Text style={styles.letter}>{LETTERS[index]}</Text>
+              )}
+            </View>
+          )}
+          <Text style={[grid ? styles.gridText : styles.rowText, { color: l.text }]} numberOfLines={grid ? 2 : undefined} adjustsFontSizeToFit={grid}>
+            {label}
+          </Text>
+        </PressScale>
+      </Pop>
+    </Shake>
   );
 }
 
 const styles = StyleSheet.create({
-  box: {
+  gridCell: { width: '48.5%' },
+  gridBox: {
+    height: 60,
+    borderRadius: radius.md,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+  gridText: { fontFamily: fonts.semibold, fontSize: 20, textAlign: 'center' },
+  rowBox: {
+    minHeight: 58,
+    borderRadius: radius.md,
+    borderWidth: 2,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    borderWidth: 2,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    minHeight: 58,
+    gap: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
   },
   badge: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  letter: { fontWeight: '800', fontSize: 15 },
-  label: { flex: 1, fontSize: 17, fontWeight: '600' },
+  letter: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink },
+  rowText: { flex: 1, fontFamily: fonts.semibold, fontSize: 17, lineHeight: 22 },
 });

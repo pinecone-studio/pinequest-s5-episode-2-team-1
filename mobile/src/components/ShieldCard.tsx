@@ -1,11 +1,12 @@
 import type { MeResponse } from '@shared/types';
 import { useState } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { api, errorText } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
-import { Card, Muted } from '@/components/ui';
-import { colors } from '@/constants/theme';
+import { Sprite } from '@/components/pixel';
+import { Muted } from '@/components/ui';
+import { colors, fonts, radius } from '@/constants/theme';
 import { S } from '@/i18n/strings';
 
 /** Streak хамгаалалтын төлөв + худалдаж авах товч (Нүүр, Дэлгүүр хоёуланд). */
@@ -29,18 +30,24 @@ export function ShieldCard() {
 
   const { shield } = me;
   return (
-    <Card style={shield.held ? styles.active : undefined}>
-      <Text style={styles.title}>🛡️ {S.home.shieldTitle}</Text>
+    <View style={[styles.card, { backgroundColor: shield.held ? colors.sky : colors.white }]}>
+      <View style={styles.head}>
+        <Sprite id="icon_flame_24x24" />
+        <Text accessibilityRole="header" style={styles.title}>
+          {S.home.shieldTitle}
+        </Text>
+      </View>
       <Muted>{shield.held ? S.home.shieldOn : S.home.shieldOff}</Muted>
       {shield.usedDay ? <Muted>{S.home.shieldUsed(shield.usedDay)}</Muted> : null}
       {!shield.held && shield.nextBuyDay ? <Muted>{S.home.shieldCooldown(shield.nextBuyDay)}</Muted> : null}
-      {shield.canBuy && <Button title={S.home.shieldBuy(shield.price)} variant="secondary" small loading={busy} onPress={buy} />}
+      {shield.canBuy && <Button title={S.home.shieldBuy(shield.price)} variant="primary" small loading={busy} onPress={buy} />}
       {error ? <Muted>{error}</Muted> : null}
-    </Card>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  title: { fontSize: 17, fontWeight: '800', color: colors.text },
-  active: { borderWidth: 2, borderColor: colors.success },
+  card: { borderRadius: radius.card, padding: 16, gap: 8 },
+  head: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  title: { fontFamily: fonts.semibold, fontSize: 17, color: colors.ink },
 });
