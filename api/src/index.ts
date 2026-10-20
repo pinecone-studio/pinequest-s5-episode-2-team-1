@@ -6,6 +6,7 @@ import type { AppEnv } from './env';
 import { errorHandler } from './lib/errors';
 import { adminRoutes } from './routes/admin';
 import { authRoutes, meRoutes } from './routes/auth';
+import { duelRoutes } from './routes/duels';
 import { questionRoutes, shieldRoutes, taskRoutes } from './routes/tasks';
 
 export { DuelRoom } from './duel/DuelRoom';
@@ -13,7 +14,9 @@ export { DuelRoom } from './duel/DuelRoom';
 const app = new Hono<AppEnv>();
 
 // Expo web (localhost:8081) -ээс шалгахад хэрэгтэй; утсан дээрх апп-д CORS хамаагүй.
-app.use('*', cors());
+// WebSocket upgrade-ийн 101 хариуг өөрчлөхгүйн тулд CORS-ийг алгасна.
+const corsMiddleware = cors();
+app.use('*', (c, next) => (c.req.header('upgrade')?.toLowerCase() === 'websocket' ? next() : corsMiddleware(c, next)));
 app.onError(errorHandler);
 app.notFound((c) => c.json({ error: { code: 'NOT_FOUND', message: 'Олдсонгүй' } }, 404));
 
@@ -28,6 +31,7 @@ app.route('/me', meRoutes);
 app.route('/tasks', taskRoutes);
 app.route('/questions', questionRoutes);
 app.route('/shield', shieldRoutes);
+app.route('/duels', duelRoutes);
 app.route('/admin', adminRoutes);
 
 export default app;

@@ -1,56 +1,10 @@
 // Ажиллаж буй dev сервер дээр демо сценарийн гол урсгалыг автоматаар шалгана.
 //   npm run e2e                 # даалгавар, оноо, streak, хамгаалалт, өдрийн хязгаар, тулаан
 //   npm run e2e -- --only tasks # зөвхөн нэг хэсэг (tasks | duel)
-import type { AnswerResponse, AuthResponse, Me, MeResponse, TaskDto, TaskResult } from '../../shared/types';
-import { ADMIN_TOKEN, arg, call, HttpError } from './lib';
+import type { MeResponse, TaskDto } from '../../shared/types';
 import { runDuelScenario } from './e2e-duel';
-
-let failures = 0;
-export function check(cond: boolean, label: string, extra?: unknown) {
-  if (cond) console.log(`  ✓ ${label}`);
-  else {
-    failures++;
-    console.log(`  ✗ ${label}`, extra === undefined ? '' : JSON.stringify(extra));
-  }
-}
-
-export async function expectError(p: Promise<unknown>, code: string, label: string) {
-  try {
-    await p;
-    check(false, label, 'алдаа гараагүй');
-  } catch (e) {
-    check(e instanceof HttpError && e.code === code, label, e instanceof HttpError ? e.code : String(e));
-  }
-}
-
-const suffix = Date.now().toString(36).slice(-5);
-export async function register(name: string, grade: number): Promise<AuthResponse> {
-  return call<AuthResponse>('POST', '/auth/register', { body: { username: `${name}_${suffix}`, password: 'e2e-pass-123', grade } });
-}
-
-export async function me(token: string): Promise<Me> {
-  return (await call<MeResponse>('GET', '/me', { token })).me;
-}
-
-async function correctIndex(questionId: number): Promise<number> {
-  return (await call<{ correctIndex: number }>('GET', `/admin/questions/${questionId}`, { admin: true })).correctIndex;
-}
-
-/** Даалгавар эхлүүлж бүх асуултад хариулна (allCorrect: бүгд зөв / бүгд буруу). */
-async function doTask(token: string, subject: string, allCorrect: boolean) {
-  const task = await call<TaskDto>('POST', '/tasks', { token, body: { subject } });
-  let last: AnswerResponse | null = null;
-  const answers: AnswerResponse[] = [];
-  for (const q of task.questions.filter((x) => !x.answered)) {
-    const ci = await correctIndex(q.id);
-    last = await call<AnswerResponse>('POST', `/tasks/${task.id}/answer`, {
-      token,
-      body: { questionId: q.id, choice: allCorrect ? ci : (ci + 1) % 4 },
-    });
-    answers.push(last);
-  }
-  return { task, answers, result: last?.result as TaskResult };
-}
+import { check, doTask, expectError, failureCount, me, register } from './e2e-lib';
+import { ADMIN_TOKEN, arg, call } from './lib';
 
 async function setStreak(userId: number, body: { streak: number; lastDay: string | null; shieldHeld?: number; shieldBoughtDay?: string | null }) {
   await call('POST', `/admin/debug/users/${userId}/streak`, { admin: true, body });
@@ -148,6 +102,7 @@ async function main() {
   if (!only || only === 'duel') await runDuelScenario();
   console.log('\n— Ledger');
   await audit();
+  const failures = failureCount();
   console.log(failures === 0 ? '\nБҮГД АМЖИЛТТАЙ ✅' : `\n${failures} шалгалт амжилтгүй ❌`);
   process.exit(failures === 0 ? 0 : 1);
 }
