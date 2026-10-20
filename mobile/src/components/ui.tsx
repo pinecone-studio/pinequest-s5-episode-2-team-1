@@ -1,5 +1,17 @@
 import type { ReactNode } from 'react';
-import { RefreshControl, ScrollView, type StyleProp, StyleSheet, Text, TextInput, type TextInputProps, View, type ViewStyle } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  RefreshControl,
+  ScrollView,
+  type StyleProp,
+  StyleSheet,
+  Text,
+  TextInput,
+  type TextInputProps,
+  View,
+  type ViewStyle,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, spacing } from '@/constants/theme';
 
@@ -18,19 +30,22 @@ export function Screen({
 }) {
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}>
-      {scroll ? (
-        <ScrollView
-          contentContainerStyle={[styles.content, contentStyle]}
-          keyboardShouldPersistTaps="handled"
-          refreshControl={
-            onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.primary} /> : undefined
-          }
-        >
-          {children}
-        </ScrollView>
-      ) : (
-        <View style={[styles.content, styles.fill, contentStyle]}>{children}</View>
-      )}
+      <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        {scroll ? (
+          <ScrollView
+            contentContainerStyle={[styles.content, contentStyle]}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            refreshControl={
+              onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.primary} /> : undefined
+            }
+          >
+            {children}
+          </ScrollView>
+        ) : (
+          <View style={[styles.content, styles.fill, contentStyle]}>{children}</View>
+        )}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
