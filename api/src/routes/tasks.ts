@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import type { AnswerResponse, FlagResponse, MeResponse, TaskDto } from '../../../shared/types';
-import { SUBJECTS } from '../config/game';
+import { GAME, SUBJECTS } from '../config/game';
 import type { AppEnv } from '../env';
 import { parseId, readBody } from '../lib/errors';
 import { requireAuth } from '../lib/session';
@@ -11,8 +11,11 @@ export const taskRoutes = new Hono<AppEnv>();
 taskRoutes.use('*', requireAuth);
 
 taskRoutes.post('/', async (c) => {
-  const { subject } = await readBody(c, z.object({ subject: z.enum(SUBJECTS) }));
-  return c.json<TaskDto>(await startTask(c.env, c.executionCtx, c.get('userId'), subject));
+  const { subject, boss } = await readBody(
+    c,
+    z.object({ subject: z.enum(SUBJECTS), boss: z.number().int().min(0).max(GAME.BOSS.COUNT - 1).optional() }),
+  );
+  return c.json<TaskDto>(await startTask(c.env, c.executionCtx, c.get('userId'), subject, boss));
 });
 
 taskRoutes.post('/:id/answer', async (c) => {
