@@ -1,14 +1,14 @@
-import { Link } from 'expo-router';
+import { router } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { errorText } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
-import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
+import { Enter, Motion, Sprite } from '@/components/pixel';
 import { ServerStatus } from '@/components/ServerStatus';
-import { Card, ErrorText, Screen, TextField } from '@/components/ui';
-import { APP_NAME } from '@/constants/app';
-import { colors, spacing } from '@/constants/theme';
+import { BackButton, Card, ErrorText, Screen, TextField } from '@/components/ui';
+import { colors, fonts } from '@/constants/theme';
+import { type } from '@/constants/type';
 import { S } from '@/i18n/strings';
 
 export default function LoginScreen() {
@@ -35,36 +35,43 @@ export default function LoginScreen() {
 
   return (
     <Screen contentStyle={styles.content}>
-      <View style={styles.hero}>
-        <Avatar look={{}} size={96} />
-        <Text style={styles.brand}>{APP_NAME}</Text>
-        <Text style={styles.tagline}>{S.auth.tagline}</Text>
-      </View>
-      <Card>
-        <TextField label={S.auth.username} value={username} onChangeText={setUsername} textContentType="username" />
-        <TextField
-          label={S.auth.password}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          textContentType="password"
-          onSubmitEditing={submit}
-        />
-        <ErrorText>{error}</ErrorText>
-        <Button title={S.auth.login} onPress={submit} loading={busy} />
-      </Card>
-      <Link href="/register" replace style={styles.link}>
-        {S.auth.toRegister}
-      </Link>
+      {router.canGoBack() ? <BackButton onPress={() => router.back()} /> : null}
+      <Enter index={0} style={styles.hero}>
+        <Motion preset="bob">
+          <Sprite id="head_idle_112x96" label="Pixel баавгайн толгой" />
+        </Motion>
+        <Text accessibilityRole="header" style={type.h1}>
+          {S.auth.loginTitle}
+        </Text>
+        <Text style={[type.bodyMuted, { textAlign: 'center' }]}>{S.welcome.tagline}</Text>
+      </Enter>
+      <Enter index={1}>
+        <Card>
+          <TextField label={S.auth.username} value={username} onChangeText={setUsername} textContentType="username" />
+          <TextField
+            label={S.auth.password}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            textContentType="password"
+            onSubmitEditing={submit}
+          />
+          <ErrorText>{error}</ErrorText>
+          <Button title={S.auth.login} onPress={submit} loading={busy} />
+        </Card>
+      </Enter>
+      <Pressable accessibilityRole="link" onPress={() => router.replace('/register')} style={styles.linkWrap}>
+        <Text style={styles.link}>{S.auth.toRegister}</Text>
+      </Pressable>
+      <View style={{ flex: 1 }} />
       <ServerStatus />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { flexGrow: 1, justifyContent: 'center' },
-  hero: { alignItems: 'center', gap: spacing.sm },
-  brand: { fontSize: 36, fontWeight: '900', color: colors.primary },
-  tagline: { fontSize: 15, color: colors.muted, textAlign: 'center' },
-  link: { color: colors.primaryDark, fontSize: 16, fontWeight: '700', textAlign: 'center', padding: spacing.sm },
+  content: { flexGrow: 1, paddingTop: 12 },
+  hero: { alignItems: 'center', gap: 8 },
+  linkWrap: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  link: { fontFamily: fonts.semibold, fontSize: 16, color: colors.indigo },
 });

@@ -1,16 +1,20 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, type ViewStyle } from 'react-native';
-import { colors, radius, spacing } from '@/constants/theme';
+import { ActivityIndicator, StyleSheet, Text, type ViewStyle } from 'react-native';
+import { PressScale } from '@/components/pixel';
+import { colors, fonts, hardShadow, radius } from '@/constants/theme';
 
-type Variant = 'primary' | 'secondary' | 'success' | 'danger' | 'ghost';
+type Variant = 'primary' | 'lime' | 'lemon' | 'white' | 'secondary' | 'pink' | 'ghost';
 
 const palette: Record<Variant, { bg: string; fg: string; border?: string }> = {
-  primary: { bg: colors.primary, fg: colors.white },
-  secondary: { bg: colors.primarySoft, fg: colors.primaryDark },
-  success: { bg: colors.success, fg: colors.white },
-  danger: { bg: colors.danger, fg: colors.white },
-  ghost: { bg: 'transparent', fg: colors.primaryDark },
+  primary: { bg: colors.indigo, fg: colors.white },
+  lime: { bg: colors.lime, fg: colors.ink },
+  lemon: { bg: colors.lemon, fg: colors.ink, border: colors.ink },
+  white: { bg: colors.white, fg: colors.ink },
+  secondary: { bg: colors.stoneAlt, fg: colors.ink },
+  pink: { bg: colors.pink, fg: colors.dangerText },
+  ghost: { bg: 'transparent', fg: colors.indigo },
 };
 
+/** DESIGN.md §7: 60px pill. `lime` = "Үргэлжлүүлэх" (том үсэг, зайтай), `lemon` = замын CTA (ink хүрээ + хатуу сүүдэр). */
 export function Button({
   title,
   onPress,
@@ -19,6 +23,7 @@ export function Button({
   loading,
   small,
   style,
+  accessibilityLabel,
 }: {
   title: string;
   onPress?: () => void;
@@ -27,43 +32,55 @@ export function Button({
   loading?: boolean;
   small?: boolean;
   style?: ViewStyle;
+  accessibilityLabel?: string;
 }) {
   const p = palette[variant];
   const inactive = disabled || loading;
+  const dim = disabled && variant !== 'ghost';
   return (
-    <Pressable
+    <PressScale
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? title}
+      accessibilityState={{ disabled: !!inactive, busy: !!loading }}
       onPress={onPress}
       disabled={inactive}
-      style={({ pressed }) => [
+      scaleTo={0.96}
+      style={[
         styles.base,
         small && styles.small,
-        { backgroundColor: inactive && variant !== 'ghost' ? colors.disabled : p.bg },
-        pressed && !inactive && styles.pressed,
+        { backgroundColor: dim ? colors.stoneAlt : p.bg },
+        p.border && !dim ? { borderWidth: 2, borderColor: p.border, ...hardShadow(4) } : null,
         style,
       ]}
     >
       {loading ? (
         <ActivityIndicator color={p.fg} />
       ) : (
-        <Text style={[styles.text, small && styles.smallText, { color: inactive && variant === 'ghost' ? colors.muted : p.fg }]}>
+        <Text
+          style={[
+            styles.text,
+            small && styles.smallText,
+            variant === 'lime' && styles.limeText,
+            { color: dim ? colors.muted : p.fg },
+          ]}
+        >
           {title}
         </Text>
       )}
-    </Pressable>
+    </PressScale>
   );
 }
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: 52,
+    minHeight: 60,
     borderRadius: radius.pill,
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  small: { minHeight: 38, paddingHorizontal: spacing.lg },
-  pressed: { opacity: 0.85, transform: [{ scale: 0.98 }] },
-  text: { fontSize: 17, fontWeight: '700' },
-  smallText: { fontSize: 14 },
+  small: { minHeight: 44, paddingHorizontal: 16 },
+  text: { fontFamily: fonts.semibold, fontSize: 18 },
+  smallText: { fontFamily: fonts.bold, fontSize: 14 },
+  limeText: { fontFamily: fonts.bold, fontSize: 16, letterSpacing: 1.4, textTransform: 'uppercase' },
 });

@@ -1,206 +1,212 @@
-import type { AvatarLook, MeResponse, ShopItem, ShopResponse, Slot } from '@shared/types';
 import * as Haptics from 'expo-haptics';
-import { useFocusEffect } from 'expo-router';
-import { useCallback, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
-import { api, errorText } from '@/api/client';
-import { useAuth } from '@/auth/AuthContext';
-import { Avatar } from '@/components/Avatar';
+import { router } from 'expo-router';
+import { useState } from 'react';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import { BgSwatch, type SwatchStatus } from '@/components/BgSwatch';
+import { OutfitCard } from '@/components/OutfitCard';
+import { PressScale, Sprite } from '@/components/pixel';
+import { PreviewStage } from '@/components/PreviewStage';
+import { SegmentedTabs } from '@/components/SegmentedTabs';
 import { ShieldCard } from '@/components/ShieldCard';
-import { Card, ErrorText, Muted, Screen, SectionTitle, Title } from '@/components/ui';
-import { colors, radius, spacing } from '@/constants/theme';
+import { CountPill, formatNumber } from '@/components/StatPill';
+import { ErrorText, Screen } from '@/components/ui';
+import { colors, fonts, radius } from '@/constants/theme';
+import { type } from '@/constants/type';
 import { S } from '@/i18n/strings';
 import { confirm } from '@/lib/confirm';
+import { usePixelBear } from '@/lib/mock/pixelBear';
+import { BACKGROUNDS, bgById, outfitById, type OutfitId } from '@/lib/pixelBear/catalog';
+import { type OutfitView, useOutfits } from '@/lib/pixelBear/useOutfits';
 
-const SLOTS: Slot[] = ['top', 'bottom', 'hair', 'shoes', 'accessory', 'skin'];
+type Tab = 'bg' | 'outfit';
 
+const chunk = <T,>(arr: T[], n: number): T[][] => Array.from({ length: Math.ceil(arr.length / n) }, (_, i) => arr.slice(i * n, i * n + n));
+
+function statusOf(opts: { equipped: boolean; owned: boolean; price: number; coins: number; lockedLevel?: number | null }): SwatchStatus {
+  const { equipped, owned, price, coins, lockedLevel } = opts;
+  if (equipped) return { text: S.shop.equipped, color: colors.okText, showCoin: false, locked: false };
+  if (owned) return { text: S.shop.owned, color: colors.okText, showCoin: false, locked: false };
+  if (lockedLevel) return { text: S.shop.levelNeeded(lockedLevel), color: colors.dangerText, showCoin: false, locked: true };
+  if (price > coins) return { text: formatNumber(price), a11y: S.shop.shortBy(formatNumber(price)), color: colors.dangerText, showCoin: true, locked: true };
+  return { text: formatNumber(price), color: colors.ink, showCoin: true, locked: false };
+}
+
+/** 07 · Дэлгүүр: дэвсгэр өнгө (MVP) ба хувцас. */
 export default function ShopScreen() {
-  const { me, setMe } = useAuth();
-  const [items, setItems] = useState<ShopItem[] | null>(null);
-  const [busy, setBusy] = useState<string | null>(null);
+  const bear = usePixelBear();
+  const outfits = useOutfits();
+  const [tab, setTab] = useState<Tab>('bg');
+  const [selBg, setSelBg] = useState(bear.bgId);
+  const [selOutfit, setSelOutfit] = useState<OutfitId>(bear.outfitId);
+  const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  const apply = useCallback(
-    (r: ShopResponse) => {
-      setItems(r.items);
-      setMe(r.me);
-    },
-    [setMe],
-  );
+  const isBg = tab === 'bg';
+  const bgDef = bgById(isBg ? selBg : bear.bgId);
+  const outfitView = outfits.views.find((v) => v.def.id === (isBg ? bear.outfitId : selOutfit)) ?? outfits.views[0];
+  const outfitDef = outfitById(outfitView.def.id);
 
-  const load = useCallback(async () => {
-    try {
-      apply(await api<ShopResponse>('/shop'));
-    } catch (e) {
-      setError(errorText(e));
-    }
-  }, [apply]);
+  // Одоо харж буй зүйлийн үйлдэл
+  const cur = isBg
+    ? {
+        name: bgDef.name,
+        equipped: bgDef.id === bear.bgId,
+        owned: bear.ownedBgs.includes(bgDef.id),
+        price: bgDef.price,
+        lockedLevel: null as number | null,
+      }
+    : {
+        name: outfitDef.name,
+        equipped: outfitDef.id === bear.outfitId,
+        owned: outfitView.owned,
+        price: outfitView.price,
+        lockedLevel: outfitView.lockedLevel,
+      };
+  const cantAfford = !cur.owned && cur.price > bear.coins;
+  const action = cur.equipped
+    ? { title: S.shop.equipped, bg: colors.white, fg: colors.okText, disabled: true }
+    : cur.owned
+      ? { title: S.shop.equip, bg: colors.indigo, fg: colors.white, disabled: false }
+      : cur.lockedLevel
+        ? { title: S.shop.levelNeeded(cur.lockedLevel), bg: colors.stoneAlt, fg: colors.muted, disabled: true }
+        : cantAfford
+          ? { title: S.shop.noCoins, bg: colors.stoneAlt, fg: colors.muted, disabled: true }
+          : { title: S.shop.buyFor(formatNumber(cur.price)), bg: colors.indigo, fg: colors.white, disabled: false };
 
-  useFocusEffect(
-    useCallback(() => {
-      void load();
-    }, [load]),
-  );
-
-  async function act(key: string, fn: () => Promise<void>) {
-    setBusy(key);
-    setError('');
+  async function onAction() {
+    if (busy || action.disabled) return;
     setMessage('');
-    try {
-      await fn();
-    } catch (e) {
-      setError(errorText(e));
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function onItem(item: ShopItem) {
-    if (busy) return;
-    if (item.equipped) {
-      if (item.slot !== 'accessory') return;
-      await act(item.id, async () => {
-        setMe((await api<MeResponse>('/avatar/equip', { body: { slot: item.slot, itemId: null } })).me);
-        await load();
-      });
+    setError('');
+    if (cur.owned) {
+      if (isBg) bear.equipBg(bgDef.id);
+      else bear.equipOutfit(outfitDef.id);
+      void Haptics.selectionAsync();
       return;
     }
-    if (item.owned) {
-      await act(item.id, async () => {
-        setMe((await api<MeResponse>('/avatar/equip', { body: { slot: item.slot, itemId: item.id } })).me);
-        await load();
-      });
+    if (!(await confirm(S.shop.buyConfirm(cur.name, cur.price), S.shop.buy))) return;
+    setBusy(true);
+    let err: string | null = null;
+    if (isBg) {
+      const r = bear.buyBg(bgDef.id);
+      err = r.ok ? null : S.shop.noCoins;
+    } else {
+      err = await outfits.buy(outfitView as OutfitView);
+    }
+    setBusy(false);
+    if (err) {
+      setError(err);
       return;
     }
-    if (item.locked) return;
-    if (!(await confirm(S.shop.buyConfirm(item.name, item.price), S.shop.buy))) return;
-    await act(item.id, async () => {
-      apply(await api<ShopResponse>(`/shop/${item.id}/buy`, { method: 'POST' }));
-      setMessage(S.shop.bought(item.name));
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    });
-  }
-
-  if (!me || !items) {
-    return (
-      <Screen contentStyle={styles.center}>
-        <ActivityIndicator color={colors.primary} />
-        <ErrorText>{error}</ErrorText>
-      </Screen>
-    );
+    setMessage(S.shop.bought(cur.name));
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }
 
   return (
-    <Screen>
-      <Title>{S.shop.title}</Title>
-      <Card style={styles.hero}>
-        <Avatar look={me.avatar} size={120} />
-        <View style={{ flex: 1, gap: spacing.sm }}>
-          <Text style={styles.points}>{S.shop.points(me.points)}</Text>
-          <Text style={styles.level}>{S.home.level(me.level)}</Text>
-          <Muted>{S.shop.hint}</Muted>
+    <Screen tabBar>
+      <View style={styles.header}>
+        <View style={{ flex: 1, gap: 4 }}>
+          <Text accessibilityRole="header" style={type.h1}>
+            {S.shop.title}
+          </Text>
+          <Text style={type.small}>{S.shop.subtitle}</Text>
         </View>
-      </Card>
-      {message ? <Text style={styles.message}>{message}</Text> : null}
-      <ErrorText>{error}</ErrorText>
+        <PressScale accessibilityRole="button" accessibilityLabel={S.bag.title} onPress={() => router.push('/bag')} style={styles.bagBtn}>
+          <Sprite id="nav2_bag_on_30x30" />
+        </PressScale>
+        <CountPill icon="icon_coin_24x24" value={bear.coins} label="Coin" />
+      </View>
 
-      <ShieldCard />
+      <PreviewStage
+        bg={bgDef}
+        outfit={outfitDef}
+        name={isBg ? S.shop.bgPreview(bgDef.name) : outfitDef.name}
+        alt={S.shop.previewAlt(outfitDef.name, bgDef.name)}
+        action={
+          <PressScale
+            accessibilityRole="button"
+            accessibilityState={{ disabled: action.disabled, busy }}
+            disabled={action.disabled || busy}
+            onPress={onAction}
+            style={[styles.action, { backgroundColor: action.bg }]}
+          >
+            {busy ? <ActivityIndicator color={action.fg} /> : <Text style={[styles.actionText, { color: action.fg }]}>{action.title}</Text>}
+          </PressScale>
+        }
+      />
 
-      {SLOTS.map((slot) => (
-        <View key={slot} style={{ gap: spacing.sm }}>
-          <SectionTitle>{S.shop.slots[slot]}</SectionTitle>
-          <View style={styles.grid}>
-            {items
-              .filter((i) => i.slot === slot)
-              .map((item) => (
-                <ItemTile
-                  key={item.id}
-                  item={item}
-                  preview={{ ...me.avatar, [slot]: item.style }}
-                  points={me.points}
-                  busy={busy === item.id}
-                  onPress={() => onItem(item)}
+      {message ? (
+        <Animated.Text entering={FadeIn} style={styles.message}>
+          {message}
+        </Animated.Text>
+      ) : null}
+      <ErrorText>{error || (!isBg ? outfits.error : '')}</ErrorText>
+
+      <SegmentedTabs<Tab>
+        label={S.shop.tabs}
+        value={tab}
+        onChange={setTab}
+        options={[
+          { value: 'bg', label: S.shop.tabBg },
+          { value: 'outfit', label: S.shop.tabOutfit },
+        ]}
+      />
+
+      {isBg ? (
+        <Animated.View key="bg" entering={FadeInDown.duration(260)} style={{ gap: 12 }}>
+          {chunk(BACKGROUNDS, 4).map((row, r) => (
+            <View key={r} style={styles.row}>
+              {row.map((b) => (
+                <BgSwatch
+                  key={b.id}
+                  name={b.name}
+                  hex={b.hex}
+                  label={S.shop.bgLabel(b.name)}
+                  selected={b.id === selBg}
+                  equipped={b.id === bear.bgId}
+                  status={statusOf({ equipped: b.id === bear.bgId, owned: bear.ownedBgs.includes(b.id), price: b.price, coins: bear.coins })}
+                  onPress={() => setSelBg(b.id)}
                 />
               ))}
-          </View>
-        </View>
-      ))}
+            </View>
+          ))}
+        </Animated.View>
+      ) : (
+        <Animated.View key="outfit" entering={FadeInDown.duration(260)} style={{ gap: 10 }}>
+          {!outfits.loaded ? <ActivityIndicator color={colors.violet} /> : null}
+          {chunk(outfits.views, 2).map((row, r) => (
+            <View key={r} style={styles.row}>
+              {row.map((v) => (
+                <OutfitCard
+                  key={v.def.id}
+                  def={v.def}
+                  selected={v.def.id === selOutfit}
+                  status={statusOf({
+                    equipped: v.def.id === bear.outfitId,
+                    owned: v.owned,
+                    price: v.price,
+                    coins: bear.coins,
+                    lockedLevel: v.lockedLevel,
+                  })}
+                  onPress={() => setSelOutfit(v.def.id)}
+                />
+              ))}
+            </View>
+          ))}
+        </Animated.View>
+      )}
+
+      <ShieldCard />
     </Screen>
   );
 }
 
-function ItemTile({
-  item,
-  preview,
-  points,
-  busy,
-  onPress,
-}: {
-  item: ShopItem;
-  preview: AvatarLook;
-  points: number;
-  busy: boolean;
-  onPress: () => void;
-}) {
-  let status: string;
-  let statusColor: string = colors.muted;
-  if (item.equipped) {
-    status = item.slot === 'accessory' ? `${S.shop.equipped} · ${S.shop.remove}` : S.shop.equipped;
-    statusColor = colors.success;
-  } else if (item.owned) {
-    status = S.shop.wear;
-    statusColor = colors.primaryDark;
-  } else if (item.locked) {
-    status = S.shop.locked(item.minLevel);
-  } else {
-    status = S.shop.price(item.price);
-    statusColor = item.price <= points ? colors.gold : colors.danger;
-  }
-
-  return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
-      disabled={busy || (item.locked && !item.owned)}
-      style={({ pressed }) => [
-        styles.tile,
-        item.equipped && styles.tileEquipped,
-        item.locked && !item.owned && styles.tileLocked,
-        pressed && { transform: [{ scale: 0.97 }] },
-      ]}
-    >
-      {busy ? <ActivityIndicator color={colors.primary} style={{ height: 85 }} /> : <Avatar look={preview} size={64} />}
-      <Text style={styles.tileName} numberOfLines={2}>
-        {item.name}
-      </Text>
-      <Text style={[styles.tileStatus, { color: statusColor }]} numberOfLines={1}>
-        {status}
-      </Text>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
-  center: { flexGrow: 1, justifyContent: 'center', alignItems: 'center' },
-  hero: { flexDirection: 'row', alignItems: 'center', gap: spacing.lg },
-  points: { fontSize: 22, fontWeight: '900', color: colors.gold },
-  level: { fontSize: 16, fontWeight: '800', color: colors.primary },
-  message: { fontSize: 15, fontWeight: '700', color: colors.success, textAlign: 'center' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  tile: {
-    width: '31.5%',
-    backgroundColor: colors.card,
-    borderRadius: radius.md,
-    borderWidth: 2,
-    borderColor: colors.border,
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.xs,
-    gap: 2,
-  },
-  tileEquipped: { borderColor: colors.success, backgroundColor: colors.successSoft },
-  tileLocked: { opacity: 0.55 },
-  tileName: { fontSize: 13, fontWeight: '700', color: colors.text, textAlign: 'center', minHeight: 34 },
-  tileStatus: { fontSize: 12, fontWeight: '800' },
+  header: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  bagBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
+  row: { flexDirection: 'row', gap: 10 },
+  action: { height: 44, paddingHorizontal: 16, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', minWidth: 96 },
+  actionText: { fontFamily: fonts.bold, fontSize: 14 },
+  message: { fontFamily: fonts.semibold, fontSize: 14, color: colors.okText, textAlign: 'center' },
 });

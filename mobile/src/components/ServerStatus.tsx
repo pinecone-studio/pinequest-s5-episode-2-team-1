@@ -1,8 +1,8 @@
 import type { HealthResponse } from '@shared/types';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { API_URL, api } from '@/api/client';
-import { colors } from '@/constants/theme';
+import { colors, fonts } from '@/constants/theme';
 import { S } from '@/i18n/strings';
 
 /** Нэвтрэх дэлгэцийн доод хэсэгт: утас серверт хүрч байгаа эсэх (LAN асуудлыг шууд харуулна). */
@@ -19,14 +19,19 @@ export function ServerStatus() {
     };
   }, []);
 
-  const label = ok === null ? S.health.checking : ok ? `✓ ${S.health.ok}` : `✕ ${S.health.fail}`;
+  const label = ok === null ? S.health.checking : ok ? S.health.ok : S.health.fail;
   return (
-    <Text style={[styles.text, ok === false && { color: colors.danger }]}>
-      {label} · {API_URL}
-    </Text>
+    <View style={styles.row} accessible accessibilityLabel={`${label} · ${API_URL}`}>
+      <View style={[styles.dot, { backgroundColor: ok === null ? colors.stone : ok ? colors.okText : colors.dangerText }]} />
+      <Text style={[styles.text, ok === false && { color: colors.dangerText }]}>
+        {label} · {API_URL}
+      </Text>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  text: { fontSize: 12, color: colors.muted, textAlign: 'center' },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 },
+  dot: { width: 8, height: 8, borderRadius: 4 },
+  text: { fontFamily: fonts.medium, fontSize: 12, color: colors.muted, textAlign: 'center' },
 });

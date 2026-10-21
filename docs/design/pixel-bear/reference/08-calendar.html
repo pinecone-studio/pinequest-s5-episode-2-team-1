@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<title>Хичээлийн хуанли</title>
+<!-- design-canvas runtime removed: {{hole}} values come from renderVals() in the script at the bottom; <sc-if>/<sc-for> are template conditionals/loops -->
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&amp;family=Pixelify+Sans:wght@500;600;700&amp;display=swap">
+<style>
+body{margin:0}
+.px{image-rendering:pixelated;image-rendering:crisp-edges}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #EFEEE9; font-family: 'Onest', system-ui, sans-serif; color: #19152E;">
+  <div style="position: absolute; left: 14px; right: 14px; top: 50px; height: 44px; display: flex; align-items: center; justify-content: space-between;">
+    <a href="03-home.html" aria-label="Хаах" style="width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#19152E" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></a>
+    <div style="font-size: 17px; font-weight: 600;">Хичээлийн хуанли</div>
+    <button type="button" aria-label="Дараагийн сар" style="width: 40px; height: 40px; border: 0; border-radius: 50%; background: #FFFFFF; display: flex; align-items: center; justify-content: center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#19152E" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></button>
+  </div>
+
+  <div style="position: absolute; left: 20px; right: 20px; top: 108px; display: flex; align-items: baseline; justify-content: space-between;">
+    <div style="font-size: 24px; font-weight: 600; letter-spacing: -0.5px;">10-р сар</div>
+    <div style="font-family: 'Pixelify Sans', monospace; font-weight: 600; font-size: 16px; color: #5E5A6E;">2026</div>
+  </div>
+
+  <div style="position: absolute; left: 20px; right: 20px; top: 148px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; text-align: center; font-size: 12px; font-weight: 600; color: #5E5A6E;">
+    <span>Да</span><span>Мя</span><span>Лх</span><span>Пү</span><span>Ба</span><span>Бя</span><span>Ня</span>
+  </div>
+
+  <div style="position: absolute; left: 20px; right: 20px; top: 172px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px;">
+    <sc-for list="{{cells}}" as="c" hint-placeholder-count="35">
+      <div title="{{c.title}}" style="height: 44px; box-sizing: border-box; border-radius: 14px; background: {{c.bg}}; border: {{c.border}}; display: flex; align-items: flex-end; justify-content: center; overflow: hidden; font-size: 12px; font-weight: 600; color: #8A8696;">
+        <sc-if value="{{c.hasFace}}" hint-placeholder-val="{{ true }}"><img class="px" src="{{c.src}}" alt="{{c.title}}" style="width: {{c.w}}px; height: 34px; flex: none;"></sc-if>
+        <sc-if value="{{c.future}}" hint-placeholder-val="{{ false }}"><span style="align-self: center;">{{c.day}}</span></sc-if>
+      </div>
+    </sc-for>
+  </div>
+
+  <div style="position: absolute; left: 20px; right: 20px; top: 434px; height: 124px; box-sizing: border-box; padding: 16px 18px; border-radius: 28px; background: #F2CDE0; overflow: hidden; display: flex; flex-direction: column; gap: 2px;">
+    <span style="font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;">Сарын явц</span>
+    <span style="font-size: 30px; font-weight: 600; letter-spacing: -0.8px; color: #7A3B5E;">16 өдөр сурлаа</span>
+    <span style="font-size: 14px; font-weight: 500; color: #5E3A50;">3 амралт · 1 алгассан</span>
+    <img class="px" src="/sprites/head_happy.png" alt="Баярласан баавгай" style="position: absolute; right: -10px; bottom: -22px; width: 164px; height: 108px;">
+  </div>
+
+  <div style="position: absolute; left: 20px; right: 20px; top: 572px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px;">
+    <div style="height: 104px; box-sizing: border-box; padding: 12px; border-radius: 22px; background: #DEDCD3; display: flex; flex-direction: column; justify-content: space-between;">
+      <span style="font-size: 13px; font-weight: 600;">Идэвх</span>
+      <div style="display: flex; flex-direction: column;"><span style="font-size: 30px; font-weight: 600; letter-spacing: -1px; line-height: 1;">237</span><span style="font-size: 12px; font-weight: 500; color: #5E5A6E;">минут</span></div>
+    </div>
+    <div style="height: 104px; box-sizing: border-box; padding: 12px; border-radius: 22px; background: #DEDCD3; display: flex; flex-direction: column; justify-content: space-between;">
+      <span style="font-size: 13px; font-weight: 600;">Тогтвортой</span>
+      <div style="display: flex; flex-direction: column;"><span style="font-size: 30px; font-weight: 600; letter-spacing: -1px; line-height: 1;">78%</span><span style="font-size: 12px; font-weight: 500; color: #5E5A6E;">төлөвлөгөө</span></div>
+    </div>
+    <div style="height: 104px; box-sizing: border-box; padding: 12px; border-radius: 22px; background: #DEDCD3; display: flex; flex-direction: column; justify-content: space-between;">
+      <span style="font-size: 13px; font-weight: 600;">Энерги</span>
+      <div style="display: flex; flex-direction: column;"><span style="font-size: 30px; font-weight: 600; letter-spacing: -1px; line-height: 1;">82%</span><span style="font-size: 12px; font-weight: 500; color: #5E5A6E;">дундаж</span></div>
+    </div>
+  </div>
+
+  <div style="position: absolute; left: 20px; right: 20px; top: 694px; display: flex; flex-wrap: wrap; gap: 6px 12px; font-size: 12px; font-weight: 600; color: #5E5A6E;">
+    <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 10px; height: 10px; border-radius: 3px; background: #F3F66C; border: 1px solid #C9C66A;"></span>Гэрэлтсэн</span>
+    <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 10px; height: 10px; border-radius: 3px; background: #D4F55E;"></span>Хэвийн</span>
+    <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 10px; height: 10px; border-radius: 3px; background: #D9D2F2;"></span>Ядарсан</span>
+    <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 10px; height: 10px; border-radius: 3px; background: #AEDDF3;"></span>Амралт</span>
+    <span style="display: flex; align-items: center; gap: 5px;"><span style="width: 10px; height: 10px; border-radius: 3px; background: #CBCAC1;"></span>Алгассан</span>
+  </div>
+
+  <nav aria-label="Үндсэн цэс" style="position: absolute; left: 0; right: 0; bottom: 0; height: 86px; box-sizing: border-box; padding: 6px 12px 20px; background: #FFFFFF; border-top: 2px solid #E6E4DD; border-radius: 28px 28px 0 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: center;">
+    <a href="03-home.html" aria-label="Нүүр" style="height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;"><img class="px" src="/sprites/nav_home_off.png" alt="" style="width: 40px; height: 36px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: transparent;"></span></a>
+    <a href="04-path.html" aria-label="Сурах зам" style="height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;"><img class="px" src="/sprites/nav_path_off.png" alt="" style="width: 40px; height: 40px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: transparent;"></span></a>
+    <a href="07-shop.html" aria-label="Дэлгүүр" style="height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;"><img class="px" src="/sprites/nav_shop_off.png" alt="" style="width: 44px; height: 38px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: transparent;"></span></a>
+    <a href="07-shop.html" aria-label="Цүнх" style="height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;"><img class="px" src="/sprites/nav_bag_off.png" alt="" style="width: 40px; height: 40px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: transparent;"></span></a>
+    <a href="09-bear-states-board.html" aria-label="Баг" style="height: 58px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;"><img class="px" src="/sprites/nav_crew_off.png" alt="" style="width: 40px; height: 40px;"><span style="width: 6px; height: 6px; border-radius: 50%; background: transparent;"></span></a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const F = {
+      h: { src: '/sprites/head_happy.png', w: 52, bg: '#F3F66C', t: 'Гэрэлтсэн' },
+      i: { src: '/sprites/head_idle.png', w: 40, bg: '#D4F55E', t: 'Хэвийн' },
+      t: { src: '/sprites/head_tired.png', w: 40, bg: '#D9D2F2', t: 'Ядарсан' },
+      n: { src: '/sprites/head_neglected.png', w: 40, bg: '#CBCAC1', t: 'Алгассан' },
+      s: { src: '/sprites/head_sleep.png', w: 54, bg: '#AEDDF3', t: 'Амралт' }
+    };
+    const pattern = 'hishitntishihhihshhh'.split('');
+    const cells = [];
+    for (let k = 0; k < 3; k++) cells.push({ bg: 'transparent', border: '0', hasFace: false, future: false, day: '', title: '' });
+    for (let d = 1; d <= 31; d++) {
+      if (d <= 20) {
+        const f = F[pattern[d - 1]] || F.i;
+        cells.push({ bg: f.bg, border: d === 20 ? '2px solid #19152E' : '0', hasFace: true, future: false, src: f.src, w: f.w, day: String(d), title: '10/' + d + ' · ' + f.t + (d === 20 ? ' · Өнөөдөр' : '') });
+      } else {
+        cells.push({ bg: 'transparent', border: '2px dashed #D8D6CE', hasFace: false, future: true, day: String(d), title: '10/' + d });
+      }
+    }
+    cells.push({ bg: 'transparent', border: '0', hasFace: false, future: false, day: '', title: '' });
+    return { cells };
+  }
+}
+</script>
+</body>
+</html>
