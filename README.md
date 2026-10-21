@@ -61,7 +61,7 @@ cd ../mobile && npm install
 Task бүр Homebrew-ийн Node 24-ийг өөрөө PATH-ийн урд тавьдаг. Харин VS Code-д **гараар нээсэн terminal**
 macOS-ийн login shell тул `/etc/zprofile` (path_helper) PATH-ийг дахин эрэмбэлж системийн хуучин Node-ийг
 сонгож болзошгүй ("Wrangler requires at least Node.js v22"). Ийм бол 1-р хэсгийн `~/.zshrc` мөрийг нэмээд
-terminal-аа шинээр нээнэ. Бусад task: "Бот тоглогч", "Асуултын сан сэргээх", "Шалгалт".
+terminal-аа шинээр нээнэ. Бусад task: "Бот тоглогч", "Асуултын сан сэргээх", "Сурах бичиг оруулах", "Шалгалт".
 
 ### Terminal-аар
 
@@ -112,7 +112,8 @@ npx expo start
 
 **Демогийн өмнө.** Local DB одоо цэвэр: хэрэглэгч байхгүй, асуултын сан шалгагдсан. e2e тест
 туршилтын хэрэглэгчид үүсгэдэг тул демогийн өмнө ажиллуулахгүй байх нь дээр. `npm run db:reset` бүх
-хэрэглэгч, асуултыг устгадаг тул хийсэн бол дараа нь заавал `npm run questions:import` ажиллуулна.
+хэрэглэгч, асуулт, сурах бичгийн санг устгадаг тул хийсэн бол дараа нь заавал `npm run questions:import`
+(сурах бичиг оруулсан бол `npm run books:import` ч) ажиллуулна.
 
 ## 4. Демо сценари (хүлээн авах шалгуур)
 
@@ -157,7 +158,8 @@ npm run e2e
   level, бооцооны хязгаар, LLM-ийн хариуны шалгалт, тулааны engine.
 - `npm run e2e` — ажиллаж буй dev сервер дээр бүтэн урсгал: даалгавар, хамгаалалт ("цаг хугацаа"
   дуурайж), өдрийн хязгаар, дэлгүүр, бодит WebSocket-оор тулаан (ялалт, тэнцээ, 10 сек салалт),
-  ledger-ийн нийлбэр. `-- --slow` нэмбэл 30 сек no-show-г бас шалгана; `-- --only tasks|shop|duel`.
+  сурах бичгийн сан (түр хавтаснаас оруулах, дахин оруулах, хуудас солих/хасах, устгах), ledger-ийн
+  нийлбэр. `-- --slow` нэмбэл 30 сек no-show-г бас шалгана; `-- --only tasks|shop|duel|books`.
 - Mobile: `cd mobile && npm run typecheck`.
 
 ## 6. LAN-аар ажиллахгүй бол
@@ -242,7 +244,9 @@ api/src/llm/               Gemini / Workers AI, prompt, шалгалт
 api/src/services/          даалгавар, тулаан (escrow), дэлгүүр, pool
 api/src/routes/            REST endpoint-ууд, /duels/:id/ws
 api/migrations/            D1 schema, дэлгүүрийн 20 эд зүйл
-api/scripts/               seed-questions, duel-bot, e2e
+api/migrations-books/      сурах бичгийн сангийн schema (тусдаа BOOKS database)
+api/books/                 номын скан, зураг — git-д орохгүй (11-р хэсэг)
+api/scripts/               seed-questions, books (сурах бичиг оруулах), duel-bot, e2e
 mobile/src/app/            дэлгэцүүд (expo-router)
 mobile/src/components/     Avatar (SVG давхарга), товч, карт…
 ```
@@ -276,3 +280,74 @@ UI нь `docs/design/pixel-bear/` дахь дизайн дээр суурилн�
 - **Демо:** Нүүрний баавгайн stage дээр удаан дарвал 5 төлөвийг ээлжлэн харуулна (зөвхөн харагдац, хадгалагдахгүй).
 - **Доод цэс (Charlie маягийн):** Нүүр · Даалгавар · Сурах зам · Дэлгүүр · Баг. Icon-ууд нь
   `docs/design/pixel-bear/tools/icons_v2.py`-оор зурагдсан 20px pixel art (1.5×, 30dp). Цүнх нь Дэлгүүрийн дээд буланд.
+
+## 11. Сурах бичгийн сан (local)
+
+Сурах бичгийн хуудас бүрийг файлаар нь хадгалах сан. Одоохондоо компьютер дээрээ (local) ажиллана, дараа
+нь багийн Cloudflare руу шилжүүлнэ.
+
+- **Мэдээлэл** (ном, хуудас, дараа нь OCR текст): тусдаа D1 database `surgalt-books` (`BOOKS` binding,
+  schema `api/migrations-books/`). Тоглоомын `surgalt` DB-д хүрэхгүй.
+- **Хуудасны файл:** R2 bucket `surgalt-books` (`BOOK_FILES`). Local-д `api/.wrangler/state` дотор хадгалагдана.
+- **Эх файл:** `api/books/<хавтас>/` — git-д орохгүй (repo public, зохиогчийн эрх). Сан устсан ч
+  (`db:reset`) эндээс `books:import`-оор дахин үүснэ. Хавтасны бүтэц, `book.json`: `api/books/README.md`.
+
+### Анх удаа: сан үүсгэх
+
+```bash
+cd api
+```
+
+```bash
+npm run db:migrate
+```
+
+Дутуу migration-ийг л нэмнэ: одоо байгаа хэрэглэгч, асуулт устахгүй. Сервер ажиллаж байсан бол шинэ кодыг
+найдвартай уншуулахын тулд зогсоогоод (`Ctrl+C`) `npm run dev`-ээр дахин асаана.
+
+### Ном оруулах (ном бүрт)
+
+1. `api/books/` дотор `<хичээл>-<анги>` нэртэй хавтас үүсгэнэ: `mongolian-7`, `math-6`, `physics-9`.
+2. Файлаа хийнэ. Хуудасны дараалал = файлын нэрийн дараалал (`2.jpg` < `10.jpg`):
+   - биет номын скан: `mongol7.pdf` (эсвэл бүлгээр `01.pdf`, `02.pdf`…);
+   - онлайн хувилбарын зураг: `001.jpg`, `002.jpg`… (pdf, jpg, png, webp).
+3. Сервер ажиллаж байх ёстой: өөр terminal-д `npm run dev` (эсвэл VS Code-ийн "API сервер" task).
+4. Хуудасны дарааллыг шалгана (юу ч оруулахгүй):
+
+   ```bash
+   npm run books:import -- --book mongolian-7 --dry
+   ```
+
+5. Сан руу оруулна:
+
+   ```bash
+   npm run books:import -- --book mongolian-7
+   ```
+
+   Анх удаа хавтасны нэрээс `book.json` үүснэ. Он, хэвлэлийн газар, `pageOffset`-ийг засаад дахин
+   ажиллуулна: өөрчлөгдөөгүй хуудсыг дахин илгээхгүй, зөвхөн мэдээлэл шинэчлэгдэнэ. `--book`-гүй бол
+   `api/books/` доторх бүх номыг оруулна.
+6. Шалгана: номын жагсаалт, дараа нь нэг хуудсыг сангаас гаргаж нээх (жишээ нь 45-р хуудас):
+
+   ```bash
+   npm run books:list
+   ```
+
+   ```bash
+   npm run books:page -- --book mongolian-7 --page 45
+   ```
+
+Хуудас солих, нэмэх, хасах: хавтас дахь файлаа өөрчлөөд 5-р алхмыг давтана. Өөрчлөгдсөн хуудас л
+шинэчлэгдэж, хассан хуудас сангаас устна. Номыг сангаас бүхэлд нь устгах (хавтас хэвээр үлдэнэ):
+
+```bash
+npm run books:delete -- --book mongolian-7
+```
+
+API: `GET /admin/books`, `GET /admin/books/<хавтас>` (хуудасны жагсаалт), `GET /admin/books/<хавтас>/pages/<дугаар>`
+(файл), бүгд `X-Admin-Token`-тэй.
+
+**Дараа нь багийн Cloudflare руу:** `npx wrangler d1 create surgalt-books`, `npx wrangler r2 bucket create surgalt-books`
+хийж `wrangler.jsonc`-ийн `BOOKS`-ийн `database_id`-г солиод `npm run db:migrate:remote`, `npm run deploy`. Дараа нь
+ижил командаар `api/books/`-оос шууд оруулна: `npm run books:import -- --url https://surgalt-api.<subdomain>.workers.dev`
+(`ADMIN_TOKEN=...`-ийг deploy хийсэн серверийнхээр).

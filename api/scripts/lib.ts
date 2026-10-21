@@ -45,15 +45,22 @@ export class HttpError extends Error {
 export async function call<T>(
   method: string,
   path: string,
-  opts: { token?: string; body?: unknown; admin?: boolean } = {},
+  opts: {
+    token?: string;
+    body?: unknown;
+    admin?: boolean;
+    /** JSON-ий оронд файлын байт илгээх (books:import). */
+    raw?: { data: Uint8Array<ArrayBuffer>; type: string };
+    headers?: Record<string, string>;
+  } = {},
 ): Promise<T> {
-  const headers: Record<string, string> = { 'content-type': 'application/json' };
+  const headers: Record<string, string> = { 'content-type': opts.raw?.type ?? 'application/json', ...opts.headers };
   if (opts.token) headers.authorization = `Bearer ${opts.token}`;
   if (opts.admin && ADMIN_TOKEN) headers['x-admin-token'] = ADMIN_TOKEN;
   const res = await fetch(API_URL + path, {
     method,
     headers,
-    body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
+    body: opts.raw ? opts.raw.data : opts.body === undefined ? undefined : JSON.stringify(opts.body),
   });
   const text = await res.text();
   let data: unknown = null;

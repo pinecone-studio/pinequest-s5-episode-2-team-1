@@ -51,8 +51,8 @@ export function newSessionToken(): string {
     .replace(/=+$/, '');
 }
 
-export async function sha256Hex(text: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', enc.encode(text));
+export async function sha256Hex(data: string | ArrayBuffer): Promise<string> {
+  const digest = await crypto.subtle.digest('SHA-256', typeof data === 'string' ? enc.encode(data) : data);
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 

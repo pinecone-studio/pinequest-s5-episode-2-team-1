@@ -271,3 +271,65 @@ export type ServerMsg =
   | { type: 'finished'; outcome: DuelOutcome }
   | { type: 'cancelled'; outcome: DuelOutcome }
   | { type: 'error'; code: string };
+
+// ---------- Сурах бичгийн сан (admin, scripts/books.ts) ----------
+
+export interface BookMeta {
+  subject: string;
+  grade: number;
+  title: string;
+  year: number | null;
+  publisher: string | null;
+  /** scan = биет номын скан, web = онлайн хувилбарын зураг */
+  source: 'scan' | 'web';
+  /** Хэвлэмэл хуудасны дугаар = seq − pageOffset */
+  pageOffset: number;
+}
+
+export interface BookSummary extends BookMeta {
+  slug: string;
+  pages: number;
+  bytes: number;
+  /** OCR текст орсон хуудас */
+  ocrPages: number;
+  updatedAt: number;
+}
+
+export interface BookPageInfo {
+  seq: number;
+  /** Аль файлаас: 'mongol7.pdf#45' | '045.jpg' */
+  origin: string;
+  mime: string;
+  bytes: number;
+  sha256: string;
+  hasText: boolean;
+}
+
+export interface BooksResponse {
+  books: BookSummary[];
+}
+
+export interface BookDetailResponse {
+  book: BookSummary;
+  pages: BookPageInfo[];
+}
+
+export interface BookPutResponse {
+  slug: string;
+  created: boolean;
+}
+
+export interface PagePutResponse {
+  seq: number;
+  sha256: string;
+  bytes: number;
+  changed: boolean;
+}
+
+export interface PagesTrimResponse {
+  deleted: number;
+}
+
+export interface BookDeleteResponse {
+  deletedPages: number;
+}

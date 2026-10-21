@@ -5,16 +5,27 @@
   "compatibility_date": "2026-10-01",
   "observability": { "enabled": true },
 
-  // Local dev-д database_id хамаагүй. workers.dev руу deploy хийхдээ
-  // `npx wrangler d1 create surgalt`-ийн гаргасан id-аар солино (README).
+  // Local dev-д database_id-ийн утга хамаагүй (зөвхөн давхардахгүй байх ёстой). workers.dev руу deploy
+  // хийхдээ `npx wrangler d1 create surgalt` (`surgalt-books`)-ийн гаргасан id-аар солино (README).
   "d1_databases": [
     {
       "binding": "DB",
       "database_name": "surgalt",
       "database_id": "00000000-0000-0000-0000-000000000000",
       "migrations_dir": "migrations"
+    },
+    // Сурах бичгийн сан (ном, хуудас). Тоглоомын DB-ээс тусдаа: local-д `db:reset` хийсэн ч
+    // `npm run books:import` хавтаснаас нь сэргээнэ, дараа нь багийн Cloudflare руу дангаар нь шилжинэ.
+    // Local-д database_id нь файлын нэр болдог тул DB-ийнхээс өөр байх ёстой.
+    {
+      "binding": "BOOKS",
+      "database_name": "surgalt-books",
+      "database_id": "00000000-0000-0000-0000-000000000001",
+      "migrations_dir": "migrations-books"
     }
   ],
+  // Хуудас бүрийн эх файл (скан PDF-ийн хуудас, зураг). Local-д .wrangler/state дотор хадгалагдана.
+  "r2_buckets": [{ "binding": "BOOK_FILES", "bucket_name": "surgalt-books" }],
 
   "durable_objects": {
     "bindings": [{ "name": "DUEL_ROOM", "class_name": "DuelRoom" }]
@@ -41,8 +52,15 @@
           "database_name": "surgalt",
           "database_id": "00000000-0000-0000-0000-000000000000",
           "migrations_dir": "migrations"
+        },
+        {
+          "binding": "BOOKS",
+          "database_name": "surgalt-books",
+          "database_id": "00000000-0000-0000-0000-000000000001",
+          "migrations_dir": "migrations-books"
         }
       ],
+      "r2_buckets": [{ "binding": "BOOK_FILES", "bucket_name": "surgalt-books" }],
       "durable_objects": {
         "bindings": [{ "name": "DUEL_ROOM", "class_name": "DuelRoom" }]
       },

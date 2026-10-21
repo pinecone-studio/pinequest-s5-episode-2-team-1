@@ -6,6 +6,7 @@ import { ApiError, parseId, readBody } from '../lib/errors';
 import { pickProvider } from '../llm';
 import { validateDrafts } from '../llm/validate';
 import { generateAndStore, insertDrafts } from '../services/pool';
+import { bookRoutes } from './books';
 
 // Зөвхөн хөгжүүлэлт, seed скрипт, duel-bot-д. `X-Admin-Token` = ADMIN_TOKEN (.dev.vars).
 export const adminRoutes = new Hono<AppEnv>();
@@ -15,6 +16,9 @@ adminRoutes.use('*', async (c, next) => {
   if (!expected || c.req.header('x-admin-token') !== expected) throw new ApiError(403, 'FORBIDDEN', 'Admin token буруу');
   await next();
 });
+
+/** Сурах бичгийн сан: /admin/books/* (routes/books.ts). */
+adminRoutes.route('/books', bookRoutes);
 
 const tierSchema = z.union([z.literal(1), z.literal(2), z.literal(3)]);
 const subjectSchema = z.enum(SUBJECTS);
