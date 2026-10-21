@@ -1,0 +1,175 @@
+{
+  "sheet": "bear_battle",
+  "frameSize": {
+    "w": 52,
+    "h": 64
+  },
+  "columns": 7,
+  "feet": 61,
+  "pad": 9,
+  "paw": [
+    2,
+    32
+  ],
+  "frames": [
+    {
+      "name": "idle",
+      "duration": 520
+    },
+    {
+      "name": "breatheA",
+      "duration": 150
+    },
+    {
+      "name": "breatheB",
+      "duration": 520
+    },
+    {
+      "name": "blink",
+      "duration": 130
+    },
+    {
+      "name": "raise",
+      "duration": 120
+    },
+    {
+      "name": "spark",
+      "duration": 110
+    },
+    {
+      "name": "charge",
+      "duration": 170
+    },
+    {
+      "name": "throwSmear",
+      "duration": 50
+    },
+    {
+      "name": "release",
+      "duration": 110
+    },
+    {
+      "name": "follow",
+      "duration": 130
+    },
+    {
+      "name": "recover",
+      "duration": 120
+    },
+    {
+      "name": "clawUp",
+      "duration": 150
+    },
+    {
+      "name": "clawSmear",
+      "duration": 50
+    },
+    {
+      "name": "claw",
+      "duration": 220
+    },
+    {
+      "name": "clawRecover",
+      "duration": 110
+    },
+    {
+      "name": "flash",
+      "duration": 120
+    },
+    {
+      "name": "hurt",
+      "duration": 440
+    },
+    {
+      "name": "front",
+      "duration": 110
+    },
+    {
+      "name": "ready",
+      "duration": 120
+    },
+    {
+      "name": "run0",
+      "duration": 96
+    },
+    {
+      "name": "run1",
+      "duration": 96
+    },
+    {
+      "name": "run2",
+      "duration": 96
+    },
+    {
+      "name": "run3",
+      "duration": 96
+    },
+    {
+      "name": "run4",
+      "duration": 96
+    },
+    {
+      "name": "run5",
+      "duration": 96
+    },
+    {
+      "name": "run6",
+      "duration": 96
+    },
+    {
+      "name": "run7",
+      "duration": 96
+    },
+    {
+      "name": "brake",
+      "duration": 130
+    }
+  ],
+  "tags": {
+    "idle": {
+      "from": 0,
+      "to": 2,
+      "direction": "pingpong"
+    },
+    "blink": {
+      "from": 3,
+      "to": 3,
+      "direction": "forward"
+    },
+    "throw": {
+      "from": 4,
+      "to": 10,
+      "direction": "forward"
+    },
+    "claw": {
+      "from": 11,
+      "to": 14,
+      "direction": "forward"
+    },
+    "hurt": {
+      "from": 15,
+      "to": 16,
+      "direction": "forward"
+    },
+    "turn": {
+      "from": 17,
+      "to": 17,
+      "direction": "forward"
+    },
+    "ready": {
+      "from": 18,
+      "to": 18,
+      "direction": "forward"
+    },
+    "run": {
+      "from": 19,
+      "to": 26,
+      "direction": "forward"
+    },
+    "brake": {
+      "from": 27,
+      "to": 27,
+      "direction": "forward"
+    }
+  }
+}

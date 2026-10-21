@@ -3,7 +3,7 @@
 Эх зураг reference/boss_pumpkin_ref.png нь 7.64px-ийн pixel блоктой, хөх саарал дэвсгэртэй, доороо тусгалтай.
 Дэвсгэр ба тусгалыг хасаж, блок бүрийн төвийн өнгөөр 25×45 цэвэр sprite болгоно.
 
-Ажиллуулах:  python3 docs/design/pixel-bear/tools/boss_pumpkin.py && python3 mobile/scripts/build-sprites.py
+Ажиллуулах:  python3 docs/design/pixel-bear/tools/boss_pumpkin.py && (cd mobile && npm run sprites)
 """
 from pathlib import Path
 

@@ -4,7 +4,7 @@
 утасны texture-ийн хязгаараас хэтрэхгүйн тулд 380px-ийн хэсгүүдэд хуваана. Зангилааны байрлалыг апп
 mobile/src/lib/pixelBear/world.json-оос уншина, тиймээс мод зам дээр хэзээ ч ургахгүй.
 
-Ажиллуулах:  python3 docs/design/pixel-bear/tools/mapgen_world.py && python3 mobile/scripts/build-sprites.py
+Ажиллуулах:  python3 docs/design/pixel-bear/tools/mapgen_world.py && (cd mobile && npm run sprites)
 """
 import json
 import random
