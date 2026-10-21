@@ -271,3 +271,103 @@ export type ServerMsg =
   | { type: 'finished'; outcome: DuelOutcome }
   | { type: 'cancelled'; outcome: DuelOutcome }
   | { type: 'error'; code: string };
+
+// ---------- Сурах бичгийн сан (admin, scripts/books.ts) ----------
+
+export interface BookMeta {
+  subject: string;
+  grade: number;
+  title: string;
+  year: number | null;
+  publisher: string | null;
+  /** scan = биет номын скан, web = онлайн хувилбарын зураг */
+  source: 'scan' | 'web';
+  /** Хэвлэмэл хуудасны дугаар = seq − pageOffset */
+  pageOffset: number;
+}
+
+export interface BookSummary extends BookMeta {
+  slug: string;
+  pages: number;
+  bytes: number;
+  /** Текст нь орсон хуудас */
+  textPages: number;
+  /** Текстийг Gemini-ээр уншсан хуудас */
+  geminiPages: number;
+  /** Текст нь муу/хоосон тул OCR хэрэгтэй хуудас */
+  weakPages: number;
+  updatedAt: number;
+}
+
+/** ok | poor = эвдэрсэн тэмдэгт олонтой | empty = текст давхаргагүй */
+export type TextQuality = 'ok' | 'poor' | 'empty';
+
+export interface BookPageInfo {
+  seq: number;
+  /** Аль файлаас: 'mongol7.pdf#45' | '045.jpg' */
+  origin: string;
+  mime: string;
+  bytes: number;
+  sha256: string;
+  hasText: boolean;
+  /** 'pdf-text' | 'gemini:<загвар>' */
+  textMethod: string | null;
+  textQuality: TextQuality | null;
+}
+
+export interface BooksResponse {
+  books: BookSummary[];
+}
+
+export interface BookDetailResponse {
+  book: BookSummary;
+  pages: BookPageInfo[];
+}
+
+export interface BookPutResponse {
+  slug: string;
+  created: boolean;
+}
+
+export interface PagePutResponse {
+  seq: number;
+  sha256: string;
+  bytes: number;
+  changed: boolean;
+}
+
+export interface PagesTrimResponse {
+  deleted: number;
+}
+
+export interface BookDeleteResponse {
+  deletedPages: number;
+}
+
+export interface PageTextInput {
+  seq: number;
+  /** Текстийг гаргасан хуудасны файлын sha256: файл солигдсон бол хадгалахгүй */
+  sha256: string;
+  text: string;
+  method: string;
+  quality: TextQuality;
+}
+
+export interface PageTextsPutResponse {
+  updated: number;
+  /** Сан дахь файл нь өөр (эсвэл хуудас алга) тул хадгалаагүй */
+  stale: number[];
+}
+
+export interface PageTextResponse {
+  seq: number;
+  text: string | null;
+  method: string | null;
+  quality: TextQuality | null;
+  at: number | null;
+}
+
+export interface BookOcrResponse {
+  model: string;
+  pages: Array<{ seq: number; sha256: string; text: string }>;
+}

@@ -1,4 +1,5 @@
 import type { Subject, Tier } from '../config/game';
+import type { Excerpt } from '../services/grounding';
 import fixtures from '../../seed/fixtures.json';
 
 const GRADES: Record<Tier, string> = { 1: '6–7-р анги', 2: '8–9-р анги', 3: '10-р анги' };
@@ -66,6 +67,8 @@ export function buildPrompt(
   subject: Subject,
   count: number,
   avoid: string[],
+  /** Сурах бичгийн сангаас: байвал асуултыг энэ хэсэгт үндэслэнэ. */
+  excerpt: Excerpt | null = null,
 ): { system: string; user: string } {
   const example = (fixtures as Array<{ tier: number; subject: string; prompt: string; options: string[]; correctIndex: number; explanation: string }>)
     .find((f) => f.tier === tier && f.subject === subject);
@@ -73,8 +76,17 @@ export function buildPrompt(
     `Create ${count} different questions.`,
     `Grade: Mongolian ЕБС ${GRADES[tier]} (Түвшин ${tier}).`,
     `Subject: ${SUBJECT_NAMES[subject]}.`,
-    `Topics (spread the questions across different topics, easy to medium difficulty): ${TOPICS[tier][subject]}.`,
   ];
+  if (excerpt) {
+    lines.push(
+      `Base every question on this excerpt from the official Mongolian ЕБС textbook "${excerpt.title}". The student never sees it.\n<<<\n${excerpt.text}\n>>>`,
+      'Use the concepts, rules, methods and exercise types taught in the excerpt (easy to medium difficulty); every question must be ' +
+        'answerable with them alone. Do not copy exercises verbatim: change the numbers, names and contexts. Never mention the ' +
+        'textbook, pages, exercise numbers, figures or tables. The excerpt may contain transcription artefacts or missing formulas; skip those parts.',
+    );
+  } else {
+    lines.push(`Topics (spread the questions across different topics, easy to medium difficulty): ${TOPICS[tier][subject]}.`);
+  }
   if (example) {
     lines.push(
       `Example of the expected style (do not copy it): ${JSON.stringify({

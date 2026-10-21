@@ -10,6 +10,7 @@
 //   --tier 1                               # зөвхөн нэг түвшин
 //   --subject math,physics                 # зөвхөн эдгээр хичээл
 //   --parallel 2                           # хэдэн хослолыг зэрэг үүсгэх (free tier-ийн минутын хязгаар)
+//   --no-books                             # сурах бичгийн сангүйгээр, хөтөлбөрийн сэдвийн жагсаалтаар
 import { readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -68,6 +69,7 @@ interface GenerateReport {
   rejected: number;
   rejectReasons: string[];
   errors: string[];
+  grounded: string[];
 }
 
 const fixturesPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'seed', 'fixtures.json');
@@ -95,12 +97,14 @@ async function seedCombo(tier: number, subject: string, start: number) {
     try {
       const r = await call<GenerateReport>('POST', '/admin/generate', {
         admin: true,
-        body: { tier, subject, count: want, chunk: CHUNK, ...(model ? { model } : {}) },
+        body: { tier, subject, count: want, chunk: CHUNK, books: !flag('no-books'), ...(model ? { model } : {}) },
       });
       have += r.inserted;
       failures = r.inserted === 0 ? failures + 1 : 0;
       if (r.inserted > 0) overloaded = 0;
-      const extra = r.rejected ? ` [татгалзсан: ${[...new Set(r.rejectReasons)].join(', ')}]` : '';
+      const extra =
+        (r.rejected ? ` [татгалзсан: ${[...new Set(r.rejectReasons)].join(', ')}]` : '') +
+        (r.grounded.length ? ` · сан: ${r.grounded.join(', ')}` : '');
       console.log(`Т${tier} ${subject}: +${r.inserted} (давхардсан ${r.duplicates}, татгалзсан ${r.rejected}) → ${have}/${TARGET}${extra}${model ? ` · ${model}` : ''}`);
       for (const e of r.errors) {
         console.log(`   ⚠ ${e.slice(0, 160)}`);

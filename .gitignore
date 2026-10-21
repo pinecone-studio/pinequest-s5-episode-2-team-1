@@ -19,3 +19,7 @@ api/worker-configuration.d.ts
 .env
 .env.local
 .env.*.local
+
+# Сурах бичгийн скан, зураг, текст: зохиогчийн эрхтэй, repo public тул git-д хэзээ ч орохгүй
+api/books/*
+!api/books/README.md

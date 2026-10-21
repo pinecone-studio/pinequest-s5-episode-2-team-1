@@ -1,5 +1,7 @@
 // seed / bot / e2e скриптүүдийн нийтлэг туслах функцүүд (Node 24: fetch, WebSocket глобал).
 import { existsSync, readFileSync } from 'node:fs';
+import { request as httpRequest } from 'node:http';
+import { request as httpsRequest } from 'node:https';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ApiErrorBody } from '../../shared/types';
@@ -45,17 +47,25 @@ export class HttpError extends Error {
 export async function call<T>(
   method: string,
   path: string,
-  opts: { token?: string; body?: unknown; admin?: boolean } = {},
+  opts: {
+    token?: string;
+    body?: unknown;
+    admin?: boolean;
+    /** JSON-ий оронд файлын байт илгээх (books:import). */
+    raw?: { data: Uint8Array<ArrayBuffer>; type: string };
+    headers?: Record<string, string>;
+    /** Хариу хэдэн минут хүлээгдэж болох хүсэлт (Gemini OCR): fetch-ийн 5 минутын хязгааргүй. */
+    slow?: boolean;
+  } = {},
 ): Promise<T> {
-  const headers: Record<string, string> = { 'content-type': 'application/json' };
+  const headers: Record<string, string> = { 'content-type': opts.raw?.type ?? 'application/json', ...opts.headers };
   if (opts.token) headers.authorization = `Bearer ${opts.token}`;
   if (opts.admin && ADMIN_TOKEN) headers['x-admin-token'] = ADMIN_TOKEN;
-  const res = await fetch(API_URL + path, {
-    method,
-    headers,
-    body: opts.body === undefined ? undefined : JSON.stringify(opts.body),
-  });
-  const text = await res.text();
+  const body = opts.raw ? opts.raw.data : opts.body === undefined ? undefined : JSON.stringify(opts.body);
+  const res = opts.slow
+    ? await slowRequest(API_URL + path, method, headers, body)
+    : await fetch(API_URL + path, { method, headers, body }).then(async (r) => ({ ok: r.ok, status: r.status, text: await r.text() }));
+  const text = res.text;
   let data: unknown = null;
   try {
     data = text ? JSON.parse(text) : null;
@@ -67,6 +77,28 @@ export async function call<T>(
     throw new HttpError(res.status, e?.code ?? 'HTTP', e?.message ?? text.slice(0, 200));
   }
   return data as T;
+}
+
+/** node:http-ийн хүсэлт хариу хүлээх хугацааны хязгааргүй. Сүлжээний алдааг fetch-тэй адил TypeError болгоно. */
+function slowRequest(
+  url: string,
+  method: string,
+  headers: Record<string, string>,
+  body: string | Uint8Array | undefined,
+): Promise<{ ok: boolean; status: number; text: string }> {
+  return new Promise((resolve, reject) => {
+    const req = (url.startsWith('https:') ? httpsRequest : httpRequest)(url, { method, headers }, (res) => {
+      const chunks: Buffer[] = [];
+      res.on('data', (c: Buffer) => chunks.push(c));
+      res.on('error', reject);
+      res.on('end', () => {
+        const status = res.statusCode ?? 0;
+        resolve({ ok: status >= 200 && status < 300, status, text: Buffer.concat(chunks).toString('utf8') });
+      });
+    });
+    req.on('error', (e) => reject(new TypeError('fetch failed', { cause: e })));
+    req.end(body);
+  });
 }
 
 export function wsUrl(path: string, token: string): string {

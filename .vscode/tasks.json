@@ -51,6 +51,13 @@
       "problemMatcher": []
     },
     {
+      "label": "Сурах бичиг оруулах (books:import)",
+      "type": "shell",
+      "command": "export PATH=/opt/homebrew/opt/node@24/bin:/usr/local/opt/node@24/bin:$PATH && npm run books:import",
+      "options": { "cwd": "${workspaceFolder}/api" },
+      "problemMatcher": []
+    },
+    {
       "label": "Шалгалт (typecheck + тест)",
       "type": "shell",
       "command": "export PATH=/opt/homebrew/opt/node@24/bin:/usr/local/opt/node@24/bin:$PATH && npm run typecheck && npm test && cd ../mobile && npm run typecheck",

@@ -3,6 +3,7 @@ import type { Bindings } from '../env';
 import { generateQuestions, pickProvider } from '../llm';
 import type { QuestionDraft } from '../llm/types';
 import { promptKey } from '../llm/validate';
+import { pickExcerpts } from './grounding';
 
 /**
  * Тоо, хувьсагч, үйлдлийн дараалал ("5x-8=22", "2.4:0.6+1.5"). Үг хэллэг нь өөр ч бодлого нь ижил
@@ -24,15 +25,17 @@ export async function insertDrafts(
   drafts: QuestionDraft[],
   source: string,
   now = Date.now(),
+  /** Сурах бичгийн сангийн хэсэг ('math-7:45-46'); апп-д харагдахгүй. */
+  bookRef: string | null = null,
 ): Promise<{ inserted: number; duplicates: number }> {
   if (drafts.length === 0) return { inserted: 0, duplicates: 0 };
   const stmt = db.prepare(
-    `INSERT OR IGNORE INTO questions (tier, subject, prompt, options, correct_index, explanation, prompt_key, source, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT OR IGNORE INTO questions (tier, subject, prompt, options, correct_index, explanation, prompt_key, source, book_ref, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
   const results = await db.batch(
     drafts.map((d) =>
-      stmt.bind(tier, subject, d.prompt, JSON.stringify(d.options), d.correctIndex, d.explanation, promptKey(d.prompt), source, now),
+      stmt.bind(tier, subject, d.prompt, JSON.stringify(d.options), d.correctIndex, d.explanation, promptKey(d.prompt), source, bookRef, now),
     ),
   );
   const inserted = results.reduce((n, r) => n + (r.meta.changes ?? 0), 0);
@@ -47,15 +50,21 @@ export interface GenerateReport {
   rejected: number;
   rejectReasons: string[];
   errors: string[];
+  /** Асуулт зохиоход ашигласан сангийн хэсгүүд; хоосон бол хөтөлбөрийн сэдвээр үүсгэсэн. */
+  grounded: string[];
 }
 
-/** `count` асуултыг `chunk`-аар хувааж LLM-ийг зэрэг дуудаад, шалгаж хадгална. */
+/**
+ * `count` асуултыг `chunk`-аар хувааж LLM-ийг зэрэг дуудаад, шалгаж хадгална. Сурах бичгийн санд
+ * тухайн хичээл, түвшний ном байвал дуудлага бүр сангийн өөр хэсэгт үндэслэнэ.
+ */
 export async function generateAndStore(
   env: Bindings,
   tier: Tier,
   subject: Subject,
   count: number,
   chunk: number = GAME.POOL.LLM_CHUNK,
+  useBooks = true,
 ): Promise<GenerateReport> {
   const { results } = await env.DB.prepare('SELECT prompt FROM questions WHERE tier = ? AND subject = ? ORDER BY id DESC')
     .bind(tier, subject)
@@ -65,10 +74,22 @@ export async function generateAndStore(
 
   const sizes: number[] = [];
   for (let left = count; left > 0; left -= chunk) sizes.push(Math.min(chunk, left));
-  const settled = await Promise.allSettled(sizes.map((n) => generateQuestions(env, tier, subject, n, avoid)));
+  const excerpts = useBooks ? await pickExcerpts(env, tier, subject, sizes.length).catch(() => []) : [];
+  // Номын хэсэг дуудлагын тооноос цөөн бол давтан ашиглана (тус бүр өөр асуулт гарна).
+  const excerptOf = (i: number) => (excerpts.length ? excerpts[i % excerpts.length] : null);
+  const settled = await Promise.allSettled(sizes.map((n, i) => generateQuestions(env, tier, subject, n, avoid, excerptOf(i))));
 
-  const report: GenerateReport = { source: null, requested: count, inserted: 0, duplicates: 0, rejected: 0, rejectReasons: [], errors: [] };
-  for (const s of settled) {
+  const report: GenerateReport = {
+    source: null,
+    requested: count,
+    inserted: 0,
+    duplicates: 0,
+    rejected: 0,
+    rejectReasons: [],
+    errors: [],
+    grounded: [],
+  };
+  for (const [i, s] of settled.entries()) {
     if (s.status === 'rejected') {
       report.errors.push(s.reason instanceof Error ? s.reason.message : String(s.reason));
       continue;
@@ -83,7 +104,9 @@ export async function generateAndStore(
       signatures.add(sig);
       return true;
     });
-    const r = await insertDrafts(env.DB, tier, subject, fresh, s.value.source);
+    const excerpt = excerptOf(i);
+    const r = await insertDrafts(env.DB, tier, subject, fresh, s.value.source, Date.now(), excerpt?.ref ?? null);
+    if (excerpt && r.inserted > 0) report.grounded.push(excerpt.ref);
     report.inserted += r.inserted;
     report.duplicates += r.duplicates + (s.value.drafts.length - fresh.length);
   }
@@ -108,7 +131,7 @@ export async function refillPool(env: Bindings, tier: Tier, subject: Subject): P
   if (!(await tryLock(env.DB, tier, subject, Date.now()))) return null;
   try {
     const report = await generateAndStore(env, tier, subject, GAME.POOL.REFILL_BATCH);
-    console.log(`[pool] refill tier=${tier} ${subject}: +${report.inserted} (rejected ${report.rejected})`, report.errors);
+    console.log(`[pool] refill tier=${tier} ${subject}: +${report.inserted} (rejected ${report.rejected}) сан: ${report.grounded.join(', ') || '—'}`, report.errors);
     return report;
   } catch (e) {
     console.error('[pool] refill failed', e);

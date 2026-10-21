@@ -5,7 +5,9 @@ import type { AppEnv } from '../env';
 import { ApiError, parseId, readBody } from '../lib/errors';
 import { pickProvider } from '../llm';
 import { validateDrafts } from '../llm/validate';
+import { pickExcerpts } from '../services/grounding';
 import { generateAndStore, insertDrafts } from '../services/pool';
+import { bookRoutes } from './books';
 
 // Зөвхөн хөгжүүлэлт, seed скрипт, duel-bot-д. `X-Admin-Token` = ADMIN_TOKEN (.dev.vars).
 export const adminRoutes = new Hono<AppEnv>();
@@ -15,6 +17,9 @@ adminRoutes.use('*', async (c, next) => {
   if (!expected || c.req.header('x-admin-token') !== expected) throw new ApiError(403, 'FORBIDDEN', 'Admin token буруу');
   await next();
 });
+
+/** Сурах бичгийн сан: /admin/books/* (routes/books.ts). */
+adminRoutes.route('/books', bookRoutes);
 
 const tierSchema = z.union([z.literal(1), z.literal(2), z.literal(3)]);
 const subjectSchema = z.enum(SUBJECTS);
@@ -29,15 +34,27 @@ adminRoutes.post('/generate', async (c) => {
       chunk: z.number().int().min(1).max(10).default(GAME.POOL.LLM_CHUNK),
       /** Энэ удаад өөр Gemini загвар ашиглах (seed скриптийн --model). */
       model: z.string().regex(/^[a-z0-9.-]+$/).optional(),
+      /** false бол сурах бичгийн сангүйгээр, хөтөлбөрийн сэдвээр (seed скриптийн --no-books). */
+      books: z.boolean().default(true),
     }),
   );
   if (!pickProvider(c.env)) {
     throw new ApiError(503, 'LLM_UNAVAILABLE', 'GEMINI_API_KEY (.env.local / .dev.vars) эсвэл `npm run dev:ai` (Workers AI) хэрэгтэй');
   }
   const env = body.model ? { ...c.env, GEMINI_MODEL: body.model } : c.env;
-  const report = await generateAndStore(env, body.tier, body.subject, body.count, body.chunk);
+  const report = await generateAndStore(env, body.tier, body.subject, body.count, body.chunk, body.books);
   if (report.inserted === 0 && report.errors.length > 0) throw new ApiError(502, 'LLM_FAILED', report.errors[0]);
   return c.json(report);
+});
+
+/** Асуулт үүсгэхэд сангаас ямар хэсэг сонгогдохыг харах (LLM дуудахгүй): ?tier=1&subject=math */
+adminRoutes.get('/excerpt', async (c) => {
+  const tier = tierSchema.safeParse(Number(c.req.query('tier')));
+  const subject = subjectSchema.safeParse(c.req.query('subject'));
+  if (!tier.success || !subject.success) throw new ApiError(400, 'BAD_REQUEST', 'tier=1..3, subject=math|mongolian|physics');
+  const [excerpt] = await pickExcerpts(c.env, tier.data, subject.data, 1);
+  if (!excerpt) throw new ApiError(404, 'NOT_FOUND', 'Энэ хичээл, түвшинд сурах бичгийн санд ном алга');
+  return c.json(excerpt);
 });
 
 /** Бэлэн асуулт (seed/fixtures.json) оруулах. */
