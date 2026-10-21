@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { ApiError, api, errorText } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
+import { BossArena, type Strike } from '@/components/BossArena';
 import { Button } from '@/components/Button';
 import { OptionButton, type OptionState } from '@/components/OptionButton';
 import { AnimatedBar, Motion, Pop, Sprite } from '@/components/pixel';
@@ -15,18 +16,26 @@ import { RewardView } from '@/components/RewardView';
 import { colors, fonts, radius } from '@/constants/theme';
 import { S, subjectNames } from '@/i18n/strings';
 import { confirm } from '@/lib/confirm';
+import { BOSSES } from '@/lib/pixelBear/path';
 import type { SpriteKey } from '@/sprites';
 
 const XP_PER_CORRECT = 10;
 
-/** 05 · Хичээл (асуулт) ба 06 · Шагнал. Логик: сонгох → ШАЛГАХ → серверт хариулт → тайлбар → дараагийн асуулт. */
+/**
+ * 05 · Хичээл (асуулт) ба 06 · Шагнал. Логик: сонгох → ШАЛГАХ → серверт хариулт → тайлбар → дараагийн асуулт.
+ * `?boss=<бүлэг>` бол дээд самбар нь boss тулаан болно (асуултууд нь ижил даалгавар).
+ */
 export default function TaskScreen() {
-  const { subject } = useLocalSearchParams<{ subject: Subject }>();
+  const { subject, boss } = useLocalSearchParams<{ subject: Subject; boss?: string }>();
+  const foe = boss === undefined ? undefined : BOSSES[Number(boss)];
   const { setMe } = useAuth();
   const insets = useSafeAreaInsets();
   const [task, setTask] = useState<TaskDto | null>(null);
   const [index, setIndex] = useState(0);
   const [answered, setAnswered] = useState(0);
+  const [hits, setHits] = useState(0);
+  const [misses, setMisses] = useState(0);
+  const [strike, setStrike] = useState<Strike | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<AnswerResponse | null>(null);
   const [pending, setPending] = useState<TaskResult | null>(null);
@@ -47,6 +56,9 @@ export default function TaskScreen() {
       const t = await api<TaskDto>('/tasks', { body: { subject } });
       setTask(t);
       setAnswered(t.answeredCount);
+      setHits(t.correctCount);
+      setMisses(t.answeredCount - t.correctCount);
+      setStrike(null);
       setIndex(Math.max(0, t.questions.findIndex((q) => !q.answered)));
     } catch (e) {
       const fatal = e instanceof ApiError && (e.code === 'DAILY_LIMIT' || e.code === 'NO_QUESTIONS');
@@ -83,6 +95,9 @@ export default function TaskScreen() {
       const r = await api<AnswerResponse>(`/tasks/${task.id}/answer`, { body: { questionId: q.id, choice: selected } });
       setFeedback(r);
       setAnswered((n) => n + 1);
+      if (r.correct) setHits((n) => n + 1);
+      else setMisses((n) => n + 1);
+      setStrike({ n: answered + 1, correct: r.correct });
       void Haptics.notificationAsync(r.correct ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error);
       if (r.result) {
         setPending(r.result);
@@ -136,10 +151,41 @@ export default function TaskScreen() {
   const promptSize = !q ? 26 : q.prompt.length <= 18 ? 36 : q.prompt.length <= 60 ? 26 : 20;
   const shown = Math.min(answered + (feedback ? 0 : 1), total);
 
+  // Boss тулаан: олонх зөв бол ялна (5 асуултад 3 зөв = boss-ын 3 амь, 3 буруу = баавгайн 3 зүрх)
+  const needed = Math.floor(total / 2) + 1;
+  const hearts = total - needed + 1;
+  const bossMessage = !foe
+    ? ''
+    : error
+      ? error.message
+      : hits >= needed
+        ? S.boss.won(foe.name)
+        : misses >= hearts
+          ? S.boss.lost(foe.name)
+          : feedback
+            ? feedback.correct
+              ? S.boss.hit
+              : S.boss.ouch
+            : answered === 0
+              ? S.boss.intro(foe.name)
+              : S.boss.next;
+
   return (
     <View style={styles.root}>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 24 }} showsVerticalScrollIndicator={false}>
-        <View style={[styles.panel, { paddingTop: insets.top, height: 402 + insets.top }]}>
+        <View style={[styles.panel, { paddingTop: insets.top, height: 402 + insets.top }, foe && { backgroundColor: colors.indigo }]}>
+          {foe ? (
+            <BossArena
+              boss={foe}
+              hits={hits}
+              misses={misses}
+              needed={needed}
+              hearts={hearts}
+              strike={strike}
+              message={bossMessage}
+              insetTop={insets.top}
+            />
+          ) : null}
           <View style={styles.panelTop}>
             <Pressable accessibilityRole="button" accessibilityLabel={S.lesson.close} onPress={() => router.back()} style={styles.close}>
               <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={colors.white} strokeWidth={2.6} strokeLinecap="round">
@@ -151,18 +197,22 @@ export default function TaskScreen() {
             </View>
           </View>
 
-          <Pop trigger={mood} from={0.85} style={[styles.bubbleWrap, { top: 76 + insets.top }]}>
-            <View style={styles.bubble}>
-              <Text style={styles.bubbleText}>{bear.bubble}</Text>
-            </View>
-          </Pop>
-          <View style={[styles.bear, { right: bear.right, top: bear.top + insets.top - 44 }]}>
-            <Pop trigger={bear.sprite} from={0.7}>
-              <Motion preset={mood === 'right' ? 'float' : 'bob'}>
-                <Sprite id={bear.sprite} label={bear.alt} />
-              </Motion>
-            </Pop>
-          </View>
+          {foe ? null : (
+            <>
+              <Pop trigger={mood} from={0.85} style={[styles.bubbleWrap, { top: 76 + insets.top }]}>
+                <View style={styles.bubble}>
+                  <Text style={styles.bubbleText}>{bear.bubble}</Text>
+                </View>
+              </Pop>
+              <View style={[styles.bear, { right: bear.right, top: bear.top + insets.top - 44 }]}>
+                <Pop trigger={bear.sprite} from={0.7}>
+                  <Motion preset={mood === 'right' ? 'float' : 'bob'}>
+                    <Sprite id={bear.sprite} label={bear.alt} />
+                  </Motion>
+                </Pop>
+              </View>
+            </>
+          )}
 
           <View style={styles.progressRow}>
             <View style={styles.track}>
