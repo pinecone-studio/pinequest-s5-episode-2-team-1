@@ -1,6 +1,8 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "surgalt-api",
+  // Багийн Cloudflare account (pinequest-team1.workers.dev): олон account-тай гишүүнд ч энэ account сонгогдоно.
+  "account_id": "7b528e45cb6c0f796a92b9f437c87281",
   "main": "src/index.ts",
   "compatibility_date": "2026-10-01",
   "observability": { "enabled": true },

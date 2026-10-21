@@ -369,10 +369,29 @@ npm run books:ocr -- --book math-6 --model gemini-3.8-flash,gemini-3.6-flash,gem
 - Хуудасны текстийг харах: `npm run books:page -- --book math-6 --page 34 --text`. `text/0034.md`-г гараар
   засаад `books:import` ажиллуулбал засвар санд орно.
 
+### Сангаас асуулт үүсгэх
+
+Асуулт үүсгэх бүх зам (`seed:questions`, background нөхөлт, `/admin/generate`) сангаас ажиллана. Санд тухайн
+хичээл, түвшний ном байвал Gemini-д сангийн 2 дараалсан хуудасны текстийг өгч, асуултыг зөвхөн түүнд үндэслэн
+зохиолгоно. Дасгалыг хуулахгүй: тоо, нэр, нөхцөлийг өөрчилнө. Хамгийн бага ашиглагдсан хуудсыг түрүүлж сонгодог
+тул номын бүх сэдэв жигд хамрагдана. Асуулт аль хуудаснаас гарсныг `questions.book_ref`-д дотооддоо хадгалдаг.
+**Апп-д эх сурвалж, хуудас харагдахгүй.**
+
+- Одоо санд Математик 6–9 байгаа тул Түвшин 1–2-ын математик сангаас үүснэ. Монгол хэл, Физик, Түвшин 3 (10-р анги)
+  хөтөлбөрийн сэдвийн жагсаалтаар үүснэ. Ном нэмэхэд автоматаар сангаас болно.
+- Gemini-д ямар хэсэг очихыг харах: `npm run books:excerpt -- --tier 1 --subject math`.
+- Сангүйгээр үүсгэх бол: `npm run seed:questions -- --no-books`.
+- Энэ шинэчлэлтийг татсны дараа нэг удаа `npm run db:migrate` (questions-д `book_ref` багана нэмнэ).
+
 ### Багийн Cloudflare дээрх сан
 
 Сан багийн Cloudflare account дээр байна: D1 `surgalt-books` ба R2 bucket `surgalt-books`. Workers subdomain нь
-`pinequest-team1.workers.dev`. Багийн гишүүнийг Cloudflare dashboard → Manage Account → Members хэсгээс урина.
+`pinequest-team1.workers.dev`. Account-ын id `wrangler.jsonc`-д бичигдсэн тул олон account-тай гишүүнд ч
+wrangler зөв account-ыг сонгоно.
+
+**Шинэ гишүүн нэмэх (account-ын эзэн):** Cloudflare dashboard → Manage Account → Members → Invite. Гишүүний имэйлийг
+оруулаад **Administrator** эрх өгнө (Workers, D1, R2-д бичих эрхтэй; төлбөрийн тохиргоонд хүрэхгүй). Гишүүн
+имэйлээр ирсэн урилгыг баталгаажуулаад өөрийн компьютер дээр:
 
 ```bash
 npx wrangler login

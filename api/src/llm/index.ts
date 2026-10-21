@@ -2,6 +2,7 @@
 // хоосон бол GEMINI_API_KEY байвал Gemini, үгүй бол Workers AI.
 import type { Subject, Tier } from '../config/game';
 import type { Bindings } from '../env';
+import type { Excerpt } from '../services/grounding';
 import { geminiGenerate } from './gemini';
 import { buildPrompt } from './prompt';
 import { LlmError, type LlmProvider, type QuestionDraft } from './types';
@@ -30,10 +31,11 @@ export async function generateQuestions(
   subject: Subject,
   count: number,
   avoid: string[] = [],
+  excerpt: Excerpt | null = null,
 ): Promise<{ drafts: QuestionDraft[]; rejected: Rejection[]; source: string }> {
   const provider = pickProvider(env);
   if (!provider) throw new LlmError(env.LLM_PROVIDER === 'workers-ai' ? 'workers-ai' : 'gemini', 0, 'LLM тохируулаагүй');
-  const { system, user } = buildPrompt(tier, subject, count, avoid);
+  const { system, user } = buildPrompt(tier, subject, count, avoid, excerpt);
   const raw = provider === 'gemini' ? await geminiGenerate(env, { system, user }) : await workersAiGenerate(env, system, user);
   const { drafts, rejected } = validateDrafts(raw);
   return { drafts, rejected, source: sourceLabel(env, provider) };

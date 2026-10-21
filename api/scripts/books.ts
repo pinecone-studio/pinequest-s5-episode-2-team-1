@@ -10,6 +10,7 @@
 //   npm run books:ocr -- --book math-6            # текст нь муу/хоосон хуудсыг Gemini-ээр уншуулна
 //       --pages 35-37,92 | --all                  # тодорхой хуудсууд | бүх хуудас (квот их зарцуулна)
 //       --batch 4 --limit 40 --model gemini-3.8-flash,gemini-3.5-flash-lite --dry
+//   npm run books:excerpt -- --tier 1 --subject math   # асуулт үүсгэхэд сангаас ямар хэсэг сонгогдохыг харах
 //   npm run books:delete -- --book mongolian-7    # номыг сангаас устгана (хавтас хэвээр үлдэнэ)
 //   --dir <хавтас>                                # api/books-ийн оронд өөр хавтас
 //   --url https://...workers.dev                  # (дараа нь) багийн Cloudflare дээрх сан руу
@@ -259,10 +260,26 @@ async function runOcr() {
   if (done < seqs.length) process.exit(1);
 }
 
-const commands: Record<string, () => Promise<void>> = { import: runImport, list: runList, page: runPage, ocr: runOcr, delete: runDelete };
+/** Gemini-д асуулт зохиолгоход сангаас өгөх дараагийн хэсэг (хамгийн бага ашиглагдсан хуудсууд). */
+async function runExcerpt() {
+  const tier = arg('tier', '1');
+  const subject = arg('subject', 'math');
+  const e = await call<{ ref: string; title: string; text: string }>('GET', `/admin/excerpt?tier=${tier}&subject=${subject}`, { admin: true });
+  console.log(`# Түвшин ${tier}, ${subject} → ${e.title} (${e.ref}), ${e.text.length} тэмдэгт\n`);
+  console.log(e.text);
+}
+
+const commands: Record<string, () => Promise<void>> = {
+  import: runImport,
+  list: runList,
+  page: runPage,
+  ocr: runOcr,
+  excerpt: runExcerpt,
+  delete: runDelete,
+};
 const run = commands[process.argv[2]];
 if (!run) {
-  console.log('Хэрэглээ: npm run books:import | books:list | books:page | books:ocr | books:delete');
+  console.log('Хэрэглээ: npm run books:import | books:list | books:page | books:ocr | books:excerpt | books:delete');
   process.exit(1);
 }
 run().catch((e) => {

@@ -46,6 +46,26 @@ export async function runBooksScenario() {
       body: { pages: [{ seq: 2, sha256: '0'.repeat(64), text: 'хуучин', method: 'manual', quality: 'ok' }] },
     });
     check(stale.updated === 0 && stale.stale[0] === 2, 'Өөр файлын (sha256) текстийг хадгалахгүй', stale);
+    const lesson = 'Тооны модул гэдэг нь тоон шулуун дээр тооллын эхээс тухайн тоо хүртэлх зай юм. '.repeat(8);
+    await call('PUT', `/admin/books/${slug}/texts`, {
+      admin: true,
+      body: {
+        pages: detail.pages
+          .filter((p) => p.seq === 2 || p.seq === 3)
+          .map((p) => ({ seq: p.seq, sha256: p.sha256, text: lesson, method: 'manual', quality: 'ok' })),
+      },
+    });
+    const excerpt = await call<{ ref: string; title: string; text: string }>('GET', '/admin/excerpt?tier=1&subject=math', { admin: true });
+    check(
+      excerpt.ref === `${slug}:2-3` && excerpt.title === 'Математик 7' && excerpt.text.includes('Тооны модул'),
+      'Асуулт үүсгэхэд сангаас текст нь хангалттай, дараалсан хуудсуудыг сонгоно (7-р анги → Түвшин 1)',
+      excerpt.ref,
+    );
+    await expectError(
+      call('GET', '/admin/excerpt?tier=3&subject=math', { admin: true }),
+      'NOT_FOUND',
+      '10-р ангийн ном санд алга бол хэсэг сонгогдохгүй (хөтөлбөрийн сэдвээр үүсгэнэ)',
+    );
     await expectError(
       call('POST', `/admin/books/${slug}/ocr`, { admin: true, body: { pages: [2] } }),
       'LLM_UNAVAILABLE',

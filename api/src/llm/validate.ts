@@ -25,6 +25,11 @@ function hasMixedScriptWord(text: string): boolean {
   );
 }
 const OPTION_PREFIX = /^\s*(?:[A-DА-Г]|[1-4])\s*[).:]\s+/;
+/**
+ * Сурагч харахгүй эх сурвалж руу заасан асуулт ("дээрх зураг", "сурах бичгийн 45-р хуудас") нь
+ * сангаас үүсгэхэд гардаг алдаа: асуулт дангаараа ойлгогдох ёстой.
+ */
+const REFERS_TO_SOURCE = /сурах бичг|(дээрх|доорх|өгсөн) (зураг|хүснэгт|график|диаграмм)|зурагт (үзүүл|харуул|өгс)|зураг дээр|\d+-р (дасгал|хуудас)/i;
 
 export interface Rejection {
   reason: string;
@@ -75,6 +80,7 @@ function checkOne(raw: unknown): QuestionDraft | Rejection {
   if (new Set(options.map((o) => o.toLowerCase())).size !== 4) return { reason: 'duplicate options', prompt };
   if ([prompt, explanation, ...options].some(hasMixedScriptWord)) return { reason: 'mixed script', prompt };
   if ([prompt, explanation, ...options].some(hasForeignScript)) return { reason: 'foreign script', prompt };
+  if (REFERS_TO_SOURCE.test(prompt) || REFERS_TO_SOURCE.test(explanation)) return { reason: 'refers to source', prompt };
 
   return { prompt, options, correctIndex: q.correctIndex, explanation };
 }
