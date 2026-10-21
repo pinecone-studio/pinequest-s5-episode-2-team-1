@@ -6,10 +6,12 @@
   "scripts": {
     "dev": "node scripts/dev.mjs",
     "dev:ai": "node scripts/dev.mjs --env ai",
+    "dev:books": "node scripts/dev.mjs --env books",
     "deploy": "wrangler deploy",
     "cf-typegen": "wrangler types --strict-vars=false",
     "db:migrate": "wrangler d1 migrations apply DB --local && wrangler d1 migrations apply BOOKS --local",
     "db:migrate:remote": "wrangler d1 migrations apply DB --remote && wrangler d1 migrations apply BOOKS --remote",
+    "books:migrate:remote": "wrangler d1 migrations apply BOOKS --remote --env books",
     "db:reset": "rm -rf .wrangler/state && npm run db:migrate",
     "typecheck": "wrangler types --strict-vars=false >/dev/null && tsc --noEmit -p tsconfig.json && tsc --noEmit -p scripts/tsconfig.json",
     "test": "vitest run",

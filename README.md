@@ -369,7 +369,20 @@ npm run books:ocr -- --book math-6 --model gemini-3.8-flash,gemini-3.6-flash,gem
 - Хуудасны текстийг харах: `npm run books:page -- --book math-6 --page 34 --text`. `text/0034.md`-г гараар
   засаад `books:import` ажиллуулбал засвар санд орно.
 
-**Дараа нь багийн Cloudflare руу:** `npx wrangler d1 create surgalt-books`, `npx wrangler r2 bucket create surgalt-books`
-хийж `wrangler.jsonc`-ийн `BOOKS`-ийн `database_id`-г солиод `npm run db:migrate:remote`, `npm run deploy`. Дараа нь
-ижил командаар `api/books/`-оос шууд оруулна: `npm run books:import -- --url https://surgalt-api.<subdomain>.workers.dev`
-(`ADMIN_TOKEN=...`-ийг deploy хийсэн серверийнхээр).
+### Багийн Cloudflare дээрх сан
+
+Сан багийн Cloudflare account дээр байна: D1 `surgalt-books` ба R2 bucket `surgalt-books`. Workers subdomain нь
+`pinequest-team1.workers.dev`. Багийн гишүүнийг Cloudflare dashboard → Manage Account → Members хэсгээс урина.
+
+```bash
+npx wrangler login
+```
+
+```bash
+npm run dev:books
+```
+
+`dev:books` горимд тоглоомын DB local хэвээр, сан (`BOOKS`, `BOOK_FILES`) нь Cloudflare дээрх жинхэнэ сан байна
+(`remote: true`, `wrangler.jsonc`-ийн `env.books`). Энэ үед `books:import`, `books:list`, `books:ocr`, `books:page`
+бүгд Cloudflare-ийн сан дээр ажиллана. Демоны `npm run dev` өөрчлөгдөхгүй, local сантай хэвээр.
+Сангийн schema шинэчлэгдвэл (`migrations-books/`): `npm run books:migrate:remote`.

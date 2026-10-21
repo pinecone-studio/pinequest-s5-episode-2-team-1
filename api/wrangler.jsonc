@@ -44,6 +44,35 @@
   // Workers AI binding local dev-д ч Cloudflare руу ханддаг тул нэвтрэлт (`npx wrangler login`)
   // шаардана. Үндсэн орчныг нэвтрэлтгүй ажиллуулахын тулд тусад нь: `npm run dev:ai`.
   "env": {
+    // `npm run dev:books`: тоглоомын DB local хэвээр, сурах бичгийн сан (BOOKS, BOOK_FILES) нь багийн
+    // Cloudflare дээрх жинхэнэ сан (remote). `npx wrangler login` шаардана.
+    "books": {
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "surgalt",
+          "database_id": "00000000-0000-0000-0000-000000000000",
+          "migrations_dir": "migrations"
+        },
+        {
+          "binding": "BOOKS",
+          "database_name": "surgalt-books",
+          "database_id": "24a6924d-6e68-40f0-896d-d00fbd93afe9",
+          "migrations_dir": "migrations-books",
+          "remote": true
+        }
+      ],
+      "r2_buckets": [{ "binding": "BOOK_FILES", "bucket_name": "surgalt-books", "remote": true }],
+      "durable_objects": {
+        "bindings": [{ "name": "DUEL_ROOM", "class_name": "DuelRoom" }]
+      },
+      "vars": {
+        "LLM_PROVIDER": "",
+        "GEMINI_MODEL": "gemini-3.8-flash",
+        "GEMINI_THINKING_LEVEL": "low",
+        "WORKERS_AI_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+      }
+    },
     "ai": {
       "ai": { "binding": "AI" },
       "d1_databases": [
