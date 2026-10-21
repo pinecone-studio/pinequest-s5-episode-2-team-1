@@ -1,7 +1,7 @@
 import type { Subject } from '@shared/types';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { type LayoutChangeEvent, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -12,13 +12,16 @@ import { PressScale } from '@/components/pixel';
 import { TopBar } from '@/components/TopBar';
 import { colors, fonts, hardShadow, radius } from '@/constants/theme';
 import { S, subjectNames } from '@/i18n/strings';
+import { kvGet, kvSet } from '@/lib/kv';
 import { usePixelBear } from '@/lib/mock/pixelBear';
-import { currentNode, lessonTitle, NODE_COUNT, NODES, type NodeStatus } from '@/lib/pixelBear/path';
+import { currentNode, isBossNode, lessonTitle, NODES, type NodeStatus, UNIT_SIZE, unitOf } from '@/lib/pixelBear/path';
 
 const SUBJECTS: Subject[] = ['math', 'mongolian', 'physics'];
 const CTA_SPACE = 112;
+/** Нэг дор алхах хамгийн олон зангилаа (олон шат ахисан бол сүүлийн хэсгийг л алхана) */
+const MAX_WALK = 6;
 
-/** 04 · Сурах зам (pixel ойн газрын зураг). */
+/** 04 · Сурах зам (адал явдлын газрын зураг). */
 export default function PathScreen() {
   const { me, refreshMe } = useAuth();
   const { subject: savedSubject, setSubject } = usePixelBear();
@@ -26,7 +29,8 @@ export default function PathScreen() {
   const insets = useSafeAreaInsets();
   const barSpace = useTabBarSpace();
   const scroll = useRef<ScrollView>(null);
-  const [viewH, setViewH] = useState(0);
+  // ScrollView бүтэн дэлгэцийг эзэлдэг (толгой, цэс дээр нь хөвнө); web дээр onLayout анх ажилладаггүй
+  const viewH = useWindowDimensions().height;
   const [menu, setMenu] = useState(false);
   const [note, setNote] = useState<string | null>(null);
 
@@ -37,16 +41,33 @@ export default function PathScreen() {
   );
 
   const current = me ? currentNode(me) : 0;
+  const userId = me?.id;
+
+  // Баавгай сүүлд харсан зангилаанаасаа одоогийнх руу алхана (апп хаагдсан ч төхөөрөмж дээр санана)
+  const [from, setFrom] = useState<number | null>(null);
+  useEffect(() => {
+    if (userId === undefined) return;
+    let alive = true;
+    const key = `pq.path.seen.${userId}`;
+    void kvGet<number>(key).then((seen) => {
+      if (!alive) return;
+      setFrom(seen === null || seen >= current ? current : Math.max(seen, current - MAX_WALK));
+      void kvSet(key, current);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [userId, current]);
 
   // Одоогийн зангилааг дэлгэцийн дунд харуулна (XP өсөхөд зөөлөн гүйлгэнэ)
   const scrolledOnce = useRef(false);
   useEffect(() => {
-    if (!viewH) return;
+    if (userId === undefined) return; // ScrollView нь me ирсний дараа л mount болно
     const total = MAP_H + CTA_SPACE + barSpace;
     const y = Math.max(0, Math.min(total - viewH, NODES[current].y - viewH * 0.55));
     scroll.current?.scrollTo({ y, animated: scrolledOnce.current });
     scrolledOnce.current = true;
-  }, [current, viewH, barSpace]);
+  }, [userId, current, viewH, barSpace]);
 
   useEffect(() => {
     if (!note) return;
@@ -62,7 +83,7 @@ export default function PathScreen() {
       setNote(S.home.limitReached);
       return;
     }
-    router.push(`/task/${subject}`);
+    router.push(isBossNode(current) ? `/task/${subject}?boss=${unitOf(current)}` : `/task/${subject}`);
   }
 
   function onNode(i: number, status: NodeStatus) {
@@ -75,11 +96,10 @@ export default function PathScreen() {
     <View style={styles.root}>
       <ScrollView
         ref={scroll}
-        onLayout={(e: LayoutChangeEvent) => setViewH(e.nativeEvent.layout.height)}
         contentContainerStyle={[styles.scrollContent, { paddingBottom: CTA_SPACE + barSpace }]}
         showsVerticalScrollIndicator={false}
       >
-        <PathMap current={current} subject={subject} onNodePress={onNode} />
+        <PathMap current={current} from={from} subject={subject} onNodePress={onNode} />
       </ScrollView>
 
       <View style={[styles.header, { top: insets.top + 6 }]} pointerEvents="box-none">
@@ -135,7 +155,7 @@ export default function PathScreen() {
       <View style={[styles.cta, { bottom: barSpace + 12 }]}>
         <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
           <Text style={styles.ctaSmall} numberOfLines={1}>
-            {S.path.chapter(1, subjectNames[subject], Math.min(current, NODE_COUNT), NODE_COUNT)}
+            {S.path.chapter(unitOf(current) + 1, subjectNames[subject], current % UNIT_SIZE, UNIT_SIZE)}
           </Text>
           <Text style={styles.ctaTitle} numberOfLines={1}>
             {lessonTitle(subject, current)}

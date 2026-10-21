@@ -62,7 +62,6 @@ export const sprites = {
   tile_pedestal_gift_72x54: { source: require('../../assets/sprites/tile_pedestal_gift_72x54.png'), width: 72, height: 54 },
   tile_pedestal_myst_72x54: { source: require('../../assets/sprites/tile_pedestal_myst_72x54.png'), width: 72, height: 54 },
   tile_pedestal_sapling_72x54: { source: require('../../assets/sprites/tile_pedestal_sapling_72x54.png'), width: 72, height: 54 },
-  map_base_390x760: { source: require('../../assets/sprites/map_base_390x760.png'), width: 390, height: 760 },
   map_world_0_390x760: { source: require('../../assets/sprites/map_world_0_390x760.png'), width: 390, height: 760 },
   map_world_1_390x760: { source: require('../../assets/sprites/map_world_1_390x760.png'), width: 390, height: 760 },
   map_world_2_390x448: { source: require('../../assets/sprites/map_world_2_390x448.png'), width: 390, height: 448 },
