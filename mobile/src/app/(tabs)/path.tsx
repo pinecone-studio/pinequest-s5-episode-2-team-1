@@ -14,7 +14,7 @@ import { colors, fonts, hardShadow, radius } from '@/constants/theme';
 import { S, subjectNames } from '@/i18n/strings';
 import { kvGet, kvSet } from '@/lib/kv';
 import { usePixelBear } from '@/lib/mock/pixelBear';
-import { currentNode, isBossNode, lessonTitle, NODES, type NodeStatus, UNIT_SIZE, unitOf } from '@/lib/pixelBear/path';
+import { bossAhead, currentNode, lessonTitle, NODES, type NodeStatus, UNIT_SIZE, unitOf } from '@/lib/pixelBear/path';
 
 const SUBJECTS: Subject[] = ['math', 'mongolian', 'physics'];
 const CTA_SPACE = 112;
@@ -41,6 +41,7 @@ export default function PathScreen() {
   );
 
   const current = me ? currentNode(me) : 0;
+  const bossFight = !!me && bossAhead(current, me.bossesBeaten);
   const userId = me?.id;
 
   // Баавгай сүүлд харсан зангилаанаасаа одоогийнх руу алхана (апп хаагдсан ч төхөөрөмж дээр санана)
@@ -83,7 +84,7 @@ export default function PathScreen() {
       setNote(S.home.limitReached);
       return;
     }
-    router.push(isBossNode(current) ? `/task/${subject}?boss=${unitOf(current)}` : `/task/${subject}`);
+    router.push(bossFight ? `/task/${subject}?boss=${unitOf(current)}` : `/task/${subject}`);
   }
 
   function onNode(i: number, status: NodeStatus) {
@@ -99,7 +100,7 @@ export default function PathScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingBottom: CTA_SPACE + barSpace }]}
         showsVerticalScrollIndicator={false}
       >
-        <PathMap current={current} from={from} subject={subject} onNodePress={onNode} />
+        <PathMap current={current} from={from} beaten={me.bossesBeaten} subject={subject} onNodePress={onNode} />
       </ScrollView>
 
       <View style={[styles.header, { top: insets.top + 6 }]} pointerEvents="box-none">
