@@ -23,3 +23,9 @@ api/worker-configuration.d.ts
 # Сурах бичгийн скан, зураг, текст: зохиогчийн эрхтэй, repo public тул git-д хэзээ ч орохгүй
 api/books/*
 !api/books/README.md
+
+# Баг npm ашигладаг: өөр lock файл Expo-г өөр package manager руу шилжүүлнэ
+bun.lock
+bun.lockb
+yarn.lock
+pnpm-lock.yaml

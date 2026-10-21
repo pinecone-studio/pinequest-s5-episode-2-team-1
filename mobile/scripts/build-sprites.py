@@ -43,7 +43,15 @@ for n in ['map_bear', 'map_bear_blink', 'map_cloud_a', 'map_cloud_b', 'map_gift'
 for n in ['tile_stone_done', 'tile_stone_lock', 'tile_pedestal_cur', 'tile_pedestal_end', 'tile_pedestal_gift',
           'tile_pedestal_myst', 'tile_pedestal_sapling']:
     M[n] = [2]
-M['map_base'] = [2]
+# адал явдлын газрын зураг (docs/design/pixel-bear/tools/mapgen_world.py): доороос дээш хэсгүүд, boss, туг
+for n in ['map_world_0', 'map_world_1', 'map_world_2', 'map_flag', 'fx_magic', 'lair_0', 'lair_1', 'lair_2', 'bear_battle', 'bear_gallop', 'fx_spark', 'fx_spark_magic', 'fx_slash']:
+    M[n] = [2]
+# boss: газрын зураг дээр 2×, тулаанд 4× (boss_pumpkin.py, mapgen_world.py)
+for n in ['boss_pumpkin_sheet', 'map_boss_1', 'map_boss_2']:
+    M[n] = [2, 4]
+for n in ['map_boss_1', 'map_boss_2']:
+    M[f'{n}_white'] = [4]
+M['fx_scythe'] = [4]
 # v2 (Charlie маягийн) nav icon ба Нүүрний товчнууд: 20px эх, 30dp-ээр (1.5×) — нарийн pixel
 for n in ['home', 'tasks', 'path', 'shop', 'crew', 'bag']:
     M[f'nav2_{n}_on'] = [(30, 30)]
