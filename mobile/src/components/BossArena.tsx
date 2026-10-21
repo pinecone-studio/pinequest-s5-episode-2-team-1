@@ -18,17 +18,21 @@ import type { SpriteKey } from '@/sprites';
 
 // Цохилтын дараалал (Scott Pilgrim маягийн "juice"): бэлдэх → цохих → сум нисэх → онох агшинд хөлдөх (hit-stop)
 // → цагаан анивчилт + оч + дэлгэц чичрэх → хойш түлхэгдэж зөөлөн буцах.
-const WINDUP_MS = 130;
+// Од шидэх: гараа хажуугаар өргөх (90) → толгойн хажууд оч (90) → цэнэглэх (120) → smear (SMEAR) → гаргах: од ниснэ
+const WINDUP_MS = 300;
+const SMEAR_MS = 70; // хурдан хөдөлгөөний нэг frame
 const STRIKE_MS = 110;
 const FLY_MS = 360;
-const HIT_AT = WINDUP_MS + STRIKE_MS + FLY_MS;
+const RELEASE_AT = WINDUP_MS + SMEAR_MS;
+const HIT_AT = RELEASE_AT + FLY_MS;
 const HITSTOP_MS = 80;
-// Давхиж сарвуудах: 4 хөлөөрөө нүдээр дагахуйц хурдаар давхиж очоод хоёр хөл дээрээ босож сарвуудна
-const GALLOP_STEP_MS = 120;
-const DASH_MS = GALLOP_STEP_MS * 8; // 2 бүтэн давхих цикл
+// Ойроос сарвуудах: 2 хөлөөрөө гүйж очоод хумсаа өргөж (smear) сарвуудна; эргэж харан гүйж буцаад дахин boss руу эргэнэ
+const RUN_STEP_MS = 96; // 8 frame-ийн гүйлтийн цикл (~1.3 алхам/сек)
+const DASH_MS = RUN_STEP_MS * 10;
 const CLAW_UP_MS = 140;
-const RUN_STEP_MS = 100;
-const RETURN_MS = 640;
+const CLAW_HOLD_MS = 220;
+const TURN_MS = 110; // урагшаа харсан frame (эргэх агшин)
+const RETURN_MS = RUN_STEP_MS * 8;
 // Boss давхиж цохих: нүдээр дагахуйц удаан гулсаж баавгайн яг урд зогсоод, хадуураа өргөж барьснаа дүүжилнэ
 const BOSS_DASH_MS = 960;
 const BOSS_WINDUP_MS = 240;
@@ -41,18 +45,22 @@ const TICK_MS = 160; // frame анимацийн хурд (~6 fps, pixel art-и�
 const GROUND = 300;
 const BOSS_LEFT = 28;
 const BEAR_RIGHT = 44;
-const BEAR_SHEET: SpriteKey = 'bear_battle_1144x122';
-const BEAR_FRAMES = 13;
+const BEAR_SHEET: SpriteKey = 'bear_battle_1344x122';
+const BEAR_FRAMES = 14;
 const { width: BEAR_W, height: BEAR_H } = frameSize(BEAR_SHEET, BEAR_FRAMES);
-/** bear_battle frame-ууд (mapgen_world.py bear_battle) */
+/** bear_battle frame-ууд (docs/design/pixel-bear/tools/bear_moves.py battle) */
 const F = {
-  idle: 0, breathe: 1, blink: 2, attack: 3, hurt: 4, flash: 5, windup: 6, charge: 7, follow: 8,
-  runA: 9, runB: 10, clawUp: 11, claw: 12,
+  idle: 0, breathe: 1, blink: 2, raise: 3, spark: 4, charge: 5, throwSmear: 6, attack: 7, follow: 8,
+  hurt: 9, flash: 10, clawUp: 11, clawSmear: 12, claw: 13,
 } as const;
-/** Шидэх frame-ийн сарвуу (frame-ийн зүүн дээд булангаас, dp): од эндээс ниснэ */
-const PAW = { x: 4, y: 64 };
-/** 4 хөлөөр давхих 4 frame (mapgen_world.py bear_gallop); баруун ирмэгээр нь зэрэгцүүлнэ */
-const GALLOP: SpriteKey = 'bear_gallop_512x122';
+/** Баавгай frame-ийн голд: зүүн, баруун талын 14dp хоосон (гар сунах зай) */
+const BEAR_PAD = 14;
+/** Гаргах frame-ийн сарвуу (frame-ийн зүүн дээд булангаас, dp): од эндээс ниснэ */
+const PAW = { x: 0, y: 64 };
+/** 2 хөлөөр гүйх 8 frame + урагшаа харсан (эргэх) frame (bear_moves.py run); буцахдаа толин тусгалаар */
+const RUN: SpriteKey = 'bear_run_864x122';
+const RUN_FRAMES = 9;
+const FRONT = 8;
 const smooth = Easing.inOut(Easing.sin);
 
 type Point = { x: number; y: number };
@@ -114,7 +122,7 @@ export function BossArena({
   const [pose, setPose] = useState<Pose>('idle');
   const [bossPose, setBossPose] = useState<BossPose>('idle');
   const [weapon, setWeapon] = useState<number | null>(null); // boss-ын зэвсгийн frame (давхиж цохих үед)
-  const [gallop, setGallop] = useState<number | null>(null); // баавгай 4 хөлөөр давхиж буй frame
+  const [run, setRun] = useState<{ frame: number; back: boolean } | null>(null); // гүйж буй frame (back = буцаж)
   useEffect(() => {
     if (reduce) return;
     const t = setInterval(() => setTick((n) => n + 1), TICK_MS);
@@ -143,18 +151,18 @@ export function BossArena({
     const melee = strike.n % 2 === 0; // давхиж очоод ойроос
     const claw = strike.correct && melee;
     const bossDash = !strike.correct && melee;
-    const hitAt = claw ? DASH_MS + CLAW_UP_MS : bossDash ? BOSS_DASH_MS + BOSS_WINDUP_MS + SWING_MS : HIT_AT;
+    const hitAt = claw ? DASH_MS + CLAW_UP_MS + SMEAR_MS : bossDash ? BOSS_DASH_MS + BOSS_WINDUP_MS + SWING_MS : HIT_AT;
     const [from, to] = strike.correct ? [at.bear, at.boss] : [at.boss, at.bear];
     const dir = strike.correct ? -1 : 1; // зөв: баавгай зүүн тийш дайрна, boss зүүн тийш түлхэгдэнэ; буруу: эсрэгээрээ
     const [attacker, target]: SharedValue<number>[] = strike.correct ? [bearX, bossX] : [bossX, bearX];
 
     const bossRight = BOSS_LEFT + frameSize(boss.battle, boss.frames).width;
-    const bearBody = width - BEAR_RIGHT - BEAR_W + 16; // баавгайн frame-ийн зүүн талын 16dp нь хоосон (гарын зай)
+    const bearBody = width - BEAR_RIGHT - BEAR_W + BEAR_PAD;
     if (claw) {
-      // boss-ын дэргэд хүртэл давхиж, сарвуудаад буцаж гүйнэ
+      // boss-ын дэргэд хүртэл гүйж, сарвуудаад эргэж харан буцаж гүйнэ
       bearX.value = withSequence(
         withTiming(-(bearBody - bossRight + 8), { duration: DASH_MS, easing: smooth }),
-        withDelay(CLAW_UP_MS + 220, withTiming(0, { duration: RETURN_MS, easing: smooth })),
+        withDelay(CLAW_UP_MS + SMEAR_MS + CLAW_HOLD_MS + TURN_MS, withTiming(0, { duration: RETURN_MS, easing: smooth })),
       );
     } else if (bossDash) {
       // баавгайн яг урд хүртэл гулсаж, хадуураа дүүжлээд буцна
@@ -167,11 +175,11 @@ export function BossArena({
       setShot(strike.correct ? 'icon_star_24x24' : 'fx_magic_22x22');
       attacker.value = withSequence(
         withTiming(-dir * 7, { duration: WINDUP_MS, easing: Easing.out(Easing.quad) }), // бэлдэх: арагшаа
-        withTiming(dir * 26, { duration: STRIKE_MS, easing: Easing.in(Easing.quad) }), // цохих: огцом урагш
+        withTiming(dir * 26, { duration: SMEAR_MS + STRIKE_MS, easing: Easing.in(Easing.quad) }), // цохих: огцом урагш
         withDelay(FLY_MS, withTiming(0, { duration: 420, easing: smooth })), // буцах
       );
       fly.value = 0;
-      fly.value = withDelay(WINDUP_MS + STRIKE_MS, withTiming(1, { duration: FLY_MS, easing: Easing.in(Easing.quad) }));
+      fly.value = withDelay(RELEASE_AT, withTiming(1, { duration: FLY_MS, easing: Easing.in(Easing.quad) }));
     }
     // hit-stop: оносон тал HITSTOP_MS хөлдөөд дараа нь хойш түлхэгдэнэ
     target.value = withDelay(
@@ -188,8 +196,8 @@ export function BossArena({
     // Pose ба очны frame (JS timer)
     const timers: ReturnType<typeof setTimeout>[] = [];
     const later = (ms: number, fn: () => void) => timers.push(setTimeout(fn, ms));
-    const run = (t0: number, t1: number) => {
-      for (let t = t0, k = 0; t < t1; t += RUN_STEP_MS, k++) later(t, () => setPose(k % 2 ? 'runB' : 'runA'));
+    const running = (t0: number, t1: number, back: boolean) => {
+      for (let t = t0, k = 0; t < t1; t += RUN_STEP_MS, k++) later(t, () => setRun({ frame: k % 8, back }));
     };
     // оносон тал анивчаад цочино
     const hit = (set: (p: 'flash' | 'hurt' | 'idle') => void) => {
@@ -198,21 +206,31 @@ export function BossArena({
       later(hitAt + 560, () => set('idle'));
     };
     if (claw) {
-      for (let t = 0, k = 0; t < DASH_MS; t += GALLOP_STEP_MS, k++) later(t, () => setGallop(k % 4));
+      // гүйх → хумсаа өргөх → smear → сарвуудах → урагшаа харж эргэх → толин тусгалаар гүйж буцах → эргэх → зогсох
+      running(0, DASH_MS, false);
       later(DASH_MS, () => {
-        setGallop(null);
+        setRun(null);
         setPose('clawUp');
       });
+      later(DASH_MS + CLAW_UP_MS, () => setPose('clawSmear'));
       later(hitAt, () => setPose('claw'));
-      run(hitAt + 220, hitAt + 220 + RETURN_MS);
-      later(hitAt + 220 + RETURN_MS, () => setPose('idle'));
+      const turn = hitAt + CLAW_HOLD_MS;
+      later(turn, () => setRun({ frame: FRONT, back: false }));
+      running(turn + TURN_MS, turn + TURN_MS + RETURN_MS, true);
+      later(turn + TURN_MS + RETURN_MS, () => setRun({ frame: FRONT, back: false }));
+      later(turn + TURN_MS * 2 + RETURN_MS, () => {
+        setRun(null);
+        setPose('idle');
+      });
       hit(setBossPose);
     } else if (strike.correct) {
-      // шидэх: гараа өргөж сарвуунд оч → од цэнэглэгдэнэ → гараа урагш шидэж гэрэл тэсэрнэ → дагах
-      setPose('windup');
-      later(WINDUP_MS / 2, () => setPose('charge'));
-      later(WINDUP_MS, () => setPose('attack'));
-      later(WINDUP_MS + STRIKE_MS, () => setPose('follow'));
+      // шидэх: гараа хажуугаар өргөж оч → толгойн хажууд од цэнэглэгдэнэ → smear → гаргаж гэрэл тэсэрнэ → дагах
+      setPose('raise');
+      later(90, () => setPose('spark'));
+      later(180, () => setPose('charge'));
+      later(WINDUP_MS, () => setPose('throwSmear'));
+      later(RELEASE_AT, () => setPose('attack'));
+      later(RELEASE_AT + 140, () => setPose('follow'));
       later(HIT_AT + 120, () => setPose('idle'));
       hit(setBossPose);
     } else if (bossDash) {
@@ -230,7 +248,7 @@ export function BossArena({
       });
       hit(setPose);
     } else {
-      later(WINDUP_MS, () => setBossPose('cast'));
+      later(RELEASE_AT, () => setBossPose('cast'));
       later(HIT_AT + 120, () => setBossPose('idle'));
       hit(setPose);
     }
@@ -302,10 +320,13 @@ export function BossArena({
           </Animated.View>
 
           <Animated.View style={[styles.abs, { right: BEAR_RIGHT, top: GROUND - BEAR_H, zIndex: 2 }, bearStyle]}>
-            {gallop === null ? (
+            {run === null ? (
               <SheetFrame id={BEAR_SHEET} frames={BEAR_FRAMES} frame={bearFrame} label={S.boss.bear} />
             ) : (
-              <SheetFrame id={GALLOP} frames={4} frame={gallop} label={S.boss.bear} />
+              // буцахдаа толин тусгал: бие frame-ийн голд тул байрнаасаа хөдлөхгүй
+              <View style={run.back ? styles.mirror : null}>
+                <SheetFrame id={RUN} frames={RUN_FRAMES} frame={run.frame} label={S.boss.bear} />
+              </View>
             )}
           </Animated.View>
 
@@ -327,7 +348,7 @@ export function BossArena({
 
       {/* Довтолгоонд л гардаг зургуудыг урьдчилж ачаална: анх гарах агшинд хоосон харагдаж "алга болохгүй" */}
       <View style={styles.preload}>
-        {[GALLOP, 'fx_slash_144x48', 'fx_spark_90x30', 'fx_spark_magic_90x30', 'fx_magic_22x22', 'icon_star_24x24', boss.weapon?.sheet, boss.white]
+        {[RUN, 'fx_slash_144x48', 'fx_spark_90x30', 'fx_spark_magic_90x30', 'fx_magic_22x22', 'icon_star_24x24', boss.weapon?.sheet, boss.white]
           .filter((id): id is SpriteKey => !!id)
           .map((id) => (
             <Sprite key={id} id={id} />
@@ -371,6 +392,7 @@ function Weapon({ sheet, left, top, frame }: { sheet: SpriteKey; left: number; t
 const styles = StyleSheet.create({
   abs: { position: 'absolute' },
   preload: { position: 'absolute', left: 0, top: 0, opacity: 0 },
+  mirror: { transform: [{ scaleX: -1 }] },
   origin: { left: 0, top: 0, zIndex: 4 },
   // boss-ын гэр: доод талдаа наалдаж, хэвтээгээр төвлөрнө (430 dp өргөн тул нарийн дэлгэцэнд хоёр захаас тайрагдана)
   lair: { position: 'absolute', bottom: 0, left: '50%', marginLeft: -215 },

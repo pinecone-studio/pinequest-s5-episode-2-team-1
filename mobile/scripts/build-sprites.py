@@ -44,7 +44,7 @@ for n in ['tile_stone_done', 'tile_stone_lock', 'tile_pedestal_cur', 'tile_pedes
           'tile_pedestal_myst', 'tile_pedestal_sapling']:
     M[n] = [2]
 # адал явдлын газрын зураг (docs/design/pixel-bear/tools/mapgen_world.py): доороос дээш хэсгүүд, boss, туг
-for n in ['map_world_0', 'map_world_1', 'map_world_2', 'map_flag', 'fx_magic', 'lair_0', 'lair_1', 'lair_2', 'bear_battle', 'bear_gallop', 'fx_spark', 'fx_spark_magic', 'fx_slash']:
+for n in ['map_world_0', 'map_world_1', 'map_world_2', 'map_flag', 'fx_magic', 'lair_0', 'lair_1', 'lair_2', 'bear_battle', 'bear_run', 'fx_spark', 'fx_spark_magic', 'fx_slash']:
     M[n] = [2]
 # boss: газрын зураг дээр 2×, тулаанд 4× (boss_pumpkin.py, mapgen_world.py)
 for n in ['boss_pumpkin_sheet', 'map_boss_1', 'map_boss_2']:
