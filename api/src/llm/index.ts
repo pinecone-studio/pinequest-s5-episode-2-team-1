@@ -34,7 +34,7 @@ export async function generateQuestions(
   const provider = pickProvider(env);
   if (!provider) throw new LlmError(env.LLM_PROVIDER === 'workers-ai' ? 'workers-ai' : 'gemini', 0, 'LLM тохируулаагүй');
   const { system, user } = buildPrompt(tier, subject, count, avoid);
-  const raw = provider === 'gemini' ? await geminiGenerate(env, system, user) : await workersAiGenerate(env, system, user);
+  const raw = provider === 'gemini' ? await geminiGenerate(env, { system, user }) : await workersAiGenerate(env, system, user);
   const { drafts, rejected } = validateDrafts(raw);
   return { drafts, rejected, source: sourceLabel(env, provider) };
 }

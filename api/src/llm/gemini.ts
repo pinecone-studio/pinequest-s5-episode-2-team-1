@@ -16,14 +16,25 @@ interface GeminiResponse {
 type Variant = 'responseJsonSchema' | 'responseFormat' | 'mimeOnly';
 let workingVariant: Variant | null = null;
 
-function generationConfig(variant: Variant, thinkingLevel: string | undefined) {
-  const base: Record<string, unknown> = { temperature: 1.0, maxOutputTokens: 8192 };
+/** Нэг дуудлага: system + user prompt, хавсралт файлууд (OCR), хариуны JSON schema. */
+export interface GeminiRequest {
+  system: string;
+  user: string;
+  /** inline_data хавсралт (base64): сурах бичгийн хуудасны PDF/зураг. */
+  files?: Array<{ mimeType: string; data: string }>;
+  /** Анхдагч нь асуултын schema. */
+  schema?: object;
+  maxOutputTokens?: number;
+}
+
+function generationConfig(variant: Variant, thinkingLevel: string | undefined, schema: object, maxOutputTokens: number) {
+  const base: Record<string, unknown> = { temperature: 1.0, maxOutputTokens };
   if (thinkingLevel) base.thinkingConfig = { thinkingLevel };
   switch (variant) {
     case 'responseJsonSchema':
-      return { ...base, responseMimeType: 'application/json', responseJsonSchema: QUESTIONS_JSON_SCHEMA };
+      return { ...base, responseMimeType: 'application/json', responseJsonSchema: schema };
     case 'responseFormat':
-      return { ...base, responseFormat: { text: { mimeType: 'APPLICATION_JSON', schema: QUESTIONS_JSON_SCHEMA } } };
+      return { ...base, responseFormat: { text: { mimeType: 'APPLICATION_JSON', schema } } };
     default:
       return { ...base, responseMimeType: 'application/json' };
   }
@@ -72,8 +83,7 @@ async function postWithRetry(url: string, init: RequestInit, deps: Required<Gemi
 
 export async function geminiGenerate(
   env: Pick<Bindings, 'GEMINI_API_KEY' | 'GEMINI_MODEL' | 'GEMINI_THINKING_LEVEL'>,
-  system: string,
-  user: string,
+  req: GeminiRequest,
   deps: GeminiDeps = {},
 ): Promise<unknown> {
   // Workers-д fetch-ийг өөр объектын method болгож дуудвал "Illegal invocation" гардаг тул ороож өгнө.
@@ -92,9 +102,9 @@ export async function geminiGenerate(
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
         body: JSON.stringify({
-          systemInstruction: { parts: [{ text: system }] },
-          contents: [{ role: 'user', parts: [{ text: user }] }],
-          generationConfig: generationConfig(variant, thinkingLevel),
+          systemInstruction: { parts: [{ text: req.system }] },
+          contents: [{ role: 'user', parts: [...(req.files ?? []).map((f) => ({ inline_data: { mime_type: f.mimeType, data: f.data } })), { text: req.user }] }],
+          generationConfig: generationConfig(variant, thinkingLevel, req.schema ?? QUESTIONS_JSON_SCHEMA, req.maxOutputTokens ?? 8192),
         }),
       },
       opts,

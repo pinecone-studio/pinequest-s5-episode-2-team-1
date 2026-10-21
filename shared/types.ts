@@ -290,10 +290,17 @@ export interface BookSummary extends BookMeta {
   slug: string;
   pages: number;
   bytes: number;
-  /** OCR текст орсон хуудас */
-  ocrPages: number;
+  /** Текст нь орсон хуудас */
+  textPages: number;
+  /** Текстийг Gemini-ээр уншсан хуудас */
+  geminiPages: number;
+  /** Текст нь муу/хоосон тул OCR хэрэгтэй хуудас */
+  weakPages: number;
   updatedAt: number;
 }
+
+/** ok | poor = эвдэрсэн тэмдэгт олонтой | empty = текст давхаргагүй */
+export type TextQuality = 'ok' | 'poor' | 'empty';
 
 export interface BookPageInfo {
   seq: number;
@@ -303,6 +310,9 @@ export interface BookPageInfo {
   bytes: number;
   sha256: string;
   hasText: boolean;
+  /** 'pdf-text' | 'gemini:<загвар>' */
+  textMethod: string | null;
+  textQuality: TextQuality | null;
 }
 
 export interface BooksResponse {
@@ -332,4 +342,32 @@ export interface PagesTrimResponse {
 
 export interface BookDeleteResponse {
   deletedPages: number;
+}
+
+export interface PageTextInput {
+  seq: number;
+  /** Текстийг гаргасан хуудасны файлын sha256: файл солигдсон бол хадгалахгүй */
+  sha256: string;
+  text: string;
+  method: string;
+  quality: TextQuality;
+}
+
+export interface PageTextsPutResponse {
+  updated: number;
+  /** Сан дахь файл нь өөр (эсвэл хуудас алга) тул хадгалаагүй */
+  stale: number[];
+}
+
+export interface PageTextResponse {
+  seq: number;
+  text: string | null;
+  method: string | null;
+  quality: TextQuality | null;
+  at: number | null;
+}
+
+export interface BookOcrResponse {
+  model: string;
+  pages: Array<{ seq: number; sha256: string; text: string }>;
 }

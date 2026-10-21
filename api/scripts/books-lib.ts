@@ -5,8 +5,17 @@ import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from '
 import { basename, dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PDFDocument } from 'pdf-lib';
-import type { BookDetailResponse, BookMeta, PagePutResponse, PagesTrimResponse } from '../../shared/types';
+import type {
+  BookDetailResponse,
+  BookMeta,
+  PagePutResponse,
+  PagesTrimResponse,
+  PageTextInput,
+  PageTextsPutResponse,
+  TextQuality,
+} from '../../shared/types';
 import { BOOK_SLUG, BOOK_SUBJECT_TITLES, bookMetaSchema, MAX_PAGE_BYTES, type PageMime } from '../src/config/books';
+import { assessText, extractPdfText, fixLegacyCyrillic, METHOD_NONE, METHOD_PDF, TEXT_DIR, TextCache } from './books-text';
 import { call, HttpError } from './lib';
 
 export const BOOKS_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'books');
@@ -32,7 +41,7 @@ export function listSourceFiles(dir: string): { files: SourceFile[]; skipped: st
   for (const name of readdirSync(dir).sort(naturalCompare)) {
     if (name.startsWith('.') || NOT_PAGES.has(name.toLowerCase())) continue;
     if (statSync(join(dir, name)).isDirectory()) {
-      skipped.push(`${name}/`);
+      if (name !== TEXT_DIR) skipped.push(`${name}/`);
       continue;
     }
     const ext = extname(name).toLowerCase();
@@ -164,6 +173,31 @@ export interface ImportStats {
   /** book.json-ийг хавтасны нэрээс шинээр үүсгэсэн */
   metaCreated: boolean;
   skipped: string[];
+  /** Хуудасны текстийн чанар (Gemini-ээр уншсаныг тусад нь) */
+  text: Record<TextQuality | 'gemini', number>;
+}
+
+/**
+ * Хуудасны текст: кэшид ижил файлынх байвал түүнийг (Gemini-ийнх, гараар зассан нь ч хамаарна),
+ * үгүй бол PDF-ийн текст давхаргаас. `retext` үед текст давхаргынхыг дахин гаргана.
+ */
+async function pageText(page: PageFile, cache: TextCache, retext: boolean): Promise<PageTextInput> {
+  const cached = cache.get(page.seq, page.sha256);
+  if (cached && !(retext && cached.method === METHOD_PDF)) {
+    return { seq: page.seq, sha256: page.sha256, text: cached.text, method: cached.method, quality: cached.quality };
+  }
+  let text = '';
+  if (page.mime === 'application/pdf') {
+    try {
+      text = fixLegacyCyrillic(await extractPdfText(page.data));
+    } catch {
+      // Текст давхарга уншигдахгүй бол хоосон (empty) гэж үзээд books:ocr-д үлдээнэ.
+    }
+  }
+  const method = page.mime === 'application/pdf' ? METHOD_PDF : METHOD_NONE;
+  const { quality } = assessText(text);
+  cache.set(page.seq, { sha256: page.sha256, method, quality }, text);
+  return { seq: page.seq, sha256: page.sha256, text, method, quality };
 }
 
 /**
@@ -172,7 +206,7 @@ export interface ImportStats {
  */
 export async function importBook(
   dir: string,
-  opts: { concurrency?: number; onProgress?: (seq: number) => void } = {},
+  opts: { concurrency?: number; onProgress?: (seq: number) => void; retext?: boolean } = {},
 ): Promise<ImportStats> {
   const slug = bookSlug(dir);
   const { files, skipped } = listSourceFiles(dir);
@@ -190,7 +224,21 @@ export async function importBook(
   }
   await call('PUT', `/admin/books/${slug}`, { admin: true, body: meta });
 
-  const stats: ImportStats = { slug, title: meta.title, pages: 0, bytes: 0, added: 0, updated: 0, unchanged: 0, removed: 0, metaCreated: created, skipped };
+  const stats: ImportStats = {
+    slug,
+    title: meta.title,
+    pages: 0,
+    bytes: 0,
+    added: 0,
+    updated: 0,
+    unchanged: 0,
+    removed: 0,
+    metaCreated: created,
+    skipped,
+    text: { ok: 0, poor: 0, empty: 0, gemini: 0 },
+  };
+  const cache = new TextCache(dir);
+  const texts: PageTextInput[] = [];
   const errors: string[] = [];
   const upload = async (p: PageFile) => {
     try {
@@ -208,25 +256,36 @@ export async function importBook(
   };
 
   const inflight = new Set<Promise<void>>();
-  for await (const page of readPages(dir, files)) {
-    stats.pages = page.seq;
-    stats.bytes += page.data.byteLength;
-    const old = existing.get(page.seq);
-    if (page.data.byteLength > MAX_PAGE_BYTES) {
-      errors.push(`${page.origin}: ${(page.data.byteLength / 1024 / 1024).toFixed(1)}MB — нэг хуудас ${MAX_PAGE_BYTES / 1024 / 1024}MB-аас ихгүй (300 DPI хангалттай)`);
-    } else if (old && old.sha256 === page.sha256 && old.origin === page.origin) {
-      stats.unchanged++;
-    } else {
-      const job = upload(page).finally(() => inflight.delete(job));
-      inflight.add(job);
-      if (inflight.size >= (opts.concurrency ?? 4)) await Promise.race(inflight);
+  try {
+    for await (const page of readPages(dir, files)) {
+      stats.pages = page.seq;
+      stats.bytes += page.data.byteLength;
+      const old = existing.get(page.seq);
+      if (page.data.byteLength > MAX_PAGE_BYTES) {
+        errors.push(`${page.origin}: ${(page.data.byteLength / 1024 / 1024).toFixed(1)}MB — нэг хуудас ${MAX_PAGE_BYTES / 1024 / 1024}MB-аас ихгүй (300 DPI хангалттай)`);
+      } else if (old && old.sha256 === page.sha256 && old.origin === page.origin) {
+        stats.unchanged++;
+      } else {
+        const job = upload(page).finally(() => inflight.delete(job));
+        inflight.add(job);
+        if (inflight.size >= (opts.concurrency ?? 4)) await Promise.race(inflight);
+      }
+      texts.push(await pageText(page, cache, opts.retext ?? false));
+      opts.onProgress?.(page.seq);
     }
-    opts.onProgress?.(page.seq);
+  } finally {
+    cache.save();
   }
   await Promise.all(inflight);
   if (errors.length) {
     throw new Error(`${errors.length} хуудас орсонгүй, дахин ажиллуулна уу:\n    ${errors.slice(0, 10).join('\n    ')}`);
   }
   stats.removed = (await call<PagesTrimResponse>('DELETE', `/admin/books/${slug}/pages?after=${stats.pages}`, { admin: true })).deleted;
+
+  for (let i = 0; i < texts.length; i += 100) {
+    const r = await call<PageTextsPutResponse>('PUT', `/admin/books/${slug}/texts`, { admin: true, body: { pages: texts.slice(i, i + 100) } });
+    if (r.stale.length) throw new Error(`${r.stale.join(', ')}-р хуудасны файл сан дотор өөр байна, дахин ажиллуулна уу`);
+  }
+  for (const t of texts) stats.text[t.method.startsWith('gemini:') ? 'gemini' : t.quality]++;
   return stats;
 }

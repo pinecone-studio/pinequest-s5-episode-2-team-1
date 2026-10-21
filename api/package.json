@@ -20,6 +20,7 @@
     "books:import": "tsx scripts/books.ts import",
     "books:list": "tsx scripts/books.ts list",
     "books:page": "tsx scripts/books.ts page",
+    "books:ocr": "tsx scripts/books.ts ocr",
     "books:delete": "tsx scripts/books.ts delete",
     "bot": "tsx scripts/duel-bot.ts",
     "e2e": "tsx scripts/e2e.ts"
@@ -31,6 +32,7 @@
   "devDependencies": {
     "@types/node": "^24.0.0",
     "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^5.7.284",
     "tsx": "^4.23.15",
     "typescript": "~6.0.3",
     "vitest": "^5.0.5",

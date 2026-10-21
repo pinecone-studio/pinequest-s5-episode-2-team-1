@@ -1,9 +1,9 @@
 // Сурах бичгийн сан: түр хавтас → importBook (books:import-тай ижил код) → /admin/books → R2.
 import { createHash } from 'node:crypto';
-import { mkdirSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import type { BookDeleteResponse, BookDetailResponse, BooksResponse } from '../../shared/types';
+import type { BookDeleteResponse, BookDetailResponse, BooksResponse, PageTextResponse, PageTextsPutResponse } from '../../shared/types';
 import { samplePdf, solidPng } from './books-fixtures';
 import { importBook } from './books-lib';
 import { check, expectError } from './e2e-lib';
@@ -31,6 +31,25 @@ export async function runBooksScenario() {
       detail.pages.map((p) => p.origin).join(',') === '01-cover.png,02-body.pdf#1,02-body.pdf#2,02-body.pdf#3,10-back.png',
       'Хуудсууд файлын нэрийн (тоон) дарааллаар',
       detail.pages.map((p) => p.origin),
+    );
+
+    const text = await call<PageTextResponse>('GET', `/admin/books/${slug}/pages/2/text`, { admin: true });
+    check(text.text === 'Page 1' && text.method === 'pdf-text', 'PDF хуудасны текст давхарга санд орно', text);
+    check(
+      detail.pages[0].textMethod === 'none' && detail.pages[0].textQuality === 'empty' && first.text.empty === 5,
+      'Зураг текстгүй (none), богино текст empty гэж тэмдэглэгдэнэ (books:ocr-д үлдэнэ)',
+      first.text,
+    );
+    check(existsSync(join(dir, 'text', '0002.md')) && existsSync(join(dir, 'text', 'index.json')), 'Текст хавтсанд кэшлэгдэнэ (text/0002.md)');
+    const stale = await call<PageTextsPutResponse>('PUT', `/admin/books/${slug}/texts`, {
+      admin: true,
+      body: { pages: [{ seq: 2, sha256: '0'.repeat(64), text: 'хуучин', method: 'manual', quality: 'ok' }] },
+    });
+    check(stale.updated === 0 && stale.stale[0] === 2, 'Өөр файлын (sha256) текстийг хадгалахгүй', stale);
+    await expectError(
+      call('POST', `/admin/books/${slug}/ocr`, { admin: true, body: { pages: [2] } }),
+      'LLM_UNAVAILABLE',
+      'GEMINI_API_KEY-гүй сервер OCR-ийг ойлгомжтой алдаагаар татгалзана',
     );
 
     const res = await pageFile(slug, 3);
@@ -61,7 +80,7 @@ export async function runBooksScenario() {
     await expectError(call('GET', '/admin/books'), 'FORBIDDEN', 'Admin token-гүй бол сан руу хандахгүй');
 
     const list = await call<BooksResponse>('GET', '/admin/books', { admin: true });
-    check(list.books.some((b) => b.slug === slug && b.pages === 4 && b.ocrPages === 0), 'books:list-д 4 хуудастай харагдана');
+    check(list.books.some((b) => b.slug === slug && b.pages === 4 && b.textPages === 4), 'books:list-д 4 хуудастай харагдана');
 
     const del = await call<BookDeleteResponse>('DELETE', `/admin/books/${slug}`, { admin: true });
     check(del.deletedPages === 4 && (await pageFile(slug, 1)).status === 404, 'Номыг устгахад хуудас, файл нь хамт устна', del);

@@ -66,6 +66,7 @@ describe('listSourceFiles', () => {
   it('book.json, далд файл алгасаж, дэд хавтас ба дэмжигдэхгүй төрлийг мэдээлнэ', () => {
     const dir = bookDir('physics-8', { 'book.json': '{}', '.DS_Store': 'x', '2.PNG': solidPng(1, 1, 1), '1.jpeg': 'jpg', 'scan.heic': 'x', 'notes.txt': 'x' });
     mkdirSync(join(dir, 'extra'));
+    mkdirSync(join(dir, 'text')); // books:import-ийн текстийн кэш: алгасна, мэдээлэхгүй
     const { files, skipped } = listSourceFiles(dir);
     expect(files).toEqual([
       { name: '1.jpeg', mime: 'image/jpeg' },

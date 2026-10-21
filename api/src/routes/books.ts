@@ -1,9 +1,23 @@
 import { Hono } from 'hono';
-import type { BookDeleteResponse, BooksResponse, PagesTrimResponse } from '../../../shared/types';
-import { BOOK_SLUG, bookMetaSchema, isPageMime, MAX_PAGE_BYTES, MAX_PAGES, PAGE_MIME } from '../config/books';
+import { z } from 'zod';
+import type { BookDeleteResponse, BookOcrResponse, BooksResponse, PagesTrimResponse, PageTextsPutResponse } from '../../../shared/types';
+import { BOOK_SLUG, bookMetaSchema, isPageMime, MAX_PAGE_BYTES, MAX_PAGES, MAX_TEXT_CHARS, PAGE_MIME } from '../config/books';
 import type { AppEnv } from '../env';
 import { ApiError, readBody } from '../lib/errors';
-import { deleteBook, getBook, getPageFile, listBooks, putPage, trimPages, upsertBook } from '../services/books';
+import { OCR_MAX_PAGES } from '../llm/ocr';
+import { LlmError } from '../llm/types';
+import {
+  deleteBook,
+  getBook,
+  getPageFile,
+  getPageText,
+  listBooks,
+  ocrBookPages,
+  putPage,
+  putPageTexts,
+  trimPages,
+  upsertBook,
+} from '../services/books';
 
 // /admin/books/* — сурах бичгийн сан. Admin token-ийг admin.ts-ийн middleware шалгана.
 // `npm run books:import | books:list | books:delete` (scripts/books.ts) эдгээрийг дуудна.
@@ -64,4 +78,52 @@ bookRoutes.delete('/:slug/pages', async (c) => {
   const after = Number(c.req.query('after'));
   if (!Number.isInteger(after) || after < 0) throw new ApiError(400, 'BAD_REQUEST', 'after нь 0 эсвэл түүнээс их бүхэл тоо');
   return c.json<PagesTrimResponse>(await trimPages(c.env, slug, after));
+});
+
+const seqSchema = z.number().int().min(1).max(MAX_PAGES);
+
+/** Хуудсуудын текст (books:import текст давхаргаас, эсвэл кэшээс). */
+bookRoutes.put('/:slug/texts', async (c) => {
+  const slug = slugParam(c.req.param('slug'));
+  const body = await readBody(
+    c,
+    z.object({
+      pages: z
+        .array(
+          z.object({
+            seq: seqSchema,
+            sha256: z.string().regex(/^[0-9a-f]{64}$/),
+            text: z.string().max(MAX_TEXT_CHARS),
+            method: z.string().regex(/^[a-z0-9:.@-]{1,60}$/),
+            quality: z.enum(['ok', 'poor', 'empty']),
+          }),
+        )
+        .min(1)
+        .max(200),
+    }),
+  );
+  return c.json<PageTextsPutResponse>(await putPageTexts(c.env, slug, body.pages));
+});
+
+bookRoutes.get('/:slug/pages/:seq/text', async (c) => c.json(await getPageText(c.env, slugParam(c.req.param('slug')), seqParam(c.req.param('seq')))));
+
+/** Body: { pages: [35, 36, …], model? } — хуудсуудыг Gemini-ээр нэг хүсэлтэд уншуулна (books:ocr). */
+bookRoutes.post('/:slug/ocr', async (c) => {
+  const slug = slugParam(c.req.param('slug'));
+  const body = await readBody(
+    c,
+    z.object({
+      pages: z.array(seqSchema).min(1).max(OCR_MAX_PAGES),
+      /** Энэ удаад өөр Gemini загвар (books:ocr --model). */
+      model: z.string().regex(/^[a-z0-9.-]+$/).optional(),
+    }),
+  );
+  if (!c.env.GEMINI_API_KEY) throw new ApiError(503, 'LLM_UNAVAILABLE', 'OCR-д GEMINI_API_KEY хэрэгтэй (repo-ийн root дээрх .env.local)');
+  const env = body.model ? { ...c.env, GEMINI_MODEL: body.model } : c.env;
+  try {
+    return c.json<BookOcrResponse>(await ocrBookPages(env, slug, [...new Set(body.pages)]));
+  } catch (e) {
+    if (e instanceof LlmError) throw new ApiError(502, 'LLM_FAILED', e.message);
+    throw e;
+  }
 });

@@ -1,10 +1,22 @@
 // Сурах бичгийн сан: ном ба хуудсын мэдээлэл D1 (BOOKS)-д, хуудас бүрийн эх файл R2 (BOOK_FILES)-д.
 // Бүх үйлдэл давтагдаж болно (idempotent): books:import-ийг дахин ажиллуулахад зөвхөн өөрчлөгдсөн нь шинэчлэгдэнэ.
-import type { BookDetailResponse, BookMeta, BookPutResponse, BookSummary, PagePutResponse } from '../../../shared/types';
+import type {
+  BookDetailResponse,
+  BookMeta,
+  BookOcrResponse,
+  BookPutResponse,
+  BookSummary,
+  PagePutResponse,
+  PageTextInput,
+  PageTextResponse,
+  PageTextsPutResponse,
+  TextQuality,
+} from '../../../shared/types';
 import { type PageMime, pageKey } from '../config/books';
 import type { Bindings } from '../env';
 import { sha256Hex } from '../lib/auth';
 import { ApiError } from '../lib/errors';
+import { ocrPages } from '../llm/ocr';
 
 type BooksEnv = Pick<Bindings, 'BOOKS' | 'BOOK_FILES'>;
 
@@ -21,14 +33,18 @@ interface BookRow {
   updated_at: number;
   pages: number;
   bytes: number;
-  ocr_pages: number;
+  text_pages: number;
+  gemini_pages: number;
+  weak_pages: number;
 }
 
 const SUMMARY_SQL = `
   SELECT b.id, b.slug, b.subject, b.grade, b.title, b.year, b.publisher, b.source, b.page_offset,
          MAX(b.updated_at, COALESCE(MAX(p.updated_at), 0)) AS updated_at,
          COUNT(p.seq) AS pages, COALESCE(SUM(p.bytes), 0) AS bytes,
-         COALESCE(SUM(p.text_md IS NOT NULL), 0) AS ocr_pages
+         COALESCE(SUM(p.text_md IS NOT NULL), 0) AS text_pages,
+         COALESCE(SUM(p.ocr_model LIKE 'gemini:%'), 0) AS gemini_pages,
+         COALESCE(SUM(p.text_quality IN ('poor', 'empty')), 0) AS weak_pages
   FROM books b LEFT JOIN book_pages p ON p.book_id = b.id`;
 
 function toSummary(r: BookRow): BookSummary {
@@ -43,7 +59,9 @@ function toSummary(r: BookRow): BookSummary {
     pageOffset: r.page_offset,
     pages: r.pages,
     bytes: r.bytes,
-    ocrPages: r.ocr_pages,
+    textPages: r.text_pages,
+    geminiPages: r.gemini_pages,
+    weakPages: r.weak_pages,
     updatedAt: r.updated_at,
   };
 }
@@ -65,14 +83,32 @@ export async function getBook(env: BooksEnv, slug: string): Promise<BookDetailRe
   const book = await env.BOOKS.prepare(`${SUMMARY_SQL} WHERE b.slug = ? GROUP BY b.id`).bind(slug).first<BookRow>();
   if (!book) throw notFound(slug);
   const { results } = await env.BOOKS.prepare(
-    `SELECT seq, origin, mime, bytes, sha256, text_md IS NOT NULL AS has_text
+    `SELECT seq, origin, mime, bytes, sha256, text_md IS NOT NULL AS has_text, ocr_model, text_quality
      FROM book_pages WHERE book_id = ? ORDER BY seq`,
   )
     .bind(book.id)
-    .all<{ seq: number; origin: string; mime: string; bytes: number; sha256: string; has_text: number }>();
+    .all<{
+      seq: number;
+      origin: string;
+      mime: string;
+      bytes: number;
+      sha256: string;
+      has_text: number;
+      ocr_model: string | null;
+      text_quality: TextQuality | null;
+    }>();
   return {
     book: toSummary(book),
-    pages: results.map((p) => ({ seq: p.seq, origin: p.origin, mime: p.mime, bytes: p.bytes, sha256: p.sha256, hasText: p.has_text === 1 })),
+    pages: results.map((p) => ({
+      seq: p.seq,
+      origin: p.origin,
+      mime: p.mime,
+      bytes: p.bytes,
+      sha256: p.sha256,
+      hasText: p.has_text === 1,
+      textMethod: p.ocr_model,
+      textQuality: p.text_quality,
+    })),
   };
 }
 
@@ -126,6 +162,7 @@ export async function putPage(
        text_md   = CASE WHEN book_pages.sha256 = excluded.sha256 THEN book_pages.text_md ELSE NULL END,
        ocr_model = CASE WHEN book_pages.sha256 = excluded.sha256 THEN book_pages.ocr_model ELSE NULL END,
        ocr_at    = CASE WHEN book_pages.sha256 = excluded.sha256 THEN book_pages.ocr_at ELSE NULL END,
+       text_quality = CASE WHEN book_pages.sha256 = excluded.sha256 THEN book_pages.text_quality ELSE NULL END,
        sha256 = excluded.sha256, updated_at = excluded.updated_at`,
   )
     .bind(id, seq, origin, key, mime, body.byteLength, sha256, now)
@@ -170,4 +207,53 @@ export async function deleteBook(env: BooksEnv, slug: string): Promise<{ deleted
     cursor = listed.truncated ? listed.cursor : undefined;
   } while (cursor);
   return { deletedPages: pages.results.length };
+}
+
+/**
+ * Хуудасны текстийг хадгална. sha256 нь сан дахь файлынхтай таарахгүй (файл солигдсон, эсвэл
+ * хуудас алга) бол хадгалахгүйгээр `stale`-д буцаана.
+ */
+export async function putPageTexts(env: BooksEnv, slug: string, pages: PageTextInput[], now = Date.now()): Promise<PageTextsPutResponse> {
+  const id = await bookId(env, slug);
+  const stmt = env.BOOKS.prepare(
+    'UPDATE book_pages SET text_md = ?, ocr_model = ?, text_quality = ?, ocr_at = ? WHERE book_id = ? AND seq = ? AND sha256 = ?',
+  );
+  const results = await env.BOOKS.batch(pages.map((p) => stmt.bind(p.text, p.method, p.quality, now, id, p.seq, p.sha256)));
+  const stale = pages.filter((_, i) => !results[i].meta.changes).map((p) => p.seq);
+  return { updated: pages.length - stale.length, stale };
+}
+
+export async function getPageText(env: BooksEnv, slug: string, seq: number): Promise<PageTextResponse> {
+  const row = await env.BOOKS.prepare(
+    `SELECT p.text_md, p.ocr_model, p.text_quality, p.ocr_at
+     FROM book_pages p JOIN books b ON b.id = p.book_id WHERE b.slug = ? AND p.seq = ?`,
+  )
+    .bind(slug, seq)
+    .first<{ text_md: string | null; ocr_model: string | null; text_quality: TextQuality | null; ocr_at: number | null }>();
+  if (!row) throw new ApiError(404, 'NOT_FOUND', `"${slug}" номын ${seq}-р хуудас алга`);
+  return { seq, text: row.text_md, method: row.ocr_model, quality: row.text_quality, at: row.ocr_at };
+}
+
+/** Хуудсуудыг R2-оос авч Gemini-ээр нэг хүсэлтээр уншуулж, текстийг нь хадгална. */
+export async function ocrBookPages(env: Bindings, slug: string, seqs: number[], now = Date.now()): Promise<BookOcrResponse> {
+  const book = await env.BOOKS.prepare('SELECT id, title FROM books WHERE slug = ?').bind(slug).first<{ id: number; title: string }>();
+  if (!book) throw notFound(slug);
+  const { results } = await env.BOOKS.prepare(
+    `SELECT seq, r2_key, mime, sha256 FROM book_pages WHERE book_id = ? AND seq IN (${seqs.map(() => '?').join(', ')}) ORDER BY seq`,
+  )
+    .bind(book.id, ...seqs)
+    .all<{ seq: number; r2_key: string; mime: string; sha256: string }>();
+  const missing = seqs.filter((s) => !results.some((r) => r.seq === s));
+  if (missing.length) throw new ApiError(404, 'NOT_FOUND', `"${slug}" номд ${missing.join(', ')}-р хуудас алга`);
+  const files = await Promise.all(
+    results.map(async (r) => {
+      const obj = await env.BOOK_FILES.get(r.r2_key);
+      if (!obj) throw new ApiError(404, 'NOT_FOUND', `${r.r2_key} файл R2-д алга`);
+      return { mimeType: r.mime, bytes: new Uint8Array(await obj.arrayBuffer()) };
+    }),
+  );
+  const { texts, source } = await ocrPages(env, files, `Book: "${book.title}", pages ${results.map((r) => r.seq).join(', ')}.`);
+  const pages = results.map((r, i) => ({ seq: r.seq, sha256: r.sha256, text: texts[i] }));
+  await putPageTexts(env, slug, pages.map((p) => ({ ...p, method: source, quality: 'ok' as const })), now);
+  return { model: source, pages };
 }

@@ -21,6 +21,8 @@ export function isPageMime(value: string | undefined): value is PageMime {
 /** Нэг хуудасны файлын дээд хэмжээ (300 DPI өнгөт скан ч үүнд багтана). */
 export const MAX_PAGE_BYTES = 30 * 1024 * 1024;
 export const MAX_PAGES = 2000;
+/** Нэг хуудасны текстийн дээд урт. */
+export const MAX_TEXT_CHARS = 60_000;
 
 /** Хавтасны нэрээс book.json үүсгэхэд: хичээл → гарчиг. */
 export const BOOK_SUBJECT_TITLES: Record<string, string> = {

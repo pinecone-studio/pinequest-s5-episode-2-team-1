@@ -134,7 +134,7 @@ describe('Gemini REST', () => {
       return new Response(JSON.stringify(okBody), { status: 200 });
     }) as unknown as typeof fetch;
 
-    const out = await geminiGenerate(env, 'SYS', 'USER', { fetchImpl: fake });
+    const out = await geminiGenerate(env, { system: 'SYS', user: 'USER' }, { fetchImpl: fake });
     expect(out).toEqual({ questions: [good()] });
     expect(calls[0].url).toContain('/models/gemini-3.8-flash:generateContent');
     const headers = calls[0].init.headers as Record<string, string>;
@@ -143,6 +143,24 @@ describe('Gemini REST', () => {
     expect(body.systemInstruction.parts[0].text).toBe('SYS');
     expect(body.generationConfig.responseJsonSchema.properties.questions.items.required).toContain('solution');
     expect(body.generationConfig.thinkingConfig).toEqual({ thinkingLevel: 'low' });
+  });
+
+  it('хавсралт файлыг inline_data-аар, өөр schema ба maxOutputTokens-ийг дамжуулна', async () => {
+    let body: { contents: Array<{ parts: unknown[] }>; generationConfig: Record<string, unknown> } | null = null;
+    const fake = (async (_url: string, init: RequestInit) => {
+      body = JSON.parse(String(init.body));
+      return new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: '{"pages":[]}' }] } }] }), { status: 200 });
+    }) as unknown as typeof fetch;
+    const schema = { type: 'object', properties: { pages: { type: 'array' } } };
+    const out = await geminiGenerate(
+      env,
+      { system: 's', user: 'u', files: [{ mimeType: 'application/pdf', data: 'QUJD' }], schema, maxOutputTokens: 32768 },
+      { fetchImpl: fake },
+    );
+    expect(out).toEqual({ pages: [] });
+    expect(body!.contents[0].parts).toEqual([{ inline_data: { mime_type: 'application/pdf', data: 'QUJD' } }, { text: 'u' }]);
+    expect(body!.generationConfig.maxOutputTokens).toBe(32768);
+    expect(JSON.stringify(body!.generationConfig)).toContain('"pages"');
   });
 
   it('400 бол дараагийн хүсэлтийн хэлбэрийг туршаад ажилласныг санана', async () => {
@@ -155,8 +173,8 @@ describe('Gemini REST', () => {
       return new Response(JSON.stringify(okBody), { status: 200 });
     }) as unknown as typeof fetch;
 
-    await geminiGenerate(env, 's', 'u', { fetchImpl: fake });
-    await geminiGenerate(env, 's', 'u', { fetchImpl: fake });
+    await geminiGenerate(env, { system: 's', user: 'u' }, { fetchImpl: fake });
+    await geminiGenerate(env, { system: 's', user: 'u' }, { fetchImpl: fake });
     expect(seen).toEqual(['jsonSchema', 'responseFormat', 'responseFormat']);
   });
 
@@ -168,7 +186,7 @@ describe('Gemini REST', () => {
       if (status === 200) return new Response(JSON.stringify(okBody), { status });
       return new Response(JSON.stringify({ error: { details: [{ retryDelay: '0.01s' }] } }), { status });
     }) as unknown as typeof fetch;
-    const out = await geminiGenerate(env, 's', 'u', { fetchImpl: fake, baseDelayMs: 1 });
+    const out = await geminiGenerate(env, { system: 's', user: 'u' }, { fetchImpl: fake, baseDelayMs: 1 });
     expect(out).toEqual({ questions: [good()] });
     expect(calls).toBe(3);
   });
@@ -179,12 +197,12 @@ describe('Gemini REST', () => {
       calls++;
       return new Response('RESOURCE_EXHAUSTED', { status: 429 });
     }) as unknown as typeof fetch;
-    await expect(geminiGenerate(env, 's', 'u', { fetchImpl: fake, attempts: 2, baseDelayMs: 1 })).rejects.toThrow(/429/);
+    await expect(geminiGenerate(env, { system: 's', user: 'u' }, { fetchImpl: fake, attempts: 2, baseDelayMs: 1 })).rejects.toThrow(/429/);
     expect(calls).toBe(2);
   });
 
   it('түлхүүргүй бол дуудахгүй', async () => {
-    await expect(geminiGenerate({ ...env, GEMINI_API_KEY: undefined }, 's', 'u')).rejects.toThrow(/GEMINI_API_KEY/);
+    await expect(geminiGenerate({ ...env, GEMINI_API_KEY: undefined }, { system: 's', user: 'u' })).rejects.toThrow(/GEMINI_API_KEY/);
   });
 });
 
