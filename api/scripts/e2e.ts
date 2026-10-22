@@ -117,11 +117,24 @@ async function recoveryScenario() {
   const ids: number[] = [];
   let wrongOk = true;
   let rightOk = true;
+  let swapped = false;
   while (r.question) {
     const id = r.question.id;
     const ci = await correctIndex(id);
     const bad = await call<RecoveryAnswerResponse>('POST', '/recovery/physics/answer', { token: u.token, body: { questionId: id, choice: (ci + 1) % 4 } });
-    wrongOk &&= !bad.correct && bad.explanation === undefined && bad.recovery.answered === ids.length;
+    wrongOk &&= !bad.correct && bad.explanation === undefined && bad.correctIndex === undefined && bad.recovery.answered === ids.length;
+    if (!swapped) {
+      // эхний асуултад 2 дахь удаа буруу: зөв хариу, тайлбар ирж, асуулт ижил сэдвийн өөр асуултаар солигдоно (байвал)
+      swapped = true;
+      const bad2 = await call<RecoveryAnswerResponse>('POST', '/recovery/physics/answer', { token: u.token, body: { questionId: id, choice: (ci + 1) % 4 } });
+      const replaced = bad2.recovery.question?.id !== id;
+      check(
+        !bad2.correct && bad2.correctIndex === ci && !!bad2.explanation && bad2.recovery.answered === 0 && bad2.recovery.total === r.total,
+        `2 дахь буруугаас зөв хариу, тайлбар ирнэ (${replaced ? 'асуулт солигдсон' : 'тэр сэдэвт өөр асуулт алга, хэвээр'})`,
+      );
+      r = bad2.recovery;
+      continue;
+    }
     const body = { questionId: id, choice: ci };
     const ok = await call<RecoveryAnswerResponse>('POST', '/recovery/physics/answer', { token: u.token, body });
     rightOk &&= ok.correct && !!ok.explanation && ok.recovery.answered === ids.length + 1;

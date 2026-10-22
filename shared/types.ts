@@ -168,8 +168,10 @@ export interface RecoveryDto {
 
 export interface RecoveryAnswerResponse {
   correct: boolean;
-  /** Зөвхөн зөв хариулсан үед. */
+  /** Зөв хариулсан үед, эсвэл нэг асуултад 2 дахь удаа буруу хариулахад (дараа нь асуулт солигдоно). */
   explanation?: string;
+  /** Нэг асуултад 2 дахь удаа буруу хариулахад л: зөв хариу (тэр асуулт ижил сэдвийн өөр асуултаар солигдоно). */
+  correctIndex?: number;
   recovery: RecoveryDto;
 }
 
