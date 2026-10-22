@@ -1,0 +1,213 @@
+{
+  "sheet": "bear_lesson",
+  "frameSize": {
+    "w": 55,
+    "h": 66
+  },
+  "columns": 7,
+  "feet": 65,
+  "pivot": 28,
+  "background": {
+    "w": 132,
+    "h": 156,
+    "floor": 112,
+    "rug": [
+      100,
+      134
+    ]
+  },
+  "frames": [
+    {
+      "name": "idle0",
+      "duration": 220,
+      "lift": 0
+    },
+    {
+      "name": "idle1",
+      "duration": 220,
+      "lift": 0
+    },
+    {
+      "name": "idle2",
+      "duration": 220,
+      "lift": 0
+    },
+    {
+      "name": "idle3",
+      "duration": 220,
+      "lift": 0
+    },
+    {
+      "name": "think0",
+      "duration": 150,
+      "lift": 0
+    },
+    {
+      "name": "think1",
+      "duration": 150,
+      "lift": 0
+    },
+    {
+      "name": "think2",
+      "duration": 150,
+      "lift": 0
+    },
+    {
+      "name": "think3",
+      "duration": 150,
+      "lift": 0
+    },
+    {
+      "name": "think4",
+      "duration": 150,
+      "lift": 0
+    },
+    {
+      "name": "think5",
+      "duration": 150,
+      "lift": 0
+    },
+    {
+      "name": "think6",
+      "duration": 150,
+      "lift": 0
+    },
+    {
+      "name": "think7",
+      "duration": 150,
+      "lift": 0
+    },
+    {
+      "name": "think8",
+      "duration": 150,
+      "lift": 0
+    },
+    {
+      "name": "cheer0",
+      "duration": 110,
+      "lift": 0
+    },
+    {
+      "name": "cheer1",
+      "duration": 110,
+      "lift": 0
+    },
+    {
+      "name": "cheer2",
+      "duration": 110,
+      "lift": 0
+    },
+    {
+      "name": "cheer3",
+      "duration": 110,
+      "lift": 0
+    },
+    {
+      "name": "cheer4",
+      "duration": 90,
+      "lift": 0
+    },
+    {
+      "name": "cheer5",
+      "duration": 90,
+      "lift": 0
+    },
+    {
+      "name": "cheer6",
+      "duration": 90,
+      "lift": 0
+    },
+    {
+      "name": "cheer7",
+      "duration": 110,
+      "lift": 0
+    },
+    {
+      "name": "cheer8",
+      "duration": 110,
+      "lift": 0
+    },
+    {
+      "name": "cheer9",
+      "duration": 110,
+      "lift": 0
+    },
+    {
+      "name": "cheer10",
+      "duration": 110,
+      "lift": 0
+    },
+    {
+      "name": "sad0",
+      "duration": 130,
+      "lift": 0
+    },
+    {
+      "name": "sad1",
+      "duration": 130,
+      "lift": 0
+    },
+    {
+      "name": "sad2",
+      "duration": 130,
+      "lift": 0
+    },
+    {
+      "name": "sad3",
+      "duration": 130,
+      "lift": 0
+    },
+    {
+      "name": "sad4",
+      "duration": 130,
+      "lift": 0
+    },
+    {
+      "name": "sad5",
+      "duration": 130,
+      "lift": 0
+    },
+    {
+      "name": "sad6",
+      "duration": 130,
+      "lift": 0
+    },
+    {
+      "name": "sad7",
+      "duration": 130,
+      "lift": 0
+    },
+    {
+      "name": "sad8",
+      "duration": 700,
+      "lift": 0
+    }
+  ],
+  "tags": {
+    "idle": {
+      "from": 0,
+      "to": 3,
+      "direction": "pingpong"
+    },
+    "think": {
+      "from": 4,
+      "to": 12,
+      "direction": "pingpong"
+    },
+    "cheer": {
+      "from": 13,
+      "to": 23,
+      "direction": "forward"
+    },
+    "wave": {
+      "from": 20,
+      "to": 23,
+      "direction": "forward"
+    },
+    "oops": {
+      "from": 24,
+      "to": 32,
+      "direction": "forward"
+    }
+  }
+}

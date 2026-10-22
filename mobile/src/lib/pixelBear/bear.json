@@ -1,84 +1,136 @@
 {
   "sheet": "bear_battle",
   "frameSize": {
-    "w": 52,
-    "h": 64
+    "w": 64,
+    "h": 65
   },
   "columns": 7,
-  "feet": 61,
-  "pad": 9,
+  "feet": 62,
+  "pad": 19,
   "paw": [
-    2,
-    32
+    1,
+    23
   ],
   "frames": [
     {
-      "name": "idle",
-      "duration": 520
+      "name": "idle0",
+      "duration": 200
     },
     {
-      "name": "breatheA",
-      "duration": 150
+      "name": "idle1",
+      "duration": 200
     },
     {
-      "name": "breatheB",
-      "duration": 520
+      "name": "idle2",
+      "duration": 200
     },
     {
-      "name": "blink",
-      "duration": 130
+      "name": "idle3",
+      "duration": 200
     },
     {
-      "name": "raise",
-      "duration": 120
+      "name": "throw0",
+      "duration": 80
     },
     {
-      "name": "spark",
+      "name": "throw1",
+      "duration": 80
+    },
+    {
+      "name": "throw2",
       "duration": 110
     },
     {
-      "name": "charge",
-      "duration": 170
+      "name": "throw3",
+      "duration": 120
+    },
+    {
+      "name": "throw4",
+      "duration": 120
     },
     {
       "name": "throwSmear",
-      "duration": 50
+      "duration": 70
     },
     {
       "name": "release",
+      "duration": 90
+    },
+    {
+      "name": "throw7",
       "duration": 110
     },
     {
-      "name": "follow",
-      "duration": 130
+      "name": "throw8",
+      "duration": 110
     },
     {
-      "name": "recover",
-      "duration": 120
+      "name": "claw0",
+      "duration": 90
     },
     {
-      "name": "clawUp",
-      "duration": 150
+      "name": "claw1",
+      "duration": 90
     },
     {
-      "name": "clawSmear",
-      "duration": 50
+      "name": "claw2",
+      "duration": 90
+    },
+    {
+      "name": "claw3",
+      "duration": 90
+    },
+    {
+      "name": "claw4",
+      "duration": 90
+    },
+    {
+      "name": "claw5",
+      "duration": 90
     },
     {
       "name": "claw",
-      "duration": 220
+      "duration": 160
     },
     {
-      "name": "clawRecover",
-      "duration": 110
+      "name": "claw7",
+      "duration": 90
+    },
+    {
+      "name": "claw8",
+      "duration": 90
     },
     {
       "name": "flash",
-      "duration": 120
+      "duration": 80
     },
     {
-      "name": "hurt",
-      "duration": 440
+      "name": "hurt0",
+      "duration": 90
+    },
+    {
+      "name": "hurt1",
+      "duration": 90
+    },
+    {
+      "name": "hurt2",
+      "duration": 90
+    },
+    {
+      "name": "hurt3",
+      "duration": 90
+    },
+    {
+      "name": "hurt4",
+      "duration": 90
+    },
+    {
+      "name": "hurt5",
+      "duration": 90
+    },
+    {
+      "name": "hurt6",
+      "duration": 90
     },
     {
       "name": "front",
@@ -128,48 +180,58 @@
   "tags": {
     "idle": {
       "from": 0,
-      "to": 2,
+      "to": 3,
       "direction": "pingpong"
     },
     "blink": {
-      "from": 3,
-      "to": 3,
+      "from": 0,
+      "to": 0,
       "direction": "forward"
     },
     "throw": {
       "from": 4,
-      "to": 10,
+      "to": 12,
       "direction": "forward"
     },
     "claw": {
-      "from": 11,
-      "to": 14,
+      "from": 13,
+      "to": 21,
       "direction": "forward"
     },
     "hurt": {
-      "from": 15,
-      "to": 16,
+      "from": 22,
+      "to": 29,
       "direction": "forward"
     },
     "turn": {
-      "from": 17,
-      "to": 17,
+      "from": 30,
+      "to": 30,
       "direction": "forward"
     },
     "ready": {
-      "from": 18,
-      "to": 18,
+      "from": 31,
+      "to": 31,
       "direction": "forward"
     },
     "run": {
-      "from": 19,
-      "to": 26,
+      "from": 32,
+      "to": 39,
       "direction": "forward"
     },
     "brake": {
-      "from": 27,
-      "to": 27,
+      "from": 40,
+      "to": 40,
       "direction": "forward"
     }
+  },
+  "honey": {
+    "sheet": "fx_honey_shatter",
+    "columns": 3,
+    "frames": 7,
+    "duration": 63,
+    "pivot": [
+      28,
+      29
+    ]
   }
 }

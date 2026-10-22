@@ -35,11 +35,13 @@ M.head_sleep = [[54, 34]];
 for (const n of ['map_bear', 'map_bear_blink', 'map_cloud_a', 'map_cloud_b', 'map_gift', 'map_qblock', 'map_ring', 'map_sapling', 'map_arrow', 'map_butterfly_sheet']) M[n] = [2];
 for (const n of ['tile_stone_done', 'tile_stone_lock', 'tile_pedestal_cur', 'tile_pedestal_end', 'tile_pedestal_gift', 'tile_pedestal_myst', 'tile_pedestal_sapling']) M[n] = [2];
 // адал явдлын газрын зураг (docs/design/pixel-bear/tools/mapgen_world.py), тулааны баавгай (scripts/bear-sprites.ts)
-for (const n of ['map_world_0', 'map_world_1', 'map_world_2', 'map_flag', 'fx_magic', 'lair_0', 'lair_1', 'lair_2', 'bear_battle', 'fx_spark', 'fx_spark_magic', 'fx_slash']) M[n] = [2];
+for (const n of ['map_world_0', 'map_world_1', 'map_world_2', 'map_flag', 'fx_magic', 'lair_0', 'lair_1', 'lair_2', 'bear_battle', 'fx_honey_shatter', 'fx_spark', 'fx_spark_magic', 'fx_slash']) M[n] = [2];
 // boss: газрын зураг дээр 2×, тулаанд 4× (boss_pumpkin.py, mapgen_world.py)
 for (const n of ['boss_pumpkin_sheet', 'map_boss_1', 'map_boss_2']) M[n] = [2, 4];
 for (const n of ['map_boss_1', 'map_boss_2']) M[`${n}_white`] = [4];
 M.fx_scythe = [4];
+// хичээлийн дэлгэц (scripts/lesson-sprites.ts): дэвсгэр ба баавгай 3×
+for (const n of ['bear_lesson', 'lesson_bg', 'lesson_shadow']) M[n] = [3];
 // v2 (Charlie маягийн) nav icon ба Нүүрний товчнууд: 20px эх, 30dp-ээр (1.5×) — нарийн pixel
 for (const n of ['home', 'tasks', 'path', 'shop', 'crew', 'bag']) {
   M[`nav2_${n}_on`] = [[30, 30]];

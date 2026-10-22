@@ -1,0 +1,113 @@
+{
+  "character": {
+    "id": "e229b5d3-3371-4930-8c03-16e8fc7d7394",
+    "name": "Idle",
+    "prompt": "cute chubby brown teddy bear, big shiny brown eyes, rosy cheeks, cream muzzle and cream belly, round ears with pink-beige inner ear, green knitted scarf with small gold dots and gold fringe hanging on the chest, standing upright on two legs, chibi proportions, bold dark brown outline, clean cel shading",
+    "size": {
+      "width": 36,
+      "height": 64
+    },
+    "directions": 4,
+    "view": "side"
+  },
+  "spritesheet": {
+    "path": "Pinequest_Bear-Idle.png",
+    "cell_size": {
+      "width": 88,
+      "height": 88
+    },
+    "sheet_size": {
+      "width": 968,
+      "height": 880
+    },
+    "columns": 11,
+    "pivot": "cell-center",
+    "rows": [
+      {
+        "row": 0,
+        "type": "rotations",
+        "frame_count": 4,
+        "directions": [
+          "south",
+          "west",
+          "east",
+          "north"
+        ]
+      },
+      {
+        "row": 1,
+        "type": "animation",
+        "frame_count": 9,
+        "animation": "sad",
+        "animation_group_id": "0d9b59d8-0d1c-4506-ac4f-8b5887166fc2",
+        "direction": "south"
+      },
+      {
+        "row": 2,
+        "type": "animation",
+        "frame_count": 11,
+        "animation": "cheer",
+        "animation_group_id": "27527753-f0db-482e-847f-0ac83b2f5ac1",
+        "direction": "south"
+      },
+      {
+        "row": 3,
+        "type": "animation",
+        "frame_count": 9,
+        "animation": "claw",
+        "animation_group_id": "6d021b08-b09d-438d-9973-101b203aea43",
+        "direction": "west"
+      },
+      {
+        "row": 4,
+        "type": "animation",
+        "frame_count": 7,
+        "animation": "hurt",
+        "animation_group_id": "7045c710-c244-46d8-bf3e-21e7ce835609",
+        "direction": "west"
+      },
+      {
+        "row": 5,
+        "type": "animation",
+        "frame_count": 9,
+        "animation": "think",
+        "animation_group_id": "811bf96a-e06c-48aa-afa9-b3993b88ce5a",
+        "direction": "south"
+      },
+      {
+        "row": 6,
+        "type": "animation",
+        "frame_count": 9,
+        "animation": "throw",
+        "animation_group_id": "8a83a072-e741-4c28-8268-644f8ea2e5e6",
+        "direction": "west"
+      },
+      {
+        "row": 7,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "idle",
+        "animation_group_id": "a44fb6d7-a70e-4bd9-9b75-ee7cddc56673",
+        "direction": "south"
+      },
+      {
+        "row": 8,
+        "type": "animation",
+        "frame_count": 4,
+        "animation": "idle",
+        "animation_group_id": "a44fb6d7-a70e-4bd9-9b75-ee7cddc56673",
+        "direction": "west"
+      },
+      {
+        "row": 9,
+        "type": "animation",
+        "frame_count": 8,
+        "animation": "run",
+        "animation_group_id": "c6deee8b-36d4-4131-983d-3997f1df8e57",
+        "direction": "west"
+      }
+    ]
+  },
+  "export_version": "1.0",
+  "export_date": "2026-10-22T05:20:46.026555+00:00"
+}
