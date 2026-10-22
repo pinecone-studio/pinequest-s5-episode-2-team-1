@@ -48,8 +48,10 @@ function honeyAt(img: Img): [number, number] {
     for (let x = 0; x < img.w; x++) {
       const i = at(img, x, y);
       const [r, g, b, a] = img.d.subarray(i, i + 4);
-      if (a && r > 200 && g > 130 && b < 90 && x < best[0]) best = [x, y];
+      if (a && r > 240 && g > 140 && b < 40 && x < best[0]) best = [x, y]; // үсний шар (b ≥ 56)-аас ялгарах тод улбар шар
     }
+  // сав олдоогүй бол (шидэх хөдөлгөөнийг өөр өнгөөр дахин үүсгэсэн) буруу цэгээс нисгэхийн оронд зогсоно
+  if (best[0] === img.w) throw new Error('honeyAt: throwSmear frame-д зөгийн балны сав (шар pixel) олдсонгүй');
   return best;
 }
 
