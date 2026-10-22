@@ -11,15 +11,16 @@ const rawSchema = z.object({
 });
 
 const CYRILLIC = /[Ѐ-ӿ]/;
-/**
- * Нэг үг дотор кирилл, латин холилдсон ("зохиolyn") нь LLM-ийн эвдэрсэн гаралт. Физикийн
- * "Eп", "Eк" зэрэг богино тэмдэглэгээг зөвшөөрөхийн тулд 5+ үсэгтэй үгийг л шалгана.
- */
+
 /** Кирилл, латин, грекээс өөр бичгийн үсэг (жишээ нь араб "ە") нь LLM-ийн эвдэрсэн гаралт. */
 function hasForeignScript(text: string): boolean {
   return /(?![\p{Script=Cyrillic}\p{Script=Latin}\p{Script=Greek}])\p{L}/u.test(text);
 }
 
+/**
+ * Нэг үг дотор кирилл, латин холилдсон ("зохиolyn") нь LLM-ийн эвдэрсэн гаралт. Физикийн
+ * "Eп", "Eк" зэрэг богино тэмдэглэгээг зөвшөөрөхийн тулд 5+ үсэгтэй үгийг л шалгана.
+ */
 function hasMixedScriptWord(text: string): boolean {
   return (text.match(/[\p{L}]+/gu) ?? []).some(
     (w) => w.length >= 5 && /[\u0400-\u04FF]/.test(w) && /[a-zA-Z]/.test(w),
