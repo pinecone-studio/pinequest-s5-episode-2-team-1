@@ -1,6 +1,6 @@
 import type { Me, SubjectPath } from '../../../shared/types';
 import { GAME, SUBJECTS, type Subject } from '../config/game';
-import { levelFromXp, levelProgress } from '../domain/level';
+import { levelProgress } from '../domain/level';
 import { shieldBlock, shieldNextBuyDay } from '../domain/shield';
 import { maxStake } from '../domain/stake';
 import { normalizeStreak, registerTaskDay, type StreakState, streakMultiplier } from '../domain/streak';
@@ -90,7 +90,8 @@ export async function loadSubjectPaths(db: D1Database, userId: number): Promise<
   for (const subject of SUBJECTS) {
     const row = results.find((r) => r.subject === subject);
     const xp = row?.xp ?? 0;
-    paths[subject] = { xp, level: levelFromXp(xp), bossesBeaten: row?.bosses_beaten ?? 0 };
+    const per = GAME.PATH_XP_PER_NODE;
+    paths[subject] = { xp, level: Math.floor(xp / per) + 1, nodeXp: xp % per, nodeXpNeeded: per, bossesBeaten: row?.bosses_beaten ?? 0 };
   }
   return paths;
 }

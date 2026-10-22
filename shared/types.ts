@@ -106,8 +106,11 @@ export interface Me {
 export interface SubjectPath {
   /** Энэ хичээлийн даалгавраас авсан XP (нийт XP-ийн хэсэг). */
   xp: number;
-  /** floor(xp / 100) + 1: газрын зураг дээрх зангилаа = level − 1. */
+  /** floor(xp / PATH_XP_PER_NODE) + 1: газрын зураг дээрх зангилаа = level − 1 (5 зөв хариулт тутамд нэг). */
   level: number;
+  /** Дараагийн зангилаа хүртэлх явц: nodeXp / nodeXpNeeded. */
+  nodeXp: number;
+  nodeXpNeeded: number;
   /** Дарааллаар ялсан boss-ын тоо: дараагийнхаа boss-ыг ялах хүртэл баавгай түүний дэргэд зогсоно. */
   bossesBeaten: number;
 }

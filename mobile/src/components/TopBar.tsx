@@ -14,7 +14,8 @@ export function TopBar({ xp = 'total', onMap, path }: { xp?: 'total' | 'level' |
   const { me } = useAuth();
   const { coins } = usePixelBear();
   if (!me) return null;
-  const levelXp = path ? path.xp - (path.level - 1) * me.levelXpNeeded : me.levelXp;
+  const levelXp = path ? path.nodeXp : me.levelXp;
+  const levelXpNeeded = path ? path.nodeXpNeeded : me.levelXpNeeded;
   return (
     <View style={styles.row}>
       <Pressable
@@ -27,9 +28,9 @@ export function TopBar({ xp = 'total', onMap, path }: { xp?: 'total' | 'level' |
       </Pressable>
       {xp === 'none' ? null : (
         <XpPill
-          text={xp === 'total' ? `${me.xp} XP` : `${levelXp}/${me.levelXpNeeded}`}
+          text={xp === 'total' ? `${me.xp} XP` : `${levelXp}/${levelXpNeeded}`}
           value={levelXp}
-          max={me.levelXpNeeded}
+          max={levelXpNeeded}
         />
       )}
       <View style={{ flex: 1 }} />

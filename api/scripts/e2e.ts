@@ -101,7 +101,7 @@ async function pathsScenario() {
   await doTask(u.token, 'math', true);
   await doTask(u.token, 'math', true);
   const m = await me(u.token);
-  check(m.paths.math.xp === 100 && m.paths.math.level === 2, 'Математикийн 2 даалгавар → математикийн зам 2-р шат (100 XP)', m.paths.math);
+  check(m.paths.math.xp === 100 && m.paths.math.level === 3, 'Математикийн 2 даалгавар (10 зөв) → математикийн замд 2 зангилаа ахина', m.paths.math);
   check(m.paths.physics.xp === 0 && m.paths.mongolian.level === 1, 'Бусад хичээлийн зам хөдлөхгүй', m.paths);
   check(m.xp === 100 && m.level === 2, 'Нийт XP, шат хэвээр нэмэгдэнэ');
   await expectError(call('POST', '/tasks', { token: u.token, body: { subject: 'math', boss: 0 } }), 'BOSS_LOCKED', 'Тэр хичээлийн boss-ын зангилаанд хүрээгүй бол boss хаалттай');
