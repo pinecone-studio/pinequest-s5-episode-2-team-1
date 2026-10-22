@@ -41,7 +41,8 @@ export type ErrorCode =
   | 'WRONG_TIER'
   | 'OWN_DUEL'
   | 'LLM_UNAVAILABLE'
-  | 'LLM_FAILED';
+  | 'LLM_FAILED'
+  | 'BOSS_LOCKED';
 
 export interface ApiErrorBody {
   error: { code: ErrorCode; message: string };
@@ -90,6 +91,8 @@ export interface Me {
   equipped: Equipped;
   avatar: AvatarLook;
   maxStake: number;
+  /** Газрын зурагт дарааллаар ялсан boss-ын тоо: дараагийнхаа boss-ыг ялах хүртэл баавгай түүний дэргэд зогсоно. */
+  bossesBeaten: number;
   today: string;
 }
 

@@ -1,5 +1,6 @@
 import type { AnswerResponse, FlagResponse, Me, TaskDto, TaskResult } from '../../../shared/types';
 import { GAME, type Subject, type Tier } from '../config/game';
+import { bossBlock, bossWon } from '../domain/boss';
 import { levelFromXp } from '../domain/level';
 import { taskReward } from '../domain/rewards';
 import { shieldBlock } from '../domain/shield';
@@ -55,18 +56,36 @@ export async function loadTask(db: D1Database, userId: number, taskId: number): 
   };
 }
 
-/** Шинэ даалгавар (эсвэл өнөөдрийн дуусаагүй ижил хичээлийнхийг) буцаана. */
-export async function startTask(env: Bindings, ctx: Ctx, userId: number, subject: Subject, now = Date.now()): Promise<TaskDto> {
+/**
+ * Шинэ даалгавар (эсвэл өнөөдрийн дуусаагүй ижил хичээлийнхийг) буцаана. `boss` = газрын зургийн тэр бүлгийн
+ * boss-той тулаан: ялбал (олонх зөв) дараагийн бүлэг нээгдэнэ.
+ */
+export async function startTask(
+  env: Bindings,
+  ctx: Ctx,
+  userId: number,
+  subject: Subject,
+  boss?: number,
+  now = Date.now(),
+): Promise<TaskDto> {
   const db = env.DB;
   const user = await getUserRow(db, userId);
   const tier = user.tier as Tier;
   const today = ubDay(now);
+  if (boss !== undefined) {
+    const block = bossBlock(levelFromXp(user.xp), user.bosses_beaten, boss);
+    if (block) throw new ApiError(409, block, 'Энэ boss-той тулалдах боломжгүй');
+  }
 
   const existing = await db
     .prepare(`SELECT id FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress' ORDER BY id DESC LIMIT 1`)
     .bind(userId, subject, today)
     .first<{ id: number }>();
-  if (existing) return loadTask(db, userId, existing.id);
+  if (existing) {
+    // Дуусаагүй даалгаврыг хаанаас нээсэн нь (газрын зургийн boss эсвэл ердийн) түүний төрлийг шийднэ.
+    await db.prepare('UPDATE tasks SET boss = ? WHERE id = ?').bind(boss ?? null, existing.id).run();
+    return loadTask(db, userId, existing.id);
+  }
 
   if ((await countTasksToday(db, userId, today)) >= GAME.DAILY_TASK_LIMIT) {
     throw new ApiError(429, 'DAILY_LIMIT', 'Өнөөдрийн хязгаар дууссан');
@@ -91,12 +110,12 @@ export async function startTask(env: Bindings, ctx: Ctx, userId: number, subject
   // Өдрийн хязгаарыг нэг statement-аар: зэрэг хоёр хүсэлт ирсэн ч 10-аас хэтрэхгүй.
   const created = await db
     .prepare(
-      `INSERT INTO tasks (user_id, subject, day, status, created_at)
-       SELECT ?, ?, ?, 'in_progress', ?
+      `INSERT INTO tasks (user_id, subject, day, status, boss, created_at)
+       SELECT ?, ?, ?, 'in_progress', ?, ?
        WHERE (SELECT COUNT(*) FROM tasks WHERE user_id = ? AND day = ?) < ?
        RETURNING id`,
     )
-    .bind(userId, subject, today, now, userId, today, GAME.DAILY_TASK_LIMIT)
+    .bind(userId, subject, today, boss ?? null, now, userId, today, GAME.DAILY_TASK_LIMIT)
     .first<{ id: number }>();
   if (!created) throw new ApiError(429, 'DAILY_LIMIT', 'Өнөөдрийн хязгаар дууссан');
 
@@ -204,11 +223,13 @@ export async function completeTask(db: D1Database, userId: number, taskId: numbe
   const normalized = normalizeStreak(streakStateOf(user), today);
   const after = registerTaskDay(normalized.state, today);
   const cc = await db
-    .prepare('SELECT COUNT(*) AS n FROM task_questions WHERE task_id = ? AND correct = 1')
+    .prepare('SELECT t.boss, (SELECT COUNT(*) FROM task_questions WHERE task_id = t.id AND correct = 1) AS n FROM tasks t WHERE t.id = ?')
     .bind(taskId)
-    .first<{ n: number }>();
+    .first<{ boss: number | null; n: number }>();
   const correctCount = cc?.n ?? 0;
   const reward = taskReward(correctCount, after.streak);
+  // Дараагийн boss-ыг ялбал дараагийн бүлэг нээгдэнэ (bosses_beaten = boss нөхцөл давхар тоолохоос сэргийлнэ)
+  const beatBoss = cc?.boss != null && cc.boss === user.bosses_beaten && bossWon(correctCount);
 
   const tx = newTx();
   const guard = 'EXISTS (SELECT 1 FROM tasks WHERE id = ? AND tx = ?)';
@@ -232,6 +253,13 @@ export async function completeTask(db: D1Database, userId: number, taskId: numbe
          SELECT ?, ?, 'task_reward', 'task', ?, ? WHERE ? > 0 AND ${guard}`,
       )
       .bind(userId, reward.points, String(taskId), now, reward.points, taskId, tx),
+    ...(beatBoss
+      ? [
+          db
+            .prepare(`UPDATE users SET bosses_beaten = bosses_beaten + 1 WHERE id = ? AND bosses_beaten = ? AND ${guard}`)
+            .bind(userId, user.bosses_beaten, taskId, tx),
+        ]
+      : []),
   ]);
   if (!results[0].meta.changes) throw new ApiError(409, 'TASK_CLOSED', 'Даалгавар аль хэдийн дууссан');
 

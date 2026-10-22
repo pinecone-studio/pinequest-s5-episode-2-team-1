@@ -71,10 +71,17 @@ export const isPedestal = (n: PathNode) => n.kind !== 'stone';
 export const unitOf = (i: number) => Math.floor(i / UNIT_SIZE);
 export const isBossNode = (i: number) => i % UNIT_SIZE === UNIT_SIZE - 1;
 
-/** Одоогийн зангилаа = түвшин − 1. shortcut: сүүлийн boss дээр зогсоно; 48-р шатнаас цааш бүлэг нэмэхэд газрын зургийг өргөтгөнө. */
-export function currentNode(me: Pick<Me, 'level'>): number {
-  return Math.max(0, Math.min(NODE_COUNT - 1, me.level - 1));
+/**
+ * Одоогийн зангилаа = түвшин − 1, гэхдээ ялаагүй boss-ын дэргэд зогсоно (XP-ээр ахисан ч boss-ыг ялж байж цааш явна).
+ * shortcut: сүүлийн boss дээр зогсоно; 48-р шатнаас цааш бүлэг нэмэхэд газрын зургийг өргөтгөнө.
+ */
+export function currentNode(me: Pick<Me, 'level' | 'bossesBeaten'>): number {
+  const gate = me.bossesBeaten < UNIT_COUNT ? me.bossesBeaten * UNIT_SIZE + UNIT_SIZE - 1 : NODE_COUNT - 1;
+  return Math.max(0, Math.min(NODE_COUNT - 1, gate, me.level - 1));
 }
+
+/** Энэ зангилаанд ялаагүй boss хүлээж байна уу (тэгвэл даалгавар нь boss тулаан). */
+export const bossAhead = (i: number, bossesBeaten: number) => isBossNode(i) && unitOf(i) >= bossesBeaten;
 
 export const statusOf = (i: number, current: number): NodeStatus => (i < current ? 'done' : i === current ? 'current' : 'lock');
 

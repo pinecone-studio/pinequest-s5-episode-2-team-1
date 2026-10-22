@@ -1,4 +1,4 @@
-// Автоматаар үүсгэсэн: mobile/scripts/build-sprites.py. Гараар засахгүй.
+// Автоматаар үүсгэсэн: mobile/scripts/build-sprites.ts. Гараар засахгүй.
 import type { ImageSourcePropType } from 'react-native';
 
 export interface SpriteAsset {
@@ -70,8 +70,7 @@ export const sprites = {
   lair_0_430x464: { source: require('../../assets/sprites/lair_0_430x464.png'), width: 430, height: 464 },
   lair_1_430x464: { source: require('../../assets/sprites/lair_1_430x464.png'), width: 430, height: 464 },
   lair_2_430x464: { source: require('../../assets/sprites/lair_2_430x464.png'), width: 430, height: 464 },
-  bear_battle_1144x122: { source: require('../../assets/sprites/bear_battle_1144x122.png'), width: 1144, height: 122 },
-  bear_gallop_512x122: { source: require('../../assets/sprites/bear_gallop_512x122.png'), width: 512, height: 122 },
+  bear_battle_728x512: { source: require('../../assets/sprites/bear_battle_728x512.png'), width: 728, height: 512 },
   fx_spark_90x30: { source: require('../../assets/sprites/fx_spark_90x30.png'), width: 90, height: 30 },
   fx_spark_magic_90x30: { source: require('../../assets/sprites/fx_spark_magic_90x30.png'), width: 90, height: 30 },
   fx_slash_144x48: { source: require('../../assets/sprites/fx_slash_144x48.png'), width: 144, height: 48 },
