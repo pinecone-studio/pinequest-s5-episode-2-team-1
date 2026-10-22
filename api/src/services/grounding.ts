@@ -9,6 +9,8 @@ export interface Excerpt {
   ref: string;
   /** 'Математик 7' */
   title: string;
+  /** номын анги (books.grade) — questions.grade */
+  grade: number;
   text: string;
 }
 
@@ -17,6 +19,12 @@ export interface PageRange {
   slug: string;
   from: number;
   to: number;
+}
+
+/** Асуулт үүсгэх хүрээ: зөвхөн энэ ангийн ном, `range` өгвөл зөвхөн тэр хуудсууд. */
+export interface Scope {
+  grade: number;
+  range?: PageRange | null;
 }
 
 export interface PageCandidate {
@@ -78,17 +86,19 @@ export function windowRef(window: PageCandidate[]): string {
 
 /**
  * `count` хүртэлх ялгаатай хэсэг (LLM-ийн зэрэг дуудлага бүрт нэг). Тухайн хичээл, түвшинд ном
- * байхгүй бол хоосон массив: дуудагч нь хөтөлбөрийн сэдвийн жагсаалтаар үүсгэнэ. `range` өгвөл зөвхөн тэр хуудсуудаас.
+ * байхгүй бол хоосон массив: дуудагч нь хөтөлбөрийн сэдвийн жагсаалтаар үүсгэнэ. `scope` өгвөл зөвхөн тэр ангийн
+ * номоос (түвшний бүх ангийнхаас биш).
  */
 export async function pickExcerpts(
   env: Pick<Bindings, 'BOOKS' | 'DB'>,
   tier: Tier,
   subject: Subject,
   count: number,
-  range: PageRange | null = null,
+  scope: Scope | null = null,
   rng: () => number = Math.random,
 ): Promise<Excerpt[]> {
-  const grades = gradesOfTier(tier);
+  const grades = scope ? [scope.grade] : gradesOfTier(tier);
+  const range = scope?.range;
   const { results: candidates } = await env.BOOKS.prepare(
     `SELECT b.slug, p.seq FROM book_pages p JOIN books b ON b.id = p.book_id
      WHERE b.subject = ? AND b.grade IN (${grades.map(() => '?').join(', ')})
@@ -121,13 +131,14 @@ export async function pickExcerpts(
   return Promise.all(
     windows.map(async (w) => {
       const { results } = await env.BOOKS.prepare(
-        `SELECT b.title, p.text_md FROM book_pages p JOIN books b ON b.id = p.book_id
+        `SELECT b.title, b.grade, p.text_md FROM book_pages p JOIN books b ON b.id = p.book_id
          WHERE b.slug = ? AND p.seq BETWEEN ? AND ? ORDER BY p.seq`,
       )
         .bind(w[0].slug, w[0].seq, w[w.length - 1].seq)
-        .all<{ title: string; text_md: string }>();
+        .all<{ title: string; grade: number; text_md: string }>();
       const text = results.map((r) => r.text_md.trim()).join('\n\n').slice(0, GAME.GROUNDING.MAX_CHARS);
-      return { ref: windowRef(w), title: results[0]?.title ?? w[0].slug, text };
+      // анги 0 = хэнд ч гарахгүй
+      return { ref: windowRef(w), title: results[0]?.title ?? w[0].slug, grade: results[0]?.grade ?? 0, text };
     }),
   );
 }

@@ -12,7 +12,7 @@ import { isConstraintError, newTx } from '../lib/db';
 import { ApiError } from '../lib/errors';
 import type { PageRange } from './grounding';
 import { bookLessons, lessonPages } from './lessons';
-import { IN_RANGE, maybeRefill, rangeArgs, refillLesson, refillPool } from './pool';
+import { maybeRefill, pickArgs, pickSql, refillLesson, refillPool } from './pool';
 import { hasPendingRecovery, recoveryCertain, recoveryStatements } from './recovery';
 import { countTasksToday, getUserRow, loadMe, loadSubjectPaths, streakStateOf, syncStreak } from './users';
 
@@ -100,32 +100,26 @@ export async function startTask(
     throw new ApiError(429, 'DAILY_LIMIT', 'Өнөөдрийн хязгаар дууссан');
   }
 
-  // Апп-ын харуулж буй зангилааны сурах бичгийн хичээл: асуулт нь тэр хуудсуудаас. Хүрэлцэхгүй бол тэр хуудсаар
-  // үүсгэнэ (удвал хүлээхгүй, дутууг нь бусад асуултаар). Ном, хичээл байхгүй (boss) бол хичээлийн бүх асуултаас.
+  // Асуулт зөвхөн хэрэглэгчийн ангийн номынх (эсвэл номгүй), өөр ангийн номоос хэзээ ч биш. Апп-ын харуулж буй
+  // зангилааны хичээлийн хуудсаас түрүүлж; хүрэлцэхгүй бол тэр хуудсаар үүсгэнэ (удвал хүлээхгүй, дутууг нь
+  // ангийн бусад асуултаар). Ном, хичээл байхгүй (boss) бол ангийн бүх асуултаас.
   const node = currentNode(path.level, path.bossesBeaten);
   const book = await bookLessons(env, subject, user.grade).catch(() => null);
   const lesson = book && lessonPages(book, node);
   const lessonRefill = (range: PageRange) =>
-    refillLesson(env, tier, subject, range, userId).catch((e) => console.error('[pool] lesson refill failed', e));
+    refillLesson(env, tier, subject, { grade: user.grade, range }, userId).catch((e) => console.error('[pool] lesson refill failed', e));
   if (lesson) {
     const refill = lessonRefill(lesson);
     ctx.waitUntil(refill);
     await Promise.race([refill, new Promise((r) => setTimeout(r, GAME.POOL.LESSON_WAIT_MS))]);
   }
 
-  // Хараагүй асуултыг (хичээлийнхийг түрүүлж) санамсаргүйгээр, дутвал хамгийн эрт харсныг нь.
   const { results: picked } = await db
-    .prepare(
-      `SELECT q.id FROM questions q
-       LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
-       WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0
-       ORDER BY (s.seen_at IS NOT NULL), ${lesson ? `${IN_RANGE} DESC,` : ''} s.seen_at, RANDOM()
-       LIMIT ?`,
-    )
-    .bind(userId, tier, subject, ...(lesson ? rangeArgs(lesson) : []), GAME.QUESTIONS_PER_TASK)
+    .prepare(pickSql(lesson !== null))
+    .bind(...pickArgs(userId, tier, subject, lesson, GAME.QUESTIONS_PER_TASK))
     .all<{ id: number }>();
   if (picked.length < GAME.QUESTIONS_PER_TASK) {
-    ctx.waitUntil(refillPool(env, tier, subject));
+    ctx.waitUntil(refillPool(env, tier, subject, { grade: user.grade }));
     throw new ApiError(503, 'NO_QUESTIONS', 'Асуулт хүрэлцэхгүй байна');
   }
 
@@ -164,7 +158,7 @@ export async function startTask(
   // Дараагийн зангилааны хичээлийн асуултыг даалгавар хийх хооронд бэлдэнэ.
   const next = book && lessonPages(book, node + 1);
   if (next) ctx.waitUntil(lessonRefill(next));
-  await maybeRefill(env, ctx, tier, subject, userId);
+  await maybeRefill(env, ctx, tier, subject, userId, user.grade);
   return loadTask(db, userId, created.id);
 }
 

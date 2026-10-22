@@ -267,15 +267,16 @@ async function startDuel(env: Bindings, userId: number, duel: DuelRow, now: numb
   }
   if (stakeError(duel.stake, acceptor.points)) throw new ApiError(400, 'STAKE_TOO_HIGH', 'Таны онооны 20%-иас их бооцоо');
 
-  // Хоёулаа хараагүй асуултыг илүүд үзнэ. Хурдны тулд LLM дуудахгүй, pool-оос.
+  // Хоёулаа хараагүй асуултыг илүүд үзнэ. Хурдны тулд LLM дуудахгүй, pool-оос. Номын асуулт зөвхөн хоёулангийнх нь
+  // ангийн номынх (өөр ангийнхан бол зөвхөн номгүй асуулт).
   const { results: picked } = await db
     .prepare(
       `SELECT q.id, q.prompt, q.options, q.correct_index, q.explanation FROM questions q
-       WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0
+       WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0 AND (q.book_ref IS NULL OR (q.grade = ? AND q.grade = ?))
        ORDER BY (SELECT COUNT(*) FROM seen_questions s WHERE s.question_id = q.id AND s.user_id IN (?, ?)), RANDOM()
        LIMIT ?`,
     )
-    .bind(duel.tier, duel.subject, creator.id, userId, GAME.DUEL.QUESTIONS)
+    .bind(duel.tier, duel.subject, creator.grade, acceptor.grade, creator.id, userId, GAME.DUEL.QUESTIONS)
     .all<{ id: number; prompt: string; options: string; correct_index: number; explanation: string }>();
   if (picked.length < GAME.DUEL.QUESTIONS) throw new ApiError(503, 'NO_QUESTIONS', 'Асуулт хүрэлцэхгүй');
   const questionIds = JSON.stringify(picked.map((q) => q.id));
