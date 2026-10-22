@@ -2,6 +2,7 @@ import type { AnswerResponse, FlagResponse, Me, TaskDto, TaskResult } from '../.
 import { GAME, type Subject, type Tier } from '../config/game';
 import { bossBlock, bossWon } from '../domain/boss';
 import { levelFromXp } from '../domain/level';
+import { currentNode } from '../domain/path';
 import { taskReward } from '../domain/rewards';
 import { shieldBlock } from '../domain/shield';
 import { normalizeStreak, registerTaskDay } from '../domain/streak';
@@ -9,7 +10,9 @@ import { addDays, ubDay } from '../domain/time';
 import type { Bindings } from '../env';
 import { isConstraintError, newTx } from '../lib/db';
 import { ApiError } from '../lib/errors';
-import { maybeRefill, refillPool } from './pool';
+import type { PageRange } from './grounding';
+import { bookLessons, lessonPages } from './lessons';
+import { IN_RANGE, maybeRefill, rangeArgs, refillLesson, refillPool } from './pool';
 import { hasPendingRecovery, recoveryCertain, recoveryStatements } from './recovery';
 import { countTasksToday, getUserRow, loadMe, loadSubjectPaths, streakStateOf, syncStreak } from './users';
 
@@ -76,9 +79,9 @@ export async function startTask(
   if (await hasPendingRecovery(db, userId, subject)) {
     throw new ApiError(409, 'RECOVERY_REQUIRED', 'Эхлээд давтлагаа дуусгаарай');
   }
+  const path = (await loadSubjectPaths(db, userId))[subject];
   if (boss !== undefined) {
     // Boss хаалт хичээл бүрийн сурах замаар: математикийн boss-ыг ялсан нь физикийн бүлгийг нээхгүй.
-    const path = (await loadSubjectPaths(db, userId))[subject];
     const block = bossBlock(path.level, path.bossesBeaten, boss);
     if (block) throw new ApiError(409, block, 'Энэ boss-той тулалдах боломжгүй');
   }
@@ -97,16 +100,29 @@ export async function startTask(
     throw new ApiError(429, 'DAILY_LIMIT', 'Өнөөдрийн хязгаар дууссан');
   }
 
-  // Хараагүй асуултыг санамсаргүйгээр, дутвал хамгийн эрт харсныг нь.
+  // Апп-ын харуулж буй зангилааны сурах бичгийн хичээл: асуулт нь тэр хуудсуудаас. Хүрэлцэхгүй бол тэр хуудсаар
+  // үүсгэнэ (удвал хүлээхгүй, дутууг нь бусад асуултаар). Ном, хичээл байхгүй (boss) бол хичээлийн бүх асуултаас.
+  const node = currentNode(path.level, path.bossesBeaten);
+  const book = await bookLessons(env, subject, user.grade).catch(() => null);
+  const lesson = book && lessonPages(book, node);
+  const lessonRefill = (range: PageRange) =>
+    refillLesson(env, tier, subject, range, userId).catch((e) => console.error('[pool] lesson refill failed', e));
+  if (lesson) {
+    const refill = lessonRefill(lesson);
+    ctx.waitUntil(refill);
+    await Promise.race([refill, new Promise((r) => setTimeout(r, GAME.POOL.LESSON_WAIT_MS))]);
+  }
+
+  // Хараагүй асуултыг (хичээлийнхийг түрүүлж) санамсаргүйгээр, дутвал хамгийн эрт харсныг нь.
   const { results: picked } = await db
     .prepare(
       `SELECT q.id FROM questions q
        LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
        WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0
-       ORDER BY (s.seen_at IS NOT NULL), s.seen_at, RANDOM()
+       ORDER BY (s.seen_at IS NOT NULL), ${lesson ? `${IN_RANGE} DESC,` : ''} s.seen_at, RANDOM()
        LIMIT ?`,
     )
-    .bind(userId, tier, subject, GAME.QUESTIONS_PER_TASK)
+    .bind(userId, tier, subject, ...(lesson ? rangeArgs(lesson) : []), GAME.QUESTIONS_PER_TASK)
     .all<{ id: number }>();
   if (picked.length < GAME.QUESTIONS_PER_TASK) {
     ctx.waitUntil(refillPool(env, tier, subject));
@@ -145,6 +161,9 @@ export async function startTask(
     throw new ApiError(429, 'DAILY_LIMIT', 'Өнөөдрийн хязгаар дууссан');
   }
 
+  // Дараагийн зангилааны хичээлийн асуултыг даалгавар хийх хооронд бэлдэнэ.
+  const next = book && lessonPages(book, node + 1);
+  if (next) ctx.waitUntil(lessonRefill(next));
   await maybeRefill(env, ctx, tier, subject, userId);
   return loadTask(db, userId, created.id);
 }

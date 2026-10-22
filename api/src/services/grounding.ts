@@ -12,6 +12,13 @@ export interface Excerpt {
   text: string;
 }
 
+/** Нэг номын дараалсан хуудсууд (seq, хоёр захаа оруулаад): сурах замын хичээлийн хуудсууд. */
+export interface PageRange {
+  slug: string;
+  from: number;
+  to: number;
+}
+
 export interface PageCandidate {
   slug: string;
   seq: number;
@@ -71,13 +78,14 @@ export function windowRef(window: PageCandidate[]): string {
 
 /**
  * `count` хүртэлх ялгаатай хэсэг (LLM-ийн зэрэг дуудлага бүрт нэг). Тухайн хичээл, түвшинд ном
- * байхгүй бол хоосон массив: дуудагч нь хөтөлбөрийн сэдвийн жагсаалтаар үүсгэнэ.
+ * байхгүй бол хоосон массив: дуудагч нь хөтөлбөрийн сэдвийн жагсаалтаар үүсгэнэ. `range` өгвөл зөвхөн тэр хуудсуудаас.
  */
 export async function pickExcerpts(
   env: Pick<Bindings, 'BOOKS' | 'DB'>,
   tier: Tier,
   subject: Subject,
   count: number,
+  range: PageRange | null = null,
   rng: () => number = Math.random,
 ): Promise<Excerpt[]> {
   const grades = gradesOfTier(tier);
@@ -86,9 +94,10 @@ export async function pickExcerpts(
      WHERE b.subject = ? AND b.grade IN (${grades.map(() => '?').join(', ')})
        AND p.text_quality = 'ok' AND length(p.text_md) >= ?
        AND p.text_md NOT LIKE '%ГАРЧИГ%' AND p.text_md NOT LIKE '%АГУУЛГА%' AND p.text_md NOT LIKE '%ISBN%'
+       ${range ? 'AND b.slug = ? AND p.seq BETWEEN ? AND ?' : ''}
      ORDER BY b.slug, p.seq`,
   )
-    .bind(subject, ...grades, GAME.GROUNDING.MIN_PAGE_CHARS)
+    .bind(subject, ...grades, GAME.GROUNDING.MIN_PAGE_CHARS, ...(range ? [range.slug, range.from, range.to] : []))
     .all<PageCandidate>();
   if (candidates.length === 0) return [];
 

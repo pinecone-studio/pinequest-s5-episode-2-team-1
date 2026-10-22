@@ -3,7 +3,7 @@ import type { Bindings } from '../env';
 import { generateQuestions, pickProvider } from '../llm';
 import type { QuestionDraft } from '../llm/types';
 import { promptKey } from '../llm/validate';
-import { pickExcerpts } from './grounding';
+import { type PageRange, pickExcerpts } from './grounding';
 
 /**
  * Тоо, хувьсагч, үйлдлийн дараалал ("5x-8=22", "2.4:0.6+1.5"). Үг хэллэг нь өөр ч бодлого нь ижил
@@ -58,8 +58,14 @@ export interface GenerateReport {
 }
 
 /**
+ * SQL: `q.book_ref` нь `range`-ийн хуудаснаас эхэлсэн эсэх (1/0); 'math-7:5-6' → math-7, 5. Утгууд: rangeArgs(range).
+ */
+export const IN_RANGE = 'COALESCE(substr(q.book_ref, 1, ?) = ? AND CAST(substr(q.book_ref, ?) AS INTEGER) BETWEEN ? AND ?, 0)';
+export const rangeArgs = (r: PageRange) => [r.slug.length + 1, `${r.slug}:`, r.slug.length + 2, r.from, r.to];
+
+/**
  * `count` асуултыг `chunk`-аар хувааж LLM-ийг зэрэг дуудаад, шалгаж хадгална. Сурах бичгийн санд
- * тухайн хичээл, түвшний ном байвал дуудлага бүр сангийн өөр хэсэгт үндэслэнэ.
+ * тухайн хичээл, түвшний ном байвал дуудлага бүр сангийн өөр хэсэгт үндэслэнэ; `range` өгвөл зөвхөн тэр хуудсуудад.
  */
 export async function generateAndStore(
   env: Bindings,
@@ -68,6 +74,7 @@ export async function generateAndStore(
   count: number,
   chunk: number = GAME.POOL.LLM_CHUNK,
   useBooks = true,
+  range: PageRange | null = null,
 ): Promise<GenerateReport> {
   const { results } = await env.DB.prepare('SELECT prompt FROM questions WHERE tier = ? AND subject = ? ORDER BY id DESC')
     .bind(tier, subject)
@@ -77,10 +84,11 @@ export async function generateAndStore(
 
   const sizes: number[] = [];
   for (let left = count; left > 0; left -= chunk) sizes.push(Math.min(chunk, left));
-  const excerpts = useBooks ? await pickExcerpts(env, tier, subject, sizes.length).catch(() => []) : [];
+  const excerpts = useBooks ? await pickExcerpts(env, tier, subject, sizes.length, range).catch(() => []) : [];
   // Номын хэсэг дуудлагын тооноос цөөн бол давтан ашиглана (тус бүр өөр асуулт гарна).
   const excerptOf = (i: number) => (excerpts.length ? excerpts[i % excerpts.length] : null);
-  const settled = await Promise.allSettled(sizes.map((n, i) => generateQuestions(env, tier, subject, n, avoid, excerptOf(i))));
+  // Хичээлийн хуудсууд санд (уншигдахуйц) байхгүй бол номгүй асуулт зохиохгүй.
+  const settled = range && excerpts.length === 0 ? [] : await Promise.allSettled(sizes.map((n, i) => generateQuestions(env, tier, subject, n, avoid, excerptOf(i))));
 
   const report: GenerateReport = {
     source: null,
@@ -128,20 +136,34 @@ async function tryLock(db: D1Database, tier: number, subject: string, now: numbe
   return (r.meta.changes ?? 0) > 0;
 }
 
-/** Background нөхөлт: нэг хослолыг зэрэг хоёр удаа нөхөхгүй. */
-export async function refillPool(env: Bindings, tier: Tier, subject: Subject): Promise<GenerateReport | null> {
+/** Background нөхөлт: нэг хослолыг (эсвэл нэг хичээлийн хуудсуудыг) зэрэг хоёр удаа нөхөхгүй. */
+export async function refillPool(env: Bindings, tier: Tier, subject: Subject, range: PageRange | null = null): Promise<GenerateReport | null> {
   if (!pickProvider(env)) return null;
-  if (!(await tryLock(env.DB, tier, subject, Date.now()))) return null;
+  const key = range ? `${subject}:${range.slug}:${range.from}` : subject;
+  if (!(await tryLock(env.DB, tier, key, Date.now()))) return null;
   try {
-    const report = await generateAndStore(env, tier, subject, GAME.POOL.REFILL_BATCH);
-    console.log(`[pool] refill tier=${tier} ${subject}: +${report.inserted} (rejected ${report.rejected}) сан: ${report.grounded.join(', ') || '—'}`, report.errors);
+    const report = range
+      ? await generateAndStore(env, tier, subject, GAME.POOL.LLM_CHUNK, GAME.POOL.LLM_CHUNK, true, range)
+      : await generateAndStore(env, tier, subject, GAME.POOL.REFILL_BATCH);
+    console.log(`[pool] refill tier=${tier} ${key}: +${report.inserted} (rejected ${report.rejected}) сан: ${report.grounded.join(', ') || '—'}`, report.errors);
     return report;
   } catch (e) {
     console.error('[pool] refill failed', e);
     return null;
   } finally {
-    await env.DB.prepare('UPDATE pool_locks SET locked_until = 0 WHERE tier = ? AND subject = ?').bind(tier, subject).run();
+    await env.DB.prepare('UPDATE pool_locks SET locked_until = 0 WHERE tier = ? AND subject = ?').bind(tier, key).run();
   }
+}
+
+/** Хэрэглэгчийн хараагүй, `range` хуудсанд үндэслэсэн асуулт нэг даалгаварт хүрэлцэхгүй бол тэр хуудсуудаар үүсгэнэ. */
+export async function refillLesson(env: Bindings, tier: Tier, subject: Subject, range: PageRange, userId: number): Promise<void> {
+  const row = await env.DB.prepare(
+    `SELECT COUNT(*) AS n FROM questions q LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
+     WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0 AND s.question_id IS NULL AND ${IN_RANGE}`,
+  )
+    .bind(userId, tier, subject, ...rangeArgs(range))
+    .first<{ n: number }>();
+  if ((row?.n ?? 0) < GAME.QUESTIONS_PER_TASK) await refillPool(env, tier, subject, range);
 }
 
 /** Хэрэглэгчийн хараагүй асуулт эсвэл нийт pool босгоос доош орсон бол background-д нөхнө. */
