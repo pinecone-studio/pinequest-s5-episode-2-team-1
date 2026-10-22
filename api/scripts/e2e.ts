@@ -87,6 +87,9 @@ async function tasksScenario() {
   const ftAfter = await call<TaskDto>('POST', '/tasks', { token: fresh.token, body: { subject: 'math' } });
   check(flagged.ok && ftAfter.answeredCount === 1, 'Flag дарсан асуулт алгасагдана');
   await call('POST', `/admin/questions/${ft.questions[0].id}/unflag`, { admin: true });
+  // Өөр хүнд гарсан, энэ хэрэглэгчийн хараагүй асуулт.
+  const other = await call<TaskDto>('POST', '/tasks', { token: (await register('e2e_flag2', 8)).token, body: { subject: 'physics' } });
+  await expectError(call('POST', `/questions/${other.questions[0].id}/flag`, { token: fresh.token, body: {} }), 'NOT_FOUND', 'Хараагүй асуултыг flag хийхгүй');
 
   return { a, b };
 }
