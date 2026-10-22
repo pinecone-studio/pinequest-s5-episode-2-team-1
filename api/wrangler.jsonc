@@ -101,6 +101,35 @@
         "GEMINI_THINKING_LEVEL": "low",
         "WORKERS_AI_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
       }
+    },
+    // `npm run deploy` / `npm run db:migrate:remote`: багийн Cloudflare дээрх жинхэнэ орчин
+    // (https://surgalt-api.pinequest-team1.workers.dev). Дээд түвшний id-ууд local dev-д зориулсан тул хөндөхгүй.
+    "production": {
+      "name": "surgalt-api",
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "surgalt",
+          "database_id": "60e7eddc-2c6d-4a78-8228-1eb19218694a",
+          "migrations_dir": "migrations"
+        },
+        {
+          "binding": "BOOKS",
+          "database_name": "surgalt-books",
+          "database_id": "24a6924d-6e68-40f0-896d-d00fbd93afe9",
+          "migrations_dir": "migrations-books"
+        }
+      ],
+      "r2_buckets": [{ "binding": "BOOK_FILES", "bucket_name": "surgalt-books" }],
+      "durable_objects": {
+        "bindings": [{ "name": "DUEL_ROOM", "class_name": "DuelRoom" }]
+      },
+      "vars": {
+        "LLM_PROVIDER": "",
+        "GEMINI_MODEL": "gemini-3.8-flash",
+        "GEMINI_THINKING_LEVEL": "low",
+        "WORKERS_AI_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+      }
     }
   }
 }

@@ -175,28 +175,28 @@ npm run e2e
 
 **Нөөц хувилбар: workers.dev руу deploy** (Free plan хангалттай; DuelRoom нь SQLite-backed):
 
+Багийн Cloudflare дээр тоглоомын DB `surgalt` ба сурах бичгийн сан `surgalt-books` аль хэдийн бий. Тэдгээрийн
+id `wrangler.jsonc`-ийн `env.production`-д бичигдсэн тул `deploy`, `db:migrate:remote` хоёр тэр орчинд ажиллана
+(дээд түвшний id-ууд зөвхөн local dev-д).
+
 ```bash
 cd api
 npx wrangler login
-npx wrangler d1 create surgalt
-```
-
-Гарсан `database_id`-г `wrangler.jsonc`-ийн хоёр газар (үндсэн ба `env.ai`) тавина. Дараа нь:
-
-```bash
 npm run db:migrate:remote
-npx wrangler secret put GEMINI_API_KEY
-npx wrangler secret put ADMIN_TOKEN
+npx wrangler secret put ADMIN_TOKEN --env production
 npm run deploy
 ```
 
-Seed (ADMIN_TOKEN-оо өөрийнхөөрөө, URL-аа deploy-ийн гаргасан хаягаар солино):
+`GEMINI_API_KEY` заавал биш (`npx wrangler secret put GEMINI_API_KEY --env production`): байхгүй бол
+асуултын сан шинээр нөхөгдөхгүй, оруулсан асуултаараа ажиллана.
+
+Шалгасан асуултын сан (ADMIN_TOKEN-оо өөрийнхөөрөө солино):
 
 ```bash
-ADMIN_TOKEN=... npm run seed:questions -- --url https://surgalt-api.<subdomain>.workers.dev --model gemini-3.5-flash-lite
+ADMIN_TOKEN=... npm run questions:import -- --url https://surgalt-api.pinequest-team1.workers.dev
 ```
 
-`mobile/.env`: `EXPO_PUBLIC_API_URL=https://surgalt-api.<subdomain>.workers.dev`. Утас Metro-д LAN-аар
+`mobile/.env`: `EXPO_PUBLIC_API_URL=https://surgalt-api.pinequest-team1.workers.dev`. Утас Metro-д LAN-аар
 хүрэхгүй бол `npx expo start --tunnel`. Deploy хийсэн Worker дээр background нөхөлт ~30 секундэд
 багтах ёстой тул `wrangler.jsonc`-д `GEMINI_MODEL`-ийг `gemini-3.5-flash-lite` болгох нь найдвартай.
 
