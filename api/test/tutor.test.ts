@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isForeignTranscript, liveEvents, liveSetup, type MissedQuestion, tutorKickoff, tutorSystemPrompt } from '../src/llm/live';
+import { isForeignTranscript, isQuotaClose, liveEvents, liveSetup, type MissedQuestion, tutorKickoff, tutorSystemPrompt } from '../src/llm/live';
 
 const q: MissedQuestion = {
   subject: 'math',
@@ -97,5 +97,13 @@ describe('isForeignTranscript', () => {
     expect(isForeignTranscript('더하기는 곱하기를 왜')).toBe(true);
     expect(isForeignTranscript('Mr. Hag nimmt Tee.')).toBe(true);
     expect(liveEvents({ serverContent: { inputTranscription: { text: '3분의 2 더하기' } } })).toEqual([]);
+  });
+});
+
+describe('isQuotaClose', () => {
+  it('Gemini-ийн квот дүүрснийг түр алдаанаас ялгана', () => {
+    expect(isQuotaClose(1011, 'You exceeded your current quota, please check your plan and billing details.')).toBe(true);
+    expect(isQuotaClose(1011, 'Internal error encountered.')).toBe(false);
+    expect(isQuotaClose(1000, '')).toBe(false);
   });
 });
