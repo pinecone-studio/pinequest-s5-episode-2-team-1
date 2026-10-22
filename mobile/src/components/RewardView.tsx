@@ -88,6 +88,9 @@ export function RewardView({ result, onAgain, onRecovery }: { result: TaskResult
             <>
               <Button title={S.reward.cont} variant="lime" onPress={() => router.back()} />
               {canAgain ? <Button title={S.reward.again} variant="white" small onPress={onAgain} /> : null}
+              {result.correctCount < result.total ? (
+                <Button title={S.reward.talk} variant="white" small onPress={() => router.push('/tutor')} />
+              ) : null}
             </>
           )}
         </Enter>

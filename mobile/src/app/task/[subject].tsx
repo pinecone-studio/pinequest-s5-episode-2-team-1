@@ -283,6 +283,10 @@ export default function TaskScreen() {
                 </Animated.View>
               ) : null}
 
+              {feedback && !feedback.correct ? (
+                <Button title={S.tutor.ask} variant="white" small onPress={() => router.push(`/tutor?questionId=${q.id}`)} />
+              ) : null}
+
               {feedback ? (
                 <Button
                   title={pending ? S.lesson.result : S.lesson.next}

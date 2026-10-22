@@ -48,6 +48,12 @@ export function setUnauthorizedHandler(handler: (() => void) | null) {
   session.onUnauthorized = handler;
 }
 
+/** Баавгайтай ярилцах (Gemini Live relay). questionId байхгүй бол сүүлд алдсан бодлогуудын тухай. */
+export function openTutorSocket(questionId?: number): WebSocket {
+  const query = questionId === undefined ? '' : `?questionId=${questionId}`;
+  return new WebSocket(`${API_URL.replace(/^http/, 'ws')}/tutor/ws${query}`, ['bearer', session.token ?? '']);
+}
+
 export function errorText(e: unknown): string {
   if (e instanceof ApiError) return e.message;
   return errorMessages.INTERNAL;
