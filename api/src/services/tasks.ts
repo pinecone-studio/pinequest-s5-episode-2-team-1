@@ -203,8 +203,9 @@ export async function flagQuestion(
   taskId: number | undefined,
   now = Date.now(),
 ): Promise<FlagResponse> {
-  const q = await db.prepare('SELECT id FROM questions WHERE id = ?').bind(questionId).first();
-  if (!q) throw new ApiError(404, 'NOT_FOUND', 'Асуулт олдсонгүй');
+  // Зөвхөн өөрт гарсан асуултыг: дурын id-гаар pool-ыг хоослохоос сэргийлнэ.
+  const seen = await db.prepare('SELECT 1 FROM seen_questions WHERE user_id = ? AND question_id = ?').bind(userId, questionId).first();
+  if (!seen) throw new ApiError(404, 'NOT_FOUND', 'Асуулт олдсонгүй');
   await db.prepare('UPDATE questions SET flagged = 1, flagged_by = ? WHERE id = ? AND flagged = 0').bind(userId, questionId).run();
   if (taskId === undefined) return { ok: true, finished: false };
 
