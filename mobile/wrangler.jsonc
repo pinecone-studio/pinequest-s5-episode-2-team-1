@@ -1,0 +1,14 @@
+// Вэб хувилбар (Expo web export → dist/) багийн Cloudflare дээр: https://surgalt.pinequest-team1.workers.dev
+// Build: EXPO_PUBLIC_API_URL=https://surgalt-api.pinequest-team1.workers.dev npx expo export -p web
+// Deploy: ../api/node_modules/.bin/wrangler deploy (api/-ийн wrangler-ийг ашиглана)
+{
+  "$schema": "../api/node_modules/wrangler/config-schema.json",
+  "name": "surgalt",
+  "account_id": "7b528e45cb6c0f796a92b9f437c87281",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "dist",
+    // expo-router-ийн web.output = 'single': /login, /task/math зэрэг бүх замд index.html-ийг өгнө.
+    "not_found_handling": "single-page-application"
+  }
+}
