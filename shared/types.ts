@@ -139,7 +139,7 @@ export interface TaskResult {
 
 export interface AnswerResponse {
   correct: boolean;
-  /** Зөвхөн зөв хариулсан үед: буруу бол зөв хариу, тайлбарыг хэлэхгүй (салаа замд өөрөө дахин бодно). */
+  /** Буруу үед салаа зам заавал нээгдэх бол (2 дахь алдаанаас) байхгүй: салаа замд өөрөө дахин бодно. */
   correctIndex?: number;
   explanation?: string;
   finished: boolean;

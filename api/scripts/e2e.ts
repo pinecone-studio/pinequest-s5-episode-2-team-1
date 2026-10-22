@@ -100,7 +100,9 @@ async function recoveryScenario() {
     const ci = await correctIndex(q.id);
     answers.push(await call<AnswerResponse>('POST', `/tasks/${t.id}/answer`, { token: u.token, body: { questionId: q.id, choice: i < 2 ? (ci + 1) % 4 : ci } }));
   }
-  check(answers.slice(0, 2).every((a) => !a.correct && a.correctIndex === undefined && a.explanation === undefined), 'Буруу хариултад зөв хариу, тайлбар ирэхгүй');
+  // 1 дэх алдаанд салаа зам хараахан баталгаагүй тул зөв хариуг хэлнэ; 2 дахиас салаа зам заавал нээгдэх тул хэлэхгүй
+  check(!answers[0].correct && answers[0].correctIndex !== undefined && !!answers[0].explanation, 'Ганц алдаанд зөв хариу, тайлбар ирнэ');
+  check(!answers[1].correct && answers[1].correctIndex === undefined && answers[1].explanation === undefined, '2 дахь алдаанаас зөв хариу, тайлбар ирэхгүй');
   check(answers.slice(0, 4).every((a) => !a.recovery) && answers[4].recovery === true, '5 асуулт дууссаны дараа л салаа зам нээгдэнэ');
   check(answers[4].result?.xpGained === 30, 'Анхны шагнал хэвээр (3 зөв → 30 XP)', answers[4].result?.xpGained);
   await expectError(call('POST', '/tasks', { token: u.token, body: { subject: 'physics' } }), 'RECOVERY_REQUIRED', 'Салаа зам дуустал тэр хичээлийн шинэ даалгавар эхлэхгүй');

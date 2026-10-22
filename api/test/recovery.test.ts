@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { groupByTopic, practiceIds } from '../src/services/recovery';
+import { groupByTopic, practiceIds, recoveryCertain } from '../src/services/recovery';
 
 describe('салаа замын асуулт сонголт', () => {
   it('алдсан асуултыг сэдвээр бүлэглэж, сэдэвгүйг тус тусад нь үлдээнэ', () => {
@@ -21,5 +21,9 @@ describe('салаа замын асуулт сонголт', () => {
         { missed: [6, 7, 8, 9], picked: [] },
       ]),
     ).toEqual([10, 11, 12, 20, 2, 4, 5, 6, 7, 8]);
+  });
+
+  it('2 буюу түүнээс олон алдаа гарвал салаа зам заавал нээгдэнэ (зөв хариуг тэр үед л нууна)', () => {
+    expect([0, 1, 2, 3].map(recoveryCertain)).toEqual([false, false, true, true]);
   });
 });

@@ -26,10 +26,16 @@ export function practiceIds(groups: { missed: number[]; picked: number[] }[], pe
   return groups.flatMap(({ missed, picked }) => [...picked.slice(0, perTopic), ...missed.slice(0, Math.max(0, perTopic - picked.length))]);
 }
 
-/** Дууссан даалгаварт салаа зам нээнэ (хэрэгтэй бол). Нээсэн эсэхийг буцаана. */
-export async function openRecovery(db: D1Database, userId: number, taskId: number, now = Date.now()): Promise<boolean> {
+/** Ийм олон алдаа гарсан бол салаа зам заавал нээгдэнэ: зөв хариуг тэнд өөрөө дахин бодож олно. */
+export const recoveryCertain = (wrong: number) => wrong >= GAME.RECOVERY_MIN_WRONG;
+
+/**
+ * Дуусах гэж буй даалгаврын салаа замын statement-ууд (хэрэггүй бол хоосон). Даалгаврыг дуусгах batch-д хамт
+ * орно: шагнал олгогдоод салаа зам нээгдэхгүй үлдэх (эсвэл эсрэгээрээ) боломжгүй.
+ */
+export async function recoveryStatements(db: D1Database, userId: number, taskId: number, now = Date.now()): Promise<D1PreparedStatement[]> {
   const task = await db.prepare('SELECT subject FROM tasks WHERE id = ? AND user_id = ?').bind(taskId, userId).first<{ subject: Subject }>();
-  if (!task) return false;
+  if (!task) return [];
   // Flag (-1) бол жинхэнэ алдаа биш.
   const { results: missed } = await db
     .prepare(
@@ -38,7 +44,7 @@ export async function openRecovery(db: D1Database, userId: number, taskId: numbe
     )
     .bind(taskId)
     .all<Missed>();
-  if (missed.length < GAME.RECOVERY_MIN_WRONG) return false;
+  if (!recoveryCertain(missed.length)) return [];
 
   const pick = db.prepare(
     `SELECT q.id FROM questions q
@@ -62,13 +68,12 @@ export async function openRecovery(db: D1Database, userId: number, taskId: numbe
     `INSERT INTO seen_questions (user_id, question_id, seen_at) VALUES (?, ?, ?)
      ON CONFLICT (user_id, question_id) DO UPDATE SET seen_at = excluded.seen_at`,
   );
-  await db.batch([
+  return [
     db
       .prepare('INSERT OR IGNORE INTO recoveries (task_id, user_id, subject, questions, created_at) VALUES (?, ?, ?, ?, ?)')
       .bind(taskId, userId, task.subject, JSON.stringify(practiceIds(groups)), now),
     ...groups.flatMap((g) => g.picked).map((id) => seen.bind(userId, id, now)),
-  ]);
-  return true;
+  ];
 }
 
 export async function hasPendingRecovery(db: D1Database, userId: number, subject: Subject): Promise<boolean> {
