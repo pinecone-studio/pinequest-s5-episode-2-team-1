@@ -1,4 +1,5 @@
 import { GAME, type Subject } from '../config/game';
+import { ubDay } from '../domain/time';
 import { ApiError } from '../lib/errors';
 import type { MissedQuestion, TutorContext } from '../llm/live';
 import { recoveryCertain } from './recovery';
@@ -61,4 +62,44 @@ export async function loadTutorContext(db: D1Database, userId: number, questionI
   const seen = new Set<number>();
   const recent = results.filter((r) => !seen.has(r.question_id) && seen.add(r.question_id)).slice(0, GAME.TUTOR.RECENT_MISSES);
   return { grade: user.grade, questions: recent.map(toMissed), focused: false };
+}
+
+/** Сервер гэнэт зогссон бол `ended_at` NULL үлддэг: ийм хугацаанаас хуучин ярилцлагыг идэвхтэй гэж тооцохгүй. */
+const ACTIVE_WINDOW_MS = GAME.TUTOR.MAX_SESSION_MS + 60_000;
+
+/**
+ * Ярилцлагыг бүртгэнэ. Өдрийн хязгаар ба зэрэг ярилцлагыг INSERT дотор шалгана: зэрэг ирсэн хүсэлт хязгаарыг давахгүй.
+ * Буцаасан id-г endTutorSession-д өгнө.
+ */
+export async function startTutorSession(db: D1Database, userId: number, now = Date.now()): Promise<number> {
+  const day = ubDay(now);
+  const activeSince = now - ACTIVE_WINDOW_MS;
+  const row = await db
+    .prepare(
+      `INSERT INTO tutor_sessions (user_id, day, started_at)
+       SELECT ?, ?, ?
+       WHERE (SELECT COUNT(*) FROM tutor_sessions WHERE user_id = ? AND day = ?) < ?
+         AND (SELECT COUNT(*) FROM tutor_sessions WHERE user_id = ? AND ended_at IS NULL AND started_at > ?) < ?
+       RETURNING id`,
+    )
+    .bind(userId, day, now, userId, day, GAME.TUTOR.DAILY_SESSIONS, userId, activeSince, GAME.TUTOR.MAX_ACTIVE)
+    .first<{ id: number }>();
+  if (row) return row.id;
+
+  const active = await db
+    .prepare('SELECT COUNT(*) AS n FROM tutor_sessions WHERE user_id = ? AND ended_at IS NULL AND started_at > ?')
+    .bind(userId, activeSince)
+    .first<{ n: number }>();
+  if ((active?.n ?? 0) >= GAME.TUTOR.MAX_ACTIVE) {
+    throw new ApiError(409, 'TUTOR_LIMIT', 'Баавгай өөр дэлгэц дээр чамтай ярьж байна. Тэр ярилцлагаа дуусгаад дахин оролдоорой.');
+  }
+  throw new ApiError(429, 'TUTOR_LIMIT', `Өнөөдрийн ${GAME.TUTOR.DAILY_SESSIONS} ярилцлага дууслаа. Маргааш дахин ярилцъя!`);
+}
+
+/** Ярилцлага дууссан. Gemini-тэй холбогдож чадаагүй бол (counted = false) тоолохгүйн тулд устгана. */
+export async function endTutorSession(db: D1Database, id: number, counted: boolean, now = Date.now()): Promise<void> {
+  await (counted
+    ? db.prepare('UPDATE tutor_sessions SET ended_at = ? WHERE id = ? AND ended_at IS NULL').bind(now, id)
+    : db.prepare('DELETE FROM tutor_sessions WHERE id = ?').bind(id)
+  ).run();
 }

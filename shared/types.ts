@@ -44,7 +44,8 @@ export type ErrorCode =
   | 'LLM_UNAVAILABLE'
   | 'LLM_FAILED'
   | 'BOSS_LOCKED'
-  | 'TUTOR_UNAVAILABLE';
+  | 'TUTOR_UNAVAILABLE'
+  | 'TUTOR_LIMIT';
 
 export interface ApiErrorBody {
   error: { code: ErrorCode; message: string };

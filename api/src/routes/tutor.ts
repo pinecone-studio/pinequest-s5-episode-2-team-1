@@ -8,7 +8,7 @@ import { socketUserId } from '../lib/session';
 import { LIVE_AUDIO_END, LIVE_URL, liveAudio, liveEvents, liveSetup, liveText, tutorKickoff, tutorSystemPrompt } from '../llm/live';
 import { SpeechQueue, speechChunkEnd } from '../llm/speech';
 import { cleanForSpeech, ttsAvailable, ttsStream } from '../llm/tts';
-import { loadTutorContext } from '../services/tutor';
+import { endTutorSession, loadTutorContext, startTutorSession } from '../services/tutor';
 
 export const tutorRoutes = new Hono<AppEnv>();
 
@@ -36,6 +36,10 @@ tutorRoutes.get('/ws', async (c) => {
       ttsModel: GAME.TUTOR.SPEECH === 'tts' && ttsAvailable() ? c.env.GEMINI_TTS_MODEL || 'gemini-3.8-flash-lite-tts' : null,
       // Live-ийг үнэгүй багцын түлхүүрээр, TTS-ийг (үнэгүй багцад өдөрт 10 хүсэлт) billing-тэй түлхүүрээр ажиллуулж болно.
       ttsKey: c.env.GEMINI_TTS_API_KEY || key,
+      session: {
+        start: () => startTutorSession(c.env.DB, userId),
+        end: (id, counted) => c.executionCtx.waitUntil(endTutorSession(c.env.DB, id, counted).catch((e) => console.error('[tutor] session', e))),
+      },
       load: async () => {
         // Upgrade-ийн өмнө HTTP 503 өгвөл клиент зөвхөн "холбоо тасарлаа" л хардаг тул socket-оор мэдэгдэнэ.
         if (!key) throw new ApiError(503, 'TUTOR_UNAVAILABLE', 'Баавгай одоо ярих боломжгүй байна. Дараа дахин оролдоно уу.');
@@ -65,7 +69,15 @@ function safeClose(ws: WebSocket, code = 1000, reason = 'closed') {
 
 async function relay(
   client: WebSocket,
-  opts: { key: string; model: string; ttsModel: string | null; ttsKey: string; load: () => ReturnType<typeof loadTutorContext> },
+  opts: {
+    key: string;
+    model: string;
+    ttsModel: string | null;
+    ttsKey: string;
+    /** Хэрэглэгчийн өдрийн / зэрэг ярилцлагын хязгаар (services/tutor). */
+    session: { start: () => Promise<number>; end: (id: number, counted: boolean) => void };
+    load: () => ReturnType<typeof loadTutorContext>;
+  },
 ) {
   let closed = false;
   // Gemini-тэй холбогдох хооронд хүүхэд дэлгэцээ хааж болно: тэгвэл Live session нээлгүй орхино.
@@ -84,15 +96,23 @@ async function relay(
 
   let upstream: WebSocket;
   let ctx: Awaited<ReturnType<typeof loadTutorContext>>;
+  let sessionId: number | null = null;
   try {
     ctx = await opts.load();
     if (clientGone) return;
+    sessionId = await opts.session.start();
+    if (clientGone) {
+      opts.session.end(sessionId, false);
+      return;
+    }
     upstream = await connectLive(opts.key);
     if (clientGone) {
+      opts.session.end(sessionId, false);
       safeClose(upstream);
       return;
     }
   } catch (e) {
+    if (sessionId !== null) opts.session.end(sessionId, false);
     if (!(e instanceof ApiError)) console.error('[tutor]', e);
     send({ type: 'end', reason: 'error', message: e instanceof ApiError ? e.message : 'Баавгайтай холбогдож чадсангүй' });
     safeClose(client, 1011, 'error');
@@ -156,6 +176,8 @@ async function relay(
   const shutdown = (msg?: TutorServerMsg) => {
     if (closed) return;
     closed = true;
+    // Gemini бэлэн болоогүй (хүүхэд баавгайтай ярьж амжаагүй) ярилцлагыг тоолохгүй.
+    if (sessionId !== null) opts.session.end(sessionId, ready);
     speech?.clear();
     if (timer !== undefined) clearTimeout(timer);
     if (msg) send(msg);
