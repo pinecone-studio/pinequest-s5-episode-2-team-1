@@ -31,8 +31,9 @@ export default function RecoveryScreen() {
   const [recovery, setRecovery] = useState<RecoveryDto | null>(null);
   const [order, setOrder] = useState<number[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
-  // Шалгасны дараах дүн; "Үргэлжлүүлэх" / "Дахин бодох" дарахад next-ийг харуулна.
-  const [verdict, setVerdict] = useState<{ correct: boolean; explanation?: string; next: RecoveryDto } | null>(null);
+  // Шалгасны дараах дүн; "Үргэлжлүүлэх" / "Дахин бодох" дарахад next-ийг харуулна. correctIndex = 2 дахь буруугийн
+  // дараа серверээс ирсэн зөв хариу (асуулт ижил сэдвийн өөр асуултаар солигдоно).
+  const [verdict, setVerdict] = useState<{ correct: boolean; explanation?: string; correctIndex?: number; next: RecoveryDto } | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -64,7 +65,7 @@ export default function RecoveryScreen() {
       const r = await api<RecoveryAnswerResponse>(`/recovery/${subject}/answer`, {
         body: { questionId: recovery.question.id, choice: selected },
       });
-      setVerdict({ correct: r.correct, explanation: r.explanation, next: r.recovery });
+      setVerdict({ correct: r.correct, explanation: r.explanation, correctIndex: r.correctIndex, next: r.recovery });
       void Haptics.notificationAsync(r.correct ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error);
     } catch (e) {
       // Өөр төхөөрөмж/давхар хүсэлтээр энэ асуулт аль хэдийн давсан: одоогийн төлвийг дахин ачаална
@@ -81,8 +82,10 @@ export default function RecoveryScreen() {
   }
 
   const q = recovery?.question;
+  const revealed = !!verdict && !verdict.correct && verdict.correctIndex !== undefined;
   const stateOf = (orig: number): OptionState => {
     if (!verdict) return selected === orig ? 'selected' : 'idle';
+    if (revealed && orig === verdict.correctIndex) return 'correct';
     if (selected !== orig) return 'dim';
     return verdict.correct ? 'correct' : 'wrong';
   };
@@ -137,12 +140,12 @@ export default function RecoveryScreen() {
                     style={[styles.verdict, { color: verdict.correct ? colors.okText : colors.dangerText }]}
                     accessibilityLiveRegion="polite"
                   >
-                    {verdict.correct ? S.recovery.correct : S.recovery.wrong}
+                    {verdict.correct ? S.recovery.correct : revealed ? S.recovery.revealed : S.recovery.wrong}
                   </Text>
-                  {verdict.correct && verdict.explanation ? <Text style={styles.body}>{verdict.explanation}</Text> : null}
+                  {verdict.explanation ? <Text style={styles.body}>{verdict.explanation}</Text> : null}
                   <Button
-                    title={verdict.correct ? S.recovery.next : S.recovery.retry}
-                    variant={verdict.correct ? 'lime' : 'primary'}
+                    title={verdict.correct || revealed ? S.recovery.next : S.recovery.retry}
+                    variant={verdict.correct || revealed ? 'lime' : 'primary'}
                     onPress={() => show(verdict.next)}
                   />
                 </>
