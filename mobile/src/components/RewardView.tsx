@@ -8,6 +8,7 @@ import { CountUp, Enter, Motion, Pop, Rising, Sprite } from '@/components/pixel'
 import { colors, fonts, radius } from '@/constants/theme';
 import { S } from '@/i18n/strings';
 import type { SpriteKey } from '@/sprites';
+import { goBack } from '@/lib/nav';
 
 const TILE = '#33208F';
 const SOFT = '#CFC6FF';
@@ -25,7 +26,7 @@ export function RewardView({ result, onAgain, onRecovery }: { result: TaskResult
         contentContainerStyle={{ paddingTop: insets.top + 4, paddingBottom: insets.bottom + 24, paddingHorizontal: 20, gap: 14 }}
         showsVerticalScrollIndicator={false}
       >
-        <Pressable accessibilityRole="button" accessibilityLabel={S.common.close} onPress={() => router.back()} style={styles.close}>
+        <Pressable accessibilityRole="button" accessibilityLabel={S.common.close} onPress={() => goBack()} style={styles.close}>
           <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={colors.white} strokeWidth={2.6} strokeLinecap="round">
             <Path d="M6 6l12 12M18 6 6 18" />
           </Svg>
@@ -86,7 +87,7 @@ export function RewardView({ result, onAgain, onRecovery }: { result: TaskResult
             </>
           ) : (
             <>
-              <Button title={S.reward.cont} variant="lime" onPress={() => router.back()} />
+              <Button title={S.reward.cont} variant="lime" onPress={() => goBack()} />
               {canAgain ? <Button title={S.reward.again} variant="white" small onPress={onAgain} /> : null}
             </>
           )}

@@ -1,5 +1,4 @@
 import * as Haptics from 'expo-haptics';
-import { router } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { BgSwatch } from '@/components/BgSwatch';
 import { OutfitCard } from '@/components/OutfitCard';
@@ -13,6 +12,7 @@ import { S } from '@/i18n/strings';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 import { BACKGROUNDS, bgById, outfitById } from '@/lib/pixelBear/catalog';
 import { useOutfits } from '@/lib/pixelBear/useOutfits';
+import { goBack } from '@/lib/nav';
 
 const chunk = <T,>(arr: T[], n: number): T[][] => Array.from({ length: Math.ceil(arr.length / n) }, (_, i) => arr.slice(i * n, i * n + n));
 const pad = <T,>(row: T[], n: number): (T | null)[] => [...row, ...Array(n - row.length).fill(null)];
@@ -30,7 +30,7 @@ export default function BagScreen() {
   return (
     <Screen>
       <View style={styles.header}>
-        <BackButton onPress={() => router.back()} />
+        <BackButton onPress={() => goBack()} />
         <View style={{ flex: 1, gap: 4 }}>
           <Text accessibilityRole="header" style={type.h1}>
             {S.bag.title}

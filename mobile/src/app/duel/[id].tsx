@@ -1,6 +1,6 @@
 import type { WsPlayer } from '@shared/types';
 import * as Haptics from 'expo-haptics';
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '@/auth/AuthContext';
@@ -13,6 +13,7 @@ import { colors, fonts, radius, subjectTheme } from '@/constants/theme';
 import { useDuelSocket } from '@/hooks/useDuelSocket';
 import { useNow } from '@/hooks/useNow';
 import { S, subjectNames } from '@/i18n/strings';
+import { goBack } from '@/lib/nav';
 import type { SpriteKey } from '@/sprites';
 import { confirm } from '@/lib/confirm';
 
@@ -51,7 +52,7 @@ export default function DuelRoomScreen() {
   }, [view.reveal, myId]);
 
   async function leave() {
-    if (ended || view.phase === null || (await confirm(S.duel.leaveConfirm, S.duel.leave))) router.back();
+    if (ended || view.phase === null || (await confirm(S.duel.leaveConfirm, S.duel.leave))) goBack('/duel');
   }
 
   return (
@@ -253,7 +254,7 @@ function ResultView({ view, myId }: { view: ReturnType<typeof useDuelSocket>['vi
           </View>
         ) : null}
       </Card>
-      <Button title={S.duel.backToLobby} onPress={() => router.back()} />
+      <Button title={S.duel.backToLobby} onPress={() => goBack('/duel')} />
     </>
   );
 }
