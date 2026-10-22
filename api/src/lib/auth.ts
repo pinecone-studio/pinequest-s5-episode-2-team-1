@@ -2,13 +2,17 @@ import { GAME } from '../config/game';
 
 const enc = new TextEncoder();
 
-function toB64(bytes: Uint8Array): string {
+// Workers runtime-д native `toBase64`/`fromBase64` байгаа: баавгайн relay аудио мессеж бүрийг хөрвүүлдэг тул
+// JS давталтаас хэд дахин бага CPU зарцуулна. Node (vitest)-д хараахан байхгүй тул доорх давталтаар.
+export function toB64(bytes: Uint8Array): string {
+  if (typeof bytes.toBase64 === 'function') return bytes.toBase64();
   let s = '';
   for (const b of bytes) s += String.fromCharCode(b);
   return btoa(s);
 }
 
-function fromB64(b64: string): Uint8Array<ArrayBuffer> {
+export function fromB64(b64: string): Uint8Array<ArrayBuffer> {
+  if (typeof Uint8Array.fromBase64 === 'function') return Uint8Array.fromBase64(b64);
   const s = atob(b64);
   const out = new Uint8Array(s.length);
   for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i);

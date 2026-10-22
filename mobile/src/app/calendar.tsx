@@ -1,4 +1,3 @@
-import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -12,6 +11,7 @@ import { S } from '@/i18n/strings';
 import { confirm } from '@/lib/confirm';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 import { buildMonth, FACE } from '@/lib/pixelBear/calendar';
+import { goBack } from '@/lib/nav';
 
 const LEGEND = [
   { face: 'happy', label: S.calendar.legend.happy },
@@ -53,7 +53,7 @@ export default function CalendarScreen() {
   return (
     <Screen contentStyle={{ paddingTop: 6 }}>
       <View style={styles.top}>
-        <Pressable accessibilityRole="button" accessibilityLabel={S.calendar.close} onPress={() => router.back()} style={styles.iconBtn}>
+        <Pressable accessibilityRole="button" accessibilityLabel={S.calendar.close} onPress={() => goBack()} style={styles.iconBtn}>
           <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={colors.ink} strokeWidth={2.6} strokeLinecap="round">
             <Path d="M6 6l12 12M18 6 6 18" />
           </Svg>

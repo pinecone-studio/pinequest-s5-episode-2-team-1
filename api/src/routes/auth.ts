@@ -70,6 +70,8 @@ authRoutes.post('/login', async (c) => {
     .prepare('SELECT id, password_hash FROM users WHERE username = ?')
     .bind(normalizeUsername(body.username))
     .first<{ id: number; password_hash: string }>();
+  // Нэр олдоогүй ч hash бодно: хариуны хугацаагаар бүртгэлтэй нэрийг таахгүй.
+  if (!user) await hashPassword(body.password);
   if (!user || !(await verifyPassword(body.password, user.password_hash))) {
     throw new ApiError(401, 'INVALID_CREDENTIALS', 'Нэр эсвэл нууц үг буруу');
   }

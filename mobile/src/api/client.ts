@@ -48,6 +48,12 @@ export function setUnauthorizedHandler(handler: (() => void) | null) {
   session.onUnauthorized = handler;
 }
 
+/** Баавгайтай ярилцах (Gemini Live relay). questionId байхгүй бол сүүлд алдсан бодлогуудын тухай. */
+export function openTutorSocket(questionId?: number): WebSocket {
+  const query = questionId === undefined ? '' : `?questionId=${questionId}`;
+  return new WebSocket(`${API_URL.replace(/^http/, 'ws')}/tutor/ws${query}`, ['bearer', session.token ?? '']);
+}
+
 export function errorText(e: unknown): string {
   if (e instanceof ApiError) return e.message;
   return errorMessages.INTERNAL;
@@ -91,7 +97,7 @@ export async function api<T>(path: string, opts: { method?: string; body?: unkno
   return data as T;
 }
 
-/** DuelRoom-ын WebSocket хаяг. Браузерын WebSocket header дамжуулдаггүй тул token query-д. */
-export function wsUrl(path: string): string {
-  return `${API_URL.replace(/^http/, 'ws')}${path}?token=${encodeURIComponent(session.token ?? '')}`;
+/** DuelRoom-ын WebSocket. Token-ийг URL-д (log-д) биш subprotocol-оор дамжуулна. */
+export function openDuelSocket(duelId: number): WebSocket {
+  return new WebSocket(`${API_URL.replace(/^http/, 'ws')}/duels/${duelId}/ws`, ['bearer', session.token ?? '']);
 }

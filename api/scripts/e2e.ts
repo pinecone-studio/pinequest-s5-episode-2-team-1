@@ -1,7 +1,7 @@
 // Ажиллаж буй dev сервер дээр демо сценарийн гол урсгалыг автоматаар шалгана.
 //   npm run e2e                 # даалгавар, оноо, streak, хамгаалалт, өдрийн хязгаар, тулаан
-//   npm run e2e -- --only tasks # зөвхөн нэг хэсэг (tasks | recovery | shop | duel | books)
-import type { AnswerResponse, MeResponse, RecoveryAnswerResponse, RecoveryDto, ShopResponse, TaskDto } from '../../shared/types';
+//   npm run e2e -- --only tasks # зөвхөн нэг хэсэг (tasks | paths | recovery | shop | duel | books)
+import type { AnswerResponse, CosmeticsResponse, MeResponse, RecoveryAnswerResponse, RecoveryDto, ShopResponse, TaskDto } from '../../shared/types';
 import { runBooksScenario } from './e2e-books';
 import { runDuelScenario } from './e2e-duel';
 import { check, correctIndex, doTask, expectError, failureCount, me, register } from './e2e-lib';
@@ -87,8 +87,24 @@ async function tasksScenario() {
   const ftAfter = await call<TaskDto>('POST', '/tasks', { token: fresh.token, body: { subject: 'math' } });
   check(flagged.ok && ftAfter.answeredCount === 1, 'Flag дарсан асуулт алгасагдана');
   await call('POST', `/admin/questions/${ft.questions[0].id}/unflag`, { admin: true });
+  // Өөр хүнд гарсан, энэ хэрэглэгчийн хараагүй асуулт.
+  const other = await call<TaskDto>('POST', '/tasks', { token: (await register('e2e_flag2', 8)).token, body: { subject: 'physics' } });
+  await expectError(call('POST', `/questions/${other.questions[0].id}/flag`, { token: fresh.token, body: {} }), 'NOT_FOUND', 'Хараагүй асуултыг flag хийхгүй');
 
   return { a, b };
+}
+
+async function pathsScenario() {
+  console.log('\n— Хичээл бүрийн сурах зам');
+  const u = await register('e2e_path', 7);
+  check((['math', 'mongolian', 'physics'] as const).every((s) => u.me.paths[s].level === 1 && u.me.paths[s].bossesBeaten === 0), 'Шинэ хэрэглэгчийн 3 зам бүгд эхлэлд');
+  await doTask(u.token, 'math', true);
+  await doTask(u.token, 'math', true);
+  const m = await me(u.token);
+  check(m.paths.math.xp === 100 && m.paths.math.level === 3, 'Математикийн 2 даалгавар (10 зөв) → математикийн замд 2 зангилаа ахина', m.paths.math);
+  check(m.paths.physics.xp === 0 && m.paths.mongolian.level === 1, 'Бусад хичээлийн зам хөдлөхгүй', m.paths);
+  check(m.xp === 100 && m.level === 2, 'Нийт XP, шат хэвээр нэмэгдэнэ');
+  await expectError(call('POST', '/tasks', { token: u.token, body: { subject: 'math', boss: 0 } }), 'BOSS_LOCKED', 'Тэр хичээлийн boss-ын зангилаанд хүрээгүй бол boss хаалттай');
 }
 
 async function recoveryScenario() {
@@ -117,11 +133,24 @@ async function recoveryScenario() {
   const ids: number[] = [];
   let wrongOk = true;
   let rightOk = true;
+  let swapped = false;
   while (r.question) {
     const id = r.question.id;
     const ci = await correctIndex(id);
     const bad = await call<RecoveryAnswerResponse>('POST', '/recovery/physics/answer', { token: u.token, body: { questionId: id, choice: (ci + 1) % 4 } });
-    wrongOk &&= !bad.correct && bad.explanation === undefined && bad.recovery.answered === ids.length;
+    wrongOk &&= !bad.correct && bad.explanation === undefined && bad.correctIndex === undefined && bad.recovery.answered === ids.length;
+    if (!swapped) {
+      // эхний асуултад 2 дахь удаа буруу: зөв хариу, тайлбар ирж, асуулт ижил сэдвийн өөр асуултаар солигдоно (байвал)
+      swapped = true;
+      const bad2 = await call<RecoveryAnswerResponse>('POST', '/recovery/physics/answer', { token: u.token, body: { questionId: id, choice: (ci + 1) % 4 } });
+      const replaced = bad2.recovery.question?.id !== id;
+      check(
+        !bad2.correct && bad2.correctIndex === ci && !!bad2.explanation && bad2.recovery.answered === 0 && bad2.recovery.total === r.total,
+        `2 дахь буруугаас зөв хариу, тайлбар ирнэ (${replaced ? 'асуулт солигдсон' : 'тэр сэдэвт өөр асуулт алга, хэвээр'})`,
+      );
+      r = bad2.recovery;
+      continue;
+    }
     const body = { questionId: id, choice: ci };
     const ok = await call<RecoveryAnswerResponse>('POST', '/recovery/physics/answer', { token: u.token, body });
     rightOk &&= ok.correct && !!ok.explanation && ok.recovery.answered === ids.length + 1;
@@ -160,6 +189,15 @@ async function shopScenario() {
     'NOT_OWNED',
     'Аваагүй эд зүйлийг өмсөхгүй',
   );
+
+  console.log('\n— Дэвсгэр ба хувцас (/cosmetics)');
+  const c = await register('cosm_u', 7);
+  await expectError(call('POST', '/cosmetics/bg_yagaan/buy', { token: c.token }), 'INSUFFICIENT_POINTS', '50 оноогоор 60-ын дэвсгэр авахгүй');
+  await doTask(c.token, 'math', true); // 50 → 100
+  const bg = await call<CosmeticsResponse>('POST', '/cosmetics/bg_yagaan/buy', { token: c.token });
+  check(bg.me.points === 40 && bg.items.some((i) => i.id === 'bg_yagaan' && i.owned), 'Дэвсгэр авахад серверийн оноо хасагдана (100 → 40)', bg.me.points);
+  await expectError(call('POST', '/cosmetics/bg_yagaan/buy', { token: c.token }), 'ALREADY_OWNED', 'Нэг дэвсгэрийг дахин авахгүй');
+  await expectError(call('POST', '/cosmetics/bg_nimbeg/buy', { token: c.token }), 'ALREADY_OWNED', 'Үнэгүй дэвсгэр анхнаасаа байгаа');
 }
 
 async function audit() {
@@ -171,6 +209,7 @@ async function main() {
   if (!ADMIN_TOKEN) throw new Error('ADMIN_TOKEN олдсонгүй (api/.dev.vars)');
   const only = arg('only');
   if (!only || only === 'tasks') await tasksScenario();
+  if (!only || only === 'paths') await pathsScenario();
   if (!only || only === 'recovery') await recoveryScenario();
   if (!only || only === 'shop') await shopScenario();
   if (!only || only === 'duel') await runDuelScenario();

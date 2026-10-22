@@ -59,8 +59,71 @@ async function limitsAndEscrow() {
   return { a, b, duelId: duel.id };
 }
 
+async function inviteCode() {
+  console.log('\n— Тулаан: урилгын код, найзын (private) сорилт');
+  const a = await register('code_a', 7);
+  const b = await register('code_b', 6);
+  const x = await register('code_x', 10);
+
+  const { duel } = await call<DuelResponse>('POST', '/duels', { token: a.token, body: { subject: 'math', stake: 3, visibility: 'private' } });
+  check(duel.visibility === 'private' && /^\d{6}$/.test(duel.code ?? ''), 'Найзын сорилт 6 оронтой кодтой үүслээ', duel.code);
+  const code = duel.code!;
+  const lobbyB = await call<LobbyResponse>('GET', '/duels', { token: b.token });
+  check(!lobbyB.open.some((d) => d.id === duel.id), 'Найзын сорилт лобби дээр гарахгүй');
+  const seen = await call<DuelResponse>('GET', `/duels/${duel.id}`, { token: b.token });
+  check(seen.duel.code === null, 'Кодыг зөвхөн үүсгэгч харна');
+  await expectError(call('POST', `/duels/${duel.id}/accept`, { token: b.token }), 'NOT_FOUND', 'Найзын сорилтыг id-аар хүлээн авахгүй');
+  await expectError(call('POST', '/duels/join', { token: b.token, body: { code: '12' } }), 'BAD_REQUEST', 'Буруу урттай код');
+  await expectError(call('POST', '/duels/join', { token: x.token, body: { code } }), 'WRONG_TIER', 'Өөр түвшний хүүхэд кодоор ч орохгүй');
+  await expectError(call('POST', '/duels/join', { token: a.token, body: { code } }), 'OWN_DUEL', 'Өөрийн кодоор орохгүй');
+
+  // Б өөрийн нээлттэй сорилттой байсан ч кодоор орж болно: Б-гийн сорилт хаагдана.
+  const { duel: own } = await call<DuelResponse>('POST', '/duels', { token: b.token, body: { subject: 'physics', stake: 2 } });
+  const joined = await call<DuelResponse>('POST', '/duels/join', { token: b.token, body: { code: `${code.slice(0, 3)} ${code.slice(3)}` } });
+  check(joined.duel.id === duel.id && joined.duel.status === 'accepted', 'Б кодоор (зайтай бичсэн ч) орлоо');
+  const ownAfter = await call<DuelResponse>('GET', `/duels/${own.id}`, { token: b.token });
+  check(ownAfter.duel.status === 'cancelled', 'Б-гийн өөрийн нээлттэй сорилт хаагдлаа');
+  const [ma, mb] = [await me(a.token), await me(b.token)];
+  check(ma.points === 47 && mb.points === 47, 'Хоёулангийнх нь бооцоо түр хасагдлаа (50 → 47)', [ma.points, mb.points]);
+  const mineA = await call<LobbyResponse>('GET', '/duels', { token: a.token });
+  check(mineA.mine?.id === duel.id && mineA.mine.status === 'accepted', 'Үүсгэгч лобби poll-оор эхэлснийг мэдэнэ');
+  const c = await register('code_c', 7);
+  await expectError(call('POST', '/duels/join', { token: c.token, body: { code } }), 'CODE_NOT_FOUND', 'Эхэлсэн тулааны кодоор дахин орохгүй');
+
+  // Лобби дээрх (public) сорилт ч кодтой: найзаа кодоор урьж болно.
+  const { duel: pub } = await call<DuelResponse>('POST', '/duels', { token: c.token, body: { subject: 'mongolian', stake: 2 } });
+  const d = await register('code_d', 6);
+  const lobbyD = await call<LobbyResponse>('GET', '/duels', { token: d.token });
+  const listed = lobbyD.open.find((o) => o.id === pub.id);
+  check(pub.visibility === 'public' && !!listed && listed.code === null, 'Нээлттэй сорилт лобби дээр кодгүйгээр харагдана');
+  await call('POST', `/duels/${pub.id}/cancel`, { token: c.token });
+  await expectError(call('POST', '/duels/join', { token: d.token, body: { code: pub.code } }), 'CODE_NOT_FOUND', 'Цуцалсан сорилтын код ажиллахгүй');
+
+  const { pa, pb } = await connectBoth(duel.id, a, b);
+  check(true, 'Кодоор орсон тулаан эхэллээ (3-2-1)');
+  pa.close();
+  pb.close();
+}
+
+/** Үүсгэгч лобби-гоо LOBBY_PRESENCE_MS (15 сек) нээгээгүй бол сорилт нь бусдад харагдахгүй (--slow). */
+async function lobbyPresence() {
+  console.log('\n— Тулаан: үүсгэгч алга бол сорилт лобби дээрээс нуугдана (--slow)');
+  const a = await register('pres_a', 7);
+  const b = await register('pres_b', 7);
+  const { duel } = await call<DuelResponse>('POST', '/duels', { token: a.token, body: { subject: 'math', stake: 1 } });
+  const listed = async () => (await call<LobbyResponse>('GET', '/duels', { token: b.token })).open.some((d) => d.id === duel.id);
+  check(await listed(), 'Үүсгэмэгц харагдана');
+  await sleep(16_000);
+  check(!(await listed()), '16 сек poll хийгээгүй бол харагдахгүй');
+  await call('GET', '/duels', { token: a.token });
+  check(await listed(), 'Үүсгэгч лобби-гоо нээмэгц дахин харагдана');
+  await call('POST', `/duels/${duel.id}/cancel`, { token: a.token });
+}
+
 async function fullDuel(a: AuthResponse, b: AuthResponse, duelId: number) {
   console.log('\n— Тулаан: real-time 3 асуулт (A хожно)');
+  const rejected = await WsPlayer.open('X', duelId, 'bad-token').then((p) => (p.close(), false), () => true);
+  check(rejected, 'Буруу token-той WebSocket холбогдохгүй');
   const { pa, pb } = await connectBoth(duelId, a, b);
 
   // Асуулт 1: Б буруу → түгжигдэнэ; А зөв → авна
@@ -165,5 +228,9 @@ export async function runDuelScenario(): Promise<void> {
   await fullDuel(a, b, duelId);
   await drawDuel();
   await forfeitDuel();
-  if (flag('slow')) await noShowDuel();
+  await inviteCode();
+  if (flag('slow')) {
+    await noShowDuel();
+    await lobbyPresence();
+  }
 }

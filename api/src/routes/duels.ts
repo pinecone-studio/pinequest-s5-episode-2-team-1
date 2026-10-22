@@ -4,8 +4,8 @@ import type { DuelResponse, LobbyResponse } from '../../../shared/types';
 import { SUBJECTS } from '../config/game';
 import type { AppEnv } from '../env';
 import { ApiError, parseId, readBody } from '../lib/errors';
-import { bearerToken, requireAuth, userIdForToken } from '../lib/session';
-import { acceptChallenge, cancelChallenge, createChallenge, duelRoomName, getDuelSummary, lobby } from '../services/duels';
+import { requireAuth, userIdForToken } from '../lib/session';
+import { acceptChallenge, cancelChallenge, createChallenge, duelRoomName, getDuelSummary, joinByCode, lobby } from '../services/duels';
 
 export const duelRoutes = new Hono<AppEnv>();
 
@@ -14,12 +14,20 @@ duelRoutes.get('/', requireAuth, async (c) => {
 });
 
 duelRoutes.post('/', requireAuth, async (c) => {
-  const body = await readBody(c, z.object({ subject: z.enum(SUBJECTS), stake: z.number() }));
-  return c.json<DuelResponse>({ duel: await createChallenge(c.env.DB, c.get('userId'), body.subject, body.stake) }, 201);
+  const body = await readBody(
+    c,
+    z.object({ subject: z.enum(SUBJECTS), stake: z.number(), visibility: z.enum(['public', 'private']).default('public') }),
+  );
+  return c.json<DuelResponse>({ duel: await createChallenge(c.env.DB, c.get('userId'), body.subject, body.stake, body.visibility) }, 201);
+});
+
+duelRoutes.post('/join', requireAuth, async (c) => {
+  const body = await readBody(c, z.object({ code: z.string().max(20) }));
+  return c.json<DuelResponse>({ duel: await joinByCode(c.env, c.get('userId'), body.code) });
 });
 
 duelRoutes.get('/:id', requireAuth, async (c) => {
-  return c.json<DuelResponse>({ duel: await getDuelSummary(c.env.DB, parseId(c.req.param('id'))) });
+  return c.json<DuelResponse>({ duel: await getDuelSummary(c.env.DB, parseId(c.req.param('id')), c.get('userId')) });
 });
 
 duelRoutes.post('/:id/accept', requireAuth, async (c) => {
@@ -32,13 +40,14 @@ duelRoutes.post('/:id/cancel', requireAuth, async (c) => {
 });
 
 /**
- * WebSocket → DuelRoom. Браузер/RN-ийн стандарт WebSocket header дамжуулдаггүй тул token-ийг
- * query-ээр авч энд шалгаад, DO руу X-User-Id-тай дамжуулна.
+ * WebSocket → DuelRoom. Браузер/RN-ийн WebSocket нь Authorization header илгээж чаддаггүй тул token-ийг
+ * subprotocol-оор авна: `new WebSocket(url, ['bearer', token])`. URL-д (тэгэхээр log-д) token орохгүй.
+ * Энд шалгаад DO руу X-User-Id-тай дамжуулна.
  */
 duelRoutes.get('/:id/ws', async (c) => {
   if (c.req.header('upgrade')?.toLowerCase() !== 'websocket') throw new ApiError(400, 'BAD_REQUEST', 'WebSocket хүлээж байна');
-  const token = c.req.query('token') ?? bearerToken(c);
-  const userId = token ? await userIdForToken(c.env.DB, token) : null;
+  const [scheme, token] = (c.req.header('sec-websocket-protocol') ?? '').split(',').map((s) => s.trim());
+  const userId = scheme === 'bearer' && token ? await userIdForToken(c.env.DB, token) : null;
   if (!userId) throw new ApiError(401, 'UNAUTHORIZED', 'Нэвтрэх шаардлагатай');
 
   const duelId = parseId(c.req.param('id'));

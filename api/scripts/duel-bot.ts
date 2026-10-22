@@ -1,13 +1,15 @@
 // Ганцаараа нэг утсаар тулааныг турших бот тоглогч (WebSocket-оор холбогдож санамсаргүй хугацаанд хариулна).
 //   npm run bot                               # лобби дахь эхний сорилтыг хүлээн авна (7-р анги → Түвшин 1)
 //   npm run bot -- --create math --stake 3    # өөрөө сорилт үүсгээд хүлээнэ (math | mongolian | physics)
+//   npm run bot -- --create math --private    # найзын сорилт: лобби дээр гарахгүй, урилгын кодыг хэвлэнэ
+//   npm run bot -- --code 482913              # утсан дээр гарсан урилгын кодоор орно
 //   --user bot1 --grade 7                     # нэр, анги (анхдагч: санамсаргүй нэр, 7-р анги)
 //   --accuracy 0.6                            # зөв хариулах магадлал (ADMIN_TOKEN-оор зөв хариуг харна)
 //   --min 2 --max 8                           # хариулах хугацаа, секундээр
 //   --loop                                    # тулаан дуусмагц дахин эхэлнэ
 //   --url http://192.168.x.x:8787             # өөр сервер
 import type { AuthResponse, DuelResponse, LobbyResponse, ServerMsg } from '../../shared/types';
-import { ADMIN_TOKEN, API_URL, arg, call, flag, HttpError, sleep, wsUrl } from './lib';
+import { ADMIN_TOKEN, API_URL, arg, call, flag, HttpError, openDuelSocket, sleep } from './lib';
 
 const USER = arg('user') ?? `bot_${Math.random().toString(36).slice(2, 7)}`;
 const PASS = arg('pass', 'bot-pass-123')!;
@@ -17,6 +19,7 @@ const MIN_S = Number(arg('min', '2'));
 const MAX_S = Number(arg('max', '8'));
 const CREATE = arg('create');
 const STAKE = arg('stake');
+const CODE = arg('code');
 
 const log = (...a: unknown[]) => console.log(`[${new Date().toLocaleTimeString()}] 🤖`, ...a);
 
@@ -36,8 +39,13 @@ async function findDuel(token: string): Promise<number> {
     let duelId = lobby.mine?.id;
     if (!duelId) {
       const stake = STAKE ? Number(STAKE) : Math.max(1, Math.min(3, lobby.maxStake));
-      duelId = (await call<DuelResponse>('POST', '/duels', { token, body: { subject: CREATE, stake } })).duel.id;
-      log(`сорилт #${duelId} үүсгэлээ (${CREATE}, ${stake} оноо). Утаснаасаа хүлээн авна уу…`);
+      const visibility = flag('private') ? 'private' : 'public';
+      const { duel } = await call<DuelResponse>('POST', '/duels', { token, body: { subject: CREATE, stake, visibility } });
+      duelId = duel.id;
+      log(`сорилт #${duelId} үүсгэлээ (${CREATE}, ${stake} оноо, ${visibility === 'private' ? 'зөвхөн кодоор' : 'лобби дээр'}).`);
+      log(`урилгын код: ${duel.code}. Утаснаасаа хүлээн авах эсвэл кодоо оруулна уу…`);
+    } else {
+      log(`урилгын код: ${lobby.mine?.code}`);
     }
     for (;;) {
       const l = await call<LobbyResponse>('GET', '/duels', { token });
@@ -45,6 +53,11 @@ async function findDuel(token: string): Promise<number> {
       if (!l.mine) throw new Error('Сорилт цуцлагдсан');
       await sleep(1500);
     }
+  }
+  if (CODE) {
+    const { duel } = await call<DuelResponse>('POST', '/duels/join', { token, body: { code: CODE } });
+    log(`${CODE} кодоор #${duel.id}-д орлоо: ${duel.subject}, ${duel.stake} оноо, үүсгэгч ${duel.creator.username}`);
+    return duel.id;
   }
   log('лобби дээр сорилт хайж байна…');
   for (;;) {
@@ -78,7 +91,7 @@ async function chooseAnswer(questionId: number, optionCount: number): Promise<nu
 
 function play(auth: AuthResponse, duelId: number): Promise<void> {
   return new Promise((resolve) => {
-    const ws = new WebSocket(wsUrl(`/duels/${duelId}/ws`, auth.token));
+    const ws = openDuelSocket(duelId, auth.token);
     const ping = setInterval(() => ws.readyState === WebSocket.OPEN && ws.send('ping'), 20_000);
     const answered = new Set<number>();
 

@@ -1,3 +1,4 @@
+import type { SubjectPath } from '@shared/types';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useAuth } from '@/auth/AuthContext';
@@ -5,11 +6,16 @@ import { Avatar } from '@/components/Avatar';
 import { CountPill, XpPill } from '@/components/StatPill';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 
-/** Нүүр, Сурах зам дээрх дээд мөр: аватар (→ хуанли), XP, дараалал, coin. */
-export function TopBar({ xp = 'total', onMap }: { xp?: 'total' | 'level' | 'none'; onMap?: boolean }) {
+/**
+ * Нүүр, Сурах зам дээрх дээд мөр: аватар (→ хуанли), XP, дараалал, coin. `path` өгвөл шатны XP-г тэр хичээлийн
+ * сурах замаас харуулна (газрын зураг хичээл бүрт тусдаа).
+ */
+export function TopBar({ xp = 'total', onMap, path }: { xp?: 'total' | 'level' | 'none'; onMap?: boolean; path?: SubjectPath }) {
   const { me } = useAuth();
   const { coins } = usePixelBear();
   if (!me) return null;
+  const levelXp = path ? path.nodeXp : me.levelXp;
+  const levelXpNeeded = path ? path.nodeXpNeeded : me.levelXpNeeded;
   return (
     <View style={styles.row}>
       <Pressable
@@ -22,9 +28,9 @@ export function TopBar({ xp = 'total', onMap }: { xp?: 'total' | 'level' | 'none
       </Pressable>
       {xp === 'none' ? null : (
         <XpPill
-          text={xp === 'total' ? `${me.xp} XP` : `${me.levelXp}/${me.levelXpNeeded}`}
-          value={me.levelXp}
-          max={me.levelXpNeeded}
+          text={xp === 'total' ? `${me.xp} XP` : `${levelXp}/${levelXpNeeded}`}
+          value={levelXp}
+          max={levelXpNeeded}
         />
       )}
       <View style={{ flex: 1 }} />

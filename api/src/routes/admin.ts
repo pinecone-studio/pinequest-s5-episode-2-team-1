@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { GAME, SUBJECTS, type Subject, type Tier } from '../config/game';
 import { topicIds } from '../config/topics';
 import type { AppEnv } from '../env';
+import { sha256Hex } from '../lib/auth';
 import { ApiError, parseId, readBody } from '../lib/errors';
 import { pickProvider } from '../llm';
 import { validateDrafts } from '../llm/validate';
@@ -15,7 +16,9 @@ export const adminRoutes = new Hono<AppEnv>();
 
 adminRoutes.use('*', async (c, next) => {
   const expected = c.env.ADMIN_TOKEN;
-  if (!expected || c.req.header('x-admin-token') !== expected) throw new ApiError(403, 'FORBIDDEN', 'Admin token буруу');
+  // Hash-ийг харьцуулна: мөрийн шууд харьцуулалт шиг хугацаагаараа token-ийг задлахгүй.
+  const ok = !!expected && (await sha256Hex(c.req.header('x-admin-token') ?? '')) === (await sha256Hex(expected));
+  if (!ok) throw new ApiError(403, 'FORBIDDEN', 'Admin token буруу');
   await next();
 });
 

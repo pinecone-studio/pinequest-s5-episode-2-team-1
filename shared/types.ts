@@ -41,9 +41,12 @@ export type ErrorCode =
   | 'DUEL_NOT_OPEN'
   | 'WRONG_TIER'
   | 'OWN_DUEL'
+  | 'CODE_NOT_FOUND'
   | 'LLM_UNAVAILABLE'
   | 'LLM_FAILED'
-  | 'BOSS_LOCKED';
+  | 'BOSS_LOCKED'
+  | 'TUTOR_UNAVAILABLE'
+  | 'TUTOR_LIMIT';
 
 export interface ApiErrorBody {
   error: { code: ErrorCode; message: string };
@@ -88,13 +91,29 @@ export interface Me {
   nextMultiplier: number;
   todayTasks: number;
   dailyLimit: number;
+  /** Тоглоомын тогтмолууд (клиент дээр дахин хатуу бичихгүйн тулд). */
+  questionsPerTask: number;
+  pointsPerCorrect: number;
+  xpPerCorrect: number;
   shield: ShieldStatus;
   equipped: Equipped;
   avatar: AvatarLook;
   maxStake: number;
-  /** Газрын зурагт дарааллаар ялсан boss-ын тоо: дараагийнхаа boss-ыг ялах хүртэл баавгай түүний дэргэд зогсоно. */
-  bossesBeaten: number;
+  /** Хичээл бүрийн сурах зам: газрын зураг дээрх байрлал ба ялсан boss хичээлээр тусдаа. */
+  paths: Record<Subject, SubjectPath>;
   today: string;
+}
+
+export interface SubjectPath {
+  /** Энэ хичээлийн даалгавраас авсан XP (нийт XP-ийн хэсэг). */
+  xp: number;
+  /** floor(xp / PATH_XP_PER_NODE) + 1: газрын зураг дээрх зангилаа = level − 1 (5 зөв хариулт тутамд нэг). */
+  level: number;
+  /** Дараагийн зангилаа хүртэлх явц: nodeXp / nodeXpNeeded. */
+  nodeXp: number;
+  nodeXpNeeded: number;
+  /** Дарааллаар ялсан boss-ын тоо: дараагийнхаа boss-ыг ялах хүртэл баавгай түүний дэргэд зогсоно. */
+  bossesBeaten: number;
 }
 
 export interface AuthResponse {
@@ -168,14 +187,19 @@ export interface RecoveryDto {
 
 export interface RecoveryAnswerResponse {
   correct: boolean;
-  /** Зөвхөн зөв хариулсан үед. */
+  /** Зөв хариулсан үед, эсвэл нэг асуултад 2 дахь удаа буруу хариулахад (дараа нь асуулт солигдоно). */
   explanation?: string;
+  /** Нэг асуултад 2 дахь удаа буруу хариулахад л: зөв хариу (тэр асуулт ижил сэдвийн өөр асуултаар солигдоно). */
+  correctIndex?: number;
   recovery: RecoveryDto;
 }
 
 // ---------- Тулаан (REST) ----------
 
 export type DuelStatus = 'open' | 'accepted' | 'finished' | 'cancelled';
+
+/** 'public' = ижил түвшний лобби дээр гарна, 'private' = зөвхөн урилгын кодоор орно. */
+export type DuelVisibility = 'public' | 'private';
 
 export interface DuelPlayerDto {
   id: number;
@@ -189,6 +213,9 @@ export interface DuelSummary {
   subject: Subject;
   stake: number;
   status: DuelStatus;
+  visibility: DuelVisibility;
+  /** Урилгын код: зөвхөн үүсгэгчид (бусдад null). */
+  code: string | null;
   createdAt: number;
   creator: DuelPlayerDto;
   opponent: DuelPlayerDto | null;
@@ -199,6 +226,7 @@ export interface DuelSummary {
 }
 
 export interface LobbyResponse {
+  /** Нэгдэх боломжтой сорилтууд: ижил түвшин, 'public', үүсгэгч нь яг одоо хүлээж байгаа. */
   open: DuelSummary[];
   /** Миний нээлттэй эсвэл явагдаж буй тулаан. */
   mine: DuelSummary | null;
@@ -208,6 +236,18 @@ export interface LobbyResponse {
 
 export interface DuelResponse {
   duel: DuelSummary;
+}
+
+/** POST /duels */
+export interface CreateDuelBody {
+  subject: Subject;
+  stake: number;
+  visibility?: DuelVisibility;
+}
+
+/** POST /duels/join — урилгын кодоор орно. */
+export interface JoinDuelBody {
+  code: string;
 }
 
 // ---------- Дэлгүүр ----------
@@ -226,6 +266,23 @@ export interface ShopItem {
 
 export interface ShopResponse {
   items: ShopItem[];
+  me: Me;
+}
+
+/** Баавгайн дэвсгэр өнгө ба хувцас (Pixel Bear UI). */
+export type CosmeticKind = 'bg' | 'outfit';
+
+export interface CosmeticItem {
+  id: string;
+  kind: CosmeticKind;
+  /** mobile catalog дахь id (жишээ нь 'yagaan', 'gradcap') */
+  key: string;
+  price: number;
+  owned: boolean;
+}
+
+export interface CosmeticsResponse {
+  items: CosmeticItem[];
   me: Me;
 }
 
@@ -297,6 +354,27 @@ export type ServerMsg =
   | { type: 'finished'; outcome: DuelOutcome }
   | { type: 'cancelled'; outcome: DuelOutcome }
   | { type: 'error'; code: string };
+
+// ---------- Баавгайтай ярилцах (GET /tutor/ws, Gemini Live) ----------
+// Binary frame: клиент → сервер PCM16LE mono 16 kHz (mic), сервер → клиент PCM16LE mono 24 kHz (баавгайн дуу).
+// Text frame: доорх JSON.
+
+export type TutorClientMsg =
+  /** Mic-ийг унтраалаа (баавгай ярих гэж байна): Gemini-ийн VAD-д сонссоноо дуусгахыг мэдэгдэнэ. */
+  { type: 'mic_off' };
+
+export type TutorServerMsg =
+  /** Gemini бэлэн; баавгай өөрөө мэндэлж эхэлнэ. */
+  | { type: 'ready'; topic: { subject: Subject; prompt: string } | null; endsAt: number; serverNow: number }
+  /** Баавгайн хэлж буй үгийн текст (хэсэг хэсгээр нэмэгдэнэ). */
+  | { type: 'bear_text'; text: string }
+  /** Хүүхдийн хэлснийг Gemini ингэж сонссон (хэсэг хэсгээр). */
+  | { type: 'kid_text'; text: string }
+  /** Баавгай ярьж дууслаа (дууны бүх хэсэг ирсэн). */
+  | { type: 'turn_end' }
+  /** Хүүхэд яриаг тасалсан тул баавгай зогсов: тоглуулж буй дуугаа хаяна. */
+  | { type: 'interrupted' }
+  | { type: 'end'; reason: 'time' | 'error'; message?: string };
 
 // ---------- Сурах бичгийн сан (admin, scripts/books.ts) ----------
 

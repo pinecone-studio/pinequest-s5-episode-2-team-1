@@ -35,7 +35,9 @@ export function refPages(ref: string): string[] {
 
 /**
  * Хамгийн бага ашиглагдсан хуудаснаас (санамсаргүйгээр) эхэлж, ижил номын дараагийн хуудсуудыг
- * нэмнэ. `taken` — энэ удаад аль хэдийн сонгосон хуудсууд (зэрэг дуудлагууд ижил хэсэг авахгүй).
+ * нэмнэ. Бүтэн цонх (`size` дараалсан чөлөөт хуудас) гарах эхлэлийг түрүүлж сонгоно: дараалсан
+ * хуудсуудын сүүлийнхээс эхэлбэл ганц хуудас очих байсан. `taken` — энэ удаад аль хэдийн сонгосон
+ * хуудсууд (зэрэг дуудлагууд ижил хэсэг авахгүй).
  */
 export function chooseWindow(
   candidates: PageCandidate[],
@@ -48,9 +50,13 @@ export function chooseWindow(
   if (free.length === 0) return null;
   const min = Math.min(...free.map((c) => usage.get(`${c.slug}:${c.seq}`) ?? 0));
   const least = free.filter((c) => (usage.get(`${c.slug}:${c.seq}`) ?? 0) === min);
-  const start = least[Math.floor(rng() * least.length)];
-  const window = [start];
   const available = new Set(free.map((c) => `${c.slug}:${c.seq}`));
+  const fits = (c: PageCandidate) =>
+    Array.from({ length: size - 1 }, (_, k) => `${c.slug}:${c.seq + k + 1}`).every((p) => available.has(p));
+  const full = least.filter(fits);
+  const starts = full.length > 0 ? full : least;
+  const start = starts[Math.floor(rng() * starts.length)];
+  const window = [start];
   while (window.length < size && available.has(`${start.slug}:${start.seq + window.length}`)) {
     window.push({ slug: start.slug, seq: start.seq + window.length });
   }

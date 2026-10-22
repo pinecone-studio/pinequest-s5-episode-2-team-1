@@ -17,9 +17,9 @@ import { RewardView } from '@/components/RewardView';
 import { colors, fonts, radius } from '@/constants/theme';
 import { S, subjectNames } from '@/i18n/strings';
 import { confirm } from '@/lib/confirm';
+import { goBack } from '@/lib/nav';
 import { BOSSES } from '@/lib/pixelBear/path';
 
-const XP_PER_CORRECT = 10;
 /** хичээлийн дэвсгэрийн хананы дээд өнгө (scripts/lesson-sprites.ts): өндөр дэлгэцэнд дэвсгэрээс дээш хэсгийг дүүргэнэ */
 const LESSON_WALL = '#3b2a8f';
 
@@ -30,7 +30,7 @@ const LESSON_WALL = '#3b2a8f';
 export default function TaskScreen() {
   const { subject, boss } = useLocalSearchParams<{ subject: Subject; boss?: string }>();
   const foe = boss === undefined ? undefined : BOSSES[Number(boss)];
-  const { setMe } = useAuth();
+  const { me, setMe } = useAuth();
   const insets = useSafeAreaInsets();
   const [task, setTask] = useState<TaskDto | null>(null);
   const [index, setIndex] = useState(0);
@@ -148,7 +148,7 @@ export default function TaskScreen() {
   const mood: LessonMood = feedback ? (feedback.correct ? 'right' : 'wrong') : 'think';
   const bear: { alt: string; bubble: string } =
     mood === 'right'
-      ? { alt: S.lesson.bearCorrect, bubble: S.lesson.correctBubble(XP_PER_CORRECT) }
+      ? { alt: S.lesson.bearCorrect, bubble: S.lesson.correctBubble(me?.xpPerCorrect ?? 0) }
       : mood === 'wrong'
         ? { alt: S.lesson.bearWrong, bubble: S.lesson.wrongBubble }
         : { alt: S.lesson.bearThinking, bubble: error ? error.message : S.lesson.thinking };
@@ -204,7 +204,7 @@ export default function TaskScreen() {
             </>
           )}
           <View style={styles.panelTop}>
-            <Pressable accessibilityRole="button" accessibilityLabel={S.lesson.close} onPress={() => router.back()} style={styles.close}>
+            <Pressable accessibilityRole="button" accessibilityLabel={S.lesson.close} onPress={() => goBack()} style={styles.close}>
               <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={colors.white} strokeWidth={2.6} strokeLinecap="round">
                 <Path d="M6 6l12 12M18 6 6 18" />
               </Svg>
@@ -239,7 +239,7 @@ export default function TaskScreen() {
             <View style={{ gap: 12 }}>
               <Text style={styles.prompt}>{error.message}</Text>
               {!error.fatal && <Button title={S.common.retry} onPress={load} />}
-              <Button title={S.task.home} variant="white" onPress={() => router.back()} />
+              <Button title={S.task.home} variant="white" onPress={() => goBack()} />
             </View>
           ) : !task || !q ? (
             <View style={styles.loading}>
@@ -281,6 +281,10 @@ export default function TaskScreen() {
                   </Text>
                   {feedback.explanation ? <Text style={styles.explainText}>{feedback.explanation}</Text> : null}
                 </Animated.View>
+              ) : null}
+
+              {feedback && !feedback.correct ? (
+                <Button title={S.tutor.ask} variant="white" small onPress={() => router.push(`/tutor?questionId=${q.id}`)} />
               ) : null}
 
               {feedback ? (

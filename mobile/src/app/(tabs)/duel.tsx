@@ -1,25 +1,35 @@
-import type { DuelResponse, DuelSummary, LobbyResponse, Subject } from '@shared/types';
+import type { CreateDuelBody, DuelResponse, DuelSummary, DuelVisibility, JoinDuelBody, LobbyResponse, Subject } from '@shared/types';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Share, StyleSheet, Text, TextInput, View } from 'react-native';
 import { api, errorText } from '@/api/client';
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { Enter, PressScale, Sprite } from '@/components/pixel';
+import { SegmentedTabs } from '@/components/SegmentedTabs';
 import { CountPill } from '@/components/StatPill';
 import { Card, Chip, ErrorText, Muted, Screen, SectionTitle } from '@/components/ui';
 import { colors, fonts, radius, subjectTheme } from '@/constants/theme';
 import { type } from '@/constants/type';
 import { S, subjectNames } from '@/i18n/strings';
+import { confirm } from '@/lib/confirm';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 
 const SUBJECTS: Subject[] = ['math', 'mongolian', 'physics'];
 const POLL_MS = 3_000;
+const CODE_LENGTH = 6;
+
+/** "482913" → "482 913" (уншиж, хэлж өгөхөд амар). */
+const formatCode = (code: string) => `${code.slice(0, 3)} ${code.slice(3)}`;
 
 export default function DuelLobby() {
   const [lobby, setLobby] = useState<LobbyResponse | null>(null);
   const [subject, setSubject] = useState<Subject>('math');
   const [stakeText, setStakeText] = useState('1');
+  const [visibility, setVisibility] = useState<DuelVisibility>('public');
+  const [codeText, setCodeText] = useState('');
+  // Кодын алдаа тусдаа: лобби-гийн poll нийтлэг алдааг 3 сек тутам арилгадаг.
+  const [codeError, setCodeError] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
   const entered = useRef<number | null>(null);
@@ -29,6 +39,7 @@ export default function DuelLobby() {
     try {
       const l = await api<LobbyResponse>('/duels');
       setLobby(l);
+      setError('');
       // Үүсгэгч: сорилтыг хүлээн авмагц өрөө рүү автоматаар орно.
       if (l.mine?.status === 'accepted' && entered.current !== l.mine.id) {
         entered.current = l.mine.id;
@@ -67,7 +78,7 @@ export default function DuelLobby() {
 
   const create = () =>
     run('create', async () => {
-      await api<DuelResponse>('/duels', { body: { subject, stake } });
+      await api<DuelResponse>('/duels', { body: { subject, stake, visibility } satisfies CreateDuelBody });
     });
 
   const cancel = (id: number) =>
@@ -75,12 +86,46 @@ export default function DuelLobby() {
       await api(`/duels/${id}/cancel`, { method: 'POST' });
     });
 
-  const accept = (id: number) =>
-    run(`accept-${id}`, async () => {
+  const enter = (id: number) => {
+    entered.current = id;
+    router.push(`/duel/${id}`);
+  };
+
+  // Өөр тулаанд нэгдэхэд өөрийн нээлттэй сорилт сервер дээр хаагдана: эхлээд асууна.
+  const leaveMineOk = () => (lobby?.mine?.status === 'open' ? confirm(S.duel.replaceMine, S.duel.replaceYes) : Promise.resolve(true));
+
+  const accept = async (id: number) => {
+    if (!(await leaveMineOk())) return;
+    await run(`accept-${id}`, async () => {
       await api<DuelResponse>(`/duels/${id}/accept`, { method: 'POST' });
-      entered.current = id;
-      router.push(`/duel/${id}`);
+      enter(id);
     });
+  };
+
+  const join = async () => {
+    if (codeText.length !== CODE_LENGTH || busy !== null || !(await leaveMineOk())) return;
+    setBusy('join');
+    setCodeError('');
+    try {
+      const { duel } = await api<DuelResponse>('/duels/join', { body: { code: codeText } satisfies JoinDuelBody });
+      setCodeText('');
+      enter(duel.id);
+      await load();
+    } catch (e) {
+      setCodeError(errorText(e));
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const share = async (d: DuelSummary) => {
+    if (!d.code) return;
+    try {
+      await Share.share({ message: S.duel.shareMessage(formatCode(d.code), d.subject, d.stake) });
+    } catch {
+      // Web дээр navigator.share байхгүй байж болно: код дэлгэц дээр харагдсаар байна.
+    }
+  };
 
   const changeStake = (delta: number) => setStakeText(String(Math.max(1, (Number.isInteger(stake) ? stake : 1) + delta)));
 
@@ -94,6 +139,10 @@ export default function DuelLobby() {
   }
 
   const mine = lobby.mine;
+  const playing = mine?.status === 'accepted';
+  // Сорилт үүсгэж байхад сонгосон хичээлийн хүлээж буй тулаанууд эхэнд гарна.
+  const open = mine ? lobby.open : [...lobby.open].sort((a, b) => Number(b.subject === subject) - Number(a.subject === subject));
+  const matching = mine ? 0 : lobby.open.filter((d) => d.subject === subject && d.stake <= lobby.maxStake).length;
   return (
     <Screen tabBar>
       <View style={styles.header}>
@@ -116,9 +165,21 @@ export default function DuelLobby() {
           </View>
           {mine.status === 'open' ? (
             <>
+              {mine.code ? (
+                <View style={styles.codeBox}>
+                  <Text style={styles.label}>{S.duel.codeLabel}</Text>
+                  <Text selectable accessibilityLabel={`${S.duel.codeLabel}: ${mine.code.split('').join(' ')}`} style={styles.code}>
+                    {formatCode(mine.code)}
+                  </Text>
+                  <Text style={styles.hint}>{mine.visibility === 'private' ? S.duel.minePrivate : S.duel.minePublic}</Text>
+                  <Button title={S.duel.share} variant="lemon" small onPress={() => share(mine)} />
+                </View>
+              ) : null}
               <View style={styles.waitingRow}>
                 <ActivityIndicator color={colors.violet} />
-                <Muted>{S.duel.waitingAccept}</Muted>
+                <View style={{ flex: 1 }}>
+                  <Muted>{S.duel.waitingAccept}</Muted>
+                </View>
               </View>
               <Button title={S.duel.cancel} variant="secondary" small loading={busy === 'cancel'} onPress={() => cancel(mine.id)} />
             </>
@@ -155,6 +216,22 @@ export default function DuelLobby() {
               <Text style={[styles.hint, stakeInvalid && { color: colors.dangerText, fontFamily: fonts.bold }]}>
                 {stakeInvalid && stake > max ? S.duel.stakeTooHigh(max) : S.duel.stakeMax(max)}
               </Text>
+              <Text style={styles.label}>{S.duel.who}</Text>
+              <SegmentedTabs
+                label={S.duel.who}
+                value={visibility}
+                onChange={setVisibility}
+                options={[
+                  { value: 'public', label: S.duel.visPublic },
+                  { value: 'private', label: S.duel.visPrivate },
+                ]}
+              />
+              <Text style={styles.hint}>{visibility === 'private' ? S.duel.visPrivateHint : S.duel.visPublicHint}</Text>
+              {matching > 0 ? (
+                <View style={styles.matching}>
+                  <Text style={styles.matchingText}>{S.duel.matching(matching, subject)}</Text>
+                </View>
+              ) : null}
               <Button
                 title={S.duel.createButton(Number.isInteger(stake) ? stake : 0)}
                 disabled={stakeInvalid}
@@ -166,17 +243,52 @@ export default function DuelLobby() {
         </Card>
       )}
 
+      {playing ? null : (
+        <Card>
+          <View style={{ gap: 4 }}>
+            <Text style={styles.cardTitle}>{S.duel.joinTitle}</Text>
+            <Muted>{S.duel.joinHint}</Muted>
+          </View>
+          <View style={styles.stakeRow}>
+            <TextInput
+              value={codeText}
+              onChangeText={(t) => {
+                setCodeText(t.replace(/[^0-9]/g, '').slice(0, CODE_LENGTH));
+                setCodeError('');
+              }}
+              onSubmitEditing={join}
+              keyboardType="number-pad"
+              returnKeyType="go"
+              maxLength={CODE_LENGTH}
+              placeholder="000000"
+              placeholderTextColor={colors.stone}
+              accessibilityLabel={S.duel.joinTitle}
+              style={[styles.stakeInput, styles.codeInput, codeError ? { borderColor: colors.dangerText } : null]}
+            />
+            <Button
+              title={S.duel.joinButton}
+              small
+              disabled={codeText.length !== CODE_LENGTH || busy !== null}
+              loading={busy === 'join'}
+              onPress={join}
+            />
+          </View>
+          <ErrorText>{codeError}</ErrorText>
+        </Card>
+      )}
+
       <ErrorText>{error}</ErrorText>
 
       <SectionTitle>{S.duel.openTitle}</SectionTitle>
-      {lobby.open.length === 0 ? <Muted>{S.duel.empty}</Muted> : null}
-      {lobby.open.map((d, i) => (
+      {open.length === 0 ? <Muted>{S.duel.empty}</Muted> : null}
+      {open.map((d, i) => (
         <ChallengeCard
           key={d.id}
           index={i}
           duel={d}
+          highlight={!mine && d.subject === subject}
           canAfford={d.stake <= lobby.maxStake}
-          disabled={!!mine || busy !== null}
+          disabled={playing || busy !== null}
           loading={busy === `accept-${d.id}`}
           onAccept={() => accept(d.id)}
         />
@@ -196,6 +308,7 @@ function StepButton({ label, onPress }: { label: string; onPress: () => void }) 
 function ChallengeCard({
   index,
   duel,
+  highlight,
   canAfford,
   disabled,
   loading,
@@ -203,13 +316,14 @@ function ChallengeCard({
 }: {
   index: number;
   duel: DuelSummary;
+  highlight: boolean;
   canAfford: boolean;
   disabled: boolean;
   loading: boolean;
   onAccept: () => void;
 }) {
   return (
-    <Enter index={index} style={styles.challenge}>
+    <Enter index={index} style={[styles.challenge, highlight && styles.challengeMatch]}>
       <Avatar size={52} />
       <View style={{ flex: 1, gap: 4 }}>
         <Text style={styles.name}>{duel.creator.username}</Text>
@@ -267,6 +381,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
   },
   hint: { fontFamily: fonts.medium, fontSize: 13, color: colors.muted },
+  codeBox: { alignItems: 'center', gap: 8, backgroundColor: colors.paper, borderRadius: radius.md, padding: 14 },
+  code: { fontFamily: fonts.pixel, fontSize: 40, letterSpacing: 4, color: colors.indigo },
+  codeInput: { letterSpacing: 6 },
+  matching: { backgroundColor: colors.lavender, borderRadius: radius.sm, paddingHorizontal: 12, paddingVertical: 10 },
+  matchingText: { fontFamily: fonts.semibold, fontSize: 13, color: colors.indigo },
   challenge: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -274,7 +393,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
     borderRadius: radius.card,
     padding: 14,
+    borderWidth: 2,
+    borderColor: colors.white,
   },
+  challengeMatch: { borderColor: colors.violet },
   name: { fontFamily: fonts.bold, fontSize: 17, color: colors.ink },
   subjectTag: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 3, borderRadius: radius.pill },
   subjectTagText: { fontFamily: fonts.bold, fontSize: 12 },
