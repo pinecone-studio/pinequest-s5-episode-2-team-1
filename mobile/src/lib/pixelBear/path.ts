@@ -1,4 +1,4 @@
-import type { Me, Subject } from '@shared/types';
+import type { Subject, SubjectPath } from '@shared/types';
 import { S } from '@/i18n/strings';
 import type { SpriteKey } from '@/sprites';
 import world from './world.json';
@@ -72,12 +72,13 @@ export const unitOf = (i: number) => Math.floor(i / UNIT_SIZE);
 export const isBossNode = (i: number) => i % UNIT_SIZE === UNIT_SIZE - 1;
 
 /**
- * Одоогийн зангилаа = түвшин − 1, гэхдээ ялаагүй boss-ын дэргэд зогсоно (XP-ээр ахисан ч boss-ыг ялж байж цааш явна).
+ * Хичээлийн сурах зам дээрх одоогийн зангилаа = тэр хичээлийн шат − 1, гэхдээ ялаагүй boss-ын дэргэд зогсоно
+ * (XP-ээр ахисан ч boss-ыг ялж байж цааш явна).
  * shortcut: сүүлийн boss дээр зогсоно; 48-р шатнаас цааш бүлэг нэмэхэд газрын зургийг өргөтгөнө.
  */
-export function currentNode(me: Pick<Me, 'level' | 'bossesBeaten'>): number {
-  const gate = me.bossesBeaten < UNIT_COUNT ? me.bossesBeaten * UNIT_SIZE + UNIT_SIZE - 1 : NODE_COUNT - 1;
-  return Math.max(0, Math.min(NODE_COUNT - 1, gate, me.level - 1));
+export function currentNode(path: Pick<SubjectPath, 'level' | 'bossesBeaten'>): number {
+  const gate = path.bossesBeaten < UNIT_COUNT ? path.bossesBeaten * UNIT_SIZE + UNIT_SIZE - 1 : NODE_COUNT - 1;
+  return Math.max(0, Math.min(NODE_COUNT - 1, gate, path.level - 1));
 }
 
 /** Энэ зангилаанд ялаагүй boss хүлээж байна уу (тэгвэл даалгавар нь boss тулаан). */

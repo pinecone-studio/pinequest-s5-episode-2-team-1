@@ -99,9 +99,21 @@ export interface Me {
   equipped: Equipped;
   avatar: AvatarLook;
   maxStake: number;
-  /** Газрын зурагт дарааллаар ялсан boss-ын тоо: дараагийнхаа boss-ыг ялах хүртэл баавгай түүний дэргэд зогсоно. */
-  bossesBeaten: number;
+  /** Хичээл бүрийн сурах зам: газрын зураг дээрх байрлал ба ялсан boss хичээлээр тусдаа. */
+  paths: Record<Subject, SubjectPath>;
   today: string;
+}
+
+export interface SubjectPath {
+  /** Энэ хичээлийн даалгавраас авсан XP (нийт XP-ийн хэсэг). */
+  xp: number;
+  /** floor(xp / PATH_XP_PER_NODE) + 1: газрын зураг дээрх зангилаа = level − 1 (5 зөв хариулт тутамд нэг). */
+  level: number;
+  /** Дараагийн зангилаа хүртэлх явц: nodeXp / nodeXpNeeded. */
+  nodeXp: number;
+  nodeXpNeeded: number;
+  /** Дарааллаар ялсан boss-ын тоо: дараагийнхаа boss-ыг ялах хүртэл баавгай түүний дэргэд зогсоно. */
+  bossesBeaten: number;
 }
 
 export interface AuthResponse {

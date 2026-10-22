@@ -1,5 +1,5 @@
-import type { Me } from '../../../shared/types';
-import { GAME } from '../config/game';
+import type { Me, SubjectPath } from '../../../shared/types';
+import { GAME, SUBJECTS, type Subject } from '../config/game';
 import { levelProgress } from '../domain/level';
 import { shieldBlock, shieldNextBuyDay } from '../domain/shield';
 import { maxStake } from '../domain/stake';
@@ -21,12 +21,11 @@ export interface UserRow {
   shield_bought_day: string | null;
   shield_used_day: string | null;
   equipped: string;
-  bosses_beaten: number;
   created_at: number;
 }
 
 const USER_COLUMNS =
-  'id, username, grade, tier, xp, points, streak, last_streak_day, shield_held, shield_bought_day, shield_used_day, equipped, bosses_beaten, created_at';
+  'id, username, grade, tier, xp, points, streak, last_streak_day, shield_held, shield_bought_day, shield_used_day, equipped, created_at';
 
 export async function getUserRow(db: D1Database, id: number): Promise<UserRow> {
   const row = await db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE id = ?`).bind(id).first<UserRow>();
@@ -81,7 +80,29 @@ export async function countTasksToday(db: D1Database, userId: number, today: str
   return row?.n ?? 0;
 }
 
-export function buildMe(user: UserRow, today: string, todayTasks: number, catalog: Map<string, CatalogItem>): Me {
+/** Хичээл бүрийн сурах замын ахиц (subject_progress); тухайн хичээлд даалгавар хийгээгүй бол 0. */
+export async function loadSubjectPaths(db: D1Database, userId: number): Promise<Record<Subject, SubjectPath>> {
+  const { results } = await db
+    .prepare('SELECT subject, xp, bosses_beaten FROM subject_progress WHERE user_id = ?')
+    .bind(userId)
+    .all<{ subject: Subject; xp: number; bosses_beaten: number }>();
+  const paths = {} as Record<Subject, SubjectPath>;
+  for (const subject of SUBJECTS) {
+    const row = results.find((r) => r.subject === subject);
+    const xp = row?.xp ?? 0;
+    const per = GAME.PATH_XP_PER_NODE;
+    paths[subject] = { xp, level: Math.floor(xp / per) + 1, nodeXp: xp % per, nodeXpNeeded: per, bossesBeaten: row?.bosses_beaten ?? 0 };
+  }
+  return paths;
+}
+
+export function buildMe(
+  user: UserRow,
+  today: string,
+  todayTasks: number,
+  catalog: Map<string, CatalogItem>,
+  paths: Record<Subject, SubjectPath>,
+): Me {
   const s = streakStateOf(user);
   const progress = levelProgress(user.xp);
   const block = shieldBlock(s, user.points, today);
@@ -115,7 +136,7 @@ export function buildMe(user: UserRow, today: string, todayTasks: number, catalo
     equipped,
     avatar: avatarLook(equipped, catalog),
     maxStake: maxStake(user.points),
-    bossesBeaten: user.bosses_beaten,
+    paths,
     today,
   };
 }
@@ -123,6 +144,6 @@ export function buildMe(user: UserRow, today: string, todayTasks: number, catalo
 export async function loadMe(db: D1Database, userId: number, now = Date.now()): Promise<Me> {
   const today = ubDay(now);
   const user = await syncStreak(db, await getUserRow(db, userId), today);
-  const [todayTasks, catalog] = await Promise.all([countTasksToday(db, userId, today), getCatalog(db)]);
-  return buildMe(user, today, todayTasks, catalog);
+  const [todayTasks, catalog, paths] = await Promise.all([countTasksToday(db, userId, today), getCatalog(db), loadSubjectPaths(db, userId)]);
+  return buildMe(user, today, todayTasks, catalog, paths);
 }
