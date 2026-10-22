@@ -1,4 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import { SUBJECTS, TIERS } from '../src/config/game';
+import { TOPICS, topicIds } from '../src/config/topics';
 import { pickProvider } from '../src/llm';
 import { geminiGenerate, resetGeminiVariant } from '../src/llm/gemini';
 import { buildPrompt } from '../src/llm/prompt';
@@ -67,6 +69,31 @@ describe('validateDrafts', () => {
   it('questions массив байхгүй бол бүгд татгалзана', () => {
     expect(validateDrafts({ foo: 1 }).drafts).toEqual([]);
     expect(validateDrafts(null).rejected[0].reason).toBe('no questions array');
+  });
+});
+
+describe('сэдэв (topic)', () => {
+  it('жагсаалтад байгаа сэдвийг хадгалж, байхгүйг нь сэдэвгүй үлдээнэ', () => {
+    const { drafts, rejected } = validateDrafts(
+      { questions: [good({ topic: 'percent' }), good({ prompt: '7 − 4 хэд вэ?', topic: 'quantum' }), good({ prompt: '9 : 3 хэд вэ?' })] },
+      undefined,
+      topicIds(1, 'math'),
+    );
+    expect(rejected).toEqual([]);
+    expect(drafts.map((d) => d.topic)).toEqual(['percent', undefined, undefined]);
+  });
+
+  it('түвшин, хичээл бүрт давхардаагүй id-тай, prompt нь id-уудыг жагсаана', () => {
+    for (const tier of TIERS) {
+      for (const subject of SUBJECTS) {
+        const ids = topicIds(tier, subject);
+        expect(ids.length).toBeGreaterThan(0);
+        expect(new Set(ids).size).toBe(ids.length);
+        expect(ids.every((id) => /^[a-z_]+$/.test(id))).toBe(true);
+        const { user } = buildPrompt(tier, subject, 3, []);
+        expect(TOPICS[tier][subject].every((t) => user.includes(`${t.id} = ${t.name}`))).toBe(true);
+      }
+    }
   });
 });
 

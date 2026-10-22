@@ -2,6 +2,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "negative_numbers",
   "prompt": "-15 + 8 - (-7) үйлдлийг гүйцэтгээрэй.",
   "options": [
    "0",
@@ -16,6 +17,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "divisibility",
   "prompt": "12 ба 18 тоонуудын хамгийн бага ерөнхий хуваагдагч (ХБЕХ)-ийг олоорой.",
   "options": [
    "24",
@@ -30,6 +32,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "percent",
   "prompt": "Номин дэлгүүрээс 12000 төгрөгийн үнэтэй номыг 25%-ийн хөнгөлөлттэй авчээ. Тэр хэдэн төгрөг төлсөн бэ?",
   "options": [
    "10000₮",
@@ -44,6 +47,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "linear_equations",
   "prompt": "4x - 7 = 17 тэгшитгэлийн шийдийг олоорой.",
   "options": [
    "8",
@@ -58,6 +62,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "triangles",
   "prompt": "Тэгш өнцөгт гурвалжны нэг хурц өнцөг нь 35° бол нөгөө хурц өнцгийн хэмжээг олоорой.",
   "options": [
    "45°",
@@ -72,6 +77,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "fractions_decimals",
   "prompt": "3/4 + 1/8 хэдтэй тэнцүү вэ?",
   "options": [
    "7/8",
@@ -86,6 +92,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "percent",
   "prompt": "120-ийн 25% хэд вэ?",
   "options": [
    "25",
@@ -100,6 +107,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "linear_equations",
   "prompt": "2x + 5 = 17 бол x хэдтэй тэнцүү вэ?",
   "options": [
    "7",
@@ -114,6 +122,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "rectangle_area",
   "prompt": "Урт нь 8 см, өргөн нь 5 см тэгш өнцөгтийн талбай хэд вэ?",
   "options": [
    "26 см²",
@@ -128,6 +137,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "negative_numbers",
   "prompt": "−7 + 12 хэдтэй тэнцүү вэ?",
   "options": [
    "19",
@@ -142,6 +152,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "divisibility",
   "prompt": "12 ба 18-ын хамгийн их ерөнхий хуваагч хэд вэ?",
   "options": [
    "3",
@@ -156,6 +167,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "mean",
   "prompt": "4, 7, 10, 15 тоонуудын арифметик дунджийг олоорой.",
   "options": [
    "12",
@@ -170,6 +182,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "fractions_decimals",
   "prompt": "2.4 : 0.6 + 1.5 үйлдлийг гүйцэтгээрэй.",
   "options": [
    "2.9",
@@ -184,6 +197,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "triangles",
   "prompt": "Гурвалжны хоёр өнцөг нь 50° ба 60° бол гурав дахь өнцгийг олоорой.",
   "options": [
    "90°",
@@ -198,6 +212,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "negative_numbers",
   "prompt": "(-4) · (-5) - 14 илэрхийллийн утгыг олоорой.",
   "options": [
    "-6",
@@ -212,6 +227,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "negative_numbers",
   "prompt": "(-8) · (-4) - (-10) илэрхийллийн утгыг олоорой.",
   "options": [
    "22",
@@ -226,6 +242,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "mean",
   "prompt": "Ангийн 4 сурагч математикийн шалгалтад 70, 80, 85, 85 оноо авчээ. Сурагчдын авсан онооны арифметик дунджийг олоорой.",
   "options": [
    "80",
@@ -240,6 +257,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "ratio_proportion",
   "prompt": "x : 15 = 4 : 5 пропорцын мэдэгдэхгүй байгаа гишүүн x-ийг олоорой.",
   "options": [
    "10",
@@ -254,6 +272,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "triangles",
   "prompt": "Гурвалжны хоёр өнцөг нь 45° ба 65° бол гурав дахь өнцгийн хэмжээг олоорой.",
   "options": [
    "60°",
@@ -268,6 +287,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "rectangle_area",
   "prompt": "Тэгш өнцөгтийн урт 9 см, өргөн 4 см бол түүний периметрийг олоорой.",
   "options": [
    "13 см",
@@ -282,6 +302,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "divisibility",
   "prompt": "16 ба 24 тоонуудын хамгийн их ерөнхий хуваагч (ХИЕХ)-ийг олоорой.",
   "options": [
    "48",
@@ -296,6 +317,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "linear_equations",
   "prompt": "5x - 8 = 22 тэгшитгэлийг бодоорой.",
   "options": [
    "x = 7",
@@ -310,6 +332,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "fractions_decimals",
   "prompt": "2/5 бутархайг аравтын бутархайд шилжүүлээрэй.",
   "options": [
    "0.5",
@@ -324,6 +347,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "percent",
   "prompt": "80 тооны 30 хувийг олоорой.",
   "options": [
    "20",
@@ -338,6 +362,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "divisibility",
   "prompt": "16 ба 24 тоонуудын хамгийн бага ерөнхий хуваагдагч (ХБЕХ)-ийг олоорой.",
   "options": [
    "8",
@@ -352,6 +377,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "rectangle_area",
   "prompt": "Тэгш өнцөгтийн урт 9 см ба периметр нь 30 см бол өргөнийг олоорой.",
   "options": [
    "3 см",
@@ -366,6 +392,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "negative_numbers",
   "prompt": "(-18) : (-3) + (-4) · 2 илэрхийллийн утгыг олоорой.",
   "options": [
    "14",
@@ -380,6 +407,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "percent",
   "prompt": "Сагсанд байгаа 60 алимны 40% нь ногоон алим байв. Хэдэн ногоон алим байсан бэ?",
   "options": [
    "24",
@@ -394,6 +422,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "fractions_decimals",
   "prompt": "5/6 - 1/3 үйлдлийг гүйцэтгээрэй.",
   "options": [
    "2/3",
@@ -408,6 +437,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "negative_numbers",
   "prompt": "-12 + (-15) : 3 илэрхийллийн утгыг олоорой.",
   "options": [
    "-9",
@@ -422,6 +452,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "rectangle_area",
   "prompt": "Тэгш өнцөгтийн талбай 48 см², өргөн нь 6 см бол уртыг олоорой.",
   "options": [
    "7 см",
@@ -436,6 +467,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "linear_equations",
   "prompt": "3x + 11 = 26 тэгшитгэлийн язгуурыг олоорой.",
   "options": [
    "15",
@@ -450,6 +482,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "mean",
   "prompt": "Талст 5 хичээлийн шалгалтад 80, 85, 90, 95, 100 оноо авчээ. Түүний дундаж оноог олоорой.",
   "options": [
    "88",
@@ -464,6 +497,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "ratio_proportion",
   "prompt": "2 : 5 = x : 20 пропорцын мэдэгдэхгүй байгаа гишүүн x-ийг олоорой.",
   "options": [
    "6",
@@ -478,6 +512,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "angles",
   "prompt": "Дэлгэмэл өнцгийг 2 : 3 харьцаатай хоёр өнцөгт хуваажээ. Бага өнцгийн хэмжээг олоорой.",
   "options": [
    "36°",
@@ -492,6 +527,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "divisibility",
   "prompt": "15 ба 20 тоонуудын хамгийн бага ерөнхий хуваагдагч (ХБЕХ)-ийг олоорой.",
   "options": [
    "300",
@@ -506,6 +542,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "negative_numbers",
   "prompt": "-12 - (-20) + (-5) үйлдлийг гүйцэтгээрэй.",
   "options": [
    "-37",
@@ -520,6 +557,7 @@
  {
   "tier": 1,
   "subject": "math",
+  "topic": "linear_equations",
   "prompt": "Аав 36 настай бөгөөд хүүгээсээ 4 дахин ах бол хүү хэдэн настай вэ?",
   "options": [
    "9",
@@ -534,6 +572,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "cases",
   "prompt": "\"Ном\" гэдэг үгэнд үйлдэхийн тийн ялгалын нөхцөл зөв залгасан нь аль вэ?",
   "options": [
    "номаар",
@@ -548,6 +587,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "synonyms_antonyms",
   "prompt": "\"Хурдан\" гэдэг үгийн эсрэг утгатай үг аль нь вэ?",
   "options": [
    "удаан",
@@ -562,6 +602,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "parts_of_speech",
   "prompt": "\"Сургууль\" гэдэг үг ямар үгийн аймагт хамаарах вэ?",
   "options": [
    "дайвар үг",
@@ -576,6 +617,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "punctuation",
   "prompt": "Аль өгүүлбэрийн төгсгөлд асуултын тэмдэг тавих вэ?",
   "options": [
    "Өнөөдөр нартай байна",
@@ -590,6 +632,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "synonyms_antonyms",
   "prompt": "\"Баяртай\" гэдэг үгтэй ойролцоо утгатай үг аль нь вэ?",
   "options": [
    "ядарсан",
@@ -604,6 +647,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "plural",
   "prompt": "\"Морь\" гэдэг үгийн олон тооны зөв хэлбэр аль нь вэ?",
   "options": [
    "морьгууд",
@@ -618,6 +662,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "synonyms_antonyms",
   "prompt": "\"Зөөлөн\" гэдэг үгийн эсрэг утгатай үг аль вэ?",
   "options": [
    "Хөнгөн",
@@ -632,6 +677,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "parts_of_speech",
   "prompt": "\"Цасан бөмбөгөөр тоглов\" гэсэн өгүүлбэрийн үйл үг нь аль вэ?",
   "options": [
    "Тоглов",
@@ -646,6 +692,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "cases",
   "prompt": "\"Мод\" гэдэг үгэнд харьяалахын тийн ялгалын нөхцөл зөв залгасан хэлбэр аль вэ?",
   "options": [
    "Модны",
@@ -660,6 +707,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "parts_of_speech",
   "prompt": "Дараах үгсээс тооны нэрийг олоорой.",
   "options": [
    "Гурван",
@@ -674,6 +722,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "idioms",
   "prompt": "\"Нүд аних\" гэсэн хэлц үг ямар утгыг илэрхийлдэг вэ?",
   "options": [
    "Нас барах",
@@ -688,6 +737,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "plural",
   "prompt": "\"Цэцэг\" гэдэг үгийн олон тооны нөхцөлтэй зөв хэлбэр аль нь вэ?",
   "options": [
    "Цэцэглэл",
@@ -702,6 +752,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "sentence_types",
   "prompt": "Дараах өгүүлбэрүүдээс аль нь захирах өгүүлбэр вэ?",
   "options": [
    "Өө, ямар гоё зураг вэ!",
@@ -716,6 +767,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "parts_of_speech",
   "prompt": "\"Өндөр уул\" гэсэн холбоо үгийн \"өндөр\" нь ямар үгийн аймаг вэ?",
   "options": [
    "Нэр үг",
@@ -730,6 +782,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "idioms",
   "prompt": "\"Чих тавих\" гэсэн хэлц үгийн утга аль нь вэ?",
   "options": [
    "Сонсох, сураглах",
@@ -744,6 +797,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "parts_of_speech",
   "prompt": "\"Тэр маргааш номын санд очно\" гэсэн өгүүлбэрийн төлөөний үг нь аль вэ?",
   "options": [
    "Тэр",
@@ -758,6 +812,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "cases",
   "prompt": "\"Уул\" гэдэг үгэнд чиглэхийн тийн ялгалын нөхцөл зөв залгасан хэлбэр аль вэ?",
   "options": [
    "уулаар",
@@ -772,6 +827,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "cases",
   "prompt": "Дараах үгсийн аль нь заахын тийн ялгалын нөхцөлтэй вэ?",
   "options": [
    "дэвтрийн",
@@ -786,6 +842,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "synonyms_antonyms",
   "prompt": "\"Халуун\" гэсэн үгийн эсрэг утгатай үг аль вэ?",
   "options": [
    "Бүлээн",
@@ -800,6 +857,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "parts_of_speech",
   "prompt": "Дараах үгсээс тэмдэг нэрийг олоорой.",
   "options": [
    "Дэвтэр",
@@ -814,6 +872,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "cases",
   "prompt": "\"Байшин\" гэдэг үгэнд гарахын тийн ялгалын нөхцөл зөв залгасан хэлбэр аль вэ?",
   "options": [
    "байшинд",
@@ -828,6 +887,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "idioms",
   "prompt": "\"Нүүр хагарах\" гэсэн хэлц үгийн утга аль нь вэ?",
   "options": [
    "Ичих, зовох",
@@ -842,6 +902,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "synonyms_antonyms",
   "prompt": "\"Үнэнч\" гэдэг үгтэй ойролцоо утгатай үг аль вэ?",
   "options": [
    "Хайхрамжгүй",
@@ -856,6 +917,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "punctuation",
   "prompt": "Дараах өгүүлбэрүүдийн алинд нь анхаарлын тэмдэг (!) тавих нь зөв бэ?",
   "options": [
    "Урагшаа, багачууд аа, хурдлаарай",
@@ -870,6 +932,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "cases",
   "prompt": "\"Нар\" гэдэг үгэнд гарахын тийн ялгалын нөхцөл зөв залгасан хэлбэр аль вэ?",
   "options": [
    "нараар",
@@ -884,6 +947,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "idioms",
   "prompt": "\"Гар сунгах\" гэсэн тогтвортой хэлц үгийн утга аль нь вэ?",
   "options": [
    "Зодог тайлах",
@@ -898,6 +962,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "sentence_types",
   "prompt": "Дараах өгүүлбэрүүдээс аль нь асуух өгүүлбэр вэ?",
   "options": [
    "Маргааш хэдэн цагт уулзах вэ?",
@@ -912,6 +977,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "parts_of_speech",
   "prompt": "\"Багш сайн сурагчийг сайшаав.\" өгүүлбэрийн \"сайшаав\" гэдэг үг ямар үгийн аймаг вэ?",
   "options": [
    "Тооны нэр",
@@ -926,6 +992,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "cases",
   "prompt": "\"Сургууль\" гэдэг үгэнд өгөх оршихын тийн ялгалын нөхцөл зөв залгасан хэлбэр аль нь вэ?",
   "options": [
    "сургуулиас",
@@ -940,6 +1007,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "spelling",
   "prompt": "\"Мөнх\" гэдэг үгэнд эгшиг зохицох ёсоор аль нөхцөл залгагдах вэ?",
   "options": [
    "-тэй",
@@ -954,6 +1022,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "parts_of_speech",
   "prompt": "\"Тэр өглөө бүр гүйдэг\" өгүүлбэрийн заах төлөөний үг аль нь вэ?",
   "options": [
    "бүр",
@@ -968,6 +1037,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "idioms",
   "prompt": "\"Цагаан сэтгэлтэй\" гэсэн хэлц үгийн утга аль нь вэ?",
   "options": [
    "Зальтай",
@@ -982,6 +1052,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "cases",
   "prompt": "\"Ном... уншив\" цэгийн хооронд заахын тийн ялгалын нөхцөлийг зөв тохируулан бичээрэй.",
   "options": [
    "номд",
@@ -996,6 +1067,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "parts_of_speech",
   "prompt": "Дараах үгсээс дэс тооны нэрийг олоорой.",
   "options": [
    "Гуравдугаар",
@@ -1010,6 +1082,7 @@
  {
   "tier": 1,
   "subject": "mongolian",
+  "topic": "sentence_types",
   "prompt": "Дараах өгүүлбэрээс уриалах өгүүлбэрийг олоорой.",
   "options": [
    "Цонхоо нээгээрэй.",
@@ -1024,6 +1097,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "speed",
   "prompt": "Машин 2 цагт 120 км зам туулсан бол дундаж хурд нь хэд вэ?",
   "options": [
    "240 км/цаг",
@@ -1038,6 +1112,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "quantities_si",
   "prompt": "Олон улсын нэгжийн системд (SI) массын үндсэн нэгж аль нь вэ?",
   "options": [
    "ньютон",
@@ -1052,6 +1127,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "states_of_matter",
   "prompt": "Ус хэвийн атмосферын даралтад хэдэн градус Цельсийд буцалдаг вэ?",
   "options": [
    "0 °C",
@@ -1066,6 +1142,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "states_of_matter",
   "prompt": "Мөс хайлж ус болох үзэгдлийг юу гэж нэрлэдэг вэ?",
   "options": [
    "уурших",
@@ -1080,6 +1157,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "light_shadow",
   "prompt": "Гэрэл нэг төрлийн орчинд хэрхэн тархдаг вэ?",
   "options": [
    "тойрог хэлбэрээр",
@@ -1094,6 +1172,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "quantities_si",
   "prompt": "Хүчийг ямар нэгжээр хэмждэг вэ?",
   "options": [
    "ватт (Вт)",
@@ -1108,6 +1187,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "mass_density",
   "prompt": "Биеийн эзлэхүүн 2 м³, масс нь 1600 кг бол тухайн биеийн нягтыг олно уу.",
   "options": [
    "3200 кг/м³",
@@ -1122,6 +1202,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "quantities_si",
   "prompt": "Олон улсын нэгжийн системд (SI) хугацааны үндсэн нэгж аль нь вэ?",
   "options": [
    "минут",
@@ -1136,6 +1217,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "simple_machines",
   "prompt": "Тэнцүү мөртэй хөшүүргийн нэг талд 40 Н хүч үйлчилж тэнцвэржсэн бол нөгөө талд ямар хүч үйлчлэх вэ?",
   "options": [
    "40 Н",
@@ -1150,6 +1232,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "states_of_matter",
   "prompt": "Бодис хийн төлөвөөс шингэн төлөвт шилжих үзэгдлийг юу гэдэг вэ?",
   "options": [
    "Хайлах",
@@ -1164,6 +1247,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "sound",
   "prompt": "Дуу ямар орчинд огт тарахгүй вэ?",
   "options": [
    "Вакуумд (агааргүй орчин)",
@@ -1178,6 +1262,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "quantities_si",
   "prompt": "Олон улсын нэгжийн системд (SI) урт, замын үндсэн нэгж аль нь вэ?",
   "options": [
    "Сантиметр (см)",
@@ -1192,6 +1277,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "speed",
   "prompt": "Сурагч 180 м замыг 30 секундэд туулсан бол ямар хурдтай алхсан бэ?",
   "options": [
    "5400 м/с",
@@ -1206,6 +1292,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "force_gravity",
   "prompt": "Биеийн масс 50 кг бол түүн дээр үйлчлэх хүндийн хүчний хэмжээг олно уу. (g ≈ 10 Н/кг)",
   "options": [
    "500 Н",
@@ -1220,6 +1307,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "states_of_matter",
   "prompt": "Шингэн бодис хийн төлөвт шилжих үзэгдлийг юу гэж нэрлэдэг вэ?",
   "options": [
    "Конденсац",
@@ -1234,6 +1322,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "light_shadow",
   "prompt": "Гэрлийн замд тунгалаг биш биет тавихад түүний ард юу үүсдэг вэ?",
   "options": [
    "Сүүдэр",
@@ -1248,6 +1337,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "heat_temperature",
   "prompt": "Бодисын температурыг ямар багажаар хэмждэг вэ?",
   "options": [
    "Динамометр",
@@ -1262,6 +1352,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "sound",
   "prompt": "Дуу агаарт ойролцоогоор ямар хурдтай тардаг вэ?",
   "options": [
    "340 м/с",
@@ -1276,6 +1367,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "friction",
   "prompt": "Гадаргуу дээгүүр чирэгдэж буй биеийн хөдөлгөөнд саад болох хүчийг юу гэж нэрлэдэг вэ?",
   "options": [
    "Эрчмийн хүч",
@@ -1290,6 +1382,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "quantities_si",
   "prompt": "Олон улсын нэгжийн системд (SI) температурын үндсэн нэгж аль нь вэ?",
   "options": [
    "Джоуль (Дж)",
@@ -1304,6 +1397,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "measurement",
   "prompt": "Сурагч шугам ашиглан номын уртыг хэмжжээ. Шугамын хамгийн жижиг хуваарийн үнэ 1 мм бол хэмжилтийн алдаа хэд байх вэ?",
   "options": [
    "0.1 мм",
@@ -1318,6 +1412,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "speed",
   "prompt": "Автобус 72 км/цаг хурдтай хөдөлж байгаа бол энэ хурдыг м/с нэгж рүү шилжүүлнэ үү.",
   "options": [
    "20 м/с",
@@ -1332,6 +1427,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "mass_density",
   "prompt": "Нийт эзлэхүүн нь 0.5 м³ ба масс нь 400 кг бодис ямар нягттай вэ?",
   "options": [
    "500 кг/м³",
@@ -1346,6 +1442,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "mass_density",
   "prompt": "Дэлхий дээр 60 кг масстай хүний саран дээрх масс хэд байх вэ?",
   "options": [
    "60 кг",
@@ -1360,6 +1457,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "friction",
   "prompt": "Тэгш гадаргуу дээр байгаа 50 Н жинтэй биеийг чирэхэд үрэлтийн коэффициент 0.2 байв. Гулгах үрэлтийн хүчийг олно уу.",
   "options": [
    "10 Н",
@@ -1374,6 +1472,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "simple_machines",
   "prompt": "Хөшүүргийн тулах цэгээс хүч үйлчлэх шугам хүртэлх хамгийн богино зайг юу гэж нэрлэдэг вэ?",
   "options": [
    "Хүчний вектор",
@@ -1388,6 +1487,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "states_of_matter",
   "prompt": "Бодис шууд хатуу төлөвөөс хийн төлөвт шилжих үзэгдлийг юу гэж нэрлэдэг вэ?",
   "options": [
    "Конденсаци",
@@ -1402,6 +1502,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "light_shadow",
   "prompt": "Нэг нарны хиртэлт болох үзэгдэл нь гэрлийн ямар чанарт үндэслэгддэг вэ?",
   "options": [
    "Гэрлийн ойлт",
@@ -1416,6 +1517,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "quantities_si",
   "prompt": "Олон улсын нэгжийн системд (SI) хүчний үндсэн нэгж юу вэ?",
   "options": [
    "Жоуль (Ж)",
@@ -1430,6 +1532,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "measurement",
   "prompt": "Хэмжүүрийн багажийн дараалсан хоёр зураасны хоорондох зайнд харгалзах утгыг юу гэж нэрлэдэг вэ?",
   "options": [
    "Хэмжих хязгаар",
@@ -1444,6 +1547,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "speed",
   "prompt": "Сурагч 400 метр замыг 80 секундэд гүйсэн бол ямар дундаж хурдтай байсан бэ?",
   "options": [
    "3200 м/с",
@@ -1458,6 +1562,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "mass_density",
   "prompt": "Масс нь 300 кг, эзлэхүүн нь 0.1 м³ байх биеийн нягтыг олно уу.",
   "options": [
    "30 кг/м³",
@@ -1472,6 +1577,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "force_gravity",
   "prompt": "Биеийн масс 80 кг бол түүнд үйлчлэх хүндийн хүчийг олно уу. (g ≈ 10 Н/кг)",
   "options": [
    "80 Н",
@@ -1486,6 +1592,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "friction",
   "prompt": "Тэгш гадаргуу дээр байгаа биеийг чирэхэд чирэх хүчний эсрэг чиглэлд ямар үрэлт үүсдэг вэ?",
   "options": [
    "Өнхрөх үрэлт",
@@ -1500,6 +1607,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "states_of_matter",
   "prompt": "Ус хөлдөж мөс болох үзэгдлийг юу гэж нэрлэдэг вэ?",
   "options": [
    "Хайлах",
@@ -1514,6 +1622,7 @@
  {
   "tier": 1,
   "subject": "physics",
+  "topic": "states_of_matter",
   "prompt": "Цельсийн хуваариар усан болор (мөс)-ын хайлах температур хэдэн градус байдаг вэ?",
   "options": [
    "37 °C",
@@ -1528,6 +1637,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "quadratic_equations",
   "prompt": "x² − 9 = 0 тэгшитгэлийн шийдүүд аль нь вэ?",
   "options": [
    "зөвхөн 3",
@@ -1542,6 +1652,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "pythagoras",
   "prompt": "Тэгш өнцөгт гурвалжны катетууд 6 см ба 8 см бол гипотенуз хэд вэ?",
   "options": [
    "48 см",
@@ -1556,6 +1667,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "linear_functions",
   "prompt": "y = 2x + 3 шугаман функцийн өнцгийн коэффициент хэд вэ?",
   "options": [
    "3",
@@ -1570,6 +1682,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "special_products",
   "prompt": "(a + b)² илэрхийллийг задалбал аль нь гарах вэ?",
   "options": [
    "a² + ab + b²",
@@ -1584,6 +1697,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "probability",
   "prompt": "Шоог нэг удаа хаяхад тэгш тоо буух магадлал хэд вэ?",
   "options": [
    "1/2",
@@ -1598,6 +1712,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "powers_roots",
   "prompt": "2³ · 2⁴ хэдтэй тэнцүү вэ?",
   "options": [
    "2⁷",
@@ -1612,6 +1727,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "powers_roots",
   "prompt": "√81 + √16 илэрхийллийн утгыг олоорой.",
   "options": [
    "25",
@@ -1626,6 +1742,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "factoring",
   "prompt": "x² − 25 олон гишүүнтийг үржигдэхүүн болгон задлаарай.",
   "options": [
    "(x + 5)²",
@@ -1640,6 +1757,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "special_products",
   "prompt": "(x − 3)² илэрхийллийг товчилсон үржүүлгийн томьёогоор задална уу.",
   "options": [
    "x² − 6x + 9",
@@ -1654,6 +1772,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "linear_functions",
   "prompt": "y = −3x + 4 шугаман функцийн график Oy осьтай ямар цэгт огтлолцох вэ?",
   "options": [
    "(−3, 0)",
@@ -1668,6 +1787,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "linear_systems",
   "prompt": "x + y = 10 ба x − y = 4 систем тэгшитгэлийн шийдийг олоорой.",
   "options": [
    "x = 7, y = 3",
@@ -1682,6 +1802,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "quadratic_equations",
   "prompt": "x² − 5x + 6 = 0 квадрат тэгшитгэлийн шийдүүдийг олоорой.",
   "options": [
    "1 ба 6",
@@ -1696,6 +1817,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "inequalities",
   "prompt": "2x − 4 > 6 тэнцэтгэл бишийн шийдийг олоорой.",
   "options": [
    "x > 1",
@@ -1710,6 +1832,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "pythagoras",
   "prompt": "Тэгш өнцөгт гурвалжны гипотенуз 10 см, нэг катет нь 6 см бол нөгөө катетын уртыг олоорой.",
   "options": [
    "4 см",
@@ -1724,6 +1847,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "similar_triangles",
   "prompt": "Ижил төстэй хоёр гурвалжны талуудын харьцаа 2:3 бол талбайнуудын харьцаа ямар байх вэ?",
   "options": [
    "4:6",
@@ -1738,6 +1862,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "statistics",
   "prompt": "3, 5, 7, 9, 11 өгөгдлийн арифметик дунджийг олоорой.",
   "options": [
    "8",
@@ -1752,6 +1877,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "linear_systems",
   "prompt": "3x + y = 7 ба 2x - y = 3 систем тэгшитгэлийн хувьд x-ийн утгыг олоорой.",
   "options": [
    "2",
@@ -1766,6 +1892,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "special_products",
   "prompt": "(2x + 3)(2x - 3) үржвэрийг олон гишүүнт болгон задлаарай.",
   "options": [
    "4x² + 9",
@@ -1780,6 +1907,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "linear_functions",
   "prompt": "y = -4x + 8 шугаман функцийн график Ox осьтой ямар цэгт огтлолцох вэ?",
   "options": [
    "(-2; 0)",
@@ -1794,6 +1922,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "statistics",
   "prompt": "3, 7, 11, 15, 19 өгөгдлийн медианыг олоорой.",
   "options": [
    "7",
@@ -1808,6 +1937,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "quadratic_equations",
   "prompt": "x² - 7x + 10 = 0 квадрат тэгшитгэлийн том шийд аль нь вэ?",
   "options": [
    "10",
@@ -1822,6 +1952,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "similar_triangles",
   "prompt": "Ижил төстэй хоёр гурвалжны талуудын харьцаа 1:3 бол талбайнуудын харьцаа ямар байх вэ?",
   "options": [
    "1:6",
@@ -1836,6 +1967,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "inequalities",
   "prompt": "5x - 3 ≤ 2x + 6 тэнцэтгэл бишийн хамгийн их бүхэл шийдийг олоорой.",
   "options": [
    "3",
@@ -1850,6 +1982,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "probability",
   "prompt": "Нэг шоог орхиход 4-өөс бага тоо буух магадлалыг олоорой.",
   "options": [
    "2/3",
@@ -1864,6 +1997,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "special_products",
   "prompt": "(√5 - 2)(√5 + 2) илэрхийллийн утгыг олоорой.",
   "options": [
    "5",
@@ -1878,6 +2012,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "statistics",
   "prompt": "Байхгүй өгөгдөл: 4, 6, 8, x өгөгдлийн арифметик дундаж 7 бол x-ийн утгыг олоорой.",
   "options": [
    "12",
@@ -1892,6 +2027,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "quadratic_equations",
   "prompt": "x^2 - 16 = 0 тэгшитгэлийн шийдүүд аль нь вэ?",
   "options": [
    "зөвхөн 4",
@@ -1906,6 +2042,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "special_products",
   "prompt": "(√7 - 3)(√7 + 3) илэрхийллийн утгыг олоорой.",
   "options": [
    "2",
@@ -1920,6 +2057,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "probability",
   "prompt": "Нэг шоог орхиход 5-аас бага тоо буух магадлалыг олоорой.",
   "options": [
    "1/2",
@@ -1934,6 +2072,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "similar_triangles",
   "prompt": "Ижил төстэй хоёр гурвалжны талуудын харьцаа 1:4 бол талбайнуудын харьцаа ямар байх вэ?",
   "options": [
    "1:16",
@@ -1948,6 +2087,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "quadratic_equations",
   "prompt": "x^2 - 9x + 20 = 0 квадрат тэгшитгэлийн том шийд аль нь вэ?",
   "options": [
    "9",
@@ -1962,6 +2102,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "statistics",
   "prompt": "2, 6, 10, 14, 18 өгөгдлийн медианыг олоорой.",
   "options": [
    "6",
@@ -1976,6 +2117,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "linear_functions",
   "prompt": "y = -2x + 6 шугаман функцийн график Ox осьтой ямар цэгт огтлолцох вэ?",
   "options": [
    "(0; 6)",
@@ -1990,6 +2132,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "special_products",
   "prompt": "(3x + 2)(3x - 2) үржвэрийг олон гишүүнт болгон задлаарай.",
   "options": [
    "3x^2 - 4",
@@ -2004,6 +2147,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "linear_systems",
   "prompt": "2x + y = 5 ба x - y = 1 систем тэгшитгэлийн хувьд x-ийн утгыг олоорой.",
   "options": [
    "2",
@@ -2018,6 +2162,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "powers_roots",
   "prompt": "2^5 · 2^3 илэрхийллийн утгыг олоорой.",
   "options": [
    "2^8",
@@ -2032,6 +2177,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "special_products",
   "prompt": "(a - b)^2 илэрхийллийг задлабал аль нь гарах вэ?",
   "options": [
    "a^2 - 2ab + b^2",
@@ -2046,6 +2192,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "linear_functions",
   "prompt": "y = 3x - 5 шугаман функцийн өнцгийн коэффициент хэд вэ?",
   "options": [
    "-3",
@@ -2060,6 +2207,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "pythagoras",
   "prompt": "Тэгш өнцөгт гурвалжны катетууд 3 см ба 4 см бол гипотенуз хэдэн см вэ?",
   "options": [
    "5",
@@ -2074,6 +2222,7 @@
  {
   "tier": 2,
   "subject": "math",
+  "topic": "quadratic_equations",
   "prompt": "x^2 - 4x + 3 = 0 квадрат тэгшитгэлийн бага шийд аль нь вэ?",
   "options": [
    "1",
@@ -2088,6 +2237,7 @@
  {
   "tier": 2,
   "subject": "mongolian",
+  "topic": "compound_sentences",
   "prompt": "Аль нь нийлмэл өгүүлбэр вэ?",
   "options": [
    "Нар гарав.",
@@ -2102,6 +2252,7 @@
  {
   "tier": 2,
   "subject": "mongolian",
+  "topic": "figures_of_speech",
   "prompt": "\"Чулуу шиг хатуу\" гэдэг нь ямар уран дүрслэх хэрэглүүр вэ?",
   "options": [
    "асуулт",
@@ -2116,6 +2267,7 @@
  {
   "tier": 2,
   "subject": "mongolian",
+  "topic": "suffixes",
   "prompt": "Аль үг харьяалахын тийн ялгалд байна вэ?",
   "options": [
    "багшаас",
@@ -2130,6 +2282,7 @@
  {
   "tier": 2,
   "subject": "mongolian",
+  "topic": "idioms_proverbs",
   "prompt": "\"Нүд ирмэхийн зуур\" гэдэг хэлц үгийн утга аль нь вэ?",
   "options": [
    "удаан хугацаанд",
@@ -2144,6 +2297,7 @@
  {
   "tier": 2,
   "subject": "mongolian",
+  "topic": "suffixes",
   "prompt": "Аль үг зөв бичигдсэн бэ?",
   "options": [
    "хүүхэдууд",
@@ -2158,6 +2312,7 @@
  {
   "tier": 2,
   "subject": "mongolian",
+  "topic": "sentence_parts",
   "prompt": "Өгүүлбэрийн гол гишүүд аль нь вэ?",
   "options": [
    "байц ба тодотгол",
@@ -2172,6 +2327,7 @@
  {
   "tier": 2,
   "subject": "mongolian",
+  "topic": "sentence_parts",
   "prompt": "Өгүүлбэрийн туслах гишүүдээс үйл үгээр илэрсэн өгүүлэхүүнд захирагдаж, үйлийн шалтгаан, зорилго, цаг хугацаа, орон байр зэргийг заадаг гишүүн ямар гишүүн бэ?",
   "options": [
    "Нөхөх гишүүн",
@@ -2186,6 +2342,7 @@
  {
   "tier": 2,
   "subject": "mongolian",
+  "topic": "figures_of_speech",
   "prompt": "\"Тэр хүү салхи шиг хурдан гүйлээ\" гэсэн өгүүлбэрт ямар уран дүрслэх хэрэглүүр ашигласан бэ?",
   "options": [
    "Адилтгал",
@@ -2200,6 +2357,7 @@
  {
   "tier": 2,
   "subject": "mongolian",
+  "topic": "compound_sentences",
   "prompt": "Дараах өгүүлбэрүүдийн аль нь зэрэгцсэн нийлмэл өгүүлбэр вэ?",
   "options": [
    "Хэрэв хичээвэл амжилтад хүрнэ.",
@@ -2214,6 +2372,7 @@
  {
   "tier": 2,
   "subject": "mongolian",
+  "topic": "idioms_proverbs",
   "prompt": "\"Тэнгэрийн хаяа улайх\" гэсэн хэлц үг ямар утгыг илэрхийлдэг вэ?",
   "options": [
    "Үүр цайх, нар мандах дөхөх",
@@ -2228,6 +2387,7 @@
  {
   "tier": 2,
   "subject": "mongolian",
+  "topic": "sentence_parts",
   "prompt": "Дараах өгүүлбэрүүдийн аль нь гишүүнчлэгдээгүй өгүүлбэр вэ?",
   "options": [
    "Тийм ээ.",
@@ -2242,6 +2402,7 @@
  {
   "tier": 2,
   "subject": "mongolian",
+  "topic": "figures_of_speech",
   "prompt": "Хэтрүүлэл (гипербола) ашигласан хэллэг аль нь вэ?",
   "options": [
    "Цас шиг цагаан",
@@ -2256,6 +2417,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "ohms_law",
   "prompt": "Дамжуулагчийн хүчдэл 12 В, эсэргүүцэл 4 Ом бол гүйдлийн хүч хэд вэ?",
   "options": [
    "8 А",
@@ -2270,6 +2432,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "newton_laws",
   "prompt": "2 кг масстай биеийн хурдатгал 3 м/с² бол түүнд үйлчлэх хүч хэд вэ?",
   "options": [
    "6 Н",
@@ -2284,6 +2447,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "archimedes",
   "prompt": "Шингэнд живсэн биеийг дээш түлхэх хүчийг юу гэдэг вэ?",
   "options": [
    "Архимедын хүч",
@@ -2298,6 +2462,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "reflection_refraction",
   "prompt": "Гэрэл хавтгай толинд 30° өнцгөөр тусвал ойлтын өнцөг хэд байх вэ?",
   "options": [
    "15°",
@@ -2312,6 +2477,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "work_power_energy",
   "prompt": "Чадлын нэгж аль нь вэ?",
   "options": [
    "вольт (В)",
@@ -2326,6 +2492,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "work_power_energy",
   "prompt": "100 Н хүчээр биеийг хүчний чиглэлд 5 м зөөхөд хийсэн ажил хэд вэ?",
   "options": [
    "500 Ж",
@@ -2340,6 +2507,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "newton_laws",
   "prompt": "Ньютоны хоёрдугаар хуулийн томьёо аль нь вэ?",
   "options": [
    "A = F * s",
@@ -2354,6 +2522,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "ohms_law",
   "prompt": "Битүү цахилгаан хэлхээний хэсэгт Омын хуулийг илэрхийлсэн томьёо аль нь вэ?",
   "options": [
    "U = I * R^2",
@@ -2368,6 +2537,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "archimedes",
   "prompt": "Усны гадаргуу дээр 50 Н хүндийн хүчтэй бие хөвж байвал түүнд үйлчлэх Архимедын хүч ямар байх вэ?",
   "options": [
    "100 Н",
@@ -2382,6 +2552,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "melting_boiling",
   "prompt": "Мөсийг хайлуулах үед түүний температур хэрхэн өөрчлөгдөх вэ?",
   "options": [
    "Эхлээд буураад дараа нь өснө",
@@ -2396,6 +2567,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "work_power_energy",
   "prompt": "Цахилгаан чадлын нэгж аль нь вэ?",
   "options": [
    "Ньютон",
@@ -2410,6 +2582,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "melting_boiling",
   "prompt": "Тогоо дүүрэн ус буцалж байх үед усны температур хэрхэн өөрчлөгдөх вэ?",
   "options": [
    "Тогтмол байна",
@@ -2424,6 +2597,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "reflection_refraction",
   "prompt": "Гэрлийн хугарлын хоёрдугаар хуулиар гэрэл оптикийн нягт багатай орчноос нягт ихтэй орчин руу тусахад хугарлын өнцөг нь тусгалын өнцөгтэй ямар хамааралтай вэ?",
   "options": [
    "Тэнцүү байна",
@@ -2438,6 +2612,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "circuits",
   "prompt": "Цуваа холбосон хоёр резисторийн ерөнхий эсэргүүцлийг хэзээ олж болох вэ?",
   "options": [
    "1/R1 + 1/R2",
@@ -2452,6 +2627,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "pressure",
   "prompt": "Даралтаас хамааруулан хатуу биеийн даралтын томьёог аль нь гэж үзэх вэ?",
   "options": [
    "p = I * R",
@@ -2466,6 +2642,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "magnetism",
   "prompt": "Соронзон орон дамжуулагч дахь цахилгаан гүйдэлд ямар хүчээр үйлчилдэг вэ?",
   "options": [
    "Хүндийн хүч",
@@ -2480,6 +2657,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "heat_quantity",
   "prompt": "2 кг масстай усны температурыг 10 °C-аас 30 °C хүртэл халаахад шаардагдах дулааны тоо хэмжээг ол. (Усны хувийн дулаан багтаамж 4200 Дж/(кг·°C))",
   "options": [
    "84000 Дж",
@@ -2494,6 +2672,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "work_power_energy",
   "prompt": "5 кг масстай чулууг 2 м өндөрт өргөхөд хийсэн ажил хэд вэ? (g = 10 м/с²)",
   "options": [
    "50 Ж",
@@ -2508,6 +2687,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "ohms_law",
   "prompt": "Хувийн эсэргүүцэл нь 0.017 Ом*мм²/м, урт нь 100 м, хөндлөн огтлолын талбай нь 1 мм² дамжуулагчийн эсэргүүцлийг ол.",
   "options": [
    "17 Ом",
@@ -2522,6 +2702,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "circuits",
   "prompt": "Цуваа холбосон 2 Ом ба 3 Ом эсэргүүцэлтэй хоёр дамжуулагчийн ерөнхий эсэргүүцэл хэд вэ?",
   "options": [
    "5 Ом",
@@ -2536,6 +2717,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "circuits",
   "prompt": "Зэрэгцээ холбосон 6 Ом ба 6 Ом эсэргүүцэлтэй хоёр дамжуулагчийн ерөнхий эсэргүүцэл хэд вэ?",
   "options": [
    "6 Ом",
@@ -2550,6 +2732,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "work_power_energy",
   "prompt": "100 В хүчдэлтэй үед 2 А гүйдэл гүйж буй цахилгаан хэрэгслийн чадал хэд вэ?",
   "options": [
    "0.02 Вт",
@@ -2564,6 +2747,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "magnetism",
   "prompt": "Тл (тесла) ямар хэмжигдэхүүний нэгж вэ?",
   "options": [
    "Эсэргүүцэл",
@@ -2578,6 +2762,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "pressure",
   "prompt": "Хатуу биеийн гадаргуу дээр үйлчлэх хүч 50 Н, талбай нь 2 м² бол даралт хэд вэ?",
   "options": [
    "25 Па",
@@ -2592,6 +2777,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "pressure",
   "prompt": "Н нягттай шингэнд h гүнд живсэн биеийн гидростатик даралтын томьёо аль нь вэ?",
   "options": [
    "p = ρ * g * h",
@@ -2606,6 +2792,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "lenses",
   "prompt": "Цугларуулагч линзийн фокусын зай 0.2 м бол оптик хүч нь хэд вэ?",
   "options": [
    "2 дптр",
@@ -2620,6 +2807,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "newton_laws",
   "prompt": "Биеийн масс 4 кг, хурдатгал 5 м/с² бол түүнд үйлчлэх үйлчлэгч хүч хэд вэ?",
   "options": [
    "0.8 Н",
@@ -2634,6 +2822,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "work_power_energy",
   "prompt": "200 Н хүчээр биеийг хүчний чиглэлд 4 м зайд зөөхөд хийсэн ажил хэд вэ?",
   "options": [
    "204 Ж",
@@ -2648,6 +2837,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "work_power_energy",
   "prompt": "10 секундэд 500 Ж ажил гүйцэтгэсэн бол цахилгаан хэрэгслийн чадал хэд вэ?",
   "options": [
    "50 Вт",
@@ -2662,6 +2852,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "pressure",
   "prompt": "Талбай нь 0.5 м², үйлчлэх хүч нь 150 Н байвал үүсэх даралт хэд вэ?",
   "options": [
    "300 Па",
@@ -2676,6 +2867,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "archimedes",
   "prompt": "Архимедын хүчний томьёо аль нь вэ?",
   "options": [
    "F = m * g",
@@ -2690,6 +2882,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "circuits",
   "prompt": "5 Ом ба 10 Ом эсэргүүцэлтэй хоёр дамжуулагчийг цуваа холбоход ерөнхий эсэргүүцэл хэд болох вэ?",
   "options": [
    "50 Ом",
@@ -2704,6 +2897,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "reflection_refraction",
   "prompt": "Гэрэл агаараас ус руу ороход тусгалын өнцөг хугарлын өнцөгтэй ямар хамааралтай вэ?",
   "options": [
    "Тусгалын өнцөг хугарлын өнцөгтэй тэнцүү",
@@ -2718,6 +2912,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "heat_quantity",
   "prompt": "1 кг масстай усны температурыг 1 °C-аар өөрчлөхөд шаардагдах дулааны тоо хэмжээг юу гэж нэрлэдэг вэ?",
   "options": [
    "Шатахын дулаан",
@@ -2732,6 +2927,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "ohms_law",
   "prompt": "Цахилгаан гүйдлийн хүчний нэгж аль нь вэ?",
   "options": [
    "Ампер",
@@ -2746,6 +2942,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "reflection_refraction",
   "prompt": "Хавтгай толинд тусах өнцөг 40° бол ойлтын өнцөг хэд вэ?",
   "options": [
    "0°",
@@ -2760,6 +2957,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "newton_laws",
   "prompt": "Ньютоны хоёрдугаар хуулийг илэрхийлсэн томьёо аль нь вэ?",
   "options": [
    "F = m * g",
@@ -2774,6 +2972,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "heat_quantity",
   "prompt": "Хувийн дулаан багтаамжийн нэгж аль нь вэ?",
   "options": [
    "Дж·°C",
@@ -2788,6 +2987,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "circuits",
   "prompt": "Зэрэгцээ холбосон 4 Ом ба 4 Ом эсэргүүцэлтэй хоёр дамжуулагчийн ерөнхий эсэргүүцэл хэд вэ?",
   "options": [
    "4 Ом",
@@ -2802,6 +3002,7 @@
  {
   "tier": 2,
   "subject": "physics",
+  "topic": "lenses",
   "prompt": "Оптик хүч нь 5 дптр (диоптр) байх линзийн фокусын зайг ол.",
   "options": [
    "2 м",
@@ -2816,6 +3017,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "progressions",
   "prompt": "Арифметик прогрессийн a₁ = 3, d = 4 бол a₅ хэд вэ?",
   "options": [
    "23",
@@ -2830,6 +3032,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "exponents_logarithms",
   "prompt": "log₂ 8 хэдтэй тэнцүү вэ?",
   "options": [
    "16",
@@ -2844,6 +3047,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "trigonometry",
   "prompt": "sin 30° хэдтэй тэнцүү вэ?",
   "options": [
    "1",
@@ -2858,6 +3062,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "vieta",
   "prompt": "x² − 5x + 6 = 0 тэгшитгэлийн язгуурууд аль нь вэ?",
   "options": [
    "−2 ба −3",
@@ -2872,6 +3077,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "combinatorics",
   "prompt": "Ялгаатай 5 номыг тавиур дээр хэдэн янзаар дараалуулан өрж болох вэ?",
   "options": [
    "120",
@@ -2886,6 +3092,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "progressions",
   "prompt": "Геометр прогрессийн b₁ = 2, q = 3 бол b₄ хэд вэ?",
   "options": [
    "24",
@@ -2900,6 +3107,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "quadratic_functions",
   "prompt": "y = x² - 4x + 3 квадрат функцийн оройн цэгийн абсцисс (x) хэд вэ?",
   "options": [
    "4",
@@ -2914,6 +3122,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "exponents_logarithms",
   "prompt": "3^(x-1) = 27 тэгшитгэлийг бодоорой.",
   "options": [
    "4",
@@ -2928,6 +3137,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "trigonometry",
   "prompt": "sin²α + cos²α илэрхийллийн утга ямар байдаг вэ?",
   "options": [
    "1",
@@ -2942,6 +3152,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "progressions",
   "prompt": "Геометр прогрессийн b₁ = 3, хуваарь q = 2 бол гуравдугаар гишүүн b₃ хэд вэ?",
   "options": [
    "9",
@@ -2956,6 +3167,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "vectors",
   "prompt": "a = (1; 2) ба b = (3; 4) векторуудын нийлбор a + b векторийг олоорой.",
   "options": [
    "(4; 8)",
@@ -2970,6 +3182,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "combinatorics",
   "prompt": "6 хүний аль хоёрыг нь сонгож гар бариулахад нийт хэдэн удаа гар барилт болох вэ?",
   "options": [
    "15",
@@ -2984,6 +3197,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "probability",
   "prompt": "Шоог нэг удаа орхиход тэгш тоо буух магадлалыг олоорой.",
   "options": [
    "2/3",
@@ -2998,6 +3212,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "vieta",
   "prompt": "x² - 7x + 10 = 0 тэгшитгэлийн язгууруудын нийлбэрийг олоорой.",
   "options": [
    "-7",
@@ -3012,6 +3227,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "exponents_logarithms",
   "prompt": "log₃ 27 хэдтэй тэнцүү вэ?",
   "options": [
    "1",
@@ -3026,6 +3242,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "systems",
   "prompt": "x + y = 5 ба x - y = 1 систем тэгшитгэлийн x утгыг олоорой.",
   "options": [
    "3",
@@ -3040,6 +3257,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "quadratic_functions",
   "prompt": "y = 2x^2 - 8x + 5 квадрат функцийн оройн цэгийн абсцисс x-ийг олоорой.",
   "options": [
    "-2",
@@ -3054,6 +3272,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "exponents_logarithms",
   "prompt": "log_2(32) + log_3(9) утгыг олоорой.",
   "options": [
    "6",
@@ -3068,6 +3287,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "trigonometry",
   "prompt": "sin(alpha) = 3/5 байвал cos^2(alpha) утгыг олоорой (0 < alpha < pi/2).",
   "options": [
    "3/5",
@@ -3082,6 +3302,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "progressions",
   "prompt": "Геометр прогрессийн b_1 = 2, хуваарь q = 3 бол b_4 хэд вэ?",
   "options": [
    "18",
@@ -3096,6 +3317,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "vectors",
   "prompt": "a = (2; -1) ба b = (4; 3) векторуудын скаляр үржвэрийг олоорой.",
   "options": [
    "11",
@@ -3110,6 +3332,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "combinatorics",
   "prompt": "Ялгаатай 4 номыг 4 хүүхдэд хэдэн янзаар хуваарилан өгч болох вэ?",
   "options": [
    "12",
@@ -3124,6 +3347,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "probability",
   "prompt": "Дамжуулж буй зоосыг 3 удаа хаяхад яг нэг удаа сүлд буух магадлалыг олоорой.",
   "options": [
    "1/2",
@@ -3138,6 +3362,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "vieta",
   "prompt": "x^2 - 5x + 6 = 0 тэгшитгэлийн язгууруудын нийлбэрийг олоорой.",
   "options": [
    "5",
@@ -3152,6 +3377,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "exponents_logarithms",
   "prompt": "2^(x+1) = 16 тэгшитгэлийг бодоорой.",
   "options": [
    "5",
@@ -3166,6 +3392,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "systems",
   "prompt": "Систем тэгшитгэлийг бодоорой: x + y = 7 ба x - y = 3.",
   "options": [
    "x = 6, y = 1",
@@ -3180,6 +3407,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "quadratic_functions",
   "prompt": "y = -x^2 + 6x - 8 квадрат функцийн графикийн оройн цэгийн ординат y-ийг олоорой.",
   "options": [
    "4",
@@ -3194,6 +3422,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "exponents_logarithms",
   "prompt": "3^(2x - 1) = 81 тэгшитгэлийг бодоорой.",
   "options": [
    "2.5",
@@ -3208,6 +3437,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "trigonometry",
   "prompt": "cos(alpha) = 4/5 байвал sin^2(alpha) утгыг олоорой (0 < alpha < pi/2).",
   "options": [
    "3/5",
@@ -3222,6 +3452,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "progressions",
   "prompt": "Арифметик прогрессийн a_1 = 5, d = 3 бол эхний 10 гишүүний нийлбэрийг олоорой.",
   "options": [
    "165",
@@ -3236,6 +3467,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "vectors",
   "prompt": "a = (3; -4) векторуудын уртыг олоорой.",
   "options": [
    "5",
@@ -3250,6 +3482,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "combinatorics",
   "prompt": "Ялгаатай 5 номноос 3 номыг сонгож хэдэн янзаар байрлуулж болох вэ?",
   "options": [
    "20",
@@ -3264,6 +3497,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "probability",
   "prompt": "Шоог хоёр удаа хаяхад ялгарсан нүднүүдийн нийлбэр 7 байх магадлалыг олоорой.",
   "options": [
    "1/6",
@@ -3278,6 +3512,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "vieta",
   "prompt": "x^2 - 9x + 20 = 0 тэгшитгэлийн язгууруудын үржвэрийг олоорой.",
   "options": [
    "20",
@@ -3292,6 +3527,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "exponents_logarithms",
   "prompt": "log_2(x) + log_2(4) = 5 тэгшитгэлийг бодоорой.",
   "options": [
    "2",
@@ -3306,6 +3542,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "systems",
   "prompt": "Систем тэгшитгэлийг бодоорой: 2x + y = 7 ба x - y = 2.",
   "options": [
    "x=3, y=1",
@@ -3320,6 +3557,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "quadratic_functions",
   "prompt": "y = x^2 - 6x + 8 квадрат функцийн графикийн оройн цэгийн абсцисс x-ийг олоорой.",
   "options": [
    "6",
@@ -3334,6 +3572,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "exponents_logarithms",
   "prompt": "log_3(x) + log_3(9) = 4 тэгшитгэлийг бодоорой.",
   "options": [
    "9",
@@ -3348,6 +3587,7 @@
  {
   "tier": 3,
   "subject": "math",
+  "topic": "progressions",
   "prompt": "Геометр прогрессийн b_1 = 3, хуваарь q = 2 бол гуравдугаар гишүүн b_3 хэд вэ?",
   "options": [
    "18",
@@ -3362,6 +3602,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "styles",
   "prompt": "Аль нь албан бичгийн найруулгад тохирох хэллэг вэ?",
   "options": [
    "Танд хүндэтгэл илэрхийлье.",
@@ -3376,6 +3617,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "idioms",
   "prompt": "\"Ам алдах\" хэлцийн утга аль нь вэ?",
   "options": [
    "чимээгүй байх",
@@ -3390,6 +3632,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "semantics",
   "prompt": "Аль үг олон утгатай вэ?",
   "options": [
    "сандал",
@@ -3404,6 +3647,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "composition",
   "prompt": "Эхийн агуулгыг товчилж, гол санааг нь дамжуулсан бичвэрийг юу гэдэг вэ?",
   "options": [
    "зүүлт тайлбар",
@@ -3418,6 +3662,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "punctuation",
   "prompt": "Аль өгүүлбэрт таслал зөв тавигдсан бэ?",
   "options": [
    "Бат Дорж Сараа, гурав сургуульдаа явлаа.",
@@ -3432,6 +3677,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "styles",
   "prompt": "Аль нь ярианы найруулгын онцлог вэ?",
   "options": [
    "албан ёсны тогтсон хэлбэр",
@@ -3446,6 +3692,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "styles",
   "prompt": "Албан бичгийн найруулгын гол онцлог шинж аль нь вэ?",
   "options": [
    "Сэтгэл хөдлөлөө уран дүр дүрслэлээр илэрхийлсэн байх",
@@ -3460,6 +3707,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "idioms",
   "prompt": "«Нүд алдам» гэсэн хэлцийн утгыг олно уу.",
   "options": [
    "Маш их ажиглах",
@@ -3474,6 +3722,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "semantics",
   "prompt": "Омоним буюу ижил нэртэй үгс аль эгнээнд байна вэ?",
   "options": [
    "ном - дэвтэр",
@@ -3488,6 +3737,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "punctuation",
   "prompt": "Шууд бус эшлэлийн ард ямар цэг тэмдэг тавих вэ?",
   "options": [
    "Хашилт дотор хийж цэг тавина.",
@@ -3502,6 +3752,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "literary_analysis",
   "prompt": "Уран зохиолын бүтээлийн далд утга, үзэл санааг илэрхийлэх ойлголтыг юу гэдэг вэ?",
   "options": [
    "Зохиомж",
@@ -3516,6 +3767,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "semantics",
   "prompt": "«Сэтгэл хөөрөх» гэсэнтэй эсрэг утгатай үгийг олно уу.",
   "options": [
    "Урам хугарах",
@@ -3530,6 +3782,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "composition",
   "prompt": "Эхийг хураангуйлан найруулахад анхаарах хамгийн гол зүйл юу вэ?",
   "options": [
    "Зөвхөн эхийн эхний догол мөрийг хуулж бичих",
@@ -3544,6 +3797,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "idioms",
   "prompt": "«Аяганы хариу өдөртөө, агтны хариу жилдээ» гэсэн зүйр үгийн утга аль нь вэ?",
   "options": [
    "Адуу мал байнга өсгөх",
@@ -3558,6 +3812,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "styles",
   "prompt": "Аль нь уран зохиолын найруулгын гол шинж вэ?",
   "options": [
    "Шинжлэх ухааны баталгаатай тоо баримт",
@@ -3572,6 +3827,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "literary_analysis",
   "prompt": "«Тэнгэрийн хаяа алтан шар торго шиг гялалзана» гэсэн өгүүлбэрт уран дүрслэлийн ямар хэрэглүүр орсон бэ?",
   "options": [
    "Адилтгал",
@@ -3586,6 +3842,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "styles",
   "prompt": "Албан бичгийн харилцаанд баримтлах гол шаардлагад аль нь ҮЛ тохирох вэ?",
   "options": [
    "Хууль зүйн болон албан ёсны нэр томьёог зөв хэрэглэх",
@@ -3600,6 +3857,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "composition",
   "prompt": "Эхийн гол сэдэв гэж юуг хэлэх вэ?",
   "options": [
    "Зохиолын эхэнд тавьсан сонирхол татах гарчиг",
@@ -3614,6 +3872,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "idioms",
   "prompt": "«Чих тавих» гэсэн хэлц үгийн утга аль нь вэ?",
   "options": [
    "Хүнтэй чанга дуугаар хэрэлдэх",
@@ -3628,6 +3887,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "styles",
   "prompt": "Албан бичигт он, сар, өдрийг стандартаар хэрхэн зөв бичих вэ?",
   "options": [
    "2024/05/12-нд",
@@ -3642,6 +3902,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "idioms",
   "prompt": "«Хөл алдах» гэсэн хэлц үгийн утгыг олно уу.",
   "options": [
    "Гүйж ядарснаас хөл нь өвдөх",
@@ -3656,6 +3917,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "semantics",
   "prompt": "Шууд тусгал ба шилжсэн утгатай үгийг ямар нэр томьёогоор нэрлэдэг вэ?",
   "options": [
    "Ижил үг",
@@ -3670,6 +3932,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "punctuation",
   "prompt": "Өгүүлбэрт харилцан яриаг бичихдээ эхэнд нь ямар цэг тэмдэг тавьдаг вэ?",
   "options": [
    "Зураас",
@@ -3684,6 +3947,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "semantics",
   "prompt": "«Тэр үнэхээр сэтгэл зөөлөн хүн юм» гэсэн өгүүлбэрийн «зөөлөн» гэдэг үг ямар утгаар орсон бэ?",
   "options": [
    "Шууд утгаар",
@@ -3698,6 +3962,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "literary_analysis",
   "prompt": "Уран дүрслэлийн «хүншүүлэл» гэж юуг хэлэх вэ?",
   "options": [
    "Хүний гадаад төрхийг зураглан бичих",
@@ -3712,6 +3977,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "idioms",
   "prompt": "«Амандаа ус балгасан юм шиг» гэсэн хэлц үг ямар утгатай вэ?",
   "options": [
    "Худал хэлэх",
@@ -3726,6 +3992,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "composition",
   "prompt": "Эхийн хэсгүүдийн хоорондын уялдаа холбоог сайжруулахад аль нь хамгийн чухал вэ?",
   "options": [
    "Олон харь үг хэрэглэх",
@@ -3740,6 +4007,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "styles",
   "prompt": "Албан захидал, өргөдлийн төгсгөлд талархал, хүсэлт илэрхийлэхэд аль хэллэг тохиромжтой вэ?",
   "options": [
    "Баяртай, дараа уулзъя.",
@@ -3754,6 +4022,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "literary_analysis",
   "prompt": "«Шүүдэр шиг тунгалаг сэтгэл» гэсэн холбоонд уран дүрслэлийн ямар хэрэглүүр орсон бэ?",
   "options": [
    "Егөөдөл",
@@ -3768,6 +4037,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "idioms",
   "prompt": "«Гар мухардах» гэсэн хэлцийн утга аль нь вэ?",
   "options": [
    "Арга мухардах, хийх аргагүй болох",
@@ -3782,6 +4052,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "language_culture",
   "prompt": "Аль хэсэгт үг хоорондын утгын холбоог буруу хэрэглэсэн алдаа байна вэ?",
   "options": [
    "Шувууд өмнө зүг рүү нислээ.",
@@ -3796,6 +4067,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "language_culture",
   "prompt": "Илтгэгч сонсогчдод хандан яриагаа эхлэхдээ аль хэллэгийг хэрэглэх нь хамгийн тохиромжтой вэ?",
   "options": [
    "Бүгдээрээ яриагаа чимээгүй сонсоорой.",
@@ -3810,6 +4082,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "semantics",
   "prompt": "«Толгой» гэдэг үг аль өгүүлбэрт шилжсэн утгаар орсон бэ?",
   "options": [
    "Бат толгойгоо өндийлгөн харав.",
@@ -3824,6 +4097,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "composition",
   "prompt": "Эхийн гол баримт, нотолгоо, тайлбар аль хэсэгт голчлон байрладаг вэ?",
   "options": [
    "Гарчигт",
@@ -3838,6 +4112,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "punctuation",
   "prompt": "Аль өгүүлбэрт хашилт тэмдгийг зөв хэрэглэсэн бэ?",
   "options": [
    "«Багш» хичээлээ анхааралтай сонсоорой гэж хэлэв.",
@@ -3852,6 +4127,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "literary_analysis",
   "prompt": "Зохиолын гол баатрын сэтгэлийн дотоод зөрчил, бодол санааг өөрөө өөртэйгөө ярих замаар гаргасныг юу гэдэг вэ?",
   "options": [
    "Дотоод монолог",
@@ -3866,6 +4142,7 @@
  {
   "tier": 3,
   "subject": "mongolian",
+  "topic": "styles",
   "prompt": "Аль нь шинжлэх ухааны хялбаршуулсан найруулгын гол шинж вэ?",
   "options": [
    "Нутаг нутгийн аялгууны онцлог үгсийг түлхүү ашигласан байдал",
@@ -3880,6 +4157,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "kinematics",
   "prompt": "Тайван байдлаас 2 м/с² хурдатгалтай хөдөлсөн бие 5 секундын дараа ямар хурдтай болох вэ?",
   "options": [
    "2.5 м/с",
@@ -3894,6 +4172,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "momentum",
   "prompt": "2 кг масстай бие 3 м/с хурдтай хөдөлж байвал түүний импульс хэд вэ?",
   "options": [
    "9 кг·м/с",
@@ -3908,6 +4187,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "mechanical_energy",
   "prompt": "4 кг масстай бие газраас 5 м өндөрт байна. Потенциал энерги нь хэд вэ? (g = 10 м/с²)",
   "options": [
    "2000 Ж",
@@ -3922,6 +4202,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "gas_laws",
   "prompt": "Хийн температурыг тогтмол байлгаж эзэлхүүнийг 2 дахин багасгавал даралт яах вэ?",
   "options": [
    "өөрчлөгдөхгүй",
@@ -3936,6 +4217,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "mechanical_energy",
   "prompt": "1 кг масстай бие 2 м/с хурдтай хөдөлж байвал кинетик энерги нь хэд вэ?",
   "options": [
    "2 Ж",
@@ -3950,6 +4232,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "gravitation",
   "prompt": "Хоёр биеийн хоорондын зайг 2 дахин ихэсгэвэл тэдгээрийн таталцлын хүч яах вэ?",
   "options": [
    "4 дахин багасна",
@@ -3964,6 +4247,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "kinematics",
   "prompt": "Жигд хувьсах хөдөлгөөн хийж буй биеийн хурд хугацаанаас хамаарах тэгшитгэл v = 4 + 2t өгөгджээ. Эхний хурд ба хурдатгалыг ол.",
   "options": [
    "v₀ = 0, a = 2 м/с²",
@@ -3978,6 +4262,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "newton_laws",
   "prompt": "2 кг масстай биед 6 Н хүч үйлчлэхэд ямар хурдатгалтай хөдлөх вэ?",
   "options": [
    "4 м/с²",
@@ -3992,6 +4277,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "circular_motion",
   "prompt": "Тойргоор жигд эргэлдэх биеийн шугаман хурд 4 м/с, тойргийн радиус 2 м бол төвд тэмүүлэх хурдатгал хэд вэ?",
   "options": [
    "2 м/с²",
@@ -4006,6 +4292,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "momentum",
   "prompt": "3 кг масстай бие 4 м/с хурдтай яваа бол түүний импульс ямар байх вэ?",
   "options": [
    "1.33 кг·м/с",
@@ -4020,6 +4307,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "thermodynamics",
   "prompt": "Термодинамикийн нэгдүгээр хуулийн томьёо аль нь вэ?",
   "options": [
    "F = ma",
@@ -4034,6 +4322,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "molecular_kinetic",
   "prompt": "Идеаль хийн дотоод энерги юунаас хамаарах вэ?",
   "options": [
    "Гадны хүчнээс",
@@ -4048,6 +4337,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "gravitation",
   "prompt": "Бүх ертөнцийн таталцлын хуулийн томьёо аль нь вэ?",
   "options": [
    "F = m · g",
@@ -4062,6 +4352,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "mechanical_energy",
   "prompt": "Биеийн кинетик энерги 4 дахин ихсэхэд түүний хурд хэд дахин ихсэх вэ?",
   "options": [
    "4 дахин",
@@ -4076,6 +4367,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "gas_laws",
   "prompt": "Даралт тогтомол байх үед хийн температурыг 2 дахин ихэсгэвэл эзэлхүүн яах вэ?",
   "options": [
    "2 дахин ихсэнэ",
@@ -4090,6 +4382,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "momentum",
   "prompt": "Масс нь 5 кг, хурд нь 4 м/с байх биеийн импульсийг ол.",
   "options": [
    "40 кг·м/с",
@@ -4104,6 +4397,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "circular_motion",
   "prompt": "Тойргоор жигд эргэлдэх биеийн шугаман хурд 6 м/с, тойргийн радиус 3 м бол төвд тэмүүлэх хурдатгал ямар вэ?",
   "options": [
    "36 м/с²",
@@ -4118,6 +4412,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "newton_laws",
   "prompt": "Ньютоны хоёрдугаар хуулийн математик илэрхийлэл аль нь вэ?",
   "options": [
    "p = m · v",
@@ -4132,6 +4427,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "mechanical_energy",
   "prompt": "4 кг масстай биеийг газраас 10 м өндөрт өргөхөд түүний потенциал энерги ямар байх вэ? (g = 10 м/с²)",
   "options": [
    "4 Ж",
@@ -4146,6 +4442,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "gas_laws",
   "prompt": "Идеаль хийн температурыг тогтмол байлгаж эзэлхүүнийг 3 дахин багасгавал даралт яаж өөрчлөгдөх вэ?",
   "options": [
    "9 дахин ихсэнэ",
@@ -4160,6 +4457,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "molecular_kinetic",
   "prompt": "Нэг моль нэг атомт идеаль хийн дотоод энергийн томьёо аль нь вэ?",
   "options": [
    "U = (3/2) · R · T",
@@ -4174,6 +4472,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "mechanical_energy",
   "prompt": "2 кг масстай бие 5 м/с хурдтай яваа бол түүний кинетик энерги хэд вэ?",
   "options": [
    "50 Ж",
@@ -4188,6 +4487,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "gravitation",
   "prompt": "Бүх ертөнцийн таталцлын хуулийн томьёон дахь G үсэг юуг илэрхийлэх вэ?",
   "options": [
    "Хурдатгал",
@@ -4202,6 +4502,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "gas_laws",
   "prompt": "Даралт тогтомол байх үед хийн температурыг (Кельвинээр) 2 дахин ихэсгэвэл эзэлхүүн яах вэ?",
   "options": [
    "Өөрчлөгдөхгүй",
@@ -4216,6 +4517,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "kinematics",
   "prompt": "Хугацаанаас хамааран хурд нь v = 3 + 4t хуулиар өөрчлөгдөх биеийн эхний хурд ба хурдатгалыг ол.",
   "options": [
    "v0 = 3 м/с, a = 4 м/с²",
@@ -4230,6 +4532,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "mechanical_energy",
   "prompt": "Биеийн кинетик энерги 9 дахин ихсэхэд түүний хурд хэд дахин ихсэх вэ?",
   "options": [
    "1.5 дахин",
@@ -4244,6 +4547,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "newton_laws",
   "prompt": "3 кг масстай биед 12 Н хүч үйлчлэхэд ямар хурдатгалтай хөдлөх вэ?",
   "options": [
    "9 м/с²",
@@ -4258,6 +4562,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "gravitation",
   "prompt": "Хоёр биеийн хоорондын зайг 3 дахин ихэсгэвэл тэдгээрийн таталцлын хүч яах вэ?",
   "options": [
    "3 дахин багасна",
@@ -4272,6 +4577,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "gas_laws",
   "prompt": "Идеаль хийн эзэлхүүнийг тогтомол байлгаж абсолют температурыг 2 дахин ихэсгэвэл даралт яах вэ?",
   "options": [
    "4 дахин ихсэнэ",
@@ -4286,6 +4592,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "circular_motion",
   "prompt": "Тойргоор жигд эргэлдэх биеийн эргэлтийн үе 2 с бол эргэлтийн давтамж ямар байх вэ?",
   "options": [
    "1 Гц",
@@ -4300,6 +4607,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "momentum",
   "prompt": "Хаалттай систем дэх биеүдийн харилца үйлчлэлийн үед импульс хадгалагдах хууль аль нөхцөлд биелэх вэ?",
   "options": [
    "Системд зөвхөн үрэлтийн хүч үйлчлэх үед",
@@ -4314,6 +4622,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "thermodynamics",
   "prompt": "Термодинамикийн нэгдүгээр хуулийн томьёо аль нь вэ? (Q - өгсөн дулаан, ΔU - дотоод энергийн өөрчлөлт, A - хийсэн ажил)",
   "options": [
    "A = Q + ΔU",
@@ -4328,6 +4637,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "molecular_kinetic",
   "prompt": "2 моль хоёр атомт идеаль хийн дотоод энергийг олох томьёо аль нь вэ? (T - абсолют температур, R - хийн тогтмол)",
   "options": [
    "U = (3/2) · R · T",
@@ -4342,6 +4652,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "mechanical_energy",
   "prompt": "Механик энергийн бүрэн хадгалагдах хууль аль тохиолдолд биелэх вэ?",
   "options": [
    "Системийн масс өөрчлөгдөх үед",
@@ -4356,6 +4667,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "kinematics",
   "prompt": "Хугацаанаас хамааран биеийн координатын өөрчлөлт x = 5t - 2t² хуулиар өөрчлөгдөх бол хурдатгал ямар байх вэ?",
   "options": [
    "-4 м/с²",
@@ -4370,6 +4682,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "newton_laws",
   "prompt": "Ньютоны гуравдугаар хуулийн утгыг аль нь зөв илэрхийлэх вэ?",
   "options": [
    "Хүчний үйлчлэлээр биеийн масс өөрчлөгддөг",
@@ -4384,6 +4697,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "gas_laws",
   "prompt": "Изобарын процессын үед хийн эзэлхүүн 2 дахин ихэсвэл абсолют температур яах вэ?",
   "options": [
    "2 дахин багасна",
@@ -4398,6 +4712,7 @@
  {
   "tier": 3,
   "subject": "physics",
+  "topic": "thermodynamics",
   "prompt": "Изохорын процессын үед хийд өгсөн дулааны хэмжээ Q = 500 Ж бол ямар ажил хийгдэх вэ?",
   "options": [
    "0 Ж",
