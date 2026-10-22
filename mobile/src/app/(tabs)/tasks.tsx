@@ -15,8 +15,6 @@ import { S, subjectGlyphs, subjectNames } from '@/i18n/strings';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 
 const SUBJECTS: Subject[] = ['math', 'mongolian', 'physics'];
-const QUESTIONS_PER_TASK = 5;
-const POINTS_PER_CORRECT = 10;
 
 /** Өнөөдрийн даалгавар (доод цэсний тусдаа хэсэг). */
 export default function TasksScreen() {
@@ -32,7 +30,7 @@ export default function TasksScreen() {
 
   if (!me) return null;
   const limitReached = me.todayTasks >= me.dailyLimit;
-  const maxReward = Math.round(QUESTIONS_PER_TASK * POINTS_PER_CORRECT * me.nextMultiplier);
+  const maxReward = me.questionsPerTask * Math.round(me.pointsPerCorrect * me.nextMultiplier);
 
   return (
     <Screen
@@ -89,7 +87,7 @@ export default function TasksScreen() {
               <View style={{ flex: 1, gap: 6 }}>
                 <View style={styles.questTop}>
                   <Text style={[styles.questLabel, { color: t.fg }]}>
-                    {S.tasks.questions(QUESTIONS_PER_TASK)} · {S.tasks.multiplier(me.nextMultiplier)}
+                    {S.tasks.questions(me.questionsPerTask)} · {S.tasks.multiplier(me.nextMultiplier)}
                   </Text>
                 </View>
                 <Text style={[styles.questTitle, { color: t.fg }]}>{subjectNames[subject]}</Text>

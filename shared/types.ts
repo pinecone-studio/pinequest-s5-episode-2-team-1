@@ -88,6 +88,10 @@ export interface Me {
   nextMultiplier: number;
   todayTasks: number;
   dailyLimit: number;
+  /** Тоглоомын тогтмолууд (клиент дээр дахин хатуу бичихгүйн тулд). */
+  questionsPerTask: number;
+  pointsPerCorrect: number;
+  xpPerCorrect: number;
   shield: ShieldStatus;
   equipped: Equipped;
   avatar: AvatarLook;
