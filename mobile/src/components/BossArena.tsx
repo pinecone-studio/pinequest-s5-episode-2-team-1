@@ -281,10 +281,10 @@ export function BossArena({
     // оч: зөгийн бал boss-д тусвал сав хагарч бал цацагдана (7 frame), бусад нь 3 frame-ийн оч
     const honey = strike.correct && !melee;
     const fx = honey
-      ? { id: SHATTER, frames: bear.honey.frames, cols: bear.honey.columns, pivot: { x: bear.honey.pivot[0] * 2, y: bear.honey.pivot[1] * 2 }, ms: SHATTER_MS }
-      : { id: melee ? ('fx_slash_144x48' as const) : strike.correct ? ('fx_spark_90x30' as const) : ('fx_spark_magic_90x30' as const), frames: 3, cols: 3, pivot: null, ms: 70 };
+      ? { id: SHATTER, frames: bear.honey.frames, cols: bear.honey.columns, pivot: bear.honey.pivot, ms: SHATTER_MS }
+      : { id: melee ? ('fx_slash_144x48' as const) : strike.correct ? ('fx_spark_90x30' as const) : ('fx_spark_magic_90x30' as const), frames: 3, cols: 3, pivot: [0.5, 0.5], ms: 70 };
     const { width: fw, height: fh } = frameSize(fx.id, fx.frames, fx.cols);
-    const pivot = fx.pivot ?? { x: fw / 2, y: fh / 2 };
+    const pivot = { x: fw * fx.pivot[0], y: fh * fx.pivot[1] };
     for (let frame = 0; frame < fx.frames; frame++)
       later(hitAt + frame * fx.ms, () => setSpark({ id: fx.id, at: to, frame, frames: fx.frames, cols: fx.cols, pivot }));
     later(hitAt + fx.frames * fx.ms, () => setSpark(null));

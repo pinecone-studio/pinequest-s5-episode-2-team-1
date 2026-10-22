@@ -85,13 +85,13 @@ if (preview < 0) {
     paw: PAW,
     frames: frames.map(({ name, duration }) => ({ name, duration })),
     tags,
-    /** хагарах эффект: frame бүрийн хугацаа, цохилтын цэг (frame-ийн зүүн дээд булангаас, px) */
+    /** хагарах эффект: frame бүрийн хугацаа, цохилтын цэг (frame-ийн өргөн/өндрийн хувь: sprite-ийн томруулалтаас үл хамаарна) */
     honey: {
       sheet: 'fx_honey_shatter',
       columns: 3,
       frames: fx.frames.length,
       duration: fx.frames[0].duration,
-      pivot: [Math.round(fx.frames[0].pivot.x * fx.frames[0].frame.w), Math.round(fx.frames[0].pivot.y * fx.frames[0].frame.h)],
+      pivot: [+fx.frames[0].pivot.x.toFixed(3), +fx.frames[0].pivot.y.toFixed(3)],
     },
   };
   writeFileSync(META, `${JSON.stringify(meta, null, 2)}\n`);
