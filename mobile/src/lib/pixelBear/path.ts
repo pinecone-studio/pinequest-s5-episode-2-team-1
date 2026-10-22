@@ -1,11 +1,12 @@
-import type { Subject, SubjectPath } from '@shared/types';
+import type { BookLesson, Subject, SubjectPath } from '@shared/types';
 import { S } from '@/i18n/strings';
 import type { SpriteKey } from '@/sprites';
 import world from './world.json';
 
 // Адал явдлын газрын зураг: DESIGN.md §8-04-ийн бүлгийг доороос дээш 3 бүлэг (ой → тал → мөсөн уул) болгосон.
 // Зангилааны байрлал ба дэвсгэр зураг хоёулаа docs/design/pixel-bear/tools/mapgen_world.py-аас үүснэ.
-// Backend-д хичээлийн бүтэц байхгүй тул түвшин (Шат) бүрийг нэг зангилаа гэж үзнэ; бүлэг бүрийн төгсгөлд boss.
+// Түвшин (Шат) бүр нэг зангилаа, бүлэг бүрийн төгсгөлд boss. Зангилааны сэдэв нь сурах бичгийн гарчгаас
+// (GET /me/lessons/:subject); ном байхгүй бол доорх TITLES.
 
 export type NodeKind = 'stone' | 'sapling' | 'gift' | 'myst' | 'boss';
 export type NodeStatus = 'done' | 'current' | 'lock';
@@ -99,7 +100,23 @@ export function tileFor(node: PathNode, status: NodeStatus): SpriteKey {
   return node.kind === 'boss' ? 'tile_pedestal_end_72x54' : 'tile_pedestal_myst_72x54';
 }
 
-// Бүлэг бүрт 8 сэдэв, сэдэв бүр 2 зангилаа (boss-ыг тооцохгүй)
+/** Boss-гүй зангилааны тоо: номын бүх хичээл эдгээрт жигд тарна. */
+const LESSON_NODES = NODE_COUNT - UNIT_COUNT;
+
+/**
+ * Зангилаанд ногдох номын хичээлүүд. Номын хичээлүүдийг boss-гүй зангилаанд дарааллаар нь жигд тараана:
+ * сүүлийн зангилаа = номын сүүлийн хичээл, дараа нь сүүлийн boss (ялбал ном дууссан). Хичээл цөөн бол нэг
+ * хичээл хэд хэдэн зангилаа эзэлнэ, олон бол нэг зангилаанд хоёр хичээл орно.
+ */
+export function lessonsAt(lessons: readonly BookLesson[], i: number): BookLesson[] {
+  if (lessons.length === 0 || isBossNode(i)) return [];
+  const k = i - unitOf(i);
+  const from = Math.floor((k * lessons.length) / LESSON_NODES);
+  const to = Math.max(from + 1, Math.floor(((k + 1) * lessons.length) / LESSON_NODES));
+  return lessons.slice(from, to);
+}
+
+// Ном байхгүй үед: бүлэг бүрт 8 сэдэв, сэдэв бүр 2 зангилаа (boss-ыг тооцохгүй)
 const TITLES: Record<Subject, string[]> = {
   math: [
     'Бутархай тоо', 'Бутархай нэмэх', 'Бутархай хасах', 'Аравтын бутархай', 'Харьцаа', 'Хувь', 'Тэгшитгэл', 'Геометр',
@@ -118,7 +135,9 @@ const TITLES: Record<Subject, string[]> = {
   ],
 };
 
-export function lessonTitle(subject: Subject, i: number): string {
+export function lessonTitle(subject: Subject, i: number, lessons: readonly BookLesson[] = []): string {
   if (isBossNode(i)) return S.path.boss(BOSSES[unitOf(i)].name);
+  const book = lessonsAt(lessons, i);
+  if (book.length) return book.map((l) => l.title).join(' · ');
   return TITLES[subject][unitOf(i) * 8 + Math.floor((i % UNIT_SIZE) / 2)];
 }
