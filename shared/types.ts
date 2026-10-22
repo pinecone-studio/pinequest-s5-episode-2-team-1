@@ -27,6 +27,7 @@ export type ErrorCode =
   | 'TASK_CLOSED'
   | 'ALREADY_ANSWERED'
   | 'INSUFFICIENT_POINTS'
+  | 'RECOVERY_REQUIRED'
   | 'SHIELD_HELD'
   | 'SHIELD_COOLDOWN'
   | 'ITEM_LOCKED'
@@ -138,16 +139,38 @@ export interface TaskResult {
 
 export interface AnswerResponse {
   correct: boolean;
-  correctIndex: number;
-  explanation: string;
+  /** Буруу үед салаа зам заавал нээгдэх бол (2 дахь алдаанаас) байхгүй: салаа замд өөрөө дахин бодно. */
+  correctIndex?: number;
+  explanation?: string;
   finished: boolean;
   result?: TaskResult;
+  /** Даалгавар дуусаад нөхөх салаа зам нээгдсэн. */
+  recovery?: boolean;
 }
 
 export interface FlagResponse {
   ok: true;
   finished: boolean;
   result?: TaskResult;
+  recovery?: boolean;
+}
+
+// ---------- Нөхөх салаа зам ----------
+
+export interface RecoveryDto {
+  subject: Subject;
+  answered: number;
+  total: number;
+  cleared: boolean;
+  /** Одоо бодох асуулт (зөв хариу, тайлбаргүй); topic = сэдвийн нэр. */
+  question: { id: number; prompt: string; options: string[]; topic?: string } | null;
+}
+
+export interface RecoveryAnswerResponse {
+  correct: boolean;
+  /** Зөвхөн зөв хариулсан үед. */
+  explanation?: string;
+  recovery: RecoveryDto;
 }
 
 // ---------- Тулаан (REST) ----------

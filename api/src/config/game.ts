@@ -23,6 +23,10 @@ export const GAME = {
   QUESTIONS_PER_TASK: 5,
   OPTIONS_PER_QUESTION: 4,
   DAILY_TASK_LIMIT: 10,
+  /** Даалгаврын 5 асуулт дуусахад үүнээс цөөнгүй алдсан бол нөхөх салаа зам нээгдэнэ. */
+  RECOVERY_MIN_WRONG: 2,
+  /** Салаа замд алдсан сэдэв бүрээр бодох ижил сэдвийн өөр асуулт (хүрэлцэхгүй бол алдсан асуултаа давтана). */
+  RECOVERY_PRACTICE: 3,
 
   /** Өдрийг Asia/Ulaanbaatar (UTC+8, DST байхгүй) цагаар тоолно. */
   TZ_OFFSET_MINUTES: 8 * 60,

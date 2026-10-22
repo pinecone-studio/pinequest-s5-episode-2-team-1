@@ -40,6 +40,7 @@ export default function TaskScreen() {
   const [feedback, setFeedback] = useState<AnswerResponse | null>(null);
   const [pending, setPending] = useState<TaskResult | null>(null);
   const [result, setResult] = useState<TaskResult | null>(null);
+  const [recovery, setRecovery] = useState(false); // даалгавар дуусаад нөхөх салаа зам нээгдсэн
   const [error, setError] = useState<{ message: string; fatal: boolean } | null>(null);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -47,6 +48,7 @@ export default function TaskScreen() {
   const load = useCallback(async () => {
     setTask(null);
     setResult(null);
+    setRecovery(false);
     setPending(null);
     setFeedback(null);
     setSelected(null);
@@ -61,6 +63,11 @@ export default function TaskScreen() {
       setStrike(null);
       setIndex(Math.max(0, t.questions.findIndex((q) => !q.answered)));
     } catch (e) {
+      // Олон алдсан өмнөх даалгаврын салаа зам дуусаагүй бол түүн рүү.
+      if (e instanceof ApiError && e.code === 'RECOVERY_REQUIRED') {
+        router.replace(`/recovery/${subject}`);
+        return;
+      }
       const fatal = e instanceof ApiError && (e.code === 'DAILY_LIMIT' || e.code === 'NO_QUESTIONS' || e.code === 'BOSS_LOCKED');
       setError({ message: errorText(e), fatal });
     }
@@ -101,6 +108,7 @@ export default function TaskScreen() {
       void Haptics.notificationAsync(r.correct ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error);
       if (r.result) {
         setPending(r.result);
+        setRecovery(!!r.recovery);
         setMe(r.result.me);
       }
     } catch (e) {
@@ -121,6 +129,7 @@ export default function TaskScreen() {
       setAnswered((n) => n + 1);
       if (r.result) {
         setMe(r.result.me);
+        setRecovery(!!r.recovery);
         setResult(r.result);
         return;
       }
@@ -130,7 +139,8 @@ export default function TaskScreen() {
     }
   }
 
-  if (result) return <RewardView result={result} onAgain={load} />;
+  // Шагналаа (XP, шат, streak) эхлээд харуулна; салаа зам нээгдсэн бол тэндээс шууд руу нь орно
+  if (result) return <RewardView result={result} onAgain={load} onRecovery={recovery ? () => router.replace(`/recovery/${subject}`) : undefined} />;
 
   // Баавгай: бодож буй (шилтэй) → зөв (баярласан) → буруу (ядарсан)
   const mood: 'think' | 'right' | 'wrong' = feedback ? (feedback.correct ? 'right' : 'wrong') : 'think';
@@ -269,7 +279,7 @@ export default function TaskScreen() {
                   <Text style={[styles.verdict, { color: feedback.correct ? colors.okText : colors.dangerText }]}>
                     {feedback.correct ? S.task.correct : S.task.wrong}
                   </Text>
-                  <Text style={styles.explainText}>{feedback.explanation}</Text>
+                  {feedback.explanation ? <Text style={styles.explainText}>{feedback.explanation}</Text> : null}
                 </Animated.View>
               ) : null}
 

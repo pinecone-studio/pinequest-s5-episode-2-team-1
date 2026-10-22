@@ -1,10 +1,10 @@
 // Ажиллаж буй dev сервер дээр демо сценарийн гол урсгалыг автоматаар шалгана.
 //   npm run e2e                 # даалгавар, оноо, streak, хамгаалалт, өдрийн хязгаар, тулаан
-//   npm run e2e -- --only tasks # зөвхөн нэг хэсэг (tasks | shop | duel | books)
-import type { MeResponse, ShopResponse, TaskDto } from '../../shared/types';
+//   npm run e2e -- --only tasks # зөвхөн нэг хэсэг (tasks | recovery | shop | duel | books)
+import type { AnswerResponse, MeResponse, RecoveryAnswerResponse, RecoveryDto, ShopResponse, TaskDto } from '../../shared/types';
 import { runBooksScenario } from './e2e-books';
 import { runDuelScenario } from './e2e-duel';
-import { check, doTask, expectError, failureCount, me, register } from './e2e-lib';
+import { check, correctIndex, doTask, expectError, failureCount, me, register } from './e2e-lib';
 import { ADMIN_TOKEN, arg, call } from './lib';
 
 async function setStreak(userId: number, body: { streak: number; lastDay: string | null; shieldHeld?: number; shieldBoughtDay?: string | null }) {
@@ -30,7 +30,7 @@ async function tasksScenario() {
   check(again.id === t.id, 'Дуусаагүй даалгаврыг дахин нээхэд үргэлжилнэ');
 
   const first = await doTask(a.token, 'math', true);
-  check(first.answers.every((x) => x.correct && x.explanation.length > 0), 'Асуулт бүрт зөв/буруу ба тайлбар ирнэ');
+  check(first.answers.every((x) => x.correct && (x.explanation ?? '').length > 0), 'Зөв хариулт бүрт тайлбар ирнэ');
   check(first.result?.streak === 1 && first.result.multiplier === 1, 'Эхний даалгаврын дараа streak 1, ×1.0', first.result);
   check(first.result?.pointsGained === 50 && first.result.me.points === 100, '5 зөв → +50 оноо (50 → 100)', first.result?.me.points);
   check(first.result?.xpGained === 50 && first.result.me.xp === 50, '+50 XP');
@@ -91,6 +91,54 @@ async function tasksScenario() {
   return { a, b };
 }
 
+async function recoveryScenario() {
+  console.log('\n— Нөхөх салаа зам');
+  const u = await register('e2e_rec', 7);
+  const t = await call<TaskDto>('POST', '/tasks', { token: u.token, body: { subject: 'physics' } });
+  const answers: AnswerResponse[] = [];
+  for (const [i, q] of t.questions.entries()) {
+    const ci = await correctIndex(q.id);
+    answers.push(await call<AnswerResponse>('POST', `/tasks/${t.id}/answer`, { token: u.token, body: { questionId: q.id, choice: i < 2 ? (ci + 1) % 4 : ci } }));
+  }
+  // 1 дэх алдаанд салаа зам хараахан баталгаагүй тул зөв хариуг хэлнэ; 2 дахиас салаа зам заавал нээгдэх тул хэлэхгүй
+  check(!answers[0].correct && answers[0].correctIndex !== undefined && !!answers[0].explanation, 'Ганц алдаанд зөв хариу, тайлбар ирнэ');
+  check(!answers[1].correct && answers[1].correctIndex === undefined && answers[1].explanation === undefined, '2 дахь алдаанаас зөв хариу, тайлбар ирэхгүй');
+  check(answers.slice(0, 4).every((a) => !a.recovery) && answers[4].recovery === true, '5 асуулт дууссаны дараа л салаа зам нээгдэнэ');
+  check(answers[4].result?.xpGained === 30, 'Анхны шагнал хэвээр (3 зөв → 30 XP)', answers[4].result?.xpGained);
+  await expectError(call('POST', '/tasks', { token: u.token, body: { subject: 'physics' } }), 'RECOVERY_REQUIRED', 'Салаа зам дуустал тэр хичээлийн шинэ даалгавар эхлэхгүй');
+  const other = await call<TaskDto>('POST', '/tasks', { token: u.token, body: { subject: 'math' } });
+  check(other.questions.length === 5, 'Өөр хичээлийн даалгавар эхэлнэ');
+
+  let r = await call<RecoveryDto>('GET', '/recovery/physics', { token: u.token });
+  const raw = JSON.stringify(r);
+  check(!!r.question && !/correct_?index/i.test(raw) && !raw.includes('explanation'), 'Салаа замын асуултад зөв хариу, тайлбар явахгүй');
+  const before = await me(u.token);
+  const original = new Set(t.questions.map((q) => q.id));
+  const ids: number[] = [];
+  let wrongOk = true;
+  let rightOk = true;
+  while (r.question) {
+    const id = r.question.id;
+    const ci = await correctIndex(id);
+    const bad = await call<RecoveryAnswerResponse>('POST', '/recovery/physics/answer', { token: u.token, body: { questionId: id, choice: (ci + 1) % 4 } });
+    wrongOk &&= !bad.correct && bad.explanation === undefined && bad.recovery.answered === ids.length;
+    const body = { questionId: id, choice: ci };
+    const ok = await call<RecoveryAnswerResponse>('POST', '/recovery/physics/answer', { token: u.token, body });
+    rightOk &&= ok.correct && !!ok.explanation && ok.recovery.answered === ids.length + 1;
+    if (ids.length === 0) await expectError(call('POST', '/recovery/physics/answer', { token: u.token, body }), 'ALREADY_ANSWERED', 'Давхар дарсан хариулт тоологдохгүй');
+    ids.push(id);
+    r = ok.recovery;
+  }
+  check(wrongOk, 'Буруу бол тайлбаргүй, ахиц нэмэгдэхгүй');
+  check(rightOk, 'Зөв бол тайлбар ирж, ахиц нэмэгдэнэ');
+  check(r.cleared && new Set(ids).size === ids.length, `Бүх асуултыг зөв хариулахад салаа зам хаагдана (${ids.filter((id) => !original.has(id)).length} шинэ, ${ids.filter((id) => original.has(id)).length} давтсан)`);
+  const after = await me(u.token);
+  check(after.xp === before.xp && after.points === before.points, 'Салаа зам XP, оноо өөрчлөхгүй');
+  await expectError(call('GET', '/recovery/physics', { token: u.token }), 'NOT_FOUND', 'Дууссаны дараа хүлээгдэж буй салаа зам алга');
+  const next = await call<TaskDto>('POST', '/tasks', { token: u.token, body: { subject: 'physics' } });
+  check(next.id !== t.id, 'Салаа зам дууссаны дараа тэр хичээлийн даалгавар дахин эхэлнэ');
+}
+
 async function shopScenario() {
   console.log('\n— Дэлгүүр ба avatar');
   const u = await register('shop_u', 7);
@@ -123,6 +171,7 @@ async function main() {
   if (!ADMIN_TOKEN) throw new Error('ADMIN_TOKEN олдсонгүй (api/.dev.vars)');
   const only = arg('only');
   if (!only || only === 'tasks') await tasksScenario();
+  if (!only || only === 'recovery') await recoveryScenario();
   if (!only || only === 'shop') await shopScenario();
   if (!only || only === 'duel') await runDuelScenario();
   if (!only || only === 'books') await runBooksScenario();

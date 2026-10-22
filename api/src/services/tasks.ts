@@ -10,6 +10,7 @@ import type { Bindings } from '../env';
 import { isConstraintError, newTx } from '../lib/db';
 import { ApiError } from '../lib/errors';
 import { maybeRefill, refillPool } from './pool';
+import { hasPendingRecovery, recoveryCertain, recoveryStatements } from './recovery';
 import { countTasksToday, getUserRow, loadMe, streakStateOf, syncStreak } from './users';
 
 type Ctx = { waitUntil(p: Promise<unknown>): void };
@@ -72,6 +73,9 @@ export async function startTask(
   const user = await getUserRow(db, userId);
   const tier = user.tier as Tier;
   const today = ubDay(now);
+  if (await hasPendingRecovery(db, userId, subject)) {
+    throw new ApiError(409, 'RECOVERY_REQUIRED', 'Эхлээд нөхөх салаа замаа дуусгаарай');
+  }
   if (boss !== undefined) {
     const block = bossBlock(levelFromXp(user.xp), user.bosses_beaten, boss);
     if (block) throw new ApiError(409, block, 'Энэ boss-той тулалдах боломжгүй');
@@ -164,13 +168,15 @@ async function recordChoice(db: D1Database, userId: number, taskId: number, row:
     .bind(choice, correct ? 1 : 0, now, taskId, row.position)
     .run();
   if (!upd.meta.changes) throw new ApiError(409, 'ALREADY_ANSWERED', 'Хариулсан асуулт');
-  const left = await db
-    .prepare('SELECT COUNT(*) AS n FROM task_questions WHERE task_id = ? AND choice IS NULL')
+  // flag (-1) нь жинхэнэ алдаа биш
+  const count = await db
+    .prepare('SELECT SUM(choice IS NULL) AS open, SUM(choice >= 0 AND correct = 0) AS wrong FROM task_questions WHERE task_id = ?')
     .bind(taskId)
-    .first<{ n: number }>();
-  const finished = (left?.n ?? 0) === 0;
-  const result = finished ? await completeTask(db, userId, taskId, now) : undefined;
-  return { correct, finished, result };
+    .first<{ open: number; wrong: number }>();
+  const finished = (count?.open ?? 0) === 0;
+  const recovery = finished ? await recoveryStatements(db, userId, taskId, now) : [];
+  const result = finished ? await completeTask(db, userId, taskId, now, recovery) : undefined;
+  return { correct, finished, result, recovery: recovery.length > 0, wrong: count?.wrong ?? 0 };
 }
 
 export async function answerTask(
@@ -183,7 +189,10 @@ export async function answerTask(
 ): Promise<AnswerResponse> {
   const row = await findTaskQuestion(db, userId, taskId, questionId);
   const r = await recordChoice(db, userId, taskId, row, choice, now);
-  return { correct: r.correct, correctIndex: row.correct_index, explanation: row.explanation, finished: r.finished, result: r.result };
+  // Буруу бол зөв хариу, тайлбарыг зөвхөн салаа зам заавал нээгдэх үед (2 дахь алдаанаас) хэлэхгүй: тэнд өөрөө
+  // дахин бодно. Ганц алдаатай бол салаа зам нээгдэхгүй тул зөв хариуг тэр дор нь харуулна.
+  const reveal = r.correct || !recoveryCertain(r.wrong) ? { correctIndex: row.correct_index, explanation: row.explanation } : {};
+  return { correct: r.correct, ...reveal, finished: r.finished, result: r.result, recovery: r.recovery };
 }
 
 /** Асуултыг flagged болгоно (дахин хэнд ч гарахгүй); даалгаврын дунд бол алгасна. */
@@ -210,14 +219,21 @@ export async function flagQuestion(
   // Хариулсан эсвэл дууссан даалгаварт flag л тэмдэглэгдэнэ.
   if (!row || row.user_id !== userId || row.status !== 'in_progress' || row.choice !== null) return { ok: true, finished: false };
   const r = await recordChoice(db, userId, taskId, row, -1, now);
-  return { ok: true, finished: r.finished, result: r.result };
+  return { ok: true, finished: r.finished, result: r.result, recovery: r.recovery };
 }
 
 /**
  * Даалгаврыг дуусгаж шагнал олгоно (нэг batch, атомик). Streak-ийг эхлээд бүртгэж,
  * шинэчлэгдсэн streak-ийн үржвэрээр оноо бодно.
  */
-export async function completeTask(db: D1Database, userId: number, taskId: number, now = Date.now()): Promise<TaskResult> {
+/** `extra` = нэг batch-д хамт бичих statement-ууд (салаа зам). */
+export async function completeTask(
+  db: D1Database,
+  userId: number,
+  taskId: number,
+  now = Date.now(),
+  extra: D1PreparedStatement[] = [],
+): Promise<TaskResult> {
   const today = ubDay(now);
   const user = await getUserRow(db, userId);
   const normalized = normalizeStreak(streakStateOf(user), today);
@@ -260,6 +276,7 @@ export async function completeTask(db: D1Database, userId: number, taskId: numbe
             .bind(userId, user.bosses_beaten, taskId, tx),
         ]
       : []),
+    ...extra,
   ]);
   if (!results[0].meta.changes) throw new ApiError(409, 'TASK_CLOSED', 'Даалгавар аль хэдийн дууссан');
 

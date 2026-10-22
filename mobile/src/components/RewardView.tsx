@@ -12,8 +12,8 @@ import type { SpriteKey } from '@/sprites';
 const TILE = '#33208F';
 const SOFT = '#CFC6FF';
 
-/** 06 · Хичээл дууслаа / шагнал. Бүх тоо серверийн TaskResult-аас. */
-export function RewardView({ result, onAgain }: { result: TaskResult; onAgain: () => void }) {
+/** 06 · Хичээл дууслаа / шагнал. Бүх тоо серверийн TaskResult-аас. `onRecovery` = нөхөх салаа зам нээгдсэн (дараагийн алхам). */
+export function RewardView({ result, onAgain, onRecovery }: { result: TaskResult; onAgain: () => void; onRecovery?: () => void }) {
   const insets = useSafeAreaInsets();
   const leveledUp = result.levelAfter > result.levelBefore;
   const canAgain = result.me.todayTasks < result.me.dailyLimit;
@@ -79,8 +79,17 @@ export function RewardView({ result, onAgain }: { result: TaskResult; onAgain: (
         ) : null}
 
         <Enter index={4} style={{ gap: 6, marginTop: 4 }}>
-          <Button title={S.reward.cont} variant="lime" onPress={() => router.back()} />
-          {canAgain ? <Button title={S.reward.again} variant="white" small onPress={onAgain} /> : null}
+          {onRecovery ? (
+            <>
+              <Text style={styles.recoveryNote}>{S.reward.recoveryNote}</Text>
+              <Button title={S.lesson.toRecovery} variant="lime" onPress={onRecovery} />
+            </>
+          ) : (
+            <>
+              <Button title={S.reward.cont} variant="lime" onPress={() => router.back()} />
+              {canAgain ? <Button title={S.reward.again} variant="white" small onPress={onAgain} /> : null}
+            </>
+          )}
         </Enter>
       </ScrollView>
     </View>
@@ -121,6 +130,7 @@ const styles = StyleSheet.create({
   big: { fontFamily: fonts.bold, fontSize: 150, lineHeight: 150, letterSpacing: -6, color: colors.white },
   bigOf: { fontFamily: fonts.bold, fontSize: 44, lineHeight: 64, color: SOFT, marginLeft: 6 },
   bigLabel: { fontFamily: fonts.medium, fontSize: 20, color: SOFT },
+  recoveryNote: { fontFamily: fonts.semibold, fontSize: 15, lineHeight: 21, color: colors.white, textAlign: 'center' },
   stage: { height: 290, alignItems: 'center', justifyContent: 'flex-end' },
   circle: { position: 'absolute', top: 30, width: 250, height: 250, borderRadius: 125, backgroundColor: '#34209A' },
   bubble: {
