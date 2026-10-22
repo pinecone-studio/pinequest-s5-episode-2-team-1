@@ -111,24 +111,37 @@ export async function startTask(
     throw new ApiError(503, 'NO_QUESTIONS', 'Асуулт хүрэлцэхгүй байна');
   }
 
-  // Өдрийн хязгаарыг нэг statement-аар: зэрэг хоёр хүсэлт ирсэн ч 10-аас хэтрэхгүй.
-  const created = await db
-    .prepare(
-      `INSERT INTO tasks (user_id, subject, day, status, boss, created_at)
-       SELECT ?, ?, ?, 'in_progress', ?, ?
-       WHERE (SELECT COUNT(*) FROM tasks WHERE user_id = ? AND day = ?) < ?
-       RETURNING id`,
-    )
-    .bind(userId, subject, today, boss ?? null, now, userId, today, GAME.DAILY_TASK_LIMIT)
-    .first<{ id: number }>();
-  if (!created) throw new ApiError(429, 'DAILY_LIMIT', 'Өнөөдрийн хязгаар дууссан');
-
-  const tq = db.prepare('INSERT INTO task_questions (task_id, position, question_id) VALUES (?, ?, ?)');
+  // Даалгавар ба асуултуудыг нэг batch-аар (хагас үүсэхгүй). Өдрийн хязгаар болон "энэ хичээлээр
+  // дуусаагүй даалгавар байхгүй" нөхцөлийг INSERT дотор шалгана: зэрэг ирсэн хүсэлт давхар үүсгэхгүй.
+  const tx = newTx();
+  const taskId = '(SELECT id FROM tasks WHERE tx = ?)';
+  const tq = db.prepare(`INSERT INTO task_questions (task_id, position, question_id) SELECT ${taskId}, ?, ? WHERE ${taskId} IS NOT NULL`);
   const seen = db.prepare(
-    `INSERT INTO seen_questions (user_id, question_id, seen_at) VALUES (?, ?, ?)
+    `INSERT INTO seen_questions (user_id, question_id, seen_at) SELECT ?, ?, ? WHERE ${taskId} IS NOT NULL
      ON CONFLICT (user_id, question_id) DO UPDATE SET seen_at = excluded.seen_at`,
   );
-  await db.batch([...picked.map((q, i) => tq.bind(created.id, i, q.id)), ...picked.map((q) => seen.bind(userId, q.id, now))]);
+  await db.batch([
+    db
+      .prepare(
+        `INSERT INTO tasks (user_id, subject, day, status, boss, tx, created_at)
+         SELECT ?, ?, ?, 'in_progress', ?, ?, ?
+         WHERE (SELECT COUNT(*) FROM tasks WHERE user_id = ? AND day = ?) < ?
+           AND NOT EXISTS (SELECT 1 FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress')`,
+      )
+      .bind(userId, subject, today, boss ?? null, tx, now, userId, today, GAME.DAILY_TASK_LIMIT, userId, subject, today),
+    ...picked.map((q, i) => tq.bind(tx, i, q.id, tx)),
+    ...picked.map((q) => seen.bind(userId, q.id, now, tx)),
+  ]);
+  const created = await db.prepare('SELECT id FROM tasks WHERE tx = ?').bind(tx).first<{ id: number }>();
+  if (!created) {
+    // Зэрэг ирсэн хүсэлт энэ хичээлийн даалгаврыг түрүүлж үүсгэсэн бол түүнийг буцаана.
+    const other = await db
+      .prepare(`SELECT id FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress'`)
+      .bind(userId, subject, today)
+      .first<{ id: number }>();
+    if (other) return loadTask(db, userId, other.id);
+    throw new ApiError(429, 'DAILY_LIMIT', 'Өнөөдрийн хязгаар дууссан');
+  }
 
   await maybeRefill(env, ctx, tier, subject, userId);
   return loadTask(db, userId, created.id);
@@ -203,8 +216,9 @@ export async function flagQuestion(
   taskId: number | undefined,
   now = Date.now(),
 ): Promise<FlagResponse> {
-  const q = await db.prepare('SELECT id FROM questions WHERE id = ?').bind(questionId).first();
-  if (!q) throw new ApiError(404, 'NOT_FOUND', 'Асуулт олдсонгүй');
+  // Зөвхөн өөрт гарсан асуултыг: дурын id-гаар pool-ыг хоослохоос сэргийлнэ.
+  const seen = await db.prepare('SELECT 1 FROM seen_questions WHERE user_id = ? AND question_id = ?').bind(userId, questionId).first();
+  if (!seen) throw new ApiError(404, 'NOT_FOUND', 'Асуулт олдсонгүй');
   await db.prepare('UPDATE questions SET flagged = 1, flagged_by = ? WHERE id = ? AND flagged = 0').bind(userId, questionId).run();
   if (taskId === undefined) return { ok: true, finished: false };
 
@@ -259,10 +273,22 @@ export async function completeTask(
       .bind(correctCount, reward.points, reward.xp, reward.multiplier, after.streak, now, tx, taskId, userId),
     db
       .prepare(
-        `UPDATE users SET xp = xp + ?, points = points + ?, streak = ?, last_streak_day = ?, shield_held = ?, shield_used_day = ?
+        // shield_held-ийг харьцангуйгаар: хооронд нь авсан хамгаалалтыг дарж бичихгүй.
+        `UPDATE users SET xp = xp + ?, points = points + ?, streak = ?, last_streak_day = ?,
+           shield_held = MAX(shield_held - ?, 0), shield_used_day = ?
          WHERE id = ? AND ${guard}`,
       )
-      .bind(reward.xp, reward.points, after.streak, after.lastDay, after.shieldHeld, after.shieldUsedDay, userId, taskId, tx),
+      .bind(
+        reward.xp,
+        reward.points,
+        after.streak,
+        after.lastDay,
+        normalized.shieldConsumed ? 1 : 0,
+        after.shieldUsedDay,
+        userId,
+        taskId,
+        tx,
+      ),
     db
       .prepare(
         `INSERT INTO point_ledger (user_id, delta, reason, ref_type, ref_id, created_at)
