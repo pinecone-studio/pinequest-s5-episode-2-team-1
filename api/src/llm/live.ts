@@ -175,6 +175,14 @@ export function isForeignTranscript(text: string): boolean {
   return letters >= 3 && cyrillic / letters < 0.3;
 }
 
+/**
+ * Gemini project-ийн квот (нэгэн зэрэг холболт гэх мэт) дүүрсэн: "1011 You exceeded your current quota…".
+ * Түр алдаа биш тул дахин холбогдохгүй.
+ */
+export function isQuotaClose(code: number, reason: string): boolean {
+  return code === 1011 && /quota/i.test(reason);
+}
+
 /** Gemini-ийн нэг мессежийг клиентэд хэрэгтэй үйл явдлууд болгоно (дарааллыг хадгална). */
 export function liveEvents(raw: unknown): LiveEvent[] {
   if (!raw || typeof raw !== 'object') return [];

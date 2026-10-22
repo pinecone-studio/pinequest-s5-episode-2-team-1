@@ -5,7 +5,7 @@ import type { AppEnv } from '../env';
 import { fromB64, toB64 } from '../lib/auth';
 import { ApiError, parseId } from '../lib/errors';
 import { socketUserId } from '../lib/session';
-import { LIVE_AUDIO_END, LIVE_URL, liveAudio, liveEvents, liveSetup, liveText, tutorKickoff, tutorSystemPrompt } from '../llm/live';
+import { isQuotaClose, LIVE_AUDIO_END, LIVE_URL, liveAudio, liveEvents, liveSetup, liveText, tutorKickoff, tutorSystemPrompt } from '../llm/live';
 import { SpeechQueue, speechChunkEnd } from '../llm/speech';
 import { cleanForSpeech, ttsAvailable, ttsStream } from '../llm/tts';
 import { endTutorSession, loadTutorContext, startTutorSession } from '../services/tutor';
@@ -277,6 +277,11 @@ async function relay(
     });
     up.addEventListener('close', (e) => {
       if (closed || up !== upstream) return;
+      if (isQuotaClose(e.code, e.reason)) {
+        console.error(`[tutor] Gemini-ийн квот дүүрсэн: ${e.reason}`);
+        shutdown({ type: 'end', reason: 'error', message: 'Баавгай түр завгүй байна. Хэдэн минутын дараа дахин оролдоорой.' });
+        return;
+      }
       if (!ready && !retried) {
         retried = true;
         console.error(`[tutor] Gemini эхлэхдээ хаалаа (${e.code} ${e.reason}), дахин холбогдож байна`);
