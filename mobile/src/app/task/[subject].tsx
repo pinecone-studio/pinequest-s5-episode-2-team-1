@@ -20,8 +20,6 @@ import { goBack } from '@/lib/nav';
 import { BOSSES } from '@/lib/pixelBear/path';
 import type { SpriteKey } from '@/sprites';
 
-const XP_PER_CORRECT = 10;
-
 /**
  * 05 · Хичээл (асуулт) ба 06 · Шагнал. Логик: сонгох → ШАЛГАХ → серверт хариулт → тайлбар → дараагийн асуулт.
  * `?boss=<бүлэг>` бол дээд самбар нь boss тулаан болно (асуултууд нь ижил даалгавар).
@@ -29,7 +27,7 @@ const XP_PER_CORRECT = 10;
 export default function TaskScreen() {
   const { subject, boss } = useLocalSearchParams<{ subject: Subject; boss?: string }>();
   const foe = boss === undefined ? undefined : BOSSES[Number(boss)];
-  const { setMe } = useAuth();
+  const { me, setMe } = useAuth();
   const insets = useSafeAreaInsets();
   const [task, setTask] = useState<TaskDto | null>(null);
   const [index, setIndex] = useState(0);
@@ -147,7 +145,7 @@ export default function TaskScreen() {
   const mood: 'think' | 'right' | 'wrong' = feedback ? (feedback.correct ? 'right' : 'wrong') : 'think';
   const bear: { sprite: SpriteKey; right: number; top: number; alt: string; bubble: string } =
     mood === 'right'
-      ? { sprite: 'bear_cheer_scarf_180x252', right: 30, top: 120, alt: S.lesson.bearCorrect, bubble: S.lesson.correctBubble(XP_PER_CORRECT) }
+      ? { sprite: 'bear_cheer_scarf_180x252', right: 30, top: 120, alt: S.lesson.bearCorrect, bubble: S.lesson.correctBubble(me?.xpPerCorrect ?? 0) }
       : mood === 'wrong'
         ? { sprite: 'bear_tired_scarf_164x280', right: 40, top: 92, alt: S.lesson.bearWrong, bubble: S.lesson.wrongBubble }
         : { sprite: 'outfit_glasses_164x280', right: 40, top: 92, alt: S.lesson.bearThinking, bubble: error ? error.message : S.lesson.thinking };

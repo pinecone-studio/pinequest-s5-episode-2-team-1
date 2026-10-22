@@ -88,6 +88,10 @@ export interface Me {
   nextMultiplier: number;
   todayTasks: number;
   dailyLimit: number;
+  /** Тоглоомын тогтмолууд (клиент дээр дахин хатуу бичихгүйн тулд). */
+  questionsPerTask: number;
+  pointsPerCorrect: number;
+  xpPerCorrect: number;
   shield: ShieldStatus;
   equipped: Equipped;
   avatar: AvatarLook;
@@ -228,6 +232,23 @@ export interface ShopItem {
 
 export interface ShopResponse {
   items: ShopItem[];
+  me: Me;
+}
+
+/** Баавгайн дэвсгэр өнгө ба хувцас (Pixel Bear UI). */
+export type CosmeticKind = 'bg' | 'outfit';
+
+export interface CosmeticItem {
+  id: string;
+  kind: CosmeticKind;
+  /** mobile catalog дахь id (жишээ нь 'yagaan', 'gradcap') */
+  key: string;
+  price: number;
+  owned: boolean;
+}
+
+export interface CosmeticsResponse {
+  items: CosmeticItem[];
   me: Me;
 }
 

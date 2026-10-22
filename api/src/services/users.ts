@@ -101,6 +101,9 @@ export function buildMe(user: UserRow, today: string, todayTasks: number, catalo
     nextMultiplier: streakMultiplier(registerTaskDay(s, today).streak),
     todayTasks,
     dailyLimit: GAME.DAILY_TASK_LIMIT,
+    questionsPerTask: GAME.QUESTIONS_PER_TASK,
+    pointsPerCorrect: GAME.POINTS_PER_CORRECT,
+    xpPerCorrect: GAME.XP_PER_CORRECT,
     shield: {
       held: user.shield_held > 0,
       price: GAME.SHIELD.PRICE,
