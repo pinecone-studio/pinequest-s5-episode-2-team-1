@@ -39,10 +39,19 @@ describe('chooseWindow', () => {
     expect(chooseWindow(candidates, usage, new Set(), () => 0)).toEqual(pages('math-6', 11, 12));
   });
 
-  it('дараагийн хуудас нь сонгох боломжгүй (сул текст, өөр ном, авсан) бол ганц хуудас', () => {
+  it('бүтэн цонх гарах эхлэлийг түрүүлж сонгоно (дараалсан хуудсуудын сүүлийнхээс эхлэхгүй)', () => {
     const fresh = new Map<string, number>();
-    expect(chooseWindow(candidates, fresh, new Set(), () => 0.99)).toEqual(pages('math-7', 6));
-    expect(chooseWindow(candidates, fresh, new Set(['math-6:11']), () => 0)).toEqual(pages('math-6', 10));
+    // эхлэл болох: math-6:10, math-6:11, math-7:5 (math-6:12, math-6:20, math-7:6-ийн дараа хуудас алга)
+    expect(chooseWindow(candidates, fresh, new Set(), () => 0.99)).toEqual(pages('math-7', 5, 6));
+    expect(chooseWindow(pages('math-7', 2, 3), fresh, new Set(), () => 0.99)).toEqual(pages('math-7', 2, 3));
+    // math-6:11 авагдсан тул math-6:10-аас бүтэн цонх гарахгүй
+    expect(chooseWindow(candidates, fresh, new Set(['math-6:11']), () => 0)).toEqual(pages('math-7', 5, 6));
+  });
+
+  it('бүтэн цонх гарах эхлэл байхгүй (сул текст, өөр ном, авсан) бол ганц хуудас', () => {
+    const fresh = new Map<string, number>();
+    expect(chooseWindow(pages('math-6', 10, 12, 20), fresh, new Set(), () => 0.99)).toEqual(pages('math-6', 20));
+    expect(chooseWindow(candidates, fresh, new Set(['math-6:11', 'math-7:6']), () => 0)).toEqual(pages('math-6', 10));
     expect(chooseWindow(pages('math-6', 20), fresh, new Set(), () => 0)).toEqual(pages('math-6', 20));
   });
 
