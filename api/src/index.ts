@@ -8,7 +8,7 @@ import { adminRoutes } from './routes/admin';
 import { authRoutes, meRoutes } from './routes/auth';
 import { duelRoutes } from './routes/duels';
 import { recoveryRoutes } from './routes/recovery';
-import { avatarRoutes, shopRoutes } from './routes/shop';
+import { avatarRoutes, cosmeticRoutes, shopRoutes } from './routes/shop';
 import { questionRoutes, shieldRoutes, taskRoutes } from './routes/tasks';
 
 export { DuelRoom } from './duel/DuelRoom';
@@ -37,6 +37,7 @@ app.route('/duels', duelRoutes);
 app.route('/recovery', recoveryRoutes);
 app.route('/shop', shopRoutes);
 app.route('/avatar', avatarRoutes);
+app.route('/cosmetics', cosmeticRoutes);
 app.route('/admin', adminRoutes);
 
 export default app;

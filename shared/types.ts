@@ -231,6 +231,23 @@ export interface ShopResponse {
   me: Me;
 }
 
+/** Баавгайн дэвсгэр өнгө ба хувцас (Pixel Bear UI). */
+export type CosmeticKind = 'bg' | 'outfit';
+
+export interface CosmeticItem {
+  id: string;
+  kind: CosmeticKind;
+  /** mobile catalog дахь id (жишээ нь 'yagaan', 'gradcap') */
+  key: string;
+  price: number;
+  owned: boolean;
+}
+
+export interface CosmeticsResponse {
+  items: CosmeticItem[];
+  me: Me;
+}
+
 // ---------- Тулаан (WebSocket) ----------
 
 export type DuelPhase = 'waiting' | 'countdown' | 'question' | 'reveal' | 'finished' | 'cancelled';

@@ -18,25 +18,26 @@ export interface OutfitView {
 }
 
 /**
- * Баавгайн хувцас: нүдний шил, чихэвч нь backend-ийн бодит эд зүйл (acc_glasses, acc_headphones) —
- * үнэ, шатны хязгаар, өмчлөл, худалдан авалт бүгд серверээс. Ороолт, төгсөгчийн малгай нь mock.
+ * Баавгайн хувцас: нүдний шил, чихэвч нь /shop-ийн эд зүйл (acc_glasses, acc_headphones, шатны хязгаартай);
+ * ороолт, төгсөгчийн малгай нь /cosmetics-оос. Үнэ, эзэмшил, худалдан авалт бүгд серверт.
  */
 export function useOutfits() {
   const { setMe } = useAuth();
   const bear = usePixelBear();
+  const { reloadCosmetics } = bear;
   const [items, setItems] = useState<ShopItem[] | null>(null);
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
     try {
-      const r = await api<ShopResponse>('/shop');
+      const [r] = await Promise.all([api<ShopResponse>('/shop'), reloadCosmetics()]);
       setItems(r.items);
       setMe(r.me);
       setError('');
     } catch (e) {
       setError(errorText(e));
     }
-  }, [setMe]);
+  }, [setMe, reloadCosmetics]);
 
   useFocusEffect(
     useCallback(() => {
@@ -49,7 +50,7 @@ export function useOutfits() {
     if (si) {
       return { def, price: si.price, owned: si.owned, lockedLevel: si.locked && !si.owned ? si.minLevel : null, server: true };
     }
-    return { def, price: def.price, owned: bear.ownedOutfits.includes(def.id), lockedLevel: null, server: false };
+    return { def, price: bear.priceOf('outfit', def.id), owned: bear.ownedOutfits.includes(def.id), lockedLevel: null, server: false };
   });
 
   /** Худалдаж аваад өмсгөнө. Алдаа гарвал мессежийг буцаана. */
@@ -66,9 +67,8 @@ export function useOutfits() {
         return errorText(e);
       }
     }
-    const res = bear.buyOutfit(v.def.id);
-    return res.ok ? null : S.shop.noCoins;
+    return bear.buyOutfit(v.def.id);
   }
 
-  return { views, loaded: items !== null || !!error, error, buy };
+  return { views, loaded: (items !== null && bear.cosmeticsLoaded) || !!error, error, buy };
 }

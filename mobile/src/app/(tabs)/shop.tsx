@@ -54,7 +54,7 @@ export default function ShopScreen() {
         name: bgDef.name,
         equipped: bgDef.id === bear.bgId,
         owned: bear.ownedBgs.includes(bgDef.id),
-        price: bgDef.price,
+        price: bear.priceOf('bg', bgDef.id),
         lockedLevel: null as number | null,
       }
     : {
@@ -65,7 +65,9 @@ export default function ShopScreen() {
         lockedLevel: outfitView.lockedLevel,
       };
   const cantAfford = !cur.owned && cur.price > bear.coins;
-  const action = cur.equipped
+  const action = !outfits.loaded
+    ? { title: '…', bg: colors.stoneAlt, fg: colors.muted, disabled: true }
+    : cur.equipped
     ? { title: S.shop.equipped, bg: colors.white, fg: colors.okText, disabled: true }
     : cur.owned
       ? { title: S.shop.equip, bg: colors.indigo, fg: colors.white, disabled: false }
@@ -89,8 +91,7 @@ export default function ShopScreen() {
     setBusy(true);
     let err: string | null = null;
     if (isBg) {
-      const r = bear.buyBg(bgDef.id);
-      err = r.ok ? null : S.shop.noCoins;
+      err = await bear.buyBg(bgDef.id);
     } else {
       err = await outfits.buy(outfitView as OutfitView);
     }
@@ -155,6 +156,7 @@ export default function ShopScreen() {
 
       {isBg ? (
         <Animated.View key="bg" entering={FadeInDown.duration(260)} style={{ gap: 12 }}>
+          {!outfits.loaded ? <ActivityIndicator color={colors.violet} /> : null}
           {chunk(BACKGROUNDS, 4).map((row, r) => (
             <View key={r} style={styles.row}>
               {row.map((b) => (
@@ -165,7 +167,7 @@ export default function ShopScreen() {
                   label={S.shop.bgLabel(b.name)}
                   selected={b.id === selBg}
                   equipped={b.id === bear.bgId}
-                  status={statusOf({ equipped: b.id === bear.bgId, owned: bear.ownedBgs.includes(b.id), price: b.price, coins: bear.coins })}
+                  status={statusOf({ equipped: b.id === bear.bgId, owned: bear.ownedBgs.includes(b.id), price: bear.priceOf('bg', b.id), coins: bear.coins })}
                   onPress={() => setSelBg(b.id)}
                 />
               ))}
