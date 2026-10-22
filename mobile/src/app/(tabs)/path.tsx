@@ -40,8 +40,10 @@ export default function PathScreen() {
     }, [refreshMe]),
   );
 
-  const current = me ? currentNode(me) : 0;
-  const bossFight = !!me && bossAhead(current, me.bossesBeaten);
+  // Хичээл бүр өөрийн сурах замтай: хичээл солиход тэр хичээлийн хамгийн сүүлд хүрсэн зангилаа гарна.
+  const path = me?.paths[subject];
+  const current = path ? currentNode(path) : 0;
+  const bossFight = !!path && bossAhead(current, path.bossesBeaten);
   const userId = me?.id;
 
   // Баавгай сүүлд харсан зангилаанаасаа одоогийнх руу алхана (апп хаагдсан ч төхөөрөмж дээр санана)
@@ -49,7 +51,8 @@ export default function PathScreen() {
   useEffect(() => {
     if (userId === undefined) return;
     let alive = true;
-    const key = `pq.path.seen.${userId}`;
+    setFrom(null); // өөр хичээлийн замаас алхаж ирэхгүй
+    const key = `pq.path.seen.${userId}.${subject}`;
     void kvGet<number>(key).then((seen) => {
       if (!alive) return;
       setFrom(seen === null || seen >= current ? current : Math.max(seen, current - MAX_WALK));
@@ -58,7 +61,7 @@ export default function PathScreen() {
     return () => {
       alive = false;
     };
-  }, [userId, current]);
+  }, [userId, subject, current]);
 
   // Одоогийн зангилааг дэлгэцийн дунд харуулна (XP өсөхөд зөөлөн гүйлгэнэ)
   const scrolledOnce = useRef(false);
@@ -100,11 +103,11 @@ export default function PathScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingBottom: CTA_SPACE + barSpace }]}
         showsVerticalScrollIndicator={false}
       >
-        <PathMap current={current} from={from} beaten={me.bossesBeaten} subject={subject} onNodePress={onNode} />
+        <PathMap current={current} from={from} beaten={path?.bossesBeaten ?? 0} subject={subject} onNodePress={onNode} />
       </ScrollView>
 
       <View style={[styles.header, { top: insets.top + 6 }]} pointerEvents="box-none">
-        <TopBar xp="level" onMap />
+        <TopBar xp="level" onMap path={path} />
         <View style={styles.row2} pointerEvents="box-none">
           <Pressable
             accessibilityRole="button"

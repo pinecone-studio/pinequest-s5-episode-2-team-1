@@ -11,7 +11,7 @@ import { isConstraintError, newTx } from '../lib/db';
 import { ApiError } from '../lib/errors';
 import { maybeRefill, refillPool } from './pool';
 import { hasPendingRecovery, recoveryCertain, recoveryStatements } from './recovery';
-import { countTasksToday, getUserRow, loadMe, streakStateOf, syncStreak } from './users';
+import { countTasksToday, getUserRow, loadMe, loadSubjectPaths, streakStateOf, syncStreak } from './users';
 
 type Ctx = { waitUntil(p: Promise<unknown>): void };
 
@@ -77,7 +77,9 @@ export async function startTask(
     throw new ApiError(409, 'RECOVERY_REQUIRED', 'Эхлээд давтлагаа дуусгаарай');
   }
   if (boss !== undefined) {
-    const block = bossBlock(levelFromXp(user.xp), user.bosses_beaten, boss);
+    // Boss хаалт хичээл бүрийн сурах замаар: математикийн boss-ыг ялсан нь физикийн бүлгийг нээхгүй.
+    const path = (await loadSubjectPaths(db, userId))[subject];
+    const block = bossBlock(path.level, path.bossesBeaten, boss);
     if (block) throw new ApiError(409, block, 'Энэ boss-той тулалдах боломжгүй');
   }
 
@@ -253,13 +255,16 @@ export async function completeTask(
   const normalized = normalizeStreak(streakStateOf(user), today);
   const after = registerTaskDay(normalized.state, today);
   const cc = await db
-    .prepare('SELECT t.boss, (SELECT COUNT(*) FROM task_questions WHERE task_id = t.id AND correct = 1) AS n FROM tasks t WHERE t.id = ?')
+    .prepare('SELECT t.subject, t.boss, (SELECT COUNT(*) FROM task_questions WHERE task_id = t.id AND correct = 1) AS n FROM tasks t WHERE t.id = ?')
     .bind(taskId)
-    .first<{ boss: number | null; n: number }>();
-  const correctCount = cc?.n ?? 0;
+    .first<{ subject: Subject; boss: number | null; n: number }>();
+  if (!cc) throw new ApiError(404, 'NOT_FOUND', 'Даалгавар олдсонгүй');
+  const correctCount = cc.n;
   const reward = taskReward(correctCount, after.streak);
-  // Дараагийн boss-ыг ялбал дараагийн бүлэг нээгдэнэ (bosses_beaten = boss нөхцөл давхар тоолохоос сэргийлнэ)
-  const beatBoss = cc?.boss != null && cc.boss === user.bosses_beaten && bossWon(correctCount);
+  const path = (await loadSubjectPaths(db, userId))[cc.subject];
+  // Тухайн хичээлийн дараагийн boss-ыг ялбал тэр хичээлийн дараагийн бүлэг нээгдэнэ (bosses_beaten = boss нөхцөл
+  // давхар тоолохоос сэргийлнэ).
+  const beatBoss = cc.boss != null && cc.boss === path.bossesBeaten && bossWon(correctCount);
 
   const tx = newTx();
   const guard = 'EXISTS (SELECT 1 FROM tasks WHERE id = ? AND tx = ?)';
@@ -295,11 +300,21 @@ export async function completeTask(
          SELECT ?, ?, 'task_reward', 'task', ?, ? WHERE ? > 0 AND ${guard}`,
       )
       .bind(userId, reward.points, String(taskId), now, reward.points, taskId, tx),
+    // Хичээлийн сурах зам: XP нь нийт дээр нэмэгдэхээс гадна тухайн хичээлийн замыг урагшлуулна.
+    db
+      .prepare(
+        `INSERT INTO subject_progress (user_id, subject, xp) SELECT ?, ?, ? WHERE ${guard}
+         ON CONFLICT (user_id, subject) DO UPDATE SET xp = xp + excluded.xp`,
+      )
+      .bind(userId, cc.subject, reward.xp, taskId, tx),
     ...(beatBoss
       ? [
           db
-            .prepare(`UPDATE users SET bosses_beaten = bosses_beaten + 1 WHERE id = ? AND bosses_beaten = ? AND ${guard}`)
-            .bind(userId, user.bosses_beaten, taskId, tx),
+            .prepare(
+              `UPDATE subject_progress SET bosses_beaten = bosses_beaten + 1
+               WHERE user_id = ? AND subject = ? AND bosses_beaten = ? AND ${guard}`,
+            )
+            .bind(userId, cc.subject, path.bossesBeaten, taskId, tx),
         ]
       : []),
     ...extra,
