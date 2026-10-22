@@ -1,7 +1,7 @@
 // Ажиллаж буй dev сервер дээр демо сценарийн гол урсгалыг автоматаар шалгана.
 //   npm run e2e                 # даалгавар, оноо, streak, хамгаалалт, өдрийн хязгаар, тулаан
 //   npm run e2e -- --only tasks # зөвхөн нэг хэсэг (tasks | recovery | shop | duel | books)
-import type { AnswerResponse, MeResponse, RecoveryAnswerResponse, RecoveryDto, ShopResponse, TaskDto } from '../../shared/types';
+import type { AnswerResponse, CosmeticsResponse, MeResponse, RecoveryAnswerResponse, RecoveryDto, ShopResponse, TaskDto } from '../../shared/types';
 import { runBooksScenario } from './e2e-books';
 import { runDuelScenario } from './e2e-duel';
 import { check, correctIndex, doTask, expectError, failureCount, me, register } from './e2e-lib';
@@ -173,6 +173,15 @@ async function shopScenario() {
     'NOT_OWNED',
     'Аваагүй эд зүйлийг өмсөхгүй',
   );
+
+  console.log('\n— Дэвсгэр ба хувцас (/cosmetics)');
+  const c = await register('cosm_u', 7);
+  await expectError(call('POST', '/cosmetics/bg_yagaan/buy', { token: c.token }), 'INSUFFICIENT_POINTS', '50 оноогоор 60-ын дэвсгэр авахгүй');
+  await doTask(c.token, 'math', true); // 50 → 100
+  const bg = await call<CosmeticsResponse>('POST', '/cosmetics/bg_yagaan/buy', { token: c.token });
+  check(bg.me.points === 40 && bg.items.some((i) => i.id === 'bg_yagaan' && i.owned), 'Дэвсгэр авахад серверийн оноо хасагдана (100 → 40)', bg.me.points);
+  await expectError(call('POST', '/cosmetics/bg_yagaan/buy', { token: c.token }), 'ALREADY_OWNED', 'Нэг дэвсгэрийг дахин авахгүй');
+  await expectError(call('POST', '/cosmetics/bg_nimbeg/buy', { token: c.token }), 'ALREADY_OWNED', 'Үнэгүй дэвсгэр анхнаасаа байгаа');
 }
 
 async function audit() {

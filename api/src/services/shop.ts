@@ -1,4 +1,5 @@
-import type { Me, ShopResponse, Slot } from '../../../shared/types';
+import type { CosmeticsResponse, Me, ShopResponse, Slot } from '../../../shared/types';
+import { COSMETICS, cosmeticById } from '../config/cosmetics';
 import { levelFromXp } from '../domain/level';
 import { isConstraintError } from '../lib/db';
 import { ApiError } from '../lib/errors';
@@ -66,4 +67,42 @@ export async function equipItem(db: D1Database, userId: number, slot: Slot, item
   }
   await db.prepare('UPDATE users SET equipped = ? WHERE id = ?').bind(JSON.stringify(equipped), userId).run();
   return loadMe(db, userId);
+}
+
+async function ownedCosmeticIds(db: D1Database, userId: number): Promise<Set<string>> {
+  const { results } = await db
+    .prepare('SELECT cosmetic_id FROM user_cosmetics WHERE user_id = ?')
+    .bind(userId)
+    .all<{ cosmetic_id: string }>();
+  return new Set(results.map((r) => r.cosmetic_id));
+}
+
+export async function cosmeticsView(db: D1Database, userId: number): Promise<CosmeticsResponse> {
+  const [me, owned] = await Promise.all([loadMe(db, userId), ownedCosmeticIds(db, userId)]);
+  return {
+    items: COSMETICS.map((c) => ({ id: c.id, kind: c.kind, key: c.key, price: c.price, owned: c.price === 0 || owned.has(c.id) })),
+    me,
+  };
+}
+
+/** Дэвсгэр / хувцас авна (нэг batch: эзэмшил, оноо, ledger). Өмсөх сонголт нь төхөөрөмж дээр. */
+export async function buyCosmetic(db: D1Database, userId: number, cosmeticId: string, now = Date.now()): Promise<CosmeticsResponse> {
+  const c = cosmeticById(cosmeticId);
+  if (!c) throw new ApiError(404, 'NOT_FOUND', 'Олдсонгүй');
+  if (c.price === 0) throw new ApiError(409, 'ALREADY_OWNED', 'Үнэгүй');
+  await getUserRow(db, userId);
+  try {
+    await db.batch([
+      db.prepare('INSERT INTO user_cosmetics (user_id, cosmetic_id, acquired_at) VALUES (?, ?, ?)').bind(userId, c.id, now),
+      db.prepare('UPDATE users SET points = points - ? WHERE id = ?').bind(c.price, userId),
+      db
+        .prepare(`INSERT INTO point_ledger (user_id, delta, reason, ref_type, ref_id, created_at) VALUES (?, ?, 'cosmetic_buy', 'cosmetic', ?, ?)`)
+        .bind(userId, -c.price, c.id, now),
+    ]);
+  } catch (e) {
+    if (isConstraintError(e, 'UNIQUE')) throw new ApiError(409, 'ALREADY_OWNED', 'Аль хэдийн авсан');
+    if (isConstraintError(e, 'CHECK')) throw new ApiError(409, 'INSUFFICIENT_POINTS', 'Оноо хүрэлцэхгүй');
+    throw e;
+  }
+  return cosmeticsView(db, userId);
 }
