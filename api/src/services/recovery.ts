@@ -4,6 +4,7 @@ import type { RecoveryAnswerResponse, RecoveryDto, Subject } from '../../../shar
 import { GAME, type Tier } from '../config/game';
 import { TOPICS } from '../config/topics';
 import { ApiError } from '../lib/errors';
+import { OWN_GRADE } from './pool';
 
 interface Missed {
   id: number;
@@ -49,7 +50,7 @@ export async function recoveryStatements(db: D1Database, userId: number, taskId:
   const pick = db.prepare(
     `SELECT q.id FROM questions q
      LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
-     WHERE q.tier = ? AND q.subject = ? AND q.topic = ? AND q.flagged = 0
+     WHERE q.tier = ? AND q.subject = ? AND q.topic = ? AND q.flagged = 0 AND ${OWN_GRADE}
        AND q.id NOT IN (SELECT question_id FROM task_questions WHERE task_id = ?)
      ORDER BY (s.seen_at IS NOT NULL), s.seen_at, RANDOM() LIMIT ?`,
   );
@@ -59,7 +60,7 @@ export async function recoveryStatements(db: D1Database, userId: number, taskId:
     const picked =
       topic === null
         ? []
-        : (await pick.bind(userId, tier, task.subject, topic, taskId, GAME.RECOVERY_PRACTICE).all<{ id: number }>()).results.map((r) => r.id);
+        : (await pick.bind(userId, tier, task.subject, topic, userId, taskId, GAME.RECOVERY_PRACTICE).all<{ id: number }>()).results.map((r) => r.id);
     groups.push({ missed: group.map((q) => q.id), picked });
   }
 
@@ -183,12 +184,12 @@ export async function answerRecovery(
           .prepare(
             `SELECT q.id FROM questions q
              LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
-             WHERE q.tier = ? AND q.subject = ? AND q.topic = ? AND q.flagged = 0
+             WHERE q.tier = ? AND q.subject = ? AND q.topic = ? AND q.flagged = 0 AND ${OWN_GRADE}
                AND q.id NOT IN (SELECT value FROM json_each(?))
                AND q.id NOT IN (SELECT question_id FROM task_questions WHERE task_id = ?)
              ORDER BY (s.seen_at IS NOT NULL), s.seen_at, RANDOM() LIMIT 1`,
           )
-          .bind(userId, q.tier, subject, q.topic, p.row.questions, p.row.task_id)
+          .bind(userId, q.tier, subject, q.topic, userId, p.row.questions, p.row.task_id)
           .first<{ id: number }>();
   const ids = p.questions.map((x) => (x.id === q.id && next ? next.id : x.id));
   const [upd] = await db.batch([

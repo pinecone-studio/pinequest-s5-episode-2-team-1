@@ -62,7 +62,7 @@ describe('chooseWindow', () => {
 });
 
 describe('buildPrompt (сангаас)', () => {
-  const excerpt = { ref: 'math-7:45-46', title: 'Математик 7', text: 'Тооны модул гэж тоон шулуун дээрх зай.' };
+  const excerpt = { ref: 'math-7:45-46', title: 'Математик 7', grade: 7, text: 'Тооны модул гэж тоон шулуун дээрх зай.' };
 
   it('хэсгийг prompt-д оруулж, сэдвийн жагсаалтын оронд хэрэглэнэ', () => {
     const { user } = buildPrompt(1, 'math', 5, [], excerpt);

@@ -3,7 +3,7 @@ import type { Bindings } from '../env';
 import { generateQuestions, pickProvider } from '../llm';
 import type { QuestionDraft } from '../llm/types';
 import { promptKey } from '../llm/validate';
-import { pickExcerpts } from './grounding';
+import { type Excerpt, type PageRange, pickExcerpts, type Scope } from './grounding';
 
 /**
  * Тоо, хувьсагч, үйлдлийн дараалал ("5x-8=22", "2.4:0.6+1.5"). Үг хэллэг нь өөр ч бодлого нь ижил
@@ -25,19 +25,19 @@ export async function insertDrafts(
   drafts: QuestionDraft[],
   source: string,
   now = Date.now(),
-  /** Сурах бичгийн сангийн хэсэг ('math-7:45-46'); апп-д харагдахгүй. */
-  bookRef: string | null = null,
+  /** Сурах бичгийн сангийн хэсэг ('math-7:45-46') ба номын анги; апп-д харагдахгүй. */
+  book: Pick<Excerpt, 'ref' | 'grade'> | null = null,
 ): Promise<{ inserted: number; duplicates: number }> {
   if (drafts.length === 0) return { inserted: 0, duplicates: 0 };
   const stmt = db.prepare(
-    `INSERT OR IGNORE INTO questions (tier, subject, prompt, options, correct_index, explanation, prompt_key, source, book_ref, topic, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT OR IGNORE INTO questions (tier, subject, prompt, options, correct_index, explanation, prompt_key, source, book_ref, grade, topic, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
   // Өмнө сэдэвгүй хадгалагдсан ижил асуултад (жишээ нь seed-ийг дахин import хийхэд) сэдвийг нөхнө.
   const fill = db.prepare('UPDATE questions SET topic = ? WHERE tier = ? AND subject = ? AND prompt_key = ? AND topic IS NULL');
   const results = await db.batch([
     ...drafts.map((d) =>
-      stmt.bind(tier, subject, d.prompt, JSON.stringify(d.options), d.correctIndex, d.explanation, promptKey(d.prompt), source, bookRef, d.topic ?? null, now),
+      stmt.bind(tier, subject, d.prompt, JSON.stringify(d.options), d.correctIndex, d.explanation, promptKey(d.prompt), source, book?.ref ?? null, book?.grade ?? null, d.topic ?? null, now),
     ),
     ...drafts.flatMap((d) => (d.topic ? [fill.bind(d.topic, tier, subject, promptKey(d.prompt))] : [])),
   ]);
@@ -58,8 +58,32 @@ export interface GenerateReport {
 }
 
 /**
+ * SQL: `q.book_ref` нь `range`-ийн хуудаснаас эхэлсэн эсэх (1/0); 'math-7:5-6' → math-7, 5. Утгууд: rangeArgs(range).
+ */
+export const IN_RANGE = 'COALESCE(substr(q.book_ref, 1, ?) = ? AND CAST(substr(q.book_ref, ?) AS INTEGER) BETWEEN ? AND ?, 0)';
+export const rangeArgs = (r: PageRange) => [r.slug.length + 1, `${r.slug}:`, r.slug.length + 2, r.from, r.to];
+
+/**
+ * SQL: хэрэглэгчид гарч болох асуулт — номгүй (түвшний нийтлэг) эсвэл өөрийнх нь ангийн номынх. Өөр ангийн
+ * (анги нь тодорхойгүй) номын асуулт хэзээ ч гарахгүй. Утга: userId.
+ */
+export const OWN_GRADE = '(q.book_ref IS NULL OR q.grade = (SELECT grade FROM users WHERE id = ?))';
+
+/** Даалгаврын асуулт: хараагүйг (хичээлийнхийг түрүүлж) санамсаргүйгээр, дутвал хамгийн эрт харсныг нь. */
+export const pickSql = (lesson: boolean) => `SELECT q.id FROM questions q
+       LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
+       WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0 AND ${OWN_GRADE}
+       ORDER BY (s.seen_at IS NOT NULL), ${lesson ? `${IN_RANGE} DESC,` : ''} s.seen_at, RANDOM()
+       LIMIT ?`;
+/** pickSql-ийн утгууд. */
+export const pickArgs = (userId: number, tier: Tier, subject: Subject, lesson: PageRange | null, limit: number) => [
+  userId, tier, subject, userId, ...(lesson ? rangeArgs(lesson) : []), limit,
+];
+
+/**
  * `count` асуултыг `chunk`-аар хувааж LLM-ийг зэрэг дуудаад, шалгаж хадгална. Сурах бичгийн санд
- * тухайн хичээл, түвшний ном байвал дуудлага бүр сангийн өөр хэсэгт үндэслэнэ.
+ * тухайн хичээл, түвшний ном байвал дуудлага бүр сангийн өөр хэсэгт үндэслэнэ; `scope` өгвөл зөвхөн тэр ангийн
+ * номд (`range` бол тэр хуудсуудад).
  */
 export async function generateAndStore(
   env: Bindings,
@@ -68,6 +92,7 @@ export async function generateAndStore(
   count: number,
   chunk: number = GAME.POOL.LLM_CHUNK,
   useBooks = true,
+  scope: Scope | null = null,
 ): Promise<GenerateReport> {
   const { results } = await env.DB.prepare('SELECT prompt FROM questions WHERE tier = ? AND subject = ? ORDER BY id DESC')
     .bind(tier, subject)
@@ -77,10 +102,11 @@ export async function generateAndStore(
 
   const sizes: number[] = [];
   for (let left = count; left > 0; left -= chunk) sizes.push(Math.min(chunk, left));
-  const excerpts = useBooks ? await pickExcerpts(env, tier, subject, sizes.length).catch(() => []) : [];
+  const excerpts = useBooks ? await pickExcerpts(env, tier, subject, sizes.length, scope).catch(() => []) : [];
   // Номын хэсэг дуудлагын тооноос цөөн бол давтан ашиглана (тус бүр өөр асуулт гарна).
   const excerptOf = (i: number) => (excerpts.length ? excerpts[i % excerpts.length] : null);
-  const settled = await Promise.allSettled(sizes.map((n, i) => generateQuestions(env, tier, subject, n, avoid, excerptOf(i))));
+  // Хичээлийн хуудсууд санд (уншигдахуйц) байхгүй бол номгүй асуулт зохиохгүй.
+  const settled = scope?.range && excerpts.length === 0 ? [] : await Promise.allSettled(sizes.map((n, i) => generateQuestions(env, tier, subject, n, avoid, excerptOf(i))));
 
   const report: GenerateReport = {
     source: null,
@@ -108,7 +134,7 @@ export async function generateAndStore(
       return true;
     });
     const excerpt = excerptOf(i);
-    const r = await insertDrafts(env.DB, tier, subject, fresh, s.value.source, Date.now(), excerpt?.ref ?? null);
+    const r = await insertDrafts(env.DB, tier, subject, fresh, s.value.source, Date.now(), excerpt);
     if (excerpt && r.inserted > 0) report.grounded.push(excerpt.ref);
     report.inserted += r.inserted;
     report.duplicates += r.duplicates + (s.value.drafts.length - fresh.length);
@@ -128,38 +154,54 @@ async function tryLock(db: D1Database, tier: number, subject: string, now: numbe
   return (r.meta.changes ?? 0) > 0;
 }
 
-/** Background нөхөлт: нэг хослолыг зэрэг хоёр удаа нөхөхгүй. */
-export async function refillPool(env: Bindings, tier: Tier, subject: Subject): Promise<GenerateReport | null> {
+/** Background нөхөлт (тухайн ангийн номоор): нэг анги (эсвэл нэг хичээлийн хуудсуудыг) зэрэг хоёр удаа нөхөхгүй. */
+export async function refillPool(env: Bindings, tier: Tier, subject: Subject, scope: Scope): Promise<GenerateReport | null> {
   if (!pickProvider(env)) return null;
-  if (!(await tryLock(env.DB, tier, subject, Date.now()))) return null;
+  const { range } = scope;
+  const key = range ? `${subject}:${range.slug}:${range.from}` : `${subject}:${scope.grade}`;
+  if (!(await tryLock(env.DB, tier, key, Date.now()))) return null;
   try {
-    const report = await generateAndStore(env, tier, subject, GAME.POOL.REFILL_BATCH);
-    console.log(`[pool] refill tier=${tier} ${subject}: +${report.inserted} (rejected ${report.rejected}) сан: ${report.grounded.join(', ') || '—'}`, report.errors);
+    const count = range ? GAME.POOL.LLM_CHUNK : GAME.POOL.REFILL_BATCH;
+    const report = await generateAndStore(env, tier, subject, count, GAME.POOL.LLM_CHUNK, true, scope);
+    console.log(`[pool] refill tier=${tier} ${key}: +${report.inserted} (rejected ${report.rejected}) сан: ${report.grounded.join(', ') || '—'}`, report.errors);
     return report;
   } catch (e) {
     console.error('[pool] refill failed', e);
     return null;
   } finally {
-    await env.DB.prepare('UPDATE pool_locks SET locked_until = 0 WHERE tier = ? AND subject = ?').bind(tier, subject).run();
+    await env.DB.prepare('UPDATE pool_locks SET locked_until = 0 WHERE tier = ? AND subject = ?').bind(tier, key).run();
   }
 }
 
-/** Хэрэглэгчийн хараагүй асуулт эсвэл нийт pool босгоос доош орсон бол background-д нөхнө. */
+/** Хэрэглэгчийн хараагүй, `range` хуудсанд үндэслэсэн асуулт нэг даалгаварт хүрэлцэхгүй бол тэр хуудсуудаар үүсгэнэ. */
+export async function refillLesson(env: Bindings, tier: Tier, subject: Subject, scope: Scope & { range: PageRange }, userId: number): Promise<void> {
+  const { range } = scope;
+  const row = await env.DB.prepare(
+    `SELECT COUNT(*) AS n FROM questions q LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
+     WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0 AND s.question_id IS NULL AND ${IN_RANGE}`,
+  )
+    .bind(userId, tier, subject, ...rangeArgs(range))
+    .first<{ n: number }>();
+  if ((row?.n ?? 0) < GAME.QUESTIONS_PER_TASK) await refillPool(env, tier, subject, scope);
+}
+
+/** Хэрэглэгчид гарч болох (өөрийн ангийн) хараагүй асуулт эсвэл нийт pool босгоос доош орсон бол background-д нөхнө. */
 export async function maybeRefill(
   env: Bindings,
   ctx: { waitUntil(p: Promise<unknown>): void },
   tier: Tier,
   subject: Subject,
   userId: number,
+  grade: number,
 ): Promise<void> {
   const row = await env.DB.prepare(
     `SELECT COUNT(*) AS total, SUM(CASE WHEN s.question_id IS NULL THEN 1 ELSE 0 END) AS unseen
      FROM questions q LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
-     WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0`,
+     WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0 AND ${OWN_GRADE}`,
   )
-    .bind(userId, tier, subject)
+    .bind(userId, tier, subject, userId)
     .first<{ total: number; unseen: number | null }>();
   const total = row?.total ?? 0;
   const unseen = row?.unseen ?? 0;
-  if (total < GAME.POOL.MIN_TOTAL || unseen < GAME.POOL.MIN_UNSEEN) ctx.waitUntil(refillPool(env, tier, subject));
+  if (total < GAME.POOL.MIN_TOTAL || unseen < GAME.POOL.MIN_UNSEEN) ctx.waitUntil(refillPool(env, tier, subject, { grade }));
 }

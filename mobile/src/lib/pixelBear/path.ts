@@ -107,6 +107,7 @@ const LESSON_NODES = NODE_COUNT - UNIT_COUNT;
  * Зангилаанд ногдох номын хичээлүүд. Номын хичээлүүдийг boss-гүй зангилаанд дарааллаар нь жигд тараана:
  * сүүлийн зангилаа = номын сүүлийн хичээл, дараа нь сүүлийн boss (ялбал ном дууссан). Хичээл цөөн бол нэг
  * хичээл хэд хэдэн зангилаа эзэлнэ, олон бол нэг зангилаанд хоёр хичээл орно.
+ * Сервер (api/src/domain/path.ts) даалгаврын асуултыг ижил тооцоогоор сонгодог: өөрчилбөл хоёуланг нь.
  */
 export function lessonsAt(lessons: readonly BookLesson[], i: number): BookLesson[] {
   if (lessons.length === 0 || isBossNode(i)) return [];
