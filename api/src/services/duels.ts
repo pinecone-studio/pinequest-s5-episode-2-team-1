@@ -41,6 +41,10 @@ const SUMMARY_SELECT = `
   JOIN users c ON c.id = d.creator_id
   LEFT JOIN users o ON o.id = d.opponent_id`;
 
+/** Хэрэглэгч (?, ?, ?) нээлттэй сорилттой эсвэл тулаан хийж байна. */
+const BUSY_SQL = `SELECT 1 FROM duels WHERE (creator_id = ? AND status = 'open')
+  OR (status = 'accepted' AND (creator_id = ? OR opponent_id = ?))`;
+
 export function duelRoomName(duelId: number): string {
   return `duel-${duelId}`;
 }
@@ -157,19 +161,17 @@ export async function createChallenge(db: D1Database, userId: number, subject: S
   const user = await getUserRow(db, userId);
   const err = stakeError(stake, user.points);
   if (err) throw new ApiError(400, err, `Бооцоо 1–${maxStake(user.points)} оноо байна`);
-  const busy = await db
-    .prepare(
-      `SELECT id FROM duels WHERE (creator_id = ? AND status = 'open')
-         OR (status = 'accepted' AND (creator_id = ? OR opponent_id = ?)) LIMIT 1`,
-    )
-    .bind(userId, userId, userId)
-    .first();
-  if (busy) throw new ApiError(409, 'DUEL_EXISTS', 'Нээлттэй тулаан байна');
+  // "Завгүй эсэх"-ийг INSERT дотор шалгана: зэрэг хоёр хүсэлт хоёр сорилт үүсгэхгүй.
   const row = await db
-    .prepare(`INSERT INTO duels (tier, subject, stake, creator_id, status, created_at) VALUES (?, ?, ?, ?, 'open', ?) RETURNING id`)
-    .bind(user.tier, subject, stake, userId, now)
+    .prepare(
+      `INSERT INTO duels (tier, subject, stake, creator_id, status, created_at)
+       SELECT ?, ?, ?, ?, 'open', ? WHERE NOT EXISTS (${BUSY_SQL})
+       RETURNING id`,
+    )
+    .bind(user.tier, subject, stake, userId, now, userId, userId, userId)
     .first<{ id: number }>();
-  return getDuelSummary(db, row!.id);
+  if (!row) throw new ApiError(409, 'DUEL_EXISTS', 'Нээлттэй тулаан байна');
+  return getDuelSummary(db, row.id);
 }
 
 export async function cancelChallenge(db: D1Database, userId: number, duelId: number, now = Date.now()): Promise<void> {
@@ -226,8 +228,13 @@ export async function acceptChallenge(env: Bindings, userId: number, duelId: num
   try {
     const res = await db.batch([
       db
-        .prepare(`UPDATE duels SET status = 'accepted', opponent_id = ?, accepted_at = ?, question_ids = ?, tx = ? WHERE id = ? AND status = 'open'`)
-        .bind(userId, now, questionIds, tx, duelId),
+        // Хоёулаа өөр тулаан хийгээгүй байхыг энд дахин шалгана (зэрэг хоёр сорилт хүлээн авахаас).
+        .prepare(
+          `UPDATE duels SET status = 'accepted', opponent_id = ?, accepted_at = ?, question_ids = ?, tx = ?
+           WHERE id = ? AND status = 'open'
+             AND NOT EXISTS (SELECT 1 FROM duels WHERE status = 'accepted' AND (creator_id IN (?, ?) OR opponent_id IN (?, ?)))`,
+        )
+        .bind(userId, now, questionIds, tx, duelId, creator.id, userId, creator.id, userId),
       db.prepare(`UPDATE users SET points = points - ? WHERE id IN (?, ?) AND ${guard}`).bind(duel.stake, creator.id, userId, duelId, tx),
       db
         .prepare(
@@ -247,7 +254,11 @@ export async function acceptChallenge(env: Bindings, userId: number, duelId: num
         )
         .bind(now, questionIds, creator.id, userId, duelId, tx),
     ]);
-    if (!res[0].meta.changes) throw new ApiError(409, 'DUEL_TAKEN', 'Өөр хүн түрүүлж авлаа');
+    if (!res[0].meta.changes) {
+      const current = await db.prepare('SELECT status FROM duels WHERE id = ?').bind(duelId).first<{ status: string }>();
+      if (current?.status === 'open') throw new ApiError(409, 'DUEL_EXISTS', 'Явагдаж буй тулаан байна');
+      throw new ApiError(409, 'DUEL_TAKEN', 'Өөр хүн түрүүлж авлаа');
+    }
   } catch (e) {
     if (e instanceof ApiError) throw e;
     if (isConstraintError(e, 'CHECK')) throw new ApiError(409, 'INSUFFICIENT_POINTS', 'Оноо хүрэлцэхгүй');
