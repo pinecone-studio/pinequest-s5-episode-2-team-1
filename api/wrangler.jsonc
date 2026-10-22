@@ -134,6 +134,8 @@
         "LLM_PROVIDER": "",
         "GEMINI_MODEL": "gemini-3.8-flash",
         "GEMINI_THINKING_LEVEL": "low",
+        "GEMINI_LIVE_MODEL": "gemini-3.8-live",
+        "GEMINI_TTS_MODEL": "gemini-3.8-flash-lite-tts",
         "WORKERS_AI_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
       }
     }
