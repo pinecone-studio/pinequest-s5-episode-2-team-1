@@ -334,6 +334,7 @@ export const errorMessages: Record<ErrorCode | 'NETWORK' | 'TIMEOUT', string> = 
   DUEL_NOT_OPEN: 'Сорилт хаагдсан байна',
   WRONG_TIER: 'Энэ сорилт өөр түвшнийх байна',
   OWN_DUEL: 'Өөрийнхөө сорилтыг хүлээн авах боломжгүй',
+  BOSS_LOCKED: 'Энэ boss-той одоохондоо тулалдах боломжгүй',
   LLM_UNAVAILABLE: 'Асуулт үүсгэх үйлчилгээ тохируулаагүй байна',
   LLM_FAILED: 'Асуулт үүсгэж чадсангүй',
   NETWORK: 'Сервертэй холбогдож чадсангүй. Wi-Fi-гаа шалгана уу.',

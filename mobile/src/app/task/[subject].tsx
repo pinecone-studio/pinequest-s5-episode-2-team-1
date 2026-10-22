@@ -53,7 +53,7 @@ export default function TaskScreen() {
     setError(null);
     setNote('');
     try {
-      const t = await api<TaskDto>('/tasks', { body: { subject } });
+      const t = await api<TaskDto>('/tasks', { body: foe ? { subject, boss: Number(boss) } : { subject } });
       setTask(t);
       setAnswered(t.answeredCount);
       setHits(t.correctCount);
@@ -66,10 +66,10 @@ export default function TaskScreen() {
         router.replace(`/recovery/${subject}`);
         return;
       }
-      const fatal = e instanceof ApiError && (e.code === 'DAILY_LIMIT' || e.code === 'NO_QUESTIONS');
+      const fatal = e instanceof ApiError && (e.code === 'DAILY_LIMIT' || e.code === 'NO_QUESTIONS' || e.code === 'BOSS_LOCKED');
       setError({ message: errorText(e), fatal });
     }
-  }, [subject]);
+  }, [subject, foe, boss]);
 
   useEffect(() => {
     void load();

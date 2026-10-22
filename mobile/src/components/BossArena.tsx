@@ -13,22 +13,42 @@ import Animated, {
 import { AnimatedBar, frameSize, Motion, Pop, SheetFrame, Sprite } from '@/components/pixel';
 import { colors, fonts, radius } from '@/constants/theme';
 import { S } from '@/i18n/strings';
+import bear from '@/lib/pixelBear/bear.json';
 import { BOSS_FRAME, type Boss, HOVER } from '@/lib/pixelBear/path';
 import type { SpriteKey } from '@/sprites';
 
+// Баавгайн frame бүр өөрийн хугацаатай, tag-аар бүлэглэгдсэн (mobile/scripts/bear-sprites.ts → bear.json).
+type Tag = keyof typeof bear.tags;
+/** tag-ийн frame-ууд; ping-pong бол буцаж давтана */
+function frames(tag: Tag): number[] {
+  const { from, to, direction } = bear.tags[tag];
+  const f = Array.from({ length: to - from + 1 }, (_, i) => from + i);
+  return direction === 'pingpong' ? [...f, ...f.slice(1, -1).reverse()] : f;
+}
+const ms = (frame: number) => bear.frames[frame].duration;
+const span = (tag: Tag) => frames(tag).reduce((t, f) => t + ms(f), 0);
+/** tag эхэлснээс `name` frame гарах хүртэлх хугацаа */
+const until = (tag: Tag, name: string) => {
+  const fs = frames(tag);
+  return fs.slice(0, fs.findIndex((f) => bear.frames[f].name === name)).reduce((t, f) => t + ms(f), 0);
+};
+
 // Цохилтын дараалал (Scott Pilgrim маягийн "juice"): бэлдэх → цохих → сум нисэх → онох агшинд хөлдөх (hit-stop)
 // → цагаан анивчилт + оч + дэлгэц чичрэх → хойш түлхэгдэж зөөлөн буцах.
-const WINDUP_MS = 130;
+// Од шидэх: гараа өргөх → оч → цэнэглэх (удаан) → smear (50ms) → гаргах: од ниснэ → дагах → буцах
+const WINDUP_MS = until('throw', 'throwSmear');
+const RELEASE_AT = until('throw', 'release');
 const STRIKE_MS = 110;
 const FLY_MS = 360;
-const HIT_AT = WINDUP_MS + STRIKE_MS + FLY_MS;
+const HIT_AT = RELEASE_AT + FLY_MS;
 const HITSTOP_MS = 80;
-// Давхиж сарвуудах: 4 хөлөөрөө нүдээр дагахуйц хурдаар давхиж очоод хоёр хөл дээрээ босож сарвуудна
-const GALLOP_STEP_MS = 120;
-const DASH_MS = GALLOP_STEP_MS * 8; // 2 бүтэн давхих цикл
-const CLAW_UP_MS = 140;
-const RUN_STEP_MS = 100;
-const RETURN_MS = 640;
+// Ойроос сарвуудах: бэлдэх (суух) → 2 хөлөөрөө гүйх → тоормослох → хумсаа өргөх → smear → сарвуудах → урагшаа харж
+// эргэх → толин тусгалаар гүйж буцах → тоормослох → эргэж boss руу харна
+const READY_MS = span('ready');
+// гүйлтийн бүтэн frame-ууд + тоормослох frame (сүүлийн алхам тасрахгүй)
+const DASH_MS = span('run') + ms(frames('run')[0]) + span('brake');
+const RETURN_MS = span('run') - ms(frames('run')[0]) + span('brake');
+const CLAW_HIT = until('claw', 'claw');
 // Boss давхиж цохих: нүдээр дагахуйц удаан гулсаж баавгайн яг урд зогсоод, хадуураа өргөж барьснаа дүүжилнэ
 const BOSS_DASH_MS = 960;
 const BOSS_WINDUP_MS = 240;
@@ -41,22 +61,20 @@ const TICK_MS = 160; // frame анимацийн хурд (~6 fps, pixel art-и�
 const GROUND = 300;
 const BOSS_LEFT = 28;
 const BEAR_RIGHT = 44;
-const BEAR_SHEET: SpriteKey = 'bear_battle_1144x122';
-const BEAR_FRAMES = 13;
-const { width: BEAR_W, height: BEAR_H } = frameSize(BEAR_SHEET, BEAR_FRAMES);
-/** bear_battle frame-ууд (mapgen_world.py bear_battle) */
-const F = {
-  idle: 0, breathe: 1, blink: 2, attack: 3, hurt: 4, flash: 5, windup: 6, charge: 7, follow: 8,
-  runA: 9, runB: 10, clawUp: 11, claw: 12,
-} as const;
-/** Шидэх frame-ийн сарвуу (frame-ийн зүүн дээд булангаас, dp): од эндээс ниснэ */
-const PAW = { x: 4, y: 64 };
-/** 4 хөлөөр давхих 4 frame (mapgen_world.py bear_gallop); баруун ирмэгээр нь зэрэгцүүлнэ */
-const GALLOP: SpriteKey = 'bear_gallop_512x122';
+const BEAR_SHEET: SpriteKey = 'bear_battle_728x512';
+const { width: BEAR_W } = frameSize(BEAR_SHEET, bear.frames.length, bear.columns);
+/** sheet-ийн pixel → dp */
+const PX = BEAR_W / bear.frameSize.w;
+/** хөлийн доод ирмэг frame-ийн дээд талаас (dp); доор нь газрын сүүдэр */
+const BEAR_FEET = bear.feet * PX;
+/** баавгай frame-ийн голд: зүүн, баруун талын хоосон зай (гар сунах, оч) */
+const BEAR_PAD = bear.pad * PX;
+/** гаргах frame-ийн сарвуу (frame-ийн зүүн дээд булангаас, dp): од эндээс ниснэ */
+const PAW = { x: bear.paw[0] * PX, y: bear.paw[1] * PX };
+const BLINK = frames('blink')[0];
 const smooth = Easing.inOut(Easing.sin);
 
 type Point = { x: number; y: number };
-type Pose = keyof typeof F;
 type BossPose = 'idle' | keyof typeof BOSS_FRAME;
 
 /** Boss-ын нүд ба баавгайн сарвууны од: сум эндээс ниснэ / энд онох */
@@ -65,7 +83,7 @@ function aim(boss: Boss, width: number): { boss: Point; bear: Point; bossTop: nu
   const bossTop = GROUND - h - (boss.floats ? 24 : 0);
   return {
     boss: { x: BOSS_LEFT + w / 2, y: bossTop + h * 0.35 },
-    bear: { x: width - BEAR_RIGHT - BEAR_W + PAW.x, y: GROUND - BEAR_H + PAW.y },
+    bear: { x: width - BEAR_RIGHT - BEAR_W + PAW.x, y: GROUND - BEAR_FEET + PAW.y },
     bossTop,
   };
 }
@@ -109,19 +127,31 @@ export function BossArena({
   const size = frameSize(boss.battle, boss.frames);
   const { bossTop } = aim(boss, width);
 
-  // Баавгайн frame: тайван үед амьсгалж (4 tick тутам), хааяа нүдээ ирмэнэ; цохилтын үед pose-ийн frame
   const [tick, setTick] = useState(0);
-  const [pose, setPose] = useState<Pose>('idle');
   const [bossPose, setBossPose] = useState<BossPose>('idle');
   const [weapon, setWeapon] = useState<number | null>(null); // boss-ын зэвсгийн frame (давхиж цохих үед)
-  const [gallop, setGallop] = useState<number | null>(null); // баавгай 4 хөлөөр давхиж буй frame
+  // Баавгай: тайван үед idle tag (амьсгал, ping-pong), хааяа нүдээ ирмэнэ; цохилтын үед `act` (mirror = буцаж гүйх)
+  const [idle, setIdle] = useState(frames('idle')[0]);
+  const [act, setAct] = useState<{ frame: number; mirror: boolean } | null>(null);
   useEffect(() => {
     if (reduce) return;
     const t = setInterval(() => setTick((n) => n + 1), TICK_MS);
     return () => clearInterval(t);
   }, [reduce]);
-  const idleFrame = tick % 23 === 22 ? F.blink : tick % 8 < 4 ? F.idle : F.breathe;
-  const bearFrame = pose === 'idle' ? idleFrame : F[pose];
+  useEffect(() => {
+    if (reduce) return;
+    const seq = frames('idle');
+    let i = 0;
+    let t: ReturnType<typeof setTimeout>;
+    const next = () => {
+      const f = i > 0 && i % (seq.length * 3) === 0 ? BLINK : seq[i % seq.length]; // 3 амьсгал тутам ирмэнэ
+      i++;
+      setIdle(f);
+      t = setTimeout(next, ms(f));
+    };
+    next();
+    return () => clearTimeout(t);
+  }, [reduce]);
   // Boss хөвөх: 2 tick тутам дараагийн давхарга (0/1/2px), ялагдсан бол газардана
   const hover = bossPose === 'idle' && !won ? HOVER[Math.floor(tick / 2) % HOVER.length] : 0;
   const bossFrame = bossPose === 'idle' ? hover : BOSS_FRAME[bossPose];
@@ -143,18 +173,20 @@ export function BossArena({
     const melee = strike.n % 2 === 0; // давхиж очоод ойроос
     const claw = strike.correct && melee;
     const bossDash = !strike.correct && melee;
-    const hitAt = claw ? DASH_MS + CLAW_UP_MS : bossDash ? BOSS_DASH_MS + BOSS_WINDUP_MS + SWING_MS : HIT_AT;
+    const arrive = READY_MS + DASH_MS; // гүйж очоод тоормослож дуусах агшин
+    const hitAt = claw ? arrive + CLAW_HIT : bossDash ? BOSS_DASH_MS + BOSS_WINDUP_MS + SWING_MS : HIT_AT;
     const [from, to] = strike.correct ? [at.bear, at.boss] : [at.boss, at.bear];
     const dir = strike.correct ? -1 : 1; // зөв: баавгай зүүн тийш дайрна, boss зүүн тийш түлхэгдэнэ; буруу: эсрэгээрээ
     const [attacker, target]: SharedValue<number>[] = strike.correct ? [bearX, bossX] : [bossX, bearX];
 
     const bossRight = BOSS_LEFT + frameSize(boss.battle, boss.frames).width;
-    const bearBody = width - BEAR_RIGHT - BEAR_W + 16; // баавгайн frame-ийн зүүн талын 16dp нь хоосон (гарын зай)
+    const bearBody = width - BEAR_RIGHT - BEAR_W + BEAR_PAD;
     if (claw) {
-      // boss-ын дэргэд хүртэл давхиж, сарвуудаад буцаж гүйнэ
+      // суугаад арагш бага зэрэг (anticipation) → boss-ын дэргэд хүртэл гүйж сарвуудаад → эргэж харан буцаж гүйнэ
       bearX.value = withSequence(
+        withTiming(3, { duration: READY_MS, easing: Easing.out(Easing.quad) }),
         withTiming(-(bearBody - bossRight + 8), { duration: DASH_MS, easing: smooth }),
-        withDelay(CLAW_UP_MS + 220, withTiming(0, { duration: RETURN_MS, easing: smooth })),
+        withDelay(span('claw') + span('turn'), withTiming(0, { duration: RETURN_MS, easing: smooth })),
       );
     } else if (bossDash) {
       // баавгайн яг урд хүртэл гулсаж, хадуураа дүүжлээд буцна
@@ -167,11 +199,11 @@ export function BossArena({
       setShot(strike.correct ? 'icon_star_24x24' : 'fx_magic_22x22');
       attacker.value = withSequence(
         withTiming(-dir * 7, { duration: WINDUP_MS, easing: Easing.out(Easing.quad) }), // бэлдэх: арагшаа
-        withTiming(dir * 26, { duration: STRIKE_MS, easing: Easing.in(Easing.quad) }), // цохих: огцом урагш
+        withTiming(dir * 26, { duration: RELEASE_AT - WINDUP_MS + STRIKE_MS, easing: Easing.in(Easing.quad) }), // цохих: огцом урагш
         withDelay(FLY_MS, withTiming(0, { duration: 420, easing: smooth })), // буцах
       );
       fly.value = 0;
-      fly.value = withDelay(WINDUP_MS + STRIKE_MS, withTiming(1, { duration: FLY_MS, easing: Easing.in(Easing.quad) }));
+      fly.value = withDelay(RELEASE_AT, withTiming(1, { duration: FLY_MS, easing: Easing.in(Easing.quad) }));
     }
     // hit-stop: оносон тал HITSTOP_MS хөлдөөд дараа нь хойш түлхэгдэнэ
     target.value = withDelay(
@@ -188,32 +220,42 @@ export function BossArena({
     // Pose ба очны frame (JS timer)
     const timers: ReturnType<typeof setTimeout>[] = [];
     const later = (ms: number, fn: () => void) => timers.push(setTimeout(fn, ms));
-    const run = (t0: number, t1: number) => {
-      for (let t = t0, k = 0; t < t1; t += RUN_STEP_MS, k++) later(t, () => setPose(k % 2 ? 'runB' : 'runA'));
+    /** tag-ийн frame-уудыг `t0`-оос өөр өөрийн хугацаагаар; дуусах агшныг буцаана */
+    const play = (tag: Tag, t0: number, mirror = false) =>
+      frames(tag).reduce((t, f) => {
+        later(t, () => setAct({ frame: f, mirror }));
+        return t + ms(f);
+      }, t0);
+    /** `t0`–`t1` хооронд tag-ийг давтана (гүйлт); сүүлийн `tail` ms-ийг дараагийн frame-д үлдээнэ */
+    const loop = (tag: Tag, t0: number, t1: number, mirror: boolean) => {
+      const fs = frames(tag);
+      for (let t = t0, k = 0; t < t1; k++) {
+        const f = fs[k % fs.length];
+        later(t, () => setAct({ frame: f, mirror }));
+        t += ms(f);
+      }
     };
-    // оносон тал анивчаад цочино
+    const rest = (t: number) => later(t, () => setAct(null));
+    // оносон boss анивчаад цочино
     const hit = (set: (p: 'flash' | 'hurt' | 'idle') => void) => {
       later(hitAt, () => set('flash'));
       later(hitAt + HITSTOP_MS + 40, () => set('hurt'));
       later(hitAt + 560, () => set('idle'));
     };
+    // оносон баавгай: цагаан анивчиж (hit-stop) цочино
+    const hurt = () => rest(play('hurt', hitAt));
     if (claw) {
-      for (let t = 0, k = 0; t < DASH_MS; t += GALLOP_STEP_MS, k++) later(t, () => setGallop(k % 4));
-      later(DASH_MS, () => {
-        setGallop(null);
-        setPose('clawUp');
-      });
-      later(hitAt, () => setPose('claw'));
-      run(hitAt + 220, hitAt + 220 + RETURN_MS);
-      later(hitAt + 220 + RETURN_MS, () => setPose('idle'));
+      play('ready', 0);
+      loop('run', READY_MS, arrive - span('brake'), false);
+      const turn = play('claw', play('brake', arrive - span('brake')));
+      const home = turn + span('turn') + RETURN_MS;
+      play('turn', turn);
+      loop('run', turn + span('turn'), home - span('brake'), true);
+      play('brake', home - span('brake'), true);
+      rest(play('turn', home));
       hit(setBossPose);
     } else if (strike.correct) {
-      // шидэх: гараа өргөж сарвуунд оч → од цэнэглэгдэнэ → гараа урагш шидэж гэрэл тэсэрнэ → дагах
-      setPose('windup');
-      later(WINDUP_MS / 2, () => setPose('charge'));
-      later(WINDUP_MS, () => setPose('attack'));
-      later(WINDUP_MS + STRIKE_MS, () => setPose('follow'));
-      later(HIT_AT + 120, () => setPose('idle'));
+      rest(play('throw', 0));
       hit(setBossPose);
     } else if (bossDash) {
       // boss хадуураа өргөөд гулсана → баавгайн урд дүүжилж цохино → хадуураа нууж буцна
@@ -228,11 +270,11 @@ export function BossArena({
         setBossPose('idle');
         setWeapon(null);
       });
-      hit(setPose);
+      hurt();
     } else {
-      later(WINDUP_MS, () => setBossPose('cast'));
+      later(RELEASE_AT, () => setBossPose('cast'));
       later(HIT_AT + 120, () => setBossPose('idle'));
-      hit(setPose);
+      hurt();
     }
     const sparkId: SpriteKey = melee ? 'fx_slash_144x48' : strike.correct ? 'fx_spark_90x30' : 'fx_spark_magic_90x30';
     [0, 1, 2].forEach((frame) => later(hitAt + frame * 70, () => setSpark({ id: sparkId, at: to, frame })));
@@ -301,12 +343,11 @@ export function BossArena({
             {weapon !== null && weapon > 0 && boss.weapon ? <Weapon {...boss.weapon} frame={weapon} /> : null}
           </Animated.View>
 
-          <Animated.View style={[styles.abs, { right: BEAR_RIGHT, top: GROUND - BEAR_H, zIndex: 2 }, bearStyle]}>
-            {gallop === null ? (
-              <SheetFrame id={BEAR_SHEET} frames={BEAR_FRAMES} frame={bearFrame} label={S.boss.bear} />
-            ) : (
-              <SheetFrame id={GALLOP} frames={4} frame={gallop} label={S.boss.bear} />
-            )}
+          <Animated.View style={[styles.abs, { right: BEAR_RIGHT, top: GROUND - BEAR_FEET, zIndex: 2 }, bearStyle]}>
+            {/* буцахдаа толин тусгал: бие frame-ийн голд тул байрнаасаа хөдлөхгүй */}
+            <View style={act?.mirror ? styles.mirror : null}>
+              <SheetFrame id={BEAR_SHEET} frames={bear.frames.length} cols={bear.columns} frame={act?.frame ?? idle} label={S.boss.bear} />
+            </View>
           </Animated.View>
 
           <Animated.View style={[styles.abs, styles.origin, shotStyle]}>
@@ -327,7 +368,7 @@ export function BossArena({
 
       {/* Довтолгоонд л гардаг зургуудыг урьдчилж ачаална: анх гарах агшинд хоосон харагдаж "алга болохгүй" */}
       <View style={styles.preload}>
-        {[GALLOP, 'fx_slash_144x48', 'fx_spark_90x30', 'fx_spark_magic_90x30', 'fx_magic_22x22', 'icon_star_24x24', boss.weapon?.sheet, boss.white]
+        {['fx_slash_144x48', 'fx_spark_90x30', 'fx_spark_magic_90x30', 'fx_magic_22x22', 'icon_star_24x24', boss.weapon?.sheet, boss.white]
           .filter((id): id is SpriteKey => !!id)
           .map((id) => (
             <Sprite key={id} id={id} />
@@ -371,6 +412,7 @@ function Weapon({ sheet, left, top, frame }: { sheet: SpriteKey; left: number; t
 const styles = StyleSheet.create({
   abs: { position: 'absolute' },
   preload: { position: 'absolute', left: 0, top: 0, opacity: 0 },
+  mirror: { transform: [{ scaleX: -1 }] },
   origin: { left: 0, top: 0, zIndex: 4 },
   // boss-ын гэр: доод талдаа наалдаж, хэвтээгээр төвлөрнө (430 dp өргөн тул нарийн дэлгэцэнд хоёр захаас тайрагдана)
   lair: { position: 'absolute', bottom: 0, left: '50%', marginLeft: -215 },

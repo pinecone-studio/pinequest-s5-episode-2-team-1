@@ -21,11 +21,12 @@ export interface UserRow {
   shield_bought_day: string | null;
   shield_used_day: string | null;
   equipped: string;
+  bosses_beaten: number;
   created_at: number;
 }
 
 const USER_COLUMNS =
-  'id, username, grade, tier, xp, points, streak, last_streak_day, shield_held, shield_bought_day, shield_used_day, equipped, created_at';
+  'id, username, grade, tier, xp, points, streak, last_streak_day, shield_held, shield_bought_day, shield_used_day, equipped, bosses_beaten, created_at';
 
 export async function getUserRow(db: D1Database, id: number): Promise<UserRow> {
   const row = await db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE id = ?`).bind(id).first<UserRow>();
@@ -111,6 +112,7 @@ export function buildMe(user: UserRow, today: string, todayTasks: number, catalo
     equipped,
     avatar: avatarLook(equipped, catalog),
     maxStake: maxStake(user.points),
+    bossesBeaten: user.bosses_beaten,
     today,
   };
 }

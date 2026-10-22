@@ -43,6 +43,12 @@ export const GAME = {
     COOLDOWN_DAYS: 7,
   },
 
+  /** Адал явдлын газрын зураг (mobile/src/lib/pixelBear/world.json-тэй ижил): бүлэг бүрийн сүүлийн зангилаа boss. */
+  BOSS: {
+    UNIT_SIZE: 16,
+    COUNT: 3,
+  },
+
   DUEL: {
     QUESTIONS: 3,
     QUESTION_MS: 20_000,

@@ -48,11 +48,14 @@ const unitTop = (k: number) => NODES[k * UNIT_SIZE].y - NODES[0].y;
 export function PathMap({
   current,
   from,
+  beaten,
   subject,
   onNodePress,
 }: {
   current: number;
   from: number | null;
+  /** ялсан boss-ын тоо: ялсан бүлэгт туг, бусдад boss */
+  beaten: number;
   subject: Subject;
   onNodePress: (i: number, status: NodeStatus) => void;
 }) {
@@ -106,7 +109,7 @@ export function PathMap({
       }).reverse()}
 
       {UNITS.map((k) => (
-        <UnitProps key={k} k={k} current={current} />
+        <UnitProps key={k} k={k} current={current} beaten={k < beaten} />
       ))}
 
       {/* Одоогийн зангилаа: цагираг, сум */}
@@ -141,7 +144,7 @@ export function PathMap({
 }
 
 /** Бүлгийн props: нахиа (3), бэлэг (9), хэцүү сорил (12), boss эсвэл ялалтын туг (15), бүлгийн нэр. */
-function UnitProps({ k, current }: { k: number; current: number }) {
+function UnitProps({ k, current, beaten }: { k: number; current: number; beaten: boolean }) {
   const base = k * UNIT_SIZE;
   const sapling = NODES[base + 3];
   const gift = NODES[base + 9];
@@ -208,7 +211,7 @@ function UnitProps({ k, current }: { k: number; current: number }) {
       ) : null}
 
       {/* Boss: ялагдах хүртлээ зангилааны хажууд, дараа нь туг */}
-      {current <= boss.i ? (
+      {!beaten ? (
         <>
           <View style={[styles.abs, { left: boss.x + BOSS_DX - bs.width / 2, top: bossTop }]}>
             {b.frames > 1 ? (
