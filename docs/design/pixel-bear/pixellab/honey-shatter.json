@@ -1,0 +1,209 @@
+{
+ "frames": [
+  {
+   "filename": "honey-pot-shatter 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 69,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 69,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 69,
+    "h": 76
+   },
+   "pivot": {
+    "x": 0.4057971014492754,
+    "y": 0.3815789473684211
+   },
+   "duration": 63
+  },
+  {
+   "filename": "honey-pot-shatter 1.png",
+   "frame": {
+    "x": 69,
+    "y": 0,
+    "w": 69,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 69,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 69,
+    "h": 76
+   },
+   "pivot": {
+    "x": 0.4057971014492754,
+    "y": 0.3815789473684211
+   },
+   "duration": 63
+  },
+  {
+   "filename": "honey-pot-shatter 2.png",
+   "frame": {
+    "x": 138,
+    "y": 0,
+    "w": 69,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 69,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 69,
+    "h": 76
+   },
+   "pivot": {
+    "x": 0.4057971014492754,
+    "y": 0.3815789473684211
+   },
+   "duration": 63
+  },
+  {
+   "filename": "honey-pot-shatter 3.png",
+   "frame": {
+    "x": 0,
+    "y": 76,
+    "w": 69,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 69,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 69,
+    "h": 76
+   },
+   "pivot": {
+    "x": 0.4057971014492754,
+    "y": 0.3815789473684211
+   },
+   "duration": 63
+  },
+  {
+   "filename": "honey-pot-shatter 4.png",
+   "frame": {
+    "x": 69,
+    "y": 76,
+    "w": 69,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 69,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 69,
+    "h": 76
+   },
+   "pivot": {
+    "x": 0.4057971014492754,
+    "y": 0.3815789473684211
+   },
+   "duration": 63
+  },
+  {
+   "filename": "honey-pot-shatter 5.png",
+   "frame": {
+    "x": 138,
+    "y": 76,
+    "w": 69,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 69,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 69,
+    "h": 76
+   },
+   "pivot": {
+    "x": 0.4057971014492754,
+    "y": 0.3815789473684211
+   },
+   "duration": 63
+  },
+  {
+   "filename": "honey-pot-shatter 6.png",
+   "frame": {
+    "x": 0,
+    "y": 152,
+    "w": 69,
+    "h": 76
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 69,
+    "h": 76
+   },
+   "sourceSize": {
+    "w": 69,
+    "h": 76
+   },
+   "pivot": {
+    "x": 0.4057971014492754,
+    "y": 0.3815789473684211
+   },
+   "duration": 63
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "honey-pot-shatter.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 207,
+   "h": 228
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 28,
+   "y": 29
+  },
+  "frameTags": [
+   {
+    "name": "honey-pot-shatter",
+    "from": 0,
+    "to": 6,
+    "direction": "forward"
+   }
+  ]
+ }
+}

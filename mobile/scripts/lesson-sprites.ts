@@ -1,137 +1,52 @@
 /**
- * Хичээлийн дэлгэцийн баавгай ба дэвсгэр: урагшаа харсан «манай баавгай»-н frame-ууд (bear_lesson.png, 7 баганатай
- * grid) + metadata (mobile/src/lib/pixelBear/bear-lesson.json) + хичээлийн булан (lesson_bg.png). Rig: ./bear-rig.ts.
+ * Хичээлийн дэлгэцийн баавгай ба дэвсгэр: урагшаа харсан баавгайн frame-ууд (bear_lesson.png, grid) + metadata
+ * (mobile/src/lib/pixelBear/bear-lesson.json) + хичээлийн булан (lesson_bg.png).
  *
- *   pixel-art-creator: 132×156 px дэвсгэр (3×-ээр 396×468 dp): ягаан-нил хана, нар жаргах цонх, хөшиг, номын тавиур,
- *     модон шал, хивс. Баавгай газар дээрээ зогсоно (хөвөхгүй).
- *   pixel-art-animator: tag бүр frame-ийн өөр өөр хугацаатай. Зөв: суух (бэлдэх) → үсрэх → оргил (од) → буух
- *     (squash) → гараа даллах. Буруу: цочих → бөхийх (хөлс) → толгой сэгсрэх → гунигтай. Бодох: эрүүгээ барих.
- *   pixel-art-professional: Bayer dither-тэй gradient, hue-shift-тэй шат, цонхны гэрэл шалан дээр, selective outline.
- *   pixel-art-exporter: grid sheet + JSON + APNG урьдчилсан харагдац (дэвсгэр дээр, 3×).
+ * Баавгай: PixelLab (pixellab.ai) map_bear.png-ээс үүсгэсэн дүр ба хөдөлгөөнүүд, эх нь
+ * docs/design/pixel-bear/pixellab/bear.png + .json (south: idle, think, cheer, sad). Энд зөвхөн тайрч, хугацаа,
+ * tag өгнө. Дэвсгэр: 132×156 px (3×-ээр 396×468 dp) нил хана, нар жаргах цонх, хөшиг, номын тавиур, модон шал, хивс.
  *
  * Ажиллуулах:  npm run sprites:lesson && npm run sprites   (mobile/)
  * Шалгах:      node scripts/lesson-sprites.ts --preview <dir>
  */
 import { writeFileSync } from 'node:fs';
+import { blank, type Img, writeApng, writePng } from './png.ts';
 import {
   BAYER,
-  breathe,
-  BX,
+  bbox,
   compose,
   contact,
-  FEET,
-  FH,
-  figure,
-  FRONT_SH,
   type Frame,
-  FW,
-  glow,
   hex,
-  type Limb,
   type P,
+  pixellab,
   put,
   type RGB,
   ramp,
-  scale,
-  selout,
   SHADOW,
-  source,
   SPRITES,
-  stand,
+  scale,
   tagOf,
   toSheet,
-} from './bear-rig.ts';
-import { blank, type Img, writeApng, writePng } from './png.ts';
+  trim,
+} from './sprite-kit.ts';
 
 const META = new URL('../src/lib/pixelBear/bear-lesson.json', import.meta.url);
 const COLS = 7;
 
-// ---------- баавгай (урагшаа харсан) ----------
-const front = source('map_bear');
-const shut = source('map_bear_blink');
-
-const DROP = ramp('#2a3f7a', '#7cc8ff', '#e8f8ff');
-/** хөлсний дусал (3×5): хүрээ, дүүргэлт, гялбаа */
-function sweat(img: Img, x: number, y: number) {
-  const shape = ['.o.', 'olo', 'ofo', 'ofo', '.o.'];
-  shape.forEach((row, dy) =>
-    [...row].forEach((ch, dx) => {
-      if (ch !== '.') put(img, x + dx, y + dy, DROP[ch === 'o' ? 0 : ch === 'f' ? 1 : 2]);
-    }),
-  );
-}
-
-/** selective outline → од, хөлс. Газрын сүүдэр frame-д байхгүй: үсрэхэд апп баавгайг дээш (translateY) зөөлөн
- * өргөж, тусдаа сүүдрийг (lesson_shadow) жижигрүүлнэ, тиймээс толгой frame-ээс тайрагдахгүй. */
-function done(r: ReturnType<typeof figure>, o: { drop?: P; stars?: P[] } = {}): Img {
-  let img = selout(r.img);
-  for (const s of o.stars ?? []) img = glow(img, s, 'star');
-  if (o.drop) sweat(img, o.drop[0], o.drop[1]);
-  return img;
-}
-
-/** `lift` = газраас өргөх өндөр (px): апп frame гарах агшинд тэр өндөрт зөөлөн (ease) хүргэнэ */
-const frames: (Frame & { lift: number })[] = [];
-const add = (name: string, duration: number, img: Img, lift = 0) => frames.push({ name, duration, img, lift });
-
-/** хоёр гар мөрнөөс (FRONT_SH) толин тусгалаар тэгш хэмтэй: `elbow`, `paw` = зүүн гарын мөрнөөс шилжилт (сөрөг x = гадагш) */
-const both = (elbow: P, paw: P): [Limb, Limb] => {
-  const [[lx, ly], [rx, ry]] = FRONT_SH;
-  return [
-    [
-      [lx + elbow[0], ly + elbow[1]],
-      [lx + paw[0], ly + paw[1]],
-    ],
-    [
-      [rx - elbow[0], ry + elbow[1]],
-      [rx - paw[0], ry + paw[1]],
-    ],
-  ];
-};
-const pose = (src: Img, [near, far]: [Limb, Limb], o: Partial<Parameters<typeof figure>[0]> = {}) => figure({ src, near, far, front: true, ...o });
-
-const IDLE = both([-3, 5], [-3, 9]); // гар биеийн хажуугаар унжина
-const IDLE_LOW = both([-3, 6], [-3, 10]); // амьсгал: мөр 1px суух
-const BACK = both([-3, 6], [0, 11]); // суух/буух: гар гуяны урд
-const UP = both([-7, -5], [-10, -13]); // хоёр гараа V хэлбэрээр дээш (толгойноос гадагш)
-const PUMP = both([-7, -8], [-8, -17]); // даллах: сарвуу илүү өндөрт
-const STARTLE = both([-5, 3], [-3, -4]); // цочиход гараа мөрний өндөрт
-const LOW = both([-2, 6], [-1, 11]); // гунигтай: гар биедээ наалдаж унжина
-const STARS_UP: P[] = [
-  [BX - 6, 15],
-  [BX + 40, 15],
-];
-
-// зогсох: амьсгалд гар эхэлж суугаад толгой дагана (overlapping action); ping-pong
-add('idle', 520, done(pose(front, IDLE)));
-add('breatheA', 150, done(pose(front, IDLE_LOW)));
-add('breatheB', 520, done(pose(breathe(front), IDLE_LOW)));
-add('blink', 130, done(pose(shut, IDLE)));
-
-// бодох: зүүн сарвуугаар эрүүгээ барьж, хааяа товшино
-const [, IDLE_R] = IDLE;
-const CHIN: Limb = [
-  [FRONT_SH[0][0], FRONT_SH[0][1] + 8],
-  [FRONT_SH[0][0] + 5, FRONT_SH[0][1] - 4],
-];
-add('think', 700, done(pose(front, [CHIN, IDLE_R])));
-add('thinkTap', 220, done(pose(front, [[CHIN[0], [CHIN[1][0], CHIN[1][1] + 1]], IDLE_R])));
-
-// зөв: суух (бэлдэх) → үсрэх → оргил (од) → унах → буух (squash) → гараа даллах
-add('crouch', 110, done(pose(front, BACK, { bob: 2, legs: stand(1, false) })));
-add('jump', 90, done(pose(front, UP)), 5);
-add('peak', 200, done(pose(front, UP), { stars: [...STARS_UP, [BX + 17, 3]] }), 9);
-add('fall', 90, done(pose(front, UP)), 4);
-add('land', 120, done(pose(front, BACK, { bob: 2, legs: stand(1, false) })));
-add('waveA', 180, done(pose(front, UP), { stars: [STARS_UP[0]] }));
-add('waveB', 180, done(pose(shut, PUMP), { stars: [STARS_UP[1]] }));
-
-// буруу: цочих → бөхийх (хөлс) → толгой сэгсрэх → гунигтай (бөхийсөн хэвээр)
-add('flinch', 140, done(pose(shut, STARTLE, { legs: stand(1) }), { drop: [BX + 29, 9] }), 1);
-add('slump', 260, done(pose(breathe(shut), LOW, { bob: 1, legs: stand(0, false) }), { drop: [BX + 29, 11] }));
-add('shakeL', 130, done(pose(breathe(front), LOW, { bob: 1, lean: -1, legs: stand(0, false) }), { drop: [BX + 28, 12] }));
-add('shakeR', 130, done(pose(breathe(front), LOW, { bob: 1, lean: 1, legs: stand(0, false) }), { drop: [BX + 30, 12] }));
-add('sad', 900, done(pose(breathe(front), LOW, { bob: 1, legs: stand(0, false) }), { drop: [BX + 29, 13] }));
+// ---------- баавгай (урагшаа харсан, PixelLab) ----------
+const bear = pixellab('bear');
+const all: Frame[] = [];
+const add = (prefix: string, imgs: Img[], ms: (i: number) => number) => imgs.forEach((img, i) => all.push({ name: `${prefix}${i}`, duration: ms(i), img }));
+add('idle', bear.frames('idle', 'south'), () => 220); // амьсгал (ping-pong)
+add('think', bear.frames('think', 'south'), () => 150); // эрүүгээ барих (ping-pong)
+add('cheer', bear.frames('cheer', 'south'), (i) => (i >= 4 && i <= 6 ? 90 : 110)); // суугаад үсэрч, гараа дэлгэнэ
+add('sad', bear.frames('sad', 'south'), (i, n = 8) => (i === n ? 700 : 130)); // цочиж, бөхийж гунигтай зогсоно
+const { frames, dx, dy } = trim(all);
+/** хөл газар хүрэх мөр ба биеийн голын багана (тайрсан frame дотор) */
+const [bx0, , bx1, by1] = bbox([bear.rotation('south')]);
+const FEET = by1 - dy;
+const PIVOT = (bx0 + bx1) / 2 - dx;
 
 // ---------- дэвсгэр: хичээлийн булан (132×156 px, 3×) ----------
 const BW = 132;
@@ -269,12 +184,11 @@ function shadow(): Img {
 // ---------- sheet + JSON ----------
 const tag = tagOf(frames);
 const tags = {
-  idle: tag('idle', 'breatheB', 'pingpong'),
-  blink: tag('blink'),
-  think: tag('think', 'thinkTap', 'pingpong'),
-  cheer: tag('crouch', 'waveB'),
-  wave: tag('waveA', 'waveB'),
-  oops: tag('flinch', 'sad'),
+  idle: tag('idle0', 'idle3', 'pingpong'),
+  think: tag('think0', 'think8', 'pingpong'),
+  cheer: tag('cheer0', 'cheer10'),
+  wave: tag('cheer7', 'cheer10'),
+  oops: tag('sad0', 'sad8'),
 };
 const sheet = toSheet(frames, COLS);
 const bg = background();
@@ -286,12 +200,12 @@ if (preview < 0) {
   writePng(new URL('lesson_shadow.png', SPRITES), shadow());
   const meta = {
     sheet: 'bear_lesson',
-    frameSize: { w: FW, h: FH },
+    frameSize: { w: frames[0].img.w, h: frames[0].img.h },
     columns: COLS,
     feet: FEET,
-    pad: BX,
+    pivot: PIVOT,
     background: { w: BW, h: BH, floor: FLOOR, rug: RUG },
-    frames: frames.map(({ name, duration, lift }) => ({ name, duration, lift })),
+    frames: frames.map(({ name, duration }) => ({ name, duration, lift: 0 })),
     tags,
   };
   writeFileSync(META, `${JSON.stringify(meta, null, 2)}\n`);
@@ -300,7 +214,7 @@ if (preview < 0) {
   const dir = `${process.argv[preview + 1]}/`;
   writePng(`${dir}lesson_contact.png`, contact(sheet));
   // дэвсгэр дээр хивсний төвд зогсоосон APNG (3×, апп-тай ижил)
-  const at0: P = [RUG[0] - Math.round(FW / 2), RUG[1] - FEET];
+  const at0: P = [RUG[0] - Math.round(PIVOT), RUG[1] - FEET];
   const seq = (t: keyof typeof tags) => {
     const { from, to, direction } = tags[t];
     const f = Array.from({ length: to - from + 1 }, (_, i) => from + i);
@@ -309,10 +223,10 @@ if (preview < 0) {
   const shot = (ids: number[], name: string) =>
     writeApng(
       `${dir}${name}.png`,
-      ids.map((i) => scale(compose(compose(bg, shadow(), RUG[0] - 18, RUG[1] - 2), frames[i].img, at0[0], at0[1] - frames[i].lift), 3)),
+      ids.map((i) => scale(compose(compose(bg, shadow(), RUG[0] - 18, RUG[1] - 2), frames[i].img, at0[0], at0[1]), 3)),
       ids.map((i) => frames[i].duration),
     );
-  shot([...seq('idle'), ...seq('idle'), tags.blink.from], 'lesson_idle');
+  shot([...seq('idle'), ...seq('idle')], 'lesson_idle');
   shot([...seq('think'), ...seq('think')], 'lesson_think');
   shot([...seq('idle'), ...seq('cheer'), ...seq('wave'), ...seq('wave'), ...seq('idle')], 'lesson_correct');
   shot([...seq('idle'), ...seq('oops'), ...seq('idle')], 'lesson_wrong');
