@@ -40,6 +40,7 @@ export default function TaskScreen() {
   const [feedback, setFeedback] = useState<AnswerResponse | null>(null);
   const [pending, setPending] = useState<TaskResult | null>(null);
   const [result, setResult] = useState<TaskResult | null>(null);
+  const [recovery, setRecovery] = useState(false); // даалгавар дуусаад нөхөх салаа зам нээгдсэн
   const [error, setError] = useState<{ message: string; fatal: boolean } | null>(null);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -47,6 +48,7 @@ export default function TaskScreen() {
   const load = useCallback(async () => {
     setTask(null);
     setResult(null);
+    setRecovery(false);
     setPending(null);
     setFeedback(null);
     setSelected(null);
@@ -81,8 +83,7 @@ export default function TaskScreen() {
 
   function goNext() {
     if (pending) {
-      if (feedback?.recovery) router.replace(`/recovery/${subject}`);
-      else setResult(pending);
+      setResult(pending);
       return;
     }
     if (!task) return;
@@ -107,6 +108,7 @@ export default function TaskScreen() {
       void Haptics.notificationAsync(r.correct ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error);
       if (r.result) {
         setPending(r.result);
+        setRecovery(!!r.recovery);
         setMe(r.result.me);
       }
     } catch (e) {
@@ -127,8 +129,8 @@ export default function TaskScreen() {
       setAnswered((n) => n + 1);
       if (r.result) {
         setMe(r.result.me);
-        if (r.recovery) router.replace(`/recovery/${subject}`);
-        else setResult(r.result);
+        setRecovery(!!r.recovery);
+        setResult(r.result);
         return;
       }
       goNext();
@@ -137,7 +139,8 @@ export default function TaskScreen() {
     }
   }
 
-  if (result) return <RewardView result={result} onAgain={load} />;
+  // Шагналаа (XP, шат, streak) эхлээд харуулна; салаа зам нээгдсэн бол тэндээс шууд руу нь орно
+  if (result) return <RewardView result={result} onAgain={load} onRecovery={recovery ? () => router.replace(`/recovery/${subject}`) : undefined} />;
 
   // Баавгай: бодож буй (шилтэй) → зөв (баярласан) → буруу (ядарсан)
   const mood: 'think' | 'right' | 'wrong' = feedback ? (feedback.correct ? 'right' : 'wrong') : 'think';
@@ -282,7 +285,7 @@ export default function TaskScreen() {
 
               {feedback ? (
                 <Button
-                  title={pending ? (feedback.recovery ? S.lesson.toRecovery : S.lesson.result) : S.lesson.next}
+                  title={pending ? S.lesson.result : S.lesson.next}
                   variant={feedback.correct || pending ? 'lime' : 'primary'}
                   onPress={goNext}
                 />

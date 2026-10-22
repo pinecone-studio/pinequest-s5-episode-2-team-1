@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { api, errorText } from '@/api/client';
+import { ApiError, api, errorText } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { OptionButton, type OptionState } from '@/components/OptionButton';
@@ -67,6 +67,8 @@ export default function RecoveryScreen() {
       setVerdict({ correct: r.correct, explanation: r.explanation, next: r.recovery });
       void Haptics.notificationAsync(r.correct ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error);
     } catch (e) {
+      // Өөр төхөөрөмж/давхар хүсэлтээр энэ асуулт аль хэдийн давсан: одоогийн төлвийг дахин ачаална
+      if (e instanceof ApiError && e.code === 'ALREADY_ANSWERED') return void load();
       setError(errorText(e));
     } finally {
       setBusy(false);
