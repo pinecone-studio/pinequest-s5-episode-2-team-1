@@ -5,7 +5,7 @@ import { SUBJECTS } from '../config/game';
 import type { AppEnv } from '../env';
 import { ApiError, parseId, readBody } from '../lib/errors';
 import { requireAuth, userIdForToken } from '../lib/session';
-import { acceptChallenge, cancelChallenge, createChallenge, duelRoomName, getDuelSummary, lobby } from '../services/duels';
+import { acceptChallenge, cancelChallenge, createChallenge, duelRoomName, getDuelSummary, joinByCode, lobby } from '../services/duels';
 
 export const duelRoutes = new Hono<AppEnv>();
 
@@ -14,12 +14,20 @@ duelRoutes.get('/', requireAuth, async (c) => {
 });
 
 duelRoutes.post('/', requireAuth, async (c) => {
-  const body = await readBody(c, z.object({ subject: z.enum(SUBJECTS), stake: z.number() }));
-  return c.json<DuelResponse>({ duel: await createChallenge(c.env.DB, c.get('userId'), body.subject, body.stake) }, 201);
+  const body = await readBody(
+    c,
+    z.object({ subject: z.enum(SUBJECTS), stake: z.number(), visibility: z.enum(['public', 'private']).default('public') }),
+  );
+  return c.json<DuelResponse>({ duel: await createChallenge(c.env.DB, c.get('userId'), body.subject, body.stake, body.visibility) }, 201);
+});
+
+duelRoutes.post('/join', requireAuth, async (c) => {
+  const body = await readBody(c, z.object({ code: z.string().max(20) }));
+  return c.json<DuelResponse>({ duel: await joinByCode(c.env, c.get('userId'), body.code) });
 });
 
 duelRoutes.get('/:id', requireAuth, async (c) => {
-  return c.json<DuelResponse>({ duel: await getDuelSummary(c.env.DB, parseId(c.req.param('id'))) });
+  return c.json<DuelResponse>({ duel: await getDuelSummary(c.env.DB, parseId(c.req.param('id')), c.get('userId')) });
 });
 
 duelRoutes.post('/:id/accept', requireAuth, async (c) => {

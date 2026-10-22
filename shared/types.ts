@@ -41,6 +41,7 @@ export type ErrorCode =
   | 'DUEL_NOT_OPEN'
   | 'WRONG_TIER'
   | 'OWN_DUEL'
+  | 'CODE_NOT_FOUND'
   | 'LLM_UNAVAILABLE'
   | 'LLM_FAILED'
   | 'BOSS_LOCKED'
@@ -185,6 +186,9 @@ export interface RecoveryAnswerResponse {
 
 export type DuelStatus = 'open' | 'accepted' | 'finished' | 'cancelled';
 
+/** 'public' = ижил түвшний лобби дээр гарна, 'private' = зөвхөн урилгын кодоор орно. */
+export type DuelVisibility = 'public' | 'private';
+
 export interface DuelPlayerDto {
   id: number;
   username: string;
@@ -197,6 +201,9 @@ export interface DuelSummary {
   subject: Subject;
   stake: number;
   status: DuelStatus;
+  visibility: DuelVisibility;
+  /** Урилгын код: зөвхөн үүсгэгчид (бусдад null). */
+  code: string | null;
   createdAt: number;
   creator: DuelPlayerDto;
   opponent: DuelPlayerDto | null;
@@ -207,6 +214,7 @@ export interface DuelSummary {
 }
 
 export interface LobbyResponse {
+  /** Нэгдэх боломжтой сорилтууд: ижил түвшин, 'public', үүсгэгч нь яг одоо хүлээж байгаа. */
   open: DuelSummary[];
   /** Миний нээлттэй эсвэл явагдаж буй тулаан. */
   mine: DuelSummary | null;
@@ -216,6 +224,18 @@ export interface LobbyResponse {
 
 export interface DuelResponse {
   duel: DuelSummary;
+}
+
+/** POST /duels */
+export interface CreateDuelBody {
+  subject: Subject;
+  stake: number;
+  visibility?: DuelVisibility;
+}
+
+/** POST /duels/join — урилгын кодоор орно. */
+export interface JoinDuelBody {
+  code: string;
 }
 
 // ---------- Дэлгүүр ----------

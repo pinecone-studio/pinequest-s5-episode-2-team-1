@@ -7,6 +7,13 @@ export const subjectNames: Record<Subject, string> = {
   physics: 'Физик',
 };
 
+/** Үйлдэх тийн ялгал: "Математикаар тулалдъя". */
+const subjectBy: Record<Subject, string> = {
+  math: 'Математикаар',
+  mongolian: 'Монгол хэлээр',
+  physics: 'Физикээр',
+};
+
 /** Картын арын том бүдэг тэмдэг (emoji ашиглахгүй). */
 export const subjectGlyphs: Record<Subject, string> = {
   math: '½',
@@ -119,14 +126,31 @@ export const S = {
     stakeTooHigh: (max: number) => `Хамгийн ихдээ ${max} оноо тавьж болно`,
     notEnough: 'Тулалдахад хамгийн багадаа 5 оноо хэрэгтэй',
     createButton: (stake: number) => `Сорилт үүсгэх · ${stake} оноо`,
+    who: 'Хэнтэй тулах вэ?',
+    visPublic: 'Бүгдтэй',
+    visPrivate: 'Найзтайгаа',
+    visPublicHint: 'Ижил түвшний бүх хүүхдийн лобби дээр гарна. Найзаа кодоор ч урьж болно.',
+    visPrivateHint: 'Лобби дээр гарахгүй. Урилгын кодыг найздаа өгөөрэй, зөвхөн тэр орно.',
+    matching: (n: number, subject: Subject) => `${subjectBy[subject]} ${n} хүүхэд тулаан хүлээж байна. Доороос шууд нэгдэж болно!`,
     mineTitle: 'Таны сорилт',
-    waitingAccept: 'Өрсөлдөгч хүлээж байна… Энэ дэлгэц дээрээ байгаарай, хүлээн авмагц тулаан автоматаар эхэлнэ.',
+    minePublic: 'Лобби дээр бусдад харагдаж байна',
+    minePrivate: 'Зөвхөн кодоор орно',
+    codeLabel: 'Урилгын код',
+    share: 'Кодоо илгээх',
+    shareMessage: (code: string, subject: Subject, stake: number) =>
+      `Надтай ${subjectBy[subject]} тулалдаарай! Бооцоо ${stake} оноо. Тулаан → «Кодоор орох» хэсэгт ${code} гэж бичээрэй.`,
+    waitingAccept: 'Өрсөлдөгч хүлээж байна… Энэ дэлгэц дээрээ байгаарай, хэн нэгэн нэгдмэгц тулаан автоматаар эхэлнэ.',
     cancel: 'Цуцлах',
     enterRoom: 'Тулаанд орох',
     inProgress: 'Тулаан явагдаж байна',
-    openTitle: 'Нээлттэй сорилтууд',
-    empty: 'Одоогоор сорилт алга. Өөрөө үүсгээрэй!',
-    accept: 'Хүлээн авах',
+    joinTitle: 'Кодоор орох',
+    joinHint: 'Найзаасаа авсан 6 оронтой кодоо оруул',
+    joinButton: 'Орох',
+    openTitle: 'Нэгдэх боломжтой тулаанууд',
+    empty: 'Одоогоор хүлээж буй тулаан алга. Өөрөө үүсгээд найзаа кодоор урь!',
+    accept: 'Нэгдэх',
+    replaceMine: 'Таны сорилт цуцлагдаж, энэ тулаанд орно. Үргэлжлүүлэх үү?',
+    replaceYes: 'Нэгдэх',
     tooHighForMe: 'Бооцоо таны онооны 20%-иас их',
     stakeLabel: (s: number) => `${s} оноо`,
     level: (l: number) => `${l}-р шат`,
@@ -357,6 +381,7 @@ export const errorMessages: Record<ErrorCode | 'NETWORK' | 'TIMEOUT', string> = 
   DUEL_NOT_OPEN: 'Сорилт хаагдсан байна',
   WRONG_TIER: 'Энэ сорилт өөр түвшнийх байна',
   OWN_DUEL: 'Өөрийнхөө сорилтыг хүлээн авах боломжгүй',
+  CODE_NOT_FOUND: 'Ийм кодтой тулаан олдсонгүй. Кодоо шалгаад дахин оролдоорой.',
   BOSS_LOCKED: 'Энэ boss-той одоохондоо тулалдах боломжгүй',
   LLM_UNAVAILABLE: 'Асуулт үүсгэх үйлчилгээ тохируулаагүй байна',
   LLM_FAILED: 'Асуулт үүсгэж чадсангүй',
