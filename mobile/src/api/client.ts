@@ -91,7 +91,7 @@ export async function api<T>(path: string, opts: { method?: string; body?: unkno
   return data as T;
 }
 
-/** DuelRoom-ын WebSocket хаяг. Браузерын WebSocket header дамжуулдаггүй тул token query-д. */
-export function wsUrl(path: string): string {
-  return `${API_URL.replace(/^http/, 'ws')}${path}?token=${encodeURIComponent(session.token ?? '')}`;
+/** DuelRoom-ын WebSocket. Token-ийг URL-д (log-д) биш subprotocol-оор дамжуулна. */
+export function openDuelSocket(duelId: number): WebSocket {
+  return new WebSocket(`${API_URL.replace(/^http/, 'ws')}/duels/${duelId}/ws`, ['bearer', session.token ?? '']);
 }

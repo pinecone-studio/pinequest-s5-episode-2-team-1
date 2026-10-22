@@ -61,6 +61,8 @@ async function limitsAndEscrow() {
 
 async function fullDuel(a: AuthResponse, b: AuthResponse, duelId: number) {
   console.log('\n— Тулаан: real-time 3 асуулт (A хожно)');
+  const rejected = await WsPlayer.open('X', duelId, 'bad-token').then((p) => (p.close(), false), () => true);
+  check(rejected, 'Буруу token-той WebSocket холбогдохгүй');
   const { pa, pb } = await connectBoth(duelId, a, b);
 
   // Асуулт 1: Б буруу → түгжигдэнэ; А зөв → авна

@@ -55,7 +55,8 @@ export class DuelRoom extends DurableObject<Bindings> {
     this.ctx.acceptWebSocket(server, [String(userId)]);
     server.serializeAttachment({ userId, connId } satisfies Attachment);
     await this.commit(onConnect(this.state, userId, connId, Date.now()));
-    return new Response(null, { status: 101, webSocket: client });
+    // Клиент ['bearer', token] subprotocol-оор холбогдсон тул сонгосныг буцаана (үгүй бол клиент холболтыг хаана).
+    return new Response(null, { status: 101, webSocket: client, headers: { 'Sec-WebSocket-Protocol': 'bearer' } });
   }
 
   async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {

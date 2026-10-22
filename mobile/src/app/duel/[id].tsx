@@ -10,11 +10,17 @@ import { OptionButton, type OptionState } from '@/components/OptionButton';
 import { Motion, Pop, Sprite } from '@/components/pixel';
 import { Card, Muted, ProgressBar, Screen } from '@/components/ui';
 import { colors, fonts, radius, subjectTheme } from '@/constants/theme';
-import { useDuelSocket } from '@/hooks/useDuelSocket';
+import { type DuelView, useDuelSocket } from '@/hooks/useDuelSocket';
 import { useNow } from '@/hooks/useNow';
 import { S, subjectNames } from '@/i18n/strings';
 import type { SpriteKey } from '@/sprites';
 import { confirm } from '@/lib/confirm';
+
+const CONNECTION_NOTE: Partial<Record<DuelView['connection'], string>> = {
+  reconnecting: S.duel.reconnecting,
+  replaced: S.duel.replaced,
+  failed: S.duel.connectFailed,
+};
 
 export default function DuelRoomScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -30,6 +36,7 @@ export default function DuelRoomScreen() {
   const remainingMs = view.deadline ? Math.max(0, view.deadline - serverNow()) : 0;
   const color = colors.violet;
   const ended = view.phase === 'finished' || view.phase === 'cancelled';
+  const connectionNote = ended ? undefined : CONNECTION_NOTE[view.connection];
 
   // Үр дүн ирмэгц хоёр утсан дээр оноог шинэчилнэ; haptic.
   const notified = useRef(false);
@@ -71,7 +78,7 @@ export default function DuelRoomScreen() {
         </View>
       </View>
 
-      {view.connection === 'reconnecting' && !ended ? <Text style={styles.banner}>{S.duel.reconnecting}</Text> : null}
+      {connectionNote ? <Text style={styles.banner}>{connectionNote}</Text> : null}
 
       {mine && theirs ? (
         <View style={styles.versus}>
