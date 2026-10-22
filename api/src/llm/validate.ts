@@ -7,6 +7,7 @@ const rawSchema = z.object({
   solution: z.string().optional(),
   correctIndex: z.number().int(),
   explanation: z.string(),
+  topic: z.string().optional(),
 });
 
 const CYRILLIC = /[Ѐ-ӿ]/;
@@ -62,7 +63,7 @@ export function shuffleOptions(d: QuestionDraft, rng: () => number = Math.random
   };
 }
 
-function checkOne(raw: unknown): QuestionDraft | Rejection {
+function checkOne(raw: unknown, topics: readonly string[]): QuestionDraft | Rejection {
   const parsed = rawSchema.safeParse(raw);
   if (!parsed.success) return { reason: 'schema' };
   const q = parsed.data;
@@ -82,14 +83,21 @@ function checkOne(raw: unknown): QuestionDraft | Rejection {
   if ([prompt, explanation, ...options].some(hasForeignScript)) return { reason: 'foreign script', prompt };
   if (REFERS_TO_SOURCE.test(prompt) || REFERS_TO_SOURCE.test(explanation)) return { reason: 'refers to source', prompt };
 
-  return { prompt, options, correctIndex: q.correctIndex, explanation };
+  // Жагсаалтад байхгүй сэдэвтэй асуултыг хаяхгүй (квот хэмнэнэ), зөвхөн сэдэвгүй хадгална.
+  const topic = q.topic?.trim();
+  return { prompt, options, correctIndex: q.correctIndex, explanation, ...(topic && topics.includes(topic) ? { topic } : {}) };
 }
 
 /**
  * LLM-ийн JSON-ийг шалгана: буруу бүтэцтэй болон багц доторх давхардсан асуултыг хаяж,
  * сонголтуудыг холино.
  */
-export function validateDrafts(raw: unknown, rng: () => number = Math.random): { drafts: QuestionDraft[]; rejected: Rejection[] } {
+export function validateDrafts(
+  raw: unknown,
+  rng: () => number = Math.random,
+  /** Энэ түвшин, хичээлийн зөвшөөрөгдөх сэдвийн id (config/topics.ts). */
+  topics: readonly string[] = [],
+): { drafts: QuestionDraft[]; rejected: Rejection[] } {
   const list: unknown = Array.isArray(raw) ? raw : (raw as { questions?: unknown } | null)?.questions;
   if (!Array.isArray(list)) return { drafts: [], rejected: [{ reason: 'no questions array' }] };
 
@@ -97,7 +105,7 @@ export function validateDrafts(raw: unknown, rng: () => number = Math.random): {
   const rejected: Rejection[] = [];
   const seen = new Set<string>();
   for (const item of list) {
-    const r = checkOne(item);
+    const r = checkOne(item, topics);
     if ('reason' in r) {
       rejected.push(r);
       continue;
