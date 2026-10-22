@@ -106,7 +106,7 @@ async function pending(db: D1Database, userId: number, subject: Subject) {
     .prepare('SELECT task_id, questions, passed, misses FROM recoveries WHERE user_id = ? AND subject = ? AND cleared_at IS NULL ORDER BY task_id DESC LIMIT 1')
     .bind(userId, subject)
     .first<RecoveryRow>();
-  if (!row) throw new ApiError(404, 'NOT_FOUND', 'Нөхөх салаа зам алга');
+  if (!row) throw new ApiError(404, 'NOT_FOUND', 'Давтлага алга');
   const { results: questions } = await db
     .prepare(
       `SELECT q.id, q.prompt, q.options, q.correct_index, q.explanation, q.tier, q.topic

@@ -74,7 +74,7 @@ export async function startTask(
   const tier = user.tier as Tier;
   const today = ubDay(now);
   if (await hasPendingRecovery(db, userId, subject)) {
-    throw new ApiError(409, 'RECOVERY_REQUIRED', 'Эхлээд нөхөх салаа замаа дуусгаарай');
+    throw new ApiError(409, 'RECOVERY_REQUIRED', 'Эхлээд давтлагаа дуусгаарай');
   }
   if (boss !== undefined) {
     const block = bossBlock(levelFromXp(user.xp), user.bosses_beaten, boss);
