@@ -291,6 +291,10 @@ UI нь `docs/design/pixel-bear/` дахь дизайн дээр суурилн�
   нэг grid sheet болж зурагдана; frame бүрийн хугацаа ба tag-ууд `mobile/src/lib/pixelBear/bear.json`-д, апп
   тэндээс уншина. `npm run sprites:bear && npm run sprites`; `node scripts/bear-sprites.ts --preview <dir>` нь
   хөдөлгөөн бүрийн APNG-ийг boss-ын гэр дээр гаргана (`docs/design/pixel-bear/previews/`).
+- **Хичээлийн дэлгэц:** дээд самбар нь pixel art хичээлийн булан (цонх, хөшиг, номын тавиур, модон шал, хивс), баавгай
+  хивсэн дээрээ зогсоно. Бодох үед эрүүгээ барина; зөв хариултад суугаад үсэрч од цацаад даллана; буруу бол цочиж, бөхийж
+  толгойгоо сэгсрээд гунигтай зогсоно (`LessonBear.tsx`). Frame, дэвсгэр, хугацаа `mobile/scripts/lesson-sprites.ts`-ээс
+  (`npm run sprites:lesson && npm run sprites`), урьдчилсан харагдац `docs/design/pixel-bear/previews/lesson_*.png`.
 - **Фонт:** Onest (UI) ба Pixelify Sans (тоо), `@expo-google-fonts/*`-оор.
 - **Хөдөлгөөн:** `mobile/src/components/pixel/` (react-native-reanimated). Утасны "motion бууруулах" тохиргоо
   асаалттай бол бүх animation зогсоно.

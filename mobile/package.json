@@ -45,7 +45,8 @@
     "lint": "expo lint",
     "typecheck": "tsc --noEmit && tsc --noEmit -p scripts",
     "sprites": "node scripts/build-sprites.ts",
-    "sprites:bear": "node scripts/bear-sprites.ts"
+    "sprites:bear": "node scripts/bear-sprites.ts",
+    "sprites:lesson": "node scripts/lesson-sprites.ts"
   },
   "private": true
 }
