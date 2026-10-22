@@ -4,5 +4,9 @@
 # (эсвэл repo-ийн root дээрх .env.local-д; `npm run dev` хоёуланг нь уншина)
 GEMINI_API_KEY=
 
+# Заавал биш: баавгайн TTS-д өөр (billing-тэй) төслийн түлхүүр. TTS-ийн үнэгүй багц өдөрт 10 хүсэлт тул
+# Live-ийг дээрх үнэгүй түлхүүрээр, TTS-ийг энэ түлхүүрээр ажиллуулна. Хоосон бол GEMINI_API_KEY-г ашиглана.
+GEMINI_TTS_API_KEY=
+
 # Admin endpoint (/admin/*) болон seed скриптэд. Дурын урт санамсаргүй мөр.
 ADMIN_TOKEN=change-me

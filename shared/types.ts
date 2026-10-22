@@ -43,7 +43,8 @@ export type ErrorCode =
   | 'OWN_DUEL'
   | 'LLM_UNAVAILABLE'
   | 'LLM_FAILED'
-  | 'BOSS_LOCKED';
+  | 'BOSS_LOCKED'
+  | 'TUTOR_UNAVAILABLE';
 
 export interface ApiErrorBody {
   error: { code: ErrorCode; message: string };
@@ -299,6 +300,27 @@ export type ServerMsg =
   | { type: 'finished'; outcome: DuelOutcome }
   | { type: 'cancelled'; outcome: DuelOutcome }
   | { type: 'error'; code: string };
+
+// ---------- Баавгайтай ярилцах (GET /tutor/ws, Gemini Live) ----------
+// Binary frame: клиент → сервер PCM16LE mono 16 kHz (mic), сервер → клиент PCM16LE mono 24 kHz (баавгайн дуу).
+// Text frame: доорх JSON.
+
+export type TutorClientMsg =
+  /** Mic-ийг унтраалаа (баавгай ярих гэж байна): Gemini-ийн VAD-д сонссоноо дуусгахыг мэдэгдэнэ. */
+  { type: 'mic_off' };
+
+export type TutorServerMsg =
+  /** Gemini бэлэн; баавгай өөрөө мэндэлж эхэлнэ. */
+  | { type: 'ready'; topic: { subject: Subject; prompt: string } | null; endsAt: number; serverNow: number }
+  /** Баавгайн хэлж буй үгийн текст (хэсэг хэсгээр нэмэгдэнэ). */
+  | { type: 'bear_text'; text: string }
+  /** Хүүхдийн хэлснийг Gemini ингэж сонссон (хэсэг хэсгээр). */
+  | { type: 'kid_text'; text: string }
+  /** Баавгай ярьж дууслаа (дууны бүх хэсэг ирсэн). */
+  | { type: 'turn_end' }
+  /** Хүүхэд яриаг тасалсан тул баавгай зогсов: тоглуулж буй дуугаа хаяна. */
+  | { type: 'interrupted' }
+  | { type: 'end'; reason: 'time' | 'error'; message?: string };
 
 // ---------- Сурах бичгийн сан (admin, scripts/books.ts) ----------
 

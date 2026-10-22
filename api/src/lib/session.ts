@@ -27,6 +27,19 @@ export function bearerToken(c: Context): string | null {
   return header.slice(7).trim() || null;
 }
 
+/**
+ * WebSocket upgrade-ийн хэрэглэгч. Браузер/RN-ийн WebSocket нь Authorization header илгээж чаддаггүй тул token-ийг
+ * subprotocol-оор авна: `new WebSocket(url, ['bearer', token])`. URL-д (тэгэхээр log-д) token орохгүй.
+ * Хариу 101-д `Sec-WebSocket-Protocol: bearer`-ийг буцаах ёстой.
+ */
+export async function socketUserId(c: Context<AppEnv>): Promise<number> {
+  if (c.req.header('upgrade')?.toLowerCase() !== 'websocket') throw new ApiError(400, 'BAD_REQUEST', 'WebSocket хүлээж байна');
+  const [scheme, token] = (c.req.header('sec-websocket-protocol') ?? '').split(',').map((s) => s.trim());
+  const userId = scheme === 'bearer' && token ? await userIdForToken(c.env.DB, token) : null;
+  if (!userId) throw new ApiError(401, 'UNAUTHORIZED', 'Нэвтрэх шаардлагатай');
+  return userId;
+}
+
 /** `Authorization: Bearer <token>` шаардана, c.var.userId-г тохируулна. */
 export const requireAuth = createMiddleware<AppEnv>(async (c, next) => {
   const token = bearerToken(c);
