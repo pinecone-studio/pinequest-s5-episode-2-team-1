@@ -36,6 +36,7 @@ const config: ExpoConfig = {
       },
     ],
     'expo-secure-store',
+    ['expo-audio', { microphonePermission: 'Баавгайтай ярилцахад микрофон хэрэгтэй.' }],
   ],
   experiments: {
     typedRoutes: false,

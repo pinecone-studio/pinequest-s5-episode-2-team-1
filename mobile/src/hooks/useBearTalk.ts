@@ -1,0 +1,284 @@
+import type { Subject, TutorClientMsg, TutorServerMsg } from '@shared/types';
+import { requestRecordingPermissionsAsync, setAudioModeAsync, useAudioPlayer, useAudioStream } from 'expo-audio';
+import { File, Paths } from 'expo-file-system';
+import { useEffect, useRef, useState } from 'react';
+import { openTutorSocket } from '@/api/client';
+import { S } from '@/i18n/strings';
+import { pcmToWav } from '@/lib/wav';
+
+/** Сервер mic-ийн дууг 16 kHz гэж Gemini-д дамжуулна; баавгайн дуу 24 kHz ирнэ (shared/types TutorServerMsg). */
+const MIC_RATE = 16_000;
+const BEAR_RATE = 24_000;
+/** Баавгайн дуу ийм хэмжээтэй (0.25 сек) хуримтлагдмагц тоглуулж эхэлнэ: бага бол хурдан эхлэх ч хэсэг олон болно. */
+const START_BYTES = BEAR_RATE * 2 * 0.25;
+/**
+ * iOS-д mic-ийн stream (.record) ба тоглуулалт зэрэг ажиллахгүй, чанга яригчаас echo ч гарна. Тиймээс ээлжлэн:
+ * баавгай ярихад mic унтарч энэ горимд шилжинэ, баавгай дуусмагц mic дахин асна.
+ */
+const PLAYBACK_MODE = { playsInSilentMode: true, allowsRecording: false, interruptionMode: 'doNotMix' } as const;
+
+export type TalkPhase = 'connecting' | 'bear' | 'listening' | 'ended';
+
+/**
+ * Баавгайтай дуугаар ярилцах (GET /tutor/ws). Баавгайн дууг хэсэг хэсгээр нь WAV болгож дараалан тоглуулна:
+ * нэг хэсэг дуусахад тэр хооронд ирсэн бүх дууг дараагийн хэсэг болгоно.
+ */
+export function useBearTalk(questionId: number | undefined) {
+  const [attempt, setAttempt] = useState(0);
+  const [phase, setPhase] = useState<TalkPhase>('connecting');
+  const [bearText, setBearText] = useState('');
+  const [kidText, setKidText] = useState('');
+  const [topic, setTopic] = useState<{ subject: Subject; prompt: string } | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  const wsRef = useRef<WebSocket | null>(null);
+  const micRef = useRef(false);
+  const interruptRef = useRef<(() => void) | null>(null);
+
+  // Хэсэг дууссаныг (didJustFinish) хурдан мэдэж дараагийнхыг тоглуулахын тулд status-ыг ойр ойрхон авна.
+  const player = useAudioPlayer(null, { updateInterval: 100 });
+  const { stream } = useAudioStream({
+    sampleRate: MIC_RATE,
+    channels: 1,
+    encoding: 'int16',
+    onBuffer: (b) => {
+      const ws = wsRef.current;
+      if (micRef.current && ws?.readyState === WebSocket.OPEN) ws.send(b.data);
+    },
+  });
+
+  useEffect(() => {
+    let alive = true;
+    let closedByUs = false;
+    let ws: WebSocket | null = null;
+    let pcm: Uint8Array[] = [];
+    let pcmBytes = 0;
+    let playing = false;
+    /** Одоогийн ээлжийн бүх дуу серверээс ирсэн. */
+    let turnDone = false;
+    /** Дараагийн bear_text шинэ ээлжийнх. */
+    let freshTurn = true;
+    /** Хүүхэд баавгайг тасалсан: энэ ээлжийн үлдсэн дууг хаяна. */
+    let drop = false;
+    let mode: Promise<unknown> = Promise.resolve();
+    let seg = 0;
+    const files: File[] = [];
+
+    setPhase('connecting');
+    setBearText('');
+    setKidText('');
+    setTopic(null);
+    setNotice(null);
+
+    const send = (msg: TutorClientMsg) => {
+      if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
+    };
+
+    const stopMic = () => {
+      if (!micRef.current) return;
+      micRef.current = false;
+      try {
+        stream.stop();
+      } catch {
+        // аль хэдийн зогссон
+      }
+    };
+
+    const end = (message: string) => {
+      if (!alive) return;
+      setNotice(message);
+      setPhase('ended');
+      stopMic();
+      player.pause();
+      pcm = [];
+      pcmBytes = 0;
+      closedByUs = true;
+      ws?.close();
+    };
+
+    const micOn = async () => {
+      if (!alive || micRef.current) return;
+      setKidText('');
+      setPhase('listening');
+      micRef.current = true;
+      try {
+        await stream.start();
+      } catch {
+        end(S.tutor.micFailed);
+      }
+    };
+
+    const playNext = async () => {
+      if (!alive || playing || pcmBytes === 0) return;
+      playing = true;
+      await mode;
+      if (!alive) return;
+      // Хүлээх хооронд хүүхэд баавгайг тасалсан бол (pcm хоосорсон) хоосон WAV тоглуулахгүй.
+      if (pcmBytes === 0) {
+        playing = false;
+        return;
+      }
+      const chunks = pcm;
+      pcm = [];
+      pcmBytes = 0;
+      const file = new File(Paths.cache, `bear-${Date.now()}-${seg++}.wav`);
+      try {
+        file.write(pcmToWav(chunks, BEAR_RATE));
+      } catch {
+        playing = false;
+        return;
+      }
+      files.push(file);
+      player.replace({ uri: file.uri });
+      player.play();
+    };
+
+    const onSegmentEnd = () => {
+      playing = false;
+      for (const f of files.splice(0)) {
+        try {
+          f.delete();
+        } catch {
+          // устгаж чадаагүй ч cache тул хамаагүй
+        }
+      }
+      if (pcmBytes > 0) void playNext();
+      else if (turnDone) void micOn();
+    };
+
+    const onAudio = (buf: ArrayBuffer) => {
+      if (!alive || drop) return;
+      turnDone = false;
+      if (micRef.current) {
+        stopMic();
+        send({ type: 'mic_off' });
+        mode = setAudioModeAsync(PLAYBACK_MODE).catch(() => {});
+      }
+      setPhase('bear');
+      pcm.push(new Uint8Array(buf));
+      pcmBytes += buf.byteLength;
+      if (!playing && pcmBytes >= START_BYTES) void playNext();
+    };
+
+    const onMessage = (m: TutorServerMsg) => {
+      switch (m.type) {
+        case 'ready':
+          setTopic(m.topic);
+          break;
+        case 'bear_text': {
+          if (drop) break;
+          const fresh = freshTurn;
+          freshTurn = false;
+          setBearText((t) => (fresh ? m.text : t + m.text));
+          break;
+        }
+        case 'kid_text':
+          setKidText((t) => t + m.text);
+          break;
+        case 'turn_end':
+          freshTurn = true;
+          if (drop) {
+            drop = false;
+            break;
+          }
+          turnDone = true;
+          if (!playing) {
+            if (pcmBytes > 0) void playNext();
+            else void micOn();
+          }
+          break;
+        case 'interrupted':
+          drop = false;
+          freshTurn = true;
+          turnDone = true;
+          pcm = [];
+          pcmBytes = 0;
+          playing = false;
+          player.pause();
+          void micOn();
+          break;
+        case 'end':
+          end(m.reason === 'time' ? S.tutor.timeUp : (m.message ?? S.tutor.lost));
+          break;
+      }
+    };
+
+    interruptRef.current = () => {
+      if (!alive) return;
+      player.pause();
+      pcm = [];
+      pcmBytes = 0;
+      playing = false;
+      drop = !turnDone;
+      turnDone = true;
+      freshTurn = true;
+      void micOn();
+    };
+
+    const sub = player.addListener('playbackStatusUpdate', (status) => {
+      if (status.didJustFinish) onSegmentEnd();
+    });
+
+    void (async () => {
+      const perm = await requestRecordingPermissionsAsync();
+      if (!alive) return;
+      if (!perm.granted) {
+        end(S.tutor.micDenied);
+        return;
+      }
+      mode = setAudioModeAsync(PLAYBACK_MODE).catch(() => {});
+      const sock = openTutorSocket(questionId);
+      sock.binaryType = 'arraybuffer';
+      ws = sock;
+      wsRef.current = sock;
+      sock.onmessage = (e) => {
+        if (typeof e.data !== 'string') {
+          onAudio(e.data as ArrayBuffer);
+          return;
+        }
+        try {
+          onMessage(JSON.parse(e.data) as TutorServerMsg);
+        } catch {
+          // буруу мессеж
+        }
+      };
+      sock.onclose = () => {
+        if (!closedByUs) end(S.tutor.lost);
+      };
+    })();
+
+    return () => {
+      alive = false;
+      closedByUs = true;
+      interruptRef.current = null;
+      sub.remove();
+      stopMic();
+      try {
+        player.pause();
+      } catch {
+        // player аль хэдийн чөлөөлөгдсөн
+      }
+      ws?.close();
+      wsRef.current = null;
+      for (const f of files) {
+        try {
+          f.delete();
+        } catch {
+          // cache
+        }
+      }
+      void setAudioModeAsync(PLAYBACK_MODE).catch(() => {});
+    };
+  }, [questionId, attempt, player, stream]);
+
+  return {
+    phase,
+    bearText,
+    kidText,
+    topic,
+    notice,
+    /** Баавгай ярьж байхад: зогсоогоод хүүхдийн mic-ийг асаана. */
+    interrupt: () => interruptRef.current?.(),
+    restart: () => setAttempt((n) => n + 1),
+  };
+}
