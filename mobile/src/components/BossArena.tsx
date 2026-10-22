@@ -57,7 +57,7 @@ const TICK_MS = 160; // frame анимацийн хурд (~6 fps, pixel art-и�
 const GROUND = 300;
 const BOSS_LEFT = 28;
 const BEAR_RIGHT = 44;
-const BEAR_SHEET: SpriteKey = 'bear_battle_728x512';
+const BEAR_SHEET: SpriteKey = 'bear_battle_896x780';
 const { width: BEAR_W } = frameSize(BEAR_SHEET, bear.frames.length, bear.columns);
 /** sheet-ийн pixel → dp */
 const PX = BEAR_W / bear.frameSize.w;
@@ -68,6 +68,11 @@ const BEAR_PAD = bear.pad * PX;
 /** гаргах frame-ийн сарвуу (frame-ийн зүүн дээд булангаас, dp): од эндээс ниснэ */
 const PAW = { x: bear.paw[0] * PX, y: bear.paw[1] * PX };
 const BLINK = frames('blink')[0];
+/** баавгайн шидэх зөгийн балны сав ба boss-д тусаж хагарах эффект (scripts/bear-sprites.ts: PixelLab VFX) */
+const HONEY_JAR: SpriteKey = 'btn_honey_30x30';
+const SHATTER: SpriteKey = 'fx_honey_shatter_414x456';
+const SHATTER_MS = 80; // эх нь 63ms: нүдээр дагахуйц удаан
+type Spark = { id: SpriteKey; at: Point; frame: number; frames: number; cols: number; pivot: Point };
 const smooth = Easing.inOut(Easing.sin);
 
 type Point = { x: number; y: number };
@@ -153,10 +158,11 @@ export function BossArena({
   const bossFrame = bossPose === 'idle' ? hover : BOSS_FRAME[bossPose];
 
   // Сум ба оч: сум үргэлж mount, харагдах эсэхийг shared value удирдана (worklet JS state уншихгүй)
-  const [shot, setShot] = useState<SpriteKey>('icon_star_24x24');
-  const [spark, setSpark] = useState<{ id: SpriteKey; at: Point; frame: number } | null>(null);
+  const [shot, setShot] = useState<SpriteKey>(HONEY_JAR);
+  const [spark, setSpark] = useState<Spark | null>(null);
+  const [damage, setDamage] = useState(0); // boss-д онох бүрт шинэ «-1» хөвөн гарна
   const fly = useSharedValue(0);
-  const route = useSharedValue({ fx: 0, fy: 0, tx: 0, ty: 0 });
+  const route = useSharedValue({ fx: 0, fy: 0, tx: 0, ty: 0, spin: 0 });
   const bossX = useSharedValue(0);
   const bearX = useSharedValue(0);
   const bossWhite = useSharedValue(0);
@@ -191,8 +197,8 @@ export function BossArena({
         withDelay(BOSS_WINDUP_MS + SWING_MS + SCYTHE_HOLD_MS, withTiming(0, { duration: BOSS_RETURN_MS, easing: smooth })),
       );
     } else {
-      route.value = { fx: from.x, fy: from.y, tx: to.x, ty: to.y };
-      setShot(strike.correct ? 'icon_star_24x24' : 'fx_magic_22x22');
+      route.value = { fx: from.x, fy: from.y, tx: to.x, ty: to.y, spin: strike.correct ? 1 : 0 };
+      setShot(strike.correct ? HONEY_JAR : 'fx_magic_22x22');
       attacker.value = withSequence(
         withTiming(-dir * 7, { duration: WINDUP_MS, easing: Easing.out(Easing.quad) }), // бэлдэх: арагшаа
         withTiming(dir * 26, { duration: RELEASE_AT - WINDUP_MS + STRIKE_MS, easing: Easing.in(Easing.quad) }), // цохих: огцом урагш
@@ -272,9 +278,17 @@ export function BossArena({
       later(HIT_AT + 120, () => setBossPose('idle'));
       hurt();
     }
-    const sparkId: SpriteKey = melee ? 'fx_slash_144x48' : strike.correct ? 'fx_spark_90x30' : 'fx_spark_magic_90x30';
-    [0, 1, 2].forEach((frame) => later(hitAt + frame * 70, () => setSpark({ id: sparkId, at: to, frame })));
-    later(hitAt + 210, () => setSpark(null));
+    // оч: зөгийн бал boss-д тусвал сав хагарч бал цацагдана (7 frame), бусад нь 3 frame-ийн оч
+    const honey = strike.correct && !melee;
+    const fx = honey
+      ? { id: SHATTER, frames: bear.honey.frames, cols: bear.honey.columns, pivot: { x: bear.honey.pivot[0] * 2, y: bear.honey.pivot[1] * 2 }, ms: SHATTER_MS }
+      : { id: melee ? ('fx_slash_144x48' as const) : strike.correct ? ('fx_spark_90x30' as const) : ('fx_spark_magic_90x30' as const), frames: 3, cols: 3, pivot: null, ms: 70 };
+    const { width: fw, height: fh } = frameSize(fx.id, fx.frames, fx.cols);
+    const pivot = fx.pivot ?? { x: fw / 2, y: fh / 2 };
+    for (let frame = 0; frame < fx.frames; frame++)
+      later(hitAt + frame * fx.ms, () => setSpark({ id: fx.id, at: to, frame, frames: fx.frames, cols: fx.cols, pivot }));
+    later(hitAt + fx.frames * fx.ms, () => setSpark(null));
+    if (strike.correct) later(hitAt, () => setDamage((n) => n + 1));
     return () => timers.forEach(clearTimeout);
   }, [strike, reduce, boss, width, fly, route, bossX, bearX, bossWhite, shakeX, shakeY]);
 
@@ -284,8 +298,9 @@ export function BossArena({
     return {
       opacity: p > 0 && p < 1 ? 1 : 0,
       transform: [
-        { translateX: r.fx + (r.tx - r.fx) * p - 12 },
-        { translateY: r.fy + (r.ty - r.fy) * p - Math.sin(Math.PI * p) * 40 - 12 },
+        { translateX: r.fx + (r.tx - r.fx) * p - 15 },
+        { translateY: r.fy + (r.ty - r.fy) * p - Math.sin(Math.PI * p) * 40 - 15 },
+        { rotate: `${-p * 540 * r.spin}deg` }, // зөгийн балны сав эргэлдэн ниснэ
       ],
     };
   });
@@ -346,25 +361,21 @@ export function BossArena({
             </View>
           </Animated.View>
 
-          <Animated.View style={[styles.abs, styles.origin, shotStyle]}>
+          <Animated.View style={[styles.abs, styles.origin, styles.shot, shotStyle]}>
             <Sprite id={shot} />
           </Animated.View>
           {spark ? (
-            <View
-              style={[
-                styles.abs,
-                { zIndex: 4, left: spark.at.x - frameSize(spark.id, 3).width / 2, top: spark.at.y - frameSize(spark.id, 3).height / 2 },
-              ]}
-            >
-              <SheetFrame id={spark.id} frames={3} frame={spark.frame} />
+            <View style={[styles.abs, { zIndex: 4, left: spark.at.x - spark.pivot.x, top: spark.at.y - spark.pivot.y }]}>
+              <SheetFrame id={spark.id} frames={spark.frames} cols={spark.cols} frame={spark.frame} />
             </View>
           ) : null}
+          {damage > 0 ? <Damage key={damage} at={aim(boss, width).boss} reduce={reduce} /> : null}
         </View>
       </Animated.View>
 
       {/* Довтолгоонд л гардаг зургуудыг урьдчилж ачаална: анх гарах агшинд хоосон харагдаж "алга болохгүй" */}
       <View style={styles.preload}>
-        {['fx_slash_144x48', 'fx_spark_90x30', 'fx_spark_magic_90x30', 'fx_magic_22x22', 'icon_star_24x24', boss.weapon?.sheet, boss.white]
+        {['fx_slash_144x48', 'fx_spark_90x30', 'fx_spark_magic_90x30', 'fx_magic_22x22', HONEY_JAR, SHATTER, boss.weapon?.sheet, boss.white]
           .filter((id): id is SpriteKey => !!id)
           .map((id) => (
             <Sprite key={id} id={id} />
@@ -397,6 +408,23 @@ export function BossArena({
   );
 }
 
+/** Boss-д онох агшинд «-1» хохирол: дээш хөвж томроод бүдгэрнэ. */
+function Damage({ at, reduce }: { at: Point; reduce: boolean }) {
+  const t = useSharedValue(0);
+  useEffect(() => {
+    t.value = reduce ? 1 : withTiming(1, { duration: 900, easing: Easing.out(Easing.quad) });
+  }, [t, reduce]);
+  const style = useAnimatedStyle(() => ({
+    opacity: t.value < 0.7 ? 1 : 1 - (t.value - 0.7) / 0.3,
+    transform: [{ translateY: -t.value * 44 }, { scale: t.value < 0.15 ? 0.6 + t.value * 4 : 1.2 - (t.value - 0.15) * 0.2 }],
+  }));
+  return (
+    <Animated.View style={[styles.abs, styles.damage, { left: at.x - 30, top: at.y - 34 }, style]}>
+      <Text style={styles.damageText}>-1</Text>
+    </Animated.View>
+  );
+}
+
 function Weapon({ sheet, left, top, frame }: { sheet: SpriteKey; left: number; top: number; frame: number }) {
   return (
     <View style={[styles.abs, { left, top }]}>
@@ -410,6 +438,16 @@ const styles = StyleSheet.create({
   preload: { position: 'absolute', left: 0, top: 0, opacity: 0 },
   mirror: { transform: [{ scaleX: -1 }] },
   origin: { left: 0, top: 0, zIndex: 4 },
+  shot: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
+  damage: { width: 60, alignItems: 'center', zIndex: 5 },
+  damageText: {
+    fontFamily: fonts.pixel,
+    fontSize: 28,
+    color: colors.lemon,
+    textShadowColor: colors.ink,
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 0,
+  },
   // boss-ын гэр: доод талдаа наалдаж, хэвтээгээр төвлөрнө (430 dp өргөн тул нарийн дэлгэцэнд хоёр захаас тайрагдана)
   lair: { position: 'absolute', bottom: 0, left: '50%', marginLeft: -215 },
   hp: { position: 'absolute', left: 24, top: 56, width: 150, gap: 6 },

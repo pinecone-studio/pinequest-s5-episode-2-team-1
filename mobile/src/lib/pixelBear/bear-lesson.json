@@ -1,12 +1,12 @@
 {
   "sheet": "bear_lesson",
   "frameSize": {
-    "w": 52,
-    "h": 64
+    "w": 55,
+    "h": 66
   },
   "columns": 7,
-  "feet": 61,
-  "pad": 9,
+  "feet": 65,
+  "pivot": 28,
   "background": {
     "w": 132,
     "h": 156,
@@ -18,125 +18,195 @@
   },
   "frames": [
     {
-      "name": "idle",
-      "duration": 520,
-      "lift": 0
-    },
-    {
-      "name": "breatheA",
-      "duration": 150,
-      "lift": 0
-    },
-    {
-      "name": "breatheB",
-      "duration": 520,
-      "lift": 0
-    },
-    {
-      "name": "blink",
-      "duration": 130,
-      "lift": 0
-    },
-    {
-      "name": "think",
-      "duration": 700,
-      "lift": 0
-    },
-    {
-      "name": "thinkTap",
+      "name": "idle0",
       "duration": 220,
       "lift": 0
     },
     {
-      "name": "crouch",
+      "name": "idle1",
+      "duration": 220,
+      "lift": 0
+    },
+    {
+      "name": "idle2",
+      "duration": 220,
+      "lift": 0
+    },
+    {
+      "name": "idle3",
+      "duration": 220,
+      "lift": 0
+    },
+    {
+      "name": "think0",
+      "duration": 150,
+      "lift": 0
+    },
+    {
+      "name": "think1",
+      "duration": 150,
+      "lift": 0
+    },
+    {
+      "name": "think2",
+      "duration": 150,
+      "lift": 0
+    },
+    {
+      "name": "think3",
+      "duration": 150,
+      "lift": 0
+    },
+    {
+      "name": "think4",
+      "duration": 150,
+      "lift": 0
+    },
+    {
+      "name": "think5",
+      "duration": 150,
+      "lift": 0
+    },
+    {
+      "name": "think6",
+      "duration": 150,
+      "lift": 0
+    },
+    {
+      "name": "think7",
+      "duration": 150,
+      "lift": 0
+    },
+    {
+      "name": "think8",
+      "duration": 150,
+      "lift": 0
+    },
+    {
+      "name": "cheer0",
       "duration": 110,
       "lift": 0
     },
     {
-      "name": "jump",
+      "name": "cheer1",
+      "duration": 110,
+      "lift": 0
+    },
+    {
+      "name": "cheer2",
+      "duration": 110,
+      "lift": 0
+    },
+    {
+      "name": "cheer3",
+      "duration": 110,
+      "lift": 0
+    },
+    {
+      "name": "cheer4",
       "duration": 90,
-      "lift": 5
+      "lift": 0
     },
     {
-      "name": "peak",
-      "duration": 200,
-      "lift": 9
-    },
-    {
-      "name": "fall",
+      "name": "cheer5",
       "duration": 90,
-      "lift": 4
-    },
-    {
-      "name": "land",
-      "duration": 120,
       "lift": 0
     },
     {
-      "name": "waveA",
-      "duration": 180,
+      "name": "cheer6",
+      "duration": 90,
       "lift": 0
     },
     {
-      "name": "waveB",
-      "duration": 180,
+      "name": "cheer7",
+      "duration": 110,
       "lift": 0
     },
     {
-      "name": "flinch",
-      "duration": 140,
-      "lift": 1
-    },
-    {
-      "name": "slump",
-      "duration": 260,
+      "name": "cheer8",
+      "duration": 110,
       "lift": 0
     },
     {
-      "name": "shakeL",
+      "name": "cheer9",
+      "duration": 110,
+      "lift": 0
+    },
+    {
+      "name": "cheer10",
+      "duration": 110,
+      "lift": 0
+    },
+    {
+      "name": "sad0",
       "duration": 130,
       "lift": 0
     },
     {
-      "name": "shakeR",
+      "name": "sad1",
       "duration": 130,
       "lift": 0
     },
     {
-      "name": "sad",
-      "duration": 900,
+      "name": "sad2",
+      "duration": 130,
+      "lift": 0
+    },
+    {
+      "name": "sad3",
+      "duration": 130,
+      "lift": 0
+    },
+    {
+      "name": "sad4",
+      "duration": 130,
+      "lift": 0
+    },
+    {
+      "name": "sad5",
+      "duration": 130,
+      "lift": 0
+    },
+    {
+      "name": "sad6",
+      "duration": 130,
+      "lift": 0
+    },
+    {
+      "name": "sad7",
+      "duration": 130,
+      "lift": 0
+    },
+    {
+      "name": "sad8",
+      "duration": 700,
       "lift": 0
     }
   ],
   "tags": {
     "idle": {
       "from": 0,
-      "to": 2,
-      "direction": "pingpong"
-    },
-    "blink": {
-      "from": 3,
       "to": 3,
-      "direction": "forward"
+      "direction": "pingpong"
     },
     "think": {
       "from": 4,
-      "to": 5,
+      "to": 12,
       "direction": "pingpong"
     },
     "cheer": {
-      "from": 6,
-      "to": 12,
+      "from": 13,
+      "to": 23,
       "direction": "forward"
     },
     "wave": {
-      "from": 11,
-      "to": 12,
+      "from": 20,
+      "to": 23,
       "direction": "forward"
     },
     "oops": {
-      "from": 13,
-      "to": 17,
+      "from": 24,
+      "to": 32,
       "direction": "forward"
     }
   }

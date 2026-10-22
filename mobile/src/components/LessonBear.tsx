@@ -6,7 +6,7 @@ import { tagFrames } from '@/lib/pixelBear/anim';
 import lesson from '@/lib/pixelBear/bear-lesson.json';
 import type { SpriteKey } from '@/sprites';
 
-const SHEET: SpriteKey = 'bear_lesson_1092x576';
+const SHEET: SpriteKey = 'bear_lesson_1155x990';
 const BG: SpriteKey = 'lesson_bg_396x468';
 const SHADOW: SpriteKey = 'lesson_shadow_108x18';
 const COUNT = lesson.frames.length;
@@ -89,5 +89,5 @@ const styles = StyleSheet.create({
   bg: { position: 'absolute', bottom: 0, left: '50%', marginLeft: -BG_W / 2 },
   stage: { position: 'absolute', top: 0, right: 0, bottom: 0, left: 0 },
   shadow: { position: 'absolute', left: '50%', marginLeft: RUG_X - 54, bottom: RUG_Y - 9 },
-  bear: { position: 'absolute', left: '50%', marginLeft: RUG_X - FRAME_W / 2, bottom: RUG_Y - FEET_GAP, width: FRAME_W, height: FRAME_H },
+  bear: { position: 'absolute', left: '50%', marginLeft: RUG_X - lesson.pivot * PX, bottom: RUG_Y - FEET_GAP, width: FRAME_W, height: FRAME_H },
 });
