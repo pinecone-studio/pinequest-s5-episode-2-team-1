@@ -1,9 +1,10 @@
 import type { DuelOutcome, DuelPhase, RevealInfo, ServerMsg, Subject, WsPlayer, WsQuestion } from '@shared/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { wsUrl } from '@/api/client';
+import { openDuelSocket } from '@/api/client';
 
 export interface DuelView {
-  connection: 'connecting' | 'open' | 'reconnecting';
+  /** replaced: өөр төхөөрөмж энэ тулаанд орсон; failed: олон удаа оролдоод холбогдсонгүй. */
+  connection: 'connecting' | 'open' | 'reconnecting' | 'replaced' | 'failed';
   phase: DuelPhase | null;
   subject: Subject | null;
   stake: number;
@@ -88,6 +89,11 @@ function reduce(v: DuelView, msg: ServerMsg): DuelView {
   }
 }
 
+/** Нэг ч удаа нээгдээгүй дараалсан оролдлого (token хүчингүй, тоглогч биш гэх мэт) үүнээс хэтэрвэл зогсоно. */
+const MAX_FAILED_ATTEMPTS = 6;
+/** DuelRoom хуучин холболтыг энэ кодоор хаадаг (DuelRoom.ts). */
+const CLOSE_REPLACED = 4000;
+
 /**
  * DuelRoom-той WebSocket холболт. Салвал (тоглолт дуусаагүй бол) дахин холбогдоно; сервер
  * snapshot илгээж одоогийн байдлыг сэргээнэ. Цагийн зөрүүг serverNow-оор засна.
@@ -104,7 +110,7 @@ export function useDuelSocket(duelId: number) {
     let retry: ReturnType<typeof setTimeout> | undefined;
 
     const connect = () => {
-      const ws = new WebSocket(wsUrl(`/duels/${duelId}/ws`));
+      const ws = openDuelSocket(duelId);
       wsRef.current = ws;
       ws.onopen = () => {
         attempt = 0;
@@ -122,8 +128,12 @@ export function useDuelSocket(duelId: number) {
         if (msg.type === 'state' && msg.outcome) doneRef.current = true;
         setView((v) => reduce(v, msg));
       };
-      ws.onclose = () => {
+      ws.onclose = (ev) => {
         if (!alive || doneRef.current) return;
+        if (ev.code === CLOSE_REPLACED || attempt >= MAX_FAILED_ATTEMPTS) {
+          setView((v) => ({ ...v, connection: ev.code === CLOSE_REPLACED ? 'replaced' : 'failed' }));
+          return;
+        }
         setView((v) => ({ ...v, connection: 'reconnecting' }));
         retry = setTimeout(connect, Math.min(500 * 2 ** attempt++, 4000));
       };

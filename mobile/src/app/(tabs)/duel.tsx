@@ -29,6 +29,7 @@ export default function DuelLobby() {
     try {
       const l = await api<LobbyResponse>('/duels');
       setLobby(l);
+      setError('');
       // Үүсгэгч: сорилтыг хүлээн авмагц өрөө рүү автоматаар орно.
       if (l.mine?.status === 'accepted' && entered.current !== l.mine.id) {
         entered.current = l.mine.id;

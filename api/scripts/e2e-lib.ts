@@ -1,5 +1,5 @@
 import type { AuthResponse, Me, MeResponse, RecoveryAnswerResponse, RecoveryDto, ServerMsg, TaskDto, AnswerResponse, TaskResult } from '../../shared/types';
-import { call, HttpError, sleep, wsUrl } from './lib';
+import { call, HttpError, openDuelSocket, sleep } from './lib';
 
 let failures = 0;
 export const failureCount = () => failures;
@@ -87,7 +87,7 @@ export class WsPlayer {
 
   static open(name: string, duelId: number, token: string): Promise<WsPlayer> {
     return new Promise((resolve, reject) => {
-      const ws = new WebSocket(wsUrl(`/duels/${duelId}/ws`, token));
+      const ws = openDuelSocket(duelId, token);
       const player = new WsPlayer(name, ws);
       ws.addEventListener('open', () => resolve(player), { once: true });
       ws.addEventListener('error', () => reject(new Error(`${name}: WebSocket нээгдсэнгүй`)), { once: true });
