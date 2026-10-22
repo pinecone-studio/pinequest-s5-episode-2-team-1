@@ -2,13 +2,13 @@ import { GAME } from '../config/game';
 
 const enc = new TextEncoder();
 
-function toB64(bytes: Uint8Array): string {
+export function toB64(bytes: Uint8Array): string {
   let s = '';
   for (const b of bytes) s += String.fromCharCode(b);
   return btoa(s);
 }
 
-function fromB64(b64: string): Uint8Array<ArrayBuffer> {
+export function fromB64(b64: string): Uint8Array<ArrayBuffer> {
   const s = atob(b64);
   const out = new Uint8Array(s.length);
   for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i);

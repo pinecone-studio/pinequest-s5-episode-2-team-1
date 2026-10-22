@@ -339,6 +339,7 @@ export const errorMessages: Record<ErrorCode | 'NETWORK' | 'TIMEOUT', string> = 
   BOSS_LOCKED: 'Энэ boss-той одоохондоо тулалдах боломжгүй',
   LLM_UNAVAILABLE: 'Асуулт үүсгэх үйлчилгээ тохируулаагүй байна',
   LLM_FAILED: 'Асуулт үүсгэж чадсангүй',
+  TUTOR_UNAVAILABLE: 'Баавгай одоо ярих боломжгүй байна. Дараа дахин оролдоно уу.',
   NETWORK: 'Сервертэй холбогдож чадсангүй. Wi-Fi-гаа шалгана уу.',
   TIMEOUT: 'Сервер хариу өгөхгүй байна. Дахин оролдоно уу.',
 };

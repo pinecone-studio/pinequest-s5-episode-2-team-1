@@ -10,6 +10,7 @@ import { duelRoutes } from './routes/duels';
 import { recoveryRoutes } from './routes/recovery';
 import { avatarRoutes, shopRoutes } from './routes/shop';
 import { questionRoutes, shieldRoutes, taskRoutes } from './routes/tasks';
+import { tutorRoutes } from './routes/tutor';
 
 export { DuelRoom } from './duel/DuelRoom';
 
@@ -38,5 +39,6 @@ app.route('/recovery', recoveryRoutes);
 app.route('/shop', shopRoutes);
 app.route('/avatar', avatarRoutes);
 app.route('/admin', adminRoutes);
+app.route('/tutor', tutorRoutes);
 
 export default app;
