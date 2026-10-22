@@ -4,6 +4,7 @@ import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { Motion, Sprite } from '@/components/pixel';
+import { APP_NAME } from '@/constants/app';
 import { colors, fonts } from '@/constants/theme';
 import { S } from '@/i18n/strings';
 
@@ -19,7 +20,7 @@ export default function WelcomeScreen() {
 
       <View style={[styles.head, { top: Math.max(insets.top, 44) + 20 }]}>
         <Text accessibilityRole="header" style={styles.wordmark}>
-          pinequest
+          {APP_NAME}
         </Text>
         <Text style={styles.tagline}>{S.welcome.tagline}</Text>
       </View>

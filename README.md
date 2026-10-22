@@ -1,4 +1,4 @@
-# Сурах Аян (PoC)
+# KUMA (PoC)
 
 6–10-р ангийн хүүхдүүдэд зориулсан gamified хичээлийн апп. Өдөр бүр хичээлийн даалгавар хийж оноо, XP
 цуглуулна; дараалал (streak) өсөх тусам оноо нь үржинэ. Оноогоороо дүрдээ хувцас авч, ижил түвшний
@@ -8,7 +8,7 @@
 - `api/` — Cloudflare Workers (Hono) + D1 + Durable Objects (`DuelRoom`, WebSocket Hibernation)
 - `shared/types.ts` — API ба WebSocket-ийн гэрээ (хоёр тал `import type`-аар хуваалцана)
 
-Апп-ын түр нэр `mobile/src/constants/brand.json`-д байна. Тоглоомын бүх тогтмол
+Апп-ын нэр (KUMA) `mobile/src/constants/brand.json`-д байна. Тоглоомын бүх тогтмол
 `api/src/config/game.ts`-д, UI-ийн бүх текст `mobile/src/i18n/strings.ts`-д төвлөрсөн.
 
 ---
