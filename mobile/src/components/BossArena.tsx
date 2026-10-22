@@ -31,11 +31,11 @@ const until = (tag: Tag, name: string) => {
 
 // Цохилтын дараалал (Scott Pilgrim маягийн "juice"): бэлдэх → цохих → сум нисэх → онох агшинд хөлдөх (hit-stop)
 // → цагаан анивчилт + оч + дэлгэц чичрэх → хойш түлхэгдэж зөөлөн буцах.
-// Од шидэх: гараа өргөх → оч → цэнэглэх (удаан) → smear (50ms) → гаргах: од ниснэ → дагах → буцах
+// Зөгийн бал шидэх: савыг ард аваачих (удаан) → smear → гаргах: сав нумаар удаан ниснэ (нүдээр дагахаар) → дагах → буцах
 const WINDUP_MS = until('throw', 'throwSmear');
 const RELEASE_AT = until('throw', 'release');
 const STRIKE_MS = 110;
-const FLY_MS = 360;
+const FLY_MS = 900;
 const HIT_AT = RELEASE_AT + FLY_MS;
 const HITSTOP_MS = 80;
 // Ойроос сарвуудах: бэлдэх (суух) → 2 хөлөөрөө гүйх → тоормослох → хумсаа өргөх → smear → сарвуудах → урагшаа харж
@@ -205,7 +205,7 @@ export function BossArena({
         withDelay(FLY_MS, withTiming(0, { duration: 420, easing: smooth })), // буцах
       );
       fly.value = 0;
-      fly.value = withDelay(RELEASE_AT, withTiming(1, { duration: FLY_MS, easing: Easing.in(Easing.quad) }));
+      fly.value = withDelay(RELEASE_AT, withTiming(1, { duration: FLY_MS, easing: Easing.linear }));
     }
     // hit-stop: оносон тал HITSTOP_MS хөлдөөд дараа нь хойш түлхэгдэнэ
     target.value = withDelay(
