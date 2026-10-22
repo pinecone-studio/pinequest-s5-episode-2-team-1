@@ -291,13 +291,15 @@ export interface ArmOpts {
   palm?: P;
   z?: number;
   ghost?: boolean;
+  /** урагшаа харсан баавгайн баруун гар: биеийн урд, ойр гартай ижил гүнд, гэрлээс холдсон тул бага зэрэг сүүдэртэй */
+  twin?: boolean;
 }
 
 /** Мөр → тохой → сарвуу. Хол гар биеийн ард, нэг шат бараан; smear-ийн сүүдэр (`ghost`) нарийн, цайвар. */
 export function arm(l: Layer, sh: P, [elbow, paw]: Limb, o: ArmOpts = {}): P {
-  const bias = o.far ? -1.4 : o.ghost ? 2.6 : 0;
+  const bias = o.far ? -1.4 : o.ghost ? 2.6 : o.twin ? -0.5 : 0;
   const z0 = o.far ? -14 : (o.z ?? 8);
-  const pid = o.far ? 30 : o.ghost ? 60 : 20;
+  const pid = o.far ? 30 : o.ghost ? 60 : o.twin ? 24 : 20;
   const k = o.ghost ? 0.7 : 1;
   if (!o.ghost) l.ball(sh, 3.6, 3.6, FUR, z0 - 1, pid, bias);
   l.capsule(sh, elbow, 3.5 * k, 3.2 * k, FUR, z0, pid, bias);
@@ -472,7 +474,15 @@ export interface Pose {
   ghosts?: Limb[];
   legs?: Legs;
   scarf?: Scarf;
+  /** урагшаа харсан баавгай: хоёр гар биеийн урд, мөрнүүд тэгш хэмтэй (FRONT_SH) */
+  front?: boolean;
 }
+
+/** урагшаа харсан баавгайн мөрнүүд: биеийн голоос (BX + 17) тэнцүү зайд */
+export const FRONT_SH: readonly [P, P] = [
+  [BX + 6, 35],
+  [BX + 28, 35],
+];
 
 export const IDLE_NEAR: Limb = [
   [BX + 3, 40],
@@ -518,10 +528,11 @@ export function figure(p: Pose): { img: Img; paw: P; feet: readonly [number, num
   const sh = mv(NEAR_SH);
   const near = limb(p.near);
   const back = new Layer();
-  arm(back, mv(FAR_SH), limb(p.far ?? IDLE_FAR), { far: true });
+  const far = limb(p.far ?? IDLE_FAR);
+  if (!p.front) arm(back, mv(FAR_SH), far, { far: true });
   const feet = (p.legs ?? stand())(back, bob);
   if (p.scarf) scarf(back, [NECK[0] + ln, NECK[1] + bob], p.scarf);
-  const behind = near[1][0] > sh[0] + 2 && near[1][1] > sh[1];
+  const behind = !p.front && near[1][0] > sh[0] + 2 && near[1][1] > sh[1];
   let paw = near[1];
   if (behind) paw = arm(back, sh, near, { z: -10, claws: p.claws, palm: p.palm });
   let img = over(back.img(), body);
@@ -533,6 +544,7 @@ export function figure(p: Pose): { img: Img; paw: P; feet: readonly [number, num
   if (!behind) {
     const f = new Layer();
     paw = arm(f, sh, near, { claws: p.claws, palm: p.palm });
+    if (p.front) arm(f, mv(FRONT_SH[1]), far, { twin: true, palm: p.palm && [-p.palm[0], p.palm[1]] });
     const fi = f.img();
     img = over(castShadow(img, fi), fi);
   }

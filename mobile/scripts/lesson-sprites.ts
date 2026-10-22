@@ -19,16 +19,14 @@ import {
   BX,
   compose,
   contact,
-  down,
   FEET,
   FH,
   figure,
+  FRONT_SH,
   type Frame,
   FW,
   glow,
   hex,
-  IDLE_FAR,
-  IDLE_NEAR,
   type Limb,
   type P,
   put,
@@ -76,52 +74,64 @@ function done(r: ReturnType<typeof figure>, o: { drop?: P; stars?: P[] } = {}): 
 const frames: (Frame & { lift: number })[] = [];
 const add = (name: string, duration: number, img: Img, lift = 0) => frames.push({ name, duration, img, lift });
 
-/** хоёр гар (ойр, хол) мөрнөөс тэгш хэмтэй: `dx`, `dy` = тохой, сарвууны мөрнөөс шилжилт (ойр гар зүүн тийш) */
-const both = (elbow: P, paw: P): [Limb, Limb] => [
-  [
-    [BX + 6 + elbow[0], 35 + elbow[1]],
-    [BX + 6 + paw[0], 35 + paw[1]],
-  ],
-  [
-    [BX + 27 - elbow[0], 35 + elbow[1]],
-    [BX + 27 - paw[0], 35 + paw[1]],
-  ],
+/** хоёр гар мөрнөөс (FRONT_SH) толин тусгалаар тэгш хэмтэй: `elbow`, `paw` = зүүн гарын мөрнөөс шилжилт (сөрөг x = гадагш) */
+const both = (elbow: P, paw: P): [Limb, Limb] => {
+  const [[lx, ly], [rx, ry]] = FRONT_SH;
+  return [
+    [
+      [lx + elbow[0], ly + elbow[1]],
+      [lx + paw[0], ly + paw[1]],
+    ],
+    [
+      [rx - elbow[0], ry + elbow[1]],
+      [rx - paw[0], ry + paw[1]],
+    ],
+  ];
+};
+const pose = (src: Img, [near, far]: [Limb, Limb], o: Partial<Parameters<typeof figure>[0]> = {}) => figure({ src, near, far, front: true, ...o });
+
+const IDLE = both([-3, 5], [-3, 9]); // гар биеийн хажуугаар унжина
+const IDLE_LOW = both([-3, 6], [-3, 10]); // амьсгал: мөр 1px суух
+const BACK = both([-3, 6], [0, 11]); // суух/буух: гар гуяны урд
+const UP = both([-7, -5], [-10, -13]); // хоёр гараа V хэлбэрээр дээш (толгойноос гадагш)
+const PUMP = both([-7, -8], [-8, -17]); // даллах: сарвуу илүү өндөрт
+const STARTLE = both([-5, 3], [-3, -4]); // цочиход гараа мөрний өндөрт
+const LOW = both([-2, 6], [-1, 11]); // гунигтай: гар биедээ наалдаж унжина
+const STARS_UP: P[] = [
+  [BX - 6, 15],
+  [BX + 40, 15],
 ];
-const [UP_N, UP_F] = both([-5, -5], [-7, -13]); // хоёр гараа V хэлбэрээр дээш
-const [WAVE_N, WAVE_F] = both([-6, -3], [-5, -11]); // даллах: сарвуу дотогш
-const [LOW_N, LOW_F] = both([-2, 6], [1, 11]); // гунигтай: гар унжиж урагшаа
-const [BACK_N, BACK_F] = both([-3, 5], [-4, 9]); // суухад гар арагш доош
-const [STARTLE_N, STARTLE_F] = both([-5, 2], [-1, -4]); // цочиход гараа цээжиндээ
 
 // зогсох: амьсгалд гар эхэлж суугаад толгой дагана (overlapping action); ping-pong
-add('idle', 520, done(figure({ src: front, near: IDLE_NEAR })));
-add('breatheA', 150, done(figure({ src: front, near: down(IDLE_NEAR, 1), far: down(IDLE_FAR, 1) })));
-add('breatheB', 520, done(figure({ src: breathe(front), near: down(IDLE_NEAR, 1), far: down(IDLE_FAR, 1) })));
-add('blink', 130, done(figure({ src: shut, near: IDLE_NEAR })));
+add('idle', 520, done(pose(front, IDLE)));
+add('breatheA', 150, done(pose(front, IDLE_LOW)));
+add('breatheB', 520, done(pose(breathe(front), IDLE_LOW)));
+add('blink', 130, done(pose(shut, IDLE)));
 
-// бодох: сарвуугаар эрүүгээ барьж, хааяа товшино
+// бодох: зүүн сарвуугаар эрүүгээ барьж, хааяа товшино
+const [, IDLE_R] = IDLE;
 const CHIN: Limb = [
-  [BX + 3, 43],
-  [BX + 10, 31],
+  [FRONT_SH[0][0], FRONT_SH[0][1] + 8],
+  [FRONT_SH[0][0] + 5, FRONT_SH[0][1] - 4],
 ];
-add('think', 700, done(figure({ src: front, near: CHIN })));
-add('thinkTap', 220, done(figure({ src: front, near: [CHIN[0], [BX + 10, 32]] })));
+add('think', 700, done(pose(front, [CHIN, IDLE_R])));
+add('thinkTap', 220, done(pose(front, [[CHIN[0], [CHIN[1][0], CHIN[1][1] + 1]], IDLE_R])));
 
-// зөв: суух (бэлдэх) → үсрэх → оргил (од) → унах → буух (squash) → даллах
-add('crouch', 110, done(figure({ src: front, near: BACK_N, far: BACK_F, bob: 2, legs: stand(1, false) })));
-add('jump', 90, done(figure({ src: front, near: UP_N, far: UP_F })), 5);
-add('peak', 200, done(figure({ src: front, near: UP_N, far: UP_F }), { stars: [[BX - 2, 20], [BX + 36, 20], [BX + 17, 3]] }), 9);
-add('fall', 90, done(figure({ src: front, near: UP_N, far: UP_F })), 4);
-add('land', 120, done(figure({ src: front, near: BACK_N, far: BACK_F, bob: 2, legs: stand(1, false) })));
-add('waveA', 180, done(figure({ src: front, near: UP_N, far: UP_F }), { stars: [[BX - 3, 14]] }));
-add('waveB', 180, done(figure({ src: shut, near: WAVE_N, far: WAVE_F }), { stars: [[BX + 37, 14]] }));
+// зөв: суух (бэлдэх) → үсрэх → оргил (од) → унах → буух (squash) → гараа даллах
+add('crouch', 110, done(pose(front, BACK, { bob: 2, legs: stand(1, false) })));
+add('jump', 90, done(pose(front, UP)), 5);
+add('peak', 200, done(pose(front, UP), { stars: [...STARS_UP, [BX + 17, 3]] }), 9);
+add('fall', 90, done(pose(front, UP)), 4);
+add('land', 120, done(pose(front, BACK, { bob: 2, legs: stand(1, false) })));
+add('waveA', 180, done(pose(front, UP), { stars: [STARS_UP[0]] }));
+add('waveB', 180, done(pose(shut, PUMP), { stars: [STARS_UP[1]] }));
 
 // буруу: цочих → бөхийх (хөлс) → толгой сэгсрэх → гунигтай (бөхийсөн хэвээр)
-add('flinch', 140, done(figure({ src: shut, near: STARTLE_N, far: STARTLE_F, legs: stand(1) }), { drop: [BX + 29, 9] }), 1);
-add('slump', 260, done(figure({ src: breathe(shut), near: LOW_N, far: LOW_F, bob: 1, legs: stand(0, false) }), { drop: [BX + 29, 11] }));
-add('shakeL', 130, done(figure({ src: breathe(front), near: LOW_N, far: LOW_F, bob: 1, lean: -1, legs: stand(0, false) }), { drop: [BX + 28, 12] }));
-add('shakeR', 130, done(figure({ src: breathe(front), near: LOW_N, far: LOW_F, bob: 1, lean: 1, legs: stand(0, false) }), { drop: [BX + 30, 12] }));
-add('sad', 900, done(figure({ src: breathe(front), near: LOW_N, far: LOW_F, bob: 1, legs: stand(0, false) }), { drop: [BX + 29, 13] }));
+add('flinch', 140, done(pose(shut, STARTLE, { legs: stand(1) }), { drop: [BX + 29, 9] }), 1);
+add('slump', 260, done(pose(breathe(shut), LOW, { bob: 1, legs: stand(0, false) }), { drop: [BX + 29, 11] }));
+add('shakeL', 130, done(pose(breathe(front), LOW, { bob: 1, lean: -1, legs: stand(0, false) }), { drop: [BX + 28, 12] }));
+add('shakeR', 130, done(pose(breathe(front), LOW, { bob: 1, lean: 1, legs: stand(0, false) }), { drop: [BX + 30, 12] }));
+add('sad', 900, done(pose(breathe(front), LOW, { bob: 1, legs: stand(0, false) }), { drop: [BX + 29, 13] }));
 
 // ---------- дэвсгэр: хичээлийн булан (132×156 px, 3×) ----------
 const BW = 132;
