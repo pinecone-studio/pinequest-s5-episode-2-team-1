@@ -15,6 +15,11 @@ export interface MissedQuestion {
   /** -1 = "Асуулт буруу байна" гэж алгассан */
   choice: number;
   explanation: string;
+  /**
+   * Даалгаварт 2+ алдсан тул хүүхэд энэ бодлогыг салаа зам дээр өөрөө дахин бодно (зөв хариуг нь апп ч
+   * харуулаагүй). Зөв хариу, тайлбарыг prompt-д огт өгөхгүй: баавгай хэлж чадахгүй.
+   */
+  hideAnswer?: boolean;
 }
 
 export interface TutorContext {
@@ -31,8 +36,12 @@ function describeQuestion(q: MissedQuestion, n: number): string {
     `${n}. [${SUBJECT_NAMES[q.subject]}] ${q.prompt}`,
     `   Хувилбарууд: ${q.options.map((_, i) => option(i)).join('; ')}`,
     `   Хүүхдийн хариулт: ${picked}`,
-    `   Зөв хариулт: ${option(q.correctIndex)}`,
-    `   Тайлбар: ${q.explanation}`,
+    ...(q.hideAnswer
+      ? [
+          '   (Хүүхэд энэ бодлогыг салаа зам дээр өөрөө дахин бодно. Зөв хариуг нь бүү хэл, бүү бодож өг, хүүхдийн хэлсэн',
+          '   хариуг зөв, буруу гэж бүү батал. Сэдвийг өөр тоотой жишээгээр заагаад, энэ бодлогыг өөрөө бодохыг урамшуул.)',
+        ]
+      : [`   Зөв хариулт: ${option(q.correctIndex)}`, `   Тайлбар: ${q.explanation}`]),
   ].join('\n');
 }
 

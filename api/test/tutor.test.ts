@@ -21,6 +21,14 @@ describe('tutorSystemPrompt', () => {
     expect(p).toContain('Ерөнхий хуваарь 6');
   });
 
+  it('салаа зам дуусаагүй бодлогын зөв хариу, тайлбарыг prompt-д өгөхгүй', () => {
+    const p = tutorSystemPrompt({ grade: 6, questions: [{ ...q, hideAnswer: true }], focused: true });
+    expect(p).toContain('Хүүхдийн хариулт: A) 2/5 (буруу)');
+    expect(p).not.toContain('Зөв хариулт:');
+    expect(p).not.toContain('Ерөнхий хуваарь 6');
+    expect(p).toContain('Зөв хариуг нь бүү хэл');
+  });
+
   it('алгассан бодлого, олон бодлогын жагсаалт', () => {
     const p = tutorSystemPrompt({ grade: 8, questions: [{ ...q, choice: -1 }, { ...q, subject: 'physics' }], focused: false });
     expect(p).toContain('Хүүхдийн хариулт: алгассан');

@@ -1,6 +1,7 @@
 import { GAME, type Subject } from '../config/game';
 import { ApiError } from '../lib/errors';
 import type { MissedQuestion, TutorContext } from '../llm/live';
+import { recoveryCertain } from './recovery';
 
 interface Row {
   question_id: number;
@@ -10,6 +11,11 @@ interface Row {
   correct_index: number;
   explanation: string;
   choice: number;
+  correct: number | null;
+  /** Тухайн даалгаврын алдсан асуултын тоо (flag тооцохгүй). */
+  task_wrong: number;
+  /** Салаа зам нь дууссан эсэх; салаа зам үүсээгүй бол null. */
+  recovery_cleared: number | null;
 }
 
 const toMissed = (r: Row): MissedQuestion => ({
@@ -19,9 +25,13 @@ const toMissed = (r: Row): MissedQuestion => ({
   correctIndex: r.correct_index,
   choice: r.choice,
   explanation: r.explanation,
+  // Апп answerTask-тай адил: 2+ алдсан даалгаврын буруу хариултын зөв хариуг салаа зам дуустал нууна.
+  hideAnswer: r.correct !== 1 && recoveryCertain(r.task_wrong) && r.recovery_cleared !== 1,
 });
 
-const SELECT = `SELECT tq.question_id, q.subject, q.prompt, q.options, q.correct_index, q.explanation, tq.choice
+const SELECT = `SELECT tq.question_id, q.subject, q.prompt, q.options, q.correct_index, q.explanation, tq.choice, tq.correct,
+    (SELECT COUNT(*) FROM task_questions w WHERE w.task_id = tq.task_id AND w.choice >= 0 AND w.correct = 0) AS task_wrong,
+    (SELECT r.cleared_at IS NOT NULL FROM recoveries r WHERE r.task_id = tq.task_id) AS recovery_cleared
   FROM task_questions tq
   JOIN tasks t ON t.id = tq.task_id
   JOIN questions q ON q.id = tq.question_id`;
