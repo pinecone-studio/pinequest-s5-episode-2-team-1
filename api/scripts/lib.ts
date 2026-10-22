@@ -101,8 +101,9 @@ function slowRequest(
   });
 }
 
-export function wsUrl(path: string, token: string): string {
-  return `${API_URL.replace(/^http/, 'ws')}${path}?token=${encodeURIComponent(token)}`;
+/** DuelRoom-ын WebSocket. Token-ийг URL-д биш subprotocol-оор дамжуулна. */
+export function openDuelSocket(duelId: number, token: string): WebSocket {
+  return new WebSocket(`${API_URL.replace(/^http/, 'ws')}/duels/${duelId}/ws`, ['bearer', token]);
 }
 
 export const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));

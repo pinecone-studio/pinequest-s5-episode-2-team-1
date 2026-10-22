@@ -7,7 +7,7 @@
 //   --loop                                    # тулаан дуусмагц дахин эхэлнэ
 //   --url http://192.168.x.x:8787             # өөр сервер
 import type { AuthResponse, DuelResponse, LobbyResponse, ServerMsg } from '../../shared/types';
-import { ADMIN_TOKEN, API_URL, arg, call, flag, HttpError, sleep, wsUrl } from './lib';
+import { ADMIN_TOKEN, API_URL, arg, call, flag, HttpError, openDuelSocket, sleep } from './lib';
 
 const USER = arg('user') ?? `bot_${Math.random().toString(36).slice(2, 7)}`;
 const PASS = arg('pass', 'bot-pass-123')!;
@@ -78,7 +78,7 @@ async function chooseAnswer(questionId: number, optionCount: number): Promise<nu
 
 function play(auth: AuthResponse, duelId: number): Promise<void> {
   return new Promise((resolve) => {
-    const ws = new WebSocket(wsUrl(`/duels/${duelId}/ws`, auth.token));
+    const ws = openDuelSocket(duelId, auth.token);
     const ping = setInterval(() => ws.readyState === WebSocket.OPEN && ws.send('ping'), 20_000);
     const answered = new Set<number>();
 
