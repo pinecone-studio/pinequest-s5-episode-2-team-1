@@ -2,7 +2,9 @@
 // хамгийн сүүлийн хуудаснаас хойших хичээл замд орохгүй: ном дутуу орсон бол зам тэнд дуусна.
 import type { BookLesson, LessonsResponse } from '../../../shared/types';
 import type { Subject } from '../config/game';
+import { lessonsAt } from '../domain/path';
 import type { Bindings } from '../env';
+import type { PageRange } from './grounding';
 
 /** Гарчиг хайх эхний хуудсууд (нүүр, хавтасны ар тал, гарчиг). */
 const TOC_SCAN_PAGES = 8;
@@ -59,20 +61,49 @@ export function parseToc(pages: string[]): BookLesson[] {
   return lessons;
 }
 
+export interface BookLessons {
+  /** 'math-7' — questions.book_ref-ийн эхний хэсэг */
+  slug: string;
+  title: string;
+  /** сан дахь хуудас (seq) = хэвлэмэл хуудас + offset */
+  offset: number;
+  /** сан дахь хамгийн сүүлийн хэвлэмэл хуудас */
+  lastPage: number;
+  lessons: BookLesson[];
+}
+
 /** Хэрэглэгчийн ангийн номын хичээлүүд; хамгийн сүүлд хэвлэгдсэн хувилбарыг авна. */
-export async function loadLessons(env: Pick<Bindings, 'BOOKS'>, subject: Subject, grade: number): Promise<LessonsResponse> {
+export async function bookLessons(env: Pick<Bindings, 'BOOKS'>, subject: Subject, grade: number): Promise<BookLessons | null> {
   const book = await env.BOOKS.prepare(
-    `SELECT b.id, b.title, b.page_offset, MAX(p.seq) AS last_seq
+    `SELECT b.id, b.slug, b.title, b.page_offset, MAX(p.seq) AS last_seq
      FROM books b JOIN book_pages p ON p.book_id = b.id
      WHERE b.subject = ? AND b.grade = ? GROUP BY b.id ORDER BY b.year DESC, b.id DESC LIMIT 1`,
   )
     .bind(subject, grade)
-    .first<{ id: number; title: string; page_offset: number; last_seq: number }>();
-  if (!book) return { book: null, lessons: [] };
+    .first<{ id: number; slug: string; title: string; page_offset: number; last_seq: number }>();
+  if (!book) return null;
   const { results } = await env.BOOKS.prepare('SELECT text_md FROM book_pages WHERE book_id = ? AND seq <= ? ORDER BY seq')
     .bind(book.id, TOC_SCAN_PAGES)
     .all<{ text_md: string | null }>();
   const lastPage = book.last_seq - book.page_offset;
   const lessons = parseToc(results.map((r) => r.text_md ?? '')).filter((l) => l.page === null || l.page <= lastPage);
-  return { book: book.title, lessons };
+  return { slug: book.slug, title: book.title, offset: book.page_offset, lastPage, lessons };
+}
+
+export async function loadLessons(env: Pick<Bindings, 'BOOKS'>, subject: Subject, grade: number): Promise<LessonsResponse> {
+  const book = await bookLessons(env, subject, grade);
+  return book ? { book: book.title, lessons: book.lessons } : { book: null, lessons: [] };
+}
+
+/**
+ * `node` зангилааны хичээлүүдийн сан дахь хуудсууд: эхний хичээлийн хуудаснаас дараагийн хичээлийн өмнөх
+ * хуудас хүртэл (сүүлийн хичээл бол номын төгсгөл хүртэл). Boss эсвэл хуудасгүй хичээл бол null.
+ */
+export function lessonPages(book: BookLessons, node: number): PageRange | null {
+  const at = lessonsAt(book.lessons, node);
+  const from = at[0]?.page;
+  if (from == null) return null;
+  const after = book.lessons.slice(book.lessons.indexOf(at[at.length - 1]) + 1);
+  const next = after.find((l) => l.page !== null)?.page ?? book.lastPage + 1;
+  return { slug: book.slug, from: from + book.offset, to: Math.max(from, next - 1) + book.offset };
 }
