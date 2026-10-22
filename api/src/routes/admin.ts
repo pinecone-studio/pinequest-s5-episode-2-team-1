@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { GAME, SUBJECTS, type Subject, type Tier } from '../config/game';
+import { topicIds } from '../config/topics';
 import type { AppEnv } from '../env';
 import { ApiError, parseId, readBody } from '../lib/errors';
 import { pickProvider } from '../llm';
@@ -77,7 +78,7 @@ adminRoutes.post('/import', async (c) => {
   let duplicates = 0;
   let rejected = 0;
   for (const g of groups.values()) {
-    const v = validateDrafts(g.items);
+    const v = validateDrafts(g.items, undefined, topicIds(g.tier, g.subject));
     rejected += v.rejected.length;
     const r = await insertDrafts(c.env.DB, g.tier, g.subject, v.drafts, body.source);
     inserted += r.inserted;
@@ -97,13 +98,14 @@ adminRoutes.get('/pool', async (c) => {
 /** Идэвхтэй (flag-гүй) асуултуудыг export хийх (seed/questions.json-д хадгалж git-д оруулна). */
 adminRoutes.get('/export', async (c) => {
   const { results } = await c.env.DB.prepare(
-    `SELECT tier, subject, prompt, options, correct_index, explanation, source
+    `SELECT tier, subject, topic, prompt, options, correct_index, explanation, source
      FROM questions WHERE flagged = 0 ORDER BY tier, subject, id`,
-  ).all<{ tier: number; subject: string; prompt: string; options: string; correct_index: number; explanation: string; source: string }>();
+  ).all<{ tier: number; subject: string; topic: string | null; prompt: string; options: string; correct_index: number; explanation: string; source: string }>();
   return c.json({
     questions: results.map((r) => ({
       tier: r.tier,
       subject: r.subject,
+      ...(r.topic ? { topic: r.topic } : {}),
       prompt: r.prompt,
       options: JSON.parse(r.options) as string[],
       correctIndex: r.correct_index,

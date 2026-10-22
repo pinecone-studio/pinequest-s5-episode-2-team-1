@@ -4,6 +4,8 @@ export interface QuestionDraft {
   options: string[];
   correctIndex: number;
   explanation: string;
+  /** config/topics.ts-ийн id; загвар буруу/хоосон өгвөл байхгүй. */
+  topic?: string;
 }
 
 export type LlmProvider = 'gemini' | 'workers-ai';
@@ -30,13 +32,14 @@ export const QUESTIONS_JSON_SCHEMA = {
       items: {
         type: 'object',
         properties: {
+          topic: { type: 'string', description: 'Хөтөлбөрийн сэдвийн id (жагсаалтаас)' },
           prompt: { type: 'string', description: 'Асуулт (монгол кирилл)' },
           options: { type: 'array', items: { type: 'string' }, minItems: 4, maxItems: 4 },
           solution: { type: 'string', description: 'Алхам алхмаар бодолт, хариугаа сонгохоос өмнө' },
           correctIndex: { type: 'integer', minimum: 0, maximum: 3 },
           explanation: { type: 'string', description: 'Сурагчид харуулах 1–2 өгүүлбэр тайлбар' },
         },
-        required: ['prompt', 'options', 'solution', 'correctIndex', 'explanation'],
+        required: ['topic', 'prompt', 'options', 'solution', 'correctIndex', 'explanation'],
       },
     },
   },

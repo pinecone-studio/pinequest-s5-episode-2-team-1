@@ -1,6 +1,7 @@
 // Асуулт үүсгэх LLM дуудлагууд зөвхөн энэ модульд. Provider-ийг LLM_PROVIDER-оор сонгоно;
 // хоосон бол GEMINI_API_KEY байвал Gemini, үгүй бол Workers AI.
 import type { Subject, Tier } from '../config/game';
+import { topicIds } from '../config/topics';
 import type { Bindings } from '../env';
 import type { Excerpt } from '../services/grounding';
 import { geminiGenerate } from './gemini';
@@ -37,6 +38,6 @@ export async function generateQuestions(
   if (!provider) throw new LlmError(env.LLM_PROVIDER === 'workers-ai' ? 'workers-ai' : 'gemini', 0, 'LLM тохируулаагүй');
   const { system, user } = buildPrompt(tier, subject, count, avoid, excerpt);
   const raw = provider === 'gemini' ? await geminiGenerate(env, { system, user }) : await workersAiGenerate(env, system, user);
-  const { drafts, rejected } = validateDrafts(raw);
+  const { drafts, rejected } = validateDrafts(raw, undefined, topicIds(tier, subject));
   return { drafts, rejected, source: sourceLabel(env, provider) };
 }
