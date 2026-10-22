@@ -17,7 +17,7 @@ const good = (over: Record<string, unknown> = {}) => ({
 
 describe('validateDrafts', () => {
   it('зөв бүтэцтэйг хүлээж авч, solution-ыг хасна', () => {
-    const { drafts, rejected } = validateDrafts({ questions: [good()] });
+    const { drafts, rejected } = validateDrafts({ questions: [good()] }, []);
     expect(rejected).toEqual([]);
     expect(drafts).toHaveLength(1);
     expect(Object.keys(drafts[0]).sort()).toEqual(['correctIndex', 'explanation', 'options', 'prompt']);
@@ -25,7 +25,7 @@ describe('validateDrafts', () => {
 
   it('сонголтуудыг холиход зөв хариултын текст хэвээр', () => {
     for (let i = 0; i < 20; i++) {
-      const [d] = validateDrafts({ questions: [good()] }).drafts;
+      const [d] = validateDrafts({ questions: [good()] }, []).drafts;
       expect(d.options[d.correctIndex]).toBe('5');
       expect([...d.options].sort()).toEqual(['23', '4', '5', '6']);
     }
@@ -45,30 +45,30 @@ describe('validateDrafts', () => {
         { prompt: 'Асуулт?' },
         'string',
       ],
-    });
+    }, []);
     expect(drafts).toHaveLength(0);
     expect(rejected).toHaveLength(10);
   });
 
   it('багц доторх давхардлыг (зай, том жижиг үсэг ялгаагүй) хаяна', () => {
-    const { drafts, rejected } = validateDrafts({ questions: [good(), good({ prompt: '2 + 3  хэдтэй ТЭНЦҮҮ вэ' })] });
+    const { drafts, rejected } = validateDrafts({ questions: [good(), good({ prompt: '2 + 3  хэдтэй ТЭНЦҮҮ вэ' })] }, []);
     expect(drafts).toHaveLength(1);
     expect(rejected[0].reason).toBe('duplicate in batch');
   });
 
   it('физикийн "Eп", "Eк", грек α, Ω тэмдэглэгээг зөвшөөрнө', () => {
-    const { drafts } = validateDrafts([good({ explanation: 'Eп = m · g · h, sin α, R = 4 Ω тул 200 Ж.' })]);
+    const { drafts } = validateDrafts([good({ explanation: 'Eп = m · g · h, sin α, R = 4 Ω тул 200 Ж.' })], []);
     expect(drafts).toHaveLength(1);
   });
 
   it('"A) " гэх мэт угтварыг сонголтоос авч хаяна', () => {
-    const [d] = validateDrafts([good({ options: ['A) 5', 'B) 6', 'C) 4', 'D) 23'] })], () => 0.999).drafts;
+    const [d] = validateDrafts([good({ options: ['A) 5', 'B) 6', 'C) 4', 'D) 23'] })], [], () => 0.999).drafts;
     expect([...d.options].sort()).toEqual(['23', '4', '5', '6']);
   });
 
   it('questions массив байхгүй бол бүгд татгалзана', () => {
-    expect(validateDrafts({ foo: 1 }).drafts).toEqual([]);
-    expect(validateDrafts(null).rejected[0].reason).toBe('no questions array');
+    expect(validateDrafts({ foo: 1 }, []).drafts).toEqual([]);
+    expect(validateDrafts(null, []).rejected[0].reason).toBe('no questions array');
   });
 });
 
@@ -76,7 +76,6 @@ describe('сэдэв (topic)', () => {
   it('жагсаалтад байгаа сэдвийг хадгалж, байхгүйг нь сэдэвгүй үлдээнэ', () => {
     const { drafts, rejected } = validateDrafts(
       { questions: [good({ topic: 'percent' }), good({ prompt: '7 − 4 хэд вэ?', topic: 'quantum' }), good({ prompt: '9 : 3 хэд вэ?' })] },
-      undefined,
       topicIds(1, 'math'),
     );
     expect(rejected).toEqual([]);

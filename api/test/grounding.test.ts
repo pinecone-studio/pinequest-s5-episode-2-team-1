@@ -80,11 +80,11 @@ describe('validateDrafts: эх сурвалж руу заасан асуулт',
 
   it('сурагч харахгүй зураг, хуудас руу заасныг татгалзана', () => {
     for (const prompt of ['Дээрх зураг дахь гурвалжны өнцгийг ол.', 'Сурах бичгийн 45-р хуудасны бодлогыг бод.', 'Зурагт үзүүлсэн тоог ол.']) {
-      expect(validateDrafts({ questions: [q(prompt)] }).rejected[0]?.reason).toBe('refers to source');
+      expect(validateDrafts({ questions: [q(prompt)] }, []).rejected[0]?.reason).toBe('refers to source');
     }
   });
 
   it('энгийн бодлогыг хэвээр нь авна', () => {
-    expect(validateDrafts({ questions: [q('|−5| хэдтэй тэнцүү вэ?'), q('Бат 120 хуудастай номын 30-ыг уншжээ. Хэдэн хувийг уншсан бэ?')] }).drafts).toHaveLength(2);
+    expect(validateDrafts({ questions: [q('|−5| хэдтэй тэнцүү вэ?'), q('Бат 120 хуудастай номын 30-ыг уншжээ. Хэдэн хувийг уншсан бэ?')] }, []).drafts).toHaveLength(2);
   });
 });

@@ -94,9 +94,9 @@ function checkOne(raw: unknown, topics: readonly string[]): QuestionDraft | Reje
  */
 export function validateDrafts(
   raw: unknown,
+  /** Энэ түвшин, хичээлийн зөвшөөрөгдөх сэдвийн id (config/topics.ts); хоосон бол бүх асуулт сэдэвгүй. */
+  topics: readonly string[],
   rng: () => number = Math.random,
-  /** Энэ түвшин, хичээлийн зөвшөөрөгдөх сэдвийн id (config/topics.ts). */
-  topics: readonly string[] = [],
 ): { drafts: QuestionDraft[]; rejected: Rejection[] } {
   const list: unknown = Array.isArray(raw) ? raw : (raw as { questions?: unknown } | null)?.questions;
   if (!Array.isArray(list)) return { drafts: [], rejected: [{ reason: 'no questions array' }] };

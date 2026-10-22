@@ -78,7 +78,7 @@ adminRoutes.post('/import', async (c) => {
   let duplicates = 0;
   let rejected = 0;
   for (const g of groups.values()) {
-    const v = validateDrafts(g.items, undefined, topicIds(g.tier, g.subject));
+    const v = validateDrafts(g.items, topicIds(g.tier, g.subject));
     rejected += v.rejected.length;
     const r = await insertDrafts(c.env.DB, g.tier, g.subject, v.drafts, body.source);
     inserted += r.inserted;
