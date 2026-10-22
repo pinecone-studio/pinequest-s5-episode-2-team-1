@@ -19,168 +19,135 @@
   "frames": [
     {
       "name": "idle0",
-      "duration": 220,
-      "lift": 0
+      "duration": 220
     },
     {
       "name": "idle1",
-      "duration": 220,
-      "lift": 0
+      "duration": 220
     },
     {
       "name": "idle2",
-      "duration": 220,
-      "lift": 0
+      "duration": 220
     },
     {
       "name": "idle3",
-      "duration": 220,
-      "lift": 0
+      "duration": 220
     },
     {
       "name": "think0",
-      "duration": 150,
-      "lift": 0
+      "duration": 150
     },
     {
       "name": "think1",
-      "duration": 150,
-      "lift": 0
+      "duration": 150
     },
     {
       "name": "think2",
-      "duration": 150,
-      "lift": 0
+      "duration": 150
     },
     {
       "name": "think3",
-      "duration": 150,
-      "lift": 0
+      "duration": 150
     },
     {
       "name": "think4",
-      "duration": 150,
-      "lift": 0
+      "duration": 150
     },
     {
       "name": "think5",
-      "duration": 150,
-      "lift": 0
+      "duration": 150
     },
     {
       "name": "think6",
-      "duration": 150,
-      "lift": 0
+      "duration": 150
     },
     {
       "name": "think7",
-      "duration": 150,
-      "lift": 0
+      "duration": 150
     },
     {
       "name": "think8",
-      "duration": 150,
-      "lift": 0
+      "duration": 150
     },
     {
       "name": "cheer0",
-      "duration": 110,
-      "lift": 0
+      "duration": 110
     },
     {
       "name": "cheer1",
-      "duration": 110,
-      "lift": 0
+      "duration": 110
     },
     {
       "name": "cheer2",
-      "duration": 110,
-      "lift": 0
+      "duration": 110
     },
     {
       "name": "cheer3",
-      "duration": 110,
-      "lift": 0
+      "duration": 110
     },
     {
       "name": "cheer4",
-      "duration": 90,
-      "lift": 0
+      "duration": 90
     },
     {
       "name": "cheer5",
-      "duration": 90,
-      "lift": 0
+      "duration": 90
     },
     {
       "name": "cheer6",
-      "duration": 90,
-      "lift": 0
+      "duration": 90
     },
     {
       "name": "cheer7",
-      "duration": 110,
-      "lift": 0
+      "duration": 110
     },
     {
       "name": "cheer8",
-      "duration": 110,
-      "lift": 0
+      "duration": 110
     },
     {
       "name": "cheer9",
-      "duration": 110,
-      "lift": 0
+      "duration": 110
     },
     {
       "name": "cheer10",
-      "duration": 110,
-      "lift": 0
+      "duration": 110
     },
     {
       "name": "sad0",
-      "duration": 130,
-      "lift": 0
+      "duration": 130
     },
     {
       "name": "sad1",
-      "duration": 130,
-      "lift": 0
+      "duration": 130
     },
     {
       "name": "sad2",
-      "duration": 130,
-      "lift": 0
+      "duration": 130
     },
     {
       "name": "sad3",
-      "duration": 130,
-      "lift": 0
+      "duration": 130
     },
     {
       "name": "sad4",
-      "duration": 130,
-      "lift": 0
+      "duration": 130
     },
     {
       "name": "sad5",
-      "duration": 130,
-      "lift": 0
+      "duration": 130
     },
     {
       "name": "sad6",
-      "duration": 130,
-      "lift": 0
+      "duration": 130
     },
     {
       "name": "sad7",
-      "duration": 130,
-      "lift": 0
+      "duration": 130
     },
     {
       "name": "sad8",
-      "duration": 700,
-      "lift": 0
+      "duration": 700
     }
   ],
   "tags": {

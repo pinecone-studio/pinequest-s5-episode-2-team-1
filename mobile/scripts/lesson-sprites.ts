@@ -205,7 +205,7 @@ if (preview < 0) {
     feet: FEET,
     pivot: PIVOT,
     background: { w: BW, h: BH, floor: FLOOR, rug: RUG },
-    frames: frames.map(({ name, duration }) => ({ name, duration, lift: 0 })),
+    frames: frames.map(({ name, duration }) => ({ name, duration })),
     tags,
   };
   writeFileSync(META, `${JSON.stringify(meta, null, 2)}\n`);
