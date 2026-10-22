@@ -13,18 +13,14 @@ import Animated, {
 import { AnimatedBar, frameSize, Motion, Pop, SheetFrame, Sprite } from '@/components/pixel';
 import { colors, fonts, radius } from '@/constants/theme';
 import { S } from '@/i18n/strings';
+import { tagFrames } from '@/lib/pixelBear/anim';
 import bear from '@/lib/pixelBear/bear.json';
 import { BOSS_FRAME, type Boss, HOVER } from '@/lib/pixelBear/path';
 import type { SpriteKey } from '@/sprites';
 
 // Баавгайн frame бүр өөрийн хугацаатай, tag-аар бүлэглэгдсэн (mobile/scripts/bear-sprites.ts → bear.json).
 type Tag = keyof typeof bear.tags;
-/** tag-ийн frame-ууд; ping-pong бол буцаж давтана */
-function frames(tag: Tag): number[] {
-  const { from, to, direction } = bear.tags[tag];
-  const f = Array.from({ length: to - from + 1 }, (_, i) => from + i);
-  return direction === 'pingpong' ? [...f, ...f.slice(1, -1).reverse()] : f;
-}
+const frames = (tag: Tag) => tagFrames(bear, tag);
 const ms = (frame: number) => bear.frames[frame].duration;
 const span = (tag: Tag) => frames(tag).reduce((t, f) => t + ms(f), 0);
 /** tag эхэлснээс `name` frame гарах хүртэлх хугацаа */

@@ -10,16 +10,18 @@ import { ApiError, api, errorText } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
 import { BossArena, type Strike } from '@/components/BossArena';
 import { Button } from '@/components/Button';
+import { LessonBackdrop, LessonBear, type LessonMood } from '@/components/LessonBear';
 import { OptionButton, type OptionState } from '@/components/OptionButton';
-import { AnimatedBar, Motion, Pop, Sprite } from '@/components/pixel';
+import { AnimatedBar, Pop } from '@/components/pixel';
 import { RewardView } from '@/components/RewardView';
 import { colors, fonts, radius } from '@/constants/theme';
 import { S, subjectNames } from '@/i18n/strings';
 import { confirm } from '@/lib/confirm';
 import { BOSSES } from '@/lib/pixelBear/path';
-import type { SpriteKey } from '@/sprites';
 
 const XP_PER_CORRECT = 10;
+/** хичээлийн дэвсгэрийн хананы дээд өнгө (scripts/lesson-sprites.ts): өндөр дэлгэцэнд дэвсгэрээс дээш хэсгийг дүүргэнэ */
+const LESSON_WALL = '#3b2a8f';
 
 /**
  * 05 · Хичээл (асуулт) ба 06 · Шагнал. Логик: сонгох → ШАЛГАХ → серверт хариулт → тайлбар → дараагийн асуулт.
@@ -142,14 +144,14 @@ export default function TaskScreen() {
   // Шагналаа (XP, шат, streak) эхлээд харуулна; салаа зам нээгдсэн бол тэндээс шууд руу нь орно
   if (result) return <RewardView result={result} onAgain={load} onRecovery={recovery ? () => router.replace(`/recovery/${subject}`) : undefined} />;
 
-  // Баавгай: бодож буй (шилтэй) → зөв (баярласан) → буруу (ядарсан)
-  const mood: 'think' | 'right' | 'wrong' = feedback ? (feedback.correct ? 'right' : 'wrong') : 'think';
-  const bear: { sprite: SpriteKey; right: number; top: number; alt: string; bubble: string } =
+  // Баавгай: бодож буй (эрүүгээ барина) → зөв (үсэрч баярлана) → буруу (цочиж, гунигтай)
+  const mood: LessonMood = feedback ? (feedback.correct ? 'right' : 'wrong') : 'think';
+  const bear: { alt: string; bubble: string } =
     mood === 'right'
-      ? { sprite: 'bear_cheer_scarf_180x252', right: 30, top: 120, alt: S.lesson.bearCorrect, bubble: S.lesson.correctBubble(XP_PER_CORRECT) }
+      ? { alt: S.lesson.bearCorrect, bubble: S.lesson.correctBubble(XP_PER_CORRECT) }
       : mood === 'wrong'
-        ? { sprite: 'bear_tired_scarf_164x280', right: 40, top: 92, alt: S.lesson.bearWrong, bubble: S.lesson.wrongBubble }
-        : { sprite: 'outfit_glasses_164x280', right: 40, top: 92, alt: S.lesson.bearThinking, bubble: error ? error.message : S.lesson.thinking };
+        ? { alt: S.lesson.bearWrong, bubble: S.lesson.wrongBubble }
+        : { alt: S.lesson.bearThinking, bubble: error ? error.message : S.lesson.thinking };
 
   const stateOf = (i: number): OptionState => {
     if (!feedback) return selected === i ? 'selected' : 'idle';
@@ -183,7 +185,7 @@ export default function TaskScreen() {
   return (
     <View style={styles.root}>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 24 }} showsVerticalScrollIndicator={false}>
-        <View style={[styles.panel, { paddingTop: insets.top, height: 402 + insets.top }, foe && { backgroundColor: colors.indigo }]}>
+        <View style={[styles.panel, { paddingTop: insets.top, height: 402 + insets.top }, { backgroundColor: foe ? colors.indigo : LESSON_WALL }]}>
           {foe ? (
             <BossArena
               boss={foe}
@@ -195,7 +197,12 @@ export default function TaskScreen() {
               message={bossMessage}
               insetTop={insets.top}
             />
-          ) : null}
+          ) : (
+            <>
+              <LessonBackdrop />
+              <LessonBear mood={mood} label={bear.alt} />
+            </>
+          )}
           <View style={styles.panelTop}>
             <Pressable accessibilityRole="button" accessibilityLabel={S.lesson.close} onPress={() => router.back()} style={styles.close}>
               <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={colors.white} strokeWidth={2.6} strokeLinecap="round">
@@ -214,13 +221,6 @@ export default function TaskScreen() {
                   <Text style={styles.bubbleText}>{bear.bubble}</Text>
                 </View>
               </Pop>
-              <View style={[styles.bear, { right: bear.right, top: bear.top + insets.top - 44 }]}>
-                <Pop trigger={bear.sprite} from={0.7}>
-                  <Motion preset={mood === 'right' ? 'float' : 'bob'}>
-                    <Sprite id={bear.sprite} label={bear.alt} />
-                  </Motion>
-                </Pop>
-              </View>
             </>
           )}
 
@@ -314,7 +314,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   panelTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 6 },
-  close: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
+  // хөшиг, гэр зэрэг ямар ч дэвсгэр дээр цагаан ✕ тод харагдана
+  close: { width: 44, height: 44, borderRadius: 22, backgroundColor: 'rgba(25,21,46,0.45)', alignItems: 'center', justifyContent: 'center' },
   subjectPill: { height: 36, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: colors.white, justifyContent: 'center' },
   subjectText: { fontFamily: fonts.bold, fontSize: 14, color: colors.ink },
   bubbleWrap: { position: 'absolute', left: 28, maxWidth: 150, zIndex: 2 },
@@ -328,7 +329,6 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 20,
   },
   bubbleText: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 19, color: colors.ink },
-  bear: { position: 'absolute' },
   progressRow: { position: 'absolute', left: 24, right: 24, bottom: 20, flexDirection: 'row', alignItems: 'center', gap: 10 },
   track: { flex: 1, height: 12, borderRadius: 6, backgroundColor: colors.white, overflow: 'hidden' },
   progressNum: { fontFamily: fonts.pixel, fontSize: 16, color: colors.white },
