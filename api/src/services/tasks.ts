@@ -259,10 +259,22 @@ export async function completeTask(
       .bind(correctCount, reward.points, reward.xp, reward.multiplier, after.streak, now, tx, taskId, userId),
     db
       .prepare(
-        `UPDATE users SET xp = xp + ?, points = points + ?, streak = ?, last_streak_day = ?, shield_held = ?, shield_used_day = ?
+        // shield_held-ийг харьцангуйгаар: хооронд нь авсан хамгаалалтыг дарж бичихгүй.
+        `UPDATE users SET xp = xp + ?, points = points + ?, streak = ?, last_streak_day = ?,
+           shield_held = MAX(shield_held - ?, 0), shield_used_day = ?
          WHERE id = ? AND ${guard}`,
       )
-      .bind(reward.xp, reward.points, after.streak, after.lastDay, after.shieldHeld, after.shieldUsedDay, userId, taskId, tx),
+      .bind(
+        reward.xp,
+        reward.points,
+        after.streak,
+        after.lastDay,
+        normalized.shieldConsumed ? 1 : 0,
+        after.shieldUsedDay,
+        userId,
+        taskId,
+        tx,
+      ),
     db
       .prepare(
         `INSERT INTO point_ledger (user_id, delta, reason, ref_type, ref_id, created_at)
