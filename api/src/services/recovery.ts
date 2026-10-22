@@ -88,6 +88,7 @@ interface RecoveryRow {
   task_id: number;
   questions: string;
   passed: string;
+  misses: number;
 }
 
 interface PracticeQuestion {
@@ -102,7 +103,7 @@ interface PracticeQuestion {
 
 async function pending(db: D1Database, userId: number, subject: Subject) {
   const row = await db
-    .prepare('SELECT task_id, questions, passed FROM recoveries WHERE user_id = ? AND subject = ? AND cleared_at IS NULL ORDER BY task_id DESC LIMIT 1')
+    .prepare('SELECT task_id, questions, passed, misses FROM recoveries WHERE user_id = ? AND subject = ? AND cleared_at IS NULL ORDER BY task_id DESC LIMIT 1')
     .bind(userId, subject)
     .first<RecoveryRow>();
   if (!row) throw new ApiError(404, 'NOT_FOUND', 'Нөхөх салаа зам алга');
@@ -135,7 +136,13 @@ export async function loadRecovery(db: D1Database, userId: number, subject: Subj
   return toDto(subject, p.questions, p.passed);
 }
 
-/** Буруу бол юу ч өөрчлөхгүй (дахин бодно); зөв бол тайлбарыг өгч, бүгд зөв болоход салаа зам хаагдана. */
+const STALE = () => new ApiError(409, 'ALREADY_ANSWERED', 'Энэ асуултад аль хэдийн хариулсан');
+
+/**
+ * Зөв бол тайлбарыг өгч, бүгд зөв болоход салаа зам хаагдана. Буруу бол дахин бодно; RECOVERY_MAX_MISSES дахь
+ * буруугаас зөв хариу, тайлбарыг үзүүлээд асуултыг ижил сэдвийн өөр асуултаар солино (байхгүй бол хэвээр үлдэнэ),
+ * тиймээс сонголтуудыг ээлжлэн дарж давах боломжгүй.
+ */
 export async function answerRecovery(
   db: D1Database,
   userId: number,
@@ -145,16 +152,59 @@ export async function answerRecovery(
   now = Date.now(),
 ): Promise<RecoveryAnswerResponse> {
   const p = await pending(db, userId, subject);
-  if (!p.current || p.current.id !== questionId) throw new ApiError(409, 'ALREADY_ANSWERED', 'Энэ асуултад аль хэдийн хариулсан');
-  if (choice !== p.current.correct_index) return { correct: false, recovery: toDto(subject, p.questions, p.passed) };
+  const q = p.current;
+  if (!q || q.id !== questionId) throw STALE();
+  // passed, misses-ийг өмнөх утгаар нь шалгаж давхар дарсан хариултыг тоолохгүй.
+  const guard = 'WHERE task_id = ? AND passed = ? AND misses = ? AND cleared_at IS NULL';
 
-  const passed = [...p.passed, questionId];
-  const done = p.questions.every((q) => passed.includes(q.id));
-  // passed-ийг өмнөх утгаар нь шалгаж давхар дарсан хариултыг тоолохгүй.
-  const upd = await db
-    .prepare('UPDATE recoveries SET passed = ?, cleared_at = ? WHERE task_id = ? AND passed = ? AND cleared_at IS NULL')
-    .bind(JSON.stringify(passed), done ? now : null, p.row.task_id, p.row.passed)
-    .run();
-  if (!upd.meta.changes) throw new ApiError(409, 'ALREADY_ANSWERED', 'Энэ асуултад аль хэдийн хариулсан');
-  return { correct: true, explanation: p.current.explanation, recovery: toDto(subject, p.questions, passed) };
+  if (choice === q.correct_index) {
+    const passed = [...p.passed, questionId];
+    const done = p.questions.every((x) => passed.includes(x.id));
+    const upd = await db
+      .prepare(`UPDATE recoveries SET passed = ?, misses = 0, cleared_at = ? ${guard}`)
+      .bind(JSON.stringify(passed), done ? now : null, p.row.task_id, p.row.passed, p.row.misses)
+      .run();
+    if (!upd.meta.changes) throw STALE();
+    return { correct: true, explanation: q.explanation, recovery: toDto(subject, p.questions, passed) };
+  }
+
+  const misses = p.row.misses + 1;
+  if (misses < GAME.RECOVERY_MAX_MISSES) {
+    const upd = await db.prepare(`UPDATE recoveries SET misses = ? ${guard}`).bind(misses, p.row.task_id, p.row.passed, p.row.misses).run();
+    if (!upd.meta.changes) throw STALE();
+    return { correct: false, recovery: toDto(subject, p.questions, p.passed) };
+  }
+
+  // Ижил сэдвийн, салаа замд болон тэр даалгаварт ороогүй асуулт (хараагүйг түрүүлж)
+  const next =
+    q.topic === null
+      ? null
+      : await db
+          .prepare(
+            `SELECT q.id FROM questions q
+             LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
+             WHERE q.tier = ? AND q.subject = ? AND q.topic = ? AND q.flagged = 0
+               AND q.id NOT IN (SELECT value FROM json_each(?))
+               AND q.id NOT IN (SELECT question_id FROM task_questions WHERE task_id = ?)
+             ORDER BY (s.seen_at IS NOT NULL), s.seen_at, RANDOM() LIMIT 1`,
+          )
+          .bind(userId, q.tier, subject, q.topic, p.row.questions, p.row.task_id)
+          .first<{ id: number }>();
+  const ids = p.questions.map((x) => (x.id === q.id && next ? next.id : x.id));
+  const [upd] = await db.batch([
+    db.prepare(`UPDATE recoveries SET questions = ?, misses = 0 ${guard}`).bind(JSON.stringify(ids), p.row.task_id, p.row.passed, p.row.misses),
+    ...(next
+      ? [
+          db
+            .prepare(
+              `INSERT INTO seen_questions (user_id, question_id, seen_at) VALUES (?, ?, ?)
+               ON CONFLICT (user_id, question_id) DO UPDATE SET seen_at = excluded.seen_at`,
+            )
+            .bind(userId, next.id, now),
+        ]
+      : []),
+  ]);
+  if (!upd.meta.changes) throw STALE();
+  const after = next ? await pending(db, userId, subject) : p;
+  return { correct: false, correctIndex: q.correct_index, explanation: q.explanation, recovery: toDto(subject, after.questions, after.passed) };
 }
