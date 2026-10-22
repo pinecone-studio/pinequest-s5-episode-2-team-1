@@ -9,6 +9,7 @@ import type { Bindings } from '../env';
 import { isConstraintError, newTx } from '../lib/db';
 import { ApiError } from '../lib/errors';
 import { maybeRefill, refillPool } from './pool';
+import { hasPendingRecovery, openRecovery } from './recovery';
 import { countTasksToday, getUserRow, loadMe, streakStateOf, syncStreak } from './users';
 
 type Ctx = { waitUntil(p: Promise<unknown>): void };
@@ -61,6 +62,9 @@ export async function startTask(env: Bindings, ctx: Ctx, userId: number, subject
   const user = await getUserRow(db, userId);
   const tier = user.tier as Tier;
   const today = ubDay(now);
+  if (await hasPendingRecovery(db, userId, subject)) {
+    throw new ApiError(409, 'RECOVERY_REQUIRED', 'Эхлээд нөхөх салаа замаа дуусгаарай');
+  }
 
   const existing = await db
     .prepare(`SELECT id FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress' ORDER BY id DESC LIMIT 1`)
@@ -151,7 +155,8 @@ async function recordChoice(db: D1Database, userId: number, taskId: number, row:
     .first<{ n: number }>();
   const finished = (left?.n ?? 0) === 0;
   const result = finished ? await completeTask(db, userId, taskId, now) : undefined;
-  return { correct, finished, result };
+  const recovery = finished ? await openRecovery(db, userId, taskId, now) : false;
+  return { correct, finished, result, recovery };
 }
 
 export async function answerTask(
@@ -164,7 +169,9 @@ export async function answerTask(
 ): Promise<AnswerResponse> {
   const row = await findTaskQuestion(db, userId, taskId, questionId);
   const r = await recordChoice(db, userId, taskId, row, choice, now);
-  return { correct: r.correct, correctIndex: row.correct_index, explanation: row.explanation, finished: r.finished, result: r.result };
+  // Буруу бол зөв хариу, тайлбарыг хэлэхгүй: олон алдвал салаа замд өөрөө дахин бодно.
+  const reveal = r.correct ? { correctIndex: row.correct_index, explanation: row.explanation } : {};
+  return { correct: r.correct, ...reveal, finished: r.finished, result: r.result, recovery: r.recovery };
 }
 
 /** Асуултыг flagged болгоно (дахин хэнд ч гарахгүй); даалгаврын дунд бол алгасна. */
@@ -191,7 +198,7 @@ export async function flagQuestion(
   // Хариулсан эсвэл дууссан даалгаварт flag л тэмдэглэгдэнэ.
   if (!row || row.user_id !== userId || row.status !== 'in_progress' || row.choice !== null) return { ok: true, finished: false };
   const r = await recordChoice(db, userId, taskId, row, -1, now);
-  return { ok: true, finished: r.finished, result: r.result };
+  return { ok: true, finished: r.finished, result: r.result, recovery: r.recovery };
 }
 
 /**
