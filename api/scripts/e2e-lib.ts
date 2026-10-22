@@ -1,4 +1,4 @@
-import type { AuthResponse, Me, MeResponse, ServerMsg, TaskDto, AnswerResponse, TaskResult } from '../../shared/types';
+import type { AuthResponse, Me, MeResponse, RecoveryAnswerResponse, RecoveryDto, ServerMsg, TaskDto, AnswerResponse, TaskResult } from '../../shared/types';
 import { call, HttpError, sleep, wsUrl } from './lib';
 
 let failures = 0;
@@ -47,7 +47,19 @@ export async function doTask(token: string, subject: string, allCorrect: boolean
     });
     answers.push(last);
   }
+  // Олон алдсан бол дараагийн даалгаврын өмнө салаа замаа дуусгах ёстой: бусад сценарийг саатуулахгүйн тулд хаана.
+  if (last?.recovery) await clearRecovery(token, subject);
   return { task, answers, result: last?.result as TaskResult };
+}
+
+/** Нөхөх салаа замын асуулт бүрийг зөв хариулж дуусгана; сүүлийн төлөвийг буцаана. */
+export async function clearRecovery(token: string, subject: string): Promise<RecoveryDto> {
+  let r = await call<RecoveryDto>('GET', `/recovery/${subject}`, { token });
+  while (r.question) {
+    const choice = await correctIndex(r.question.id);
+    r = (await call<RecoveryAnswerResponse>('POST', `/recovery/${subject}/answer`, { token, body: { questionId: r.question.id, choice } })).recovery;
+  }
+  return r;
 }
 
 type Msg<T extends ServerMsg['type']> = Extract<ServerMsg, { type: T }>;

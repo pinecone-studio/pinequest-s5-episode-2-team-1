@@ -7,6 +7,7 @@ import { errorHandler } from './lib/errors';
 import { adminRoutes } from './routes/admin';
 import { authRoutes, meRoutes } from './routes/auth';
 import { duelRoutes } from './routes/duels';
+import { recoveryRoutes } from './routes/recovery';
 import { avatarRoutes, shopRoutes } from './routes/shop';
 import { questionRoutes, shieldRoutes, taskRoutes } from './routes/tasks';
 
@@ -33,6 +34,7 @@ app.route('/tasks', taskRoutes);
 app.route('/questions', questionRoutes);
 app.route('/shield', shieldRoutes);
 app.route('/duels', duelRoutes);
+app.route('/recovery', recoveryRoutes);
 app.route('/shop', shopRoutes);
 app.route('/avatar', avatarRoutes);
 app.route('/admin', adminRoutes);
