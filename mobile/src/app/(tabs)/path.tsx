@@ -1,10 +1,11 @@
-import type { Subject } from '@shared/types';
+import type { BookLesson, LessonsResponse, Subject } from '@shared/types';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
+import { api } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
 import { useTabBarSpace } from '@/components/BottomNav';
 import { MAP_H, PathMap } from '@/components/PathMap';
@@ -14,7 +15,7 @@ import { colors, fonts, hardShadow, radius } from '@/constants/theme';
 import { S, subjectNames } from '@/i18n/strings';
 import { kvGet, kvSet } from '@/lib/kv';
 import { usePixelBear } from '@/lib/mock/pixelBear';
-import { bossAhead, currentNode, lessonTitle, NODES, type NodeStatus, UNIT_SIZE, unitOf } from '@/lib/pixelBear/path';
+import { bossAhead, currentNode, lessonsAt, lessonTitle, NODES, type NodeStatus, UNIT_SIZE, unitOf } from '@/lib/pixelBear/path';
 
 const SUBJECTS: Subject[] = ['math', 'mongolian', 'physics'];
 const CTA_SPACE = 112;
@@ -39,6 +40,19 @@ export default function PathScreen() {
       void refreshMe();
     }, [refreshMe]),
   );
+
+  // Замын сэдвүүд = хэрэглэгчийн ангийн сурах бичгийн хичээлүүд; ачаалж амжаагүй, алдаа гарсан бол хуучин сэдвүүд
+  const [book, setBook] = useState<{ subject: Subject; lessons: BookLesson[] } | null>(null);
+  useEffect(() => {
+    let alive = true;
+    api<LessonsResponse>(`/me/lessons/${subject}`)
+      .then((r) => alive && setBook({ subject, lessons: r.lessons }))
+      .catch(() => alive && setBook(null));
+    return () => {
+      alive = false;
+    };
+  }, [subject]);
+  const lessons = book?.subject === subject ? book.lessons : [];
 
   // Хичээл бүр өөрийн сурах замтай: хичээл солиход тэр хичээлийн хамгийн сүүлд хүрсэн зангилаа гарна.
   const path = me?.paths[subject];
@@ -92,7 +106,7 @@ export default function PathScreen() {
 
   function onNode(i: number, status: NodeStatus) {
     if (status === 'lock') setNote(S.path.locked);
-    else if (status === 'done') setNote(`${lessonTitle(subject, i)} · ${S.path.done}`);
+    else if (status === 'done') setNote(`${lessonTitle(subject, i, lessons)} · ${S.path.done}`);
     else start();
   }
 
@@ -103,7 +117,7 @@ export default function PathScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingBottom: CTA_SPACE + barSpace }]}
         showsVerticalScrollIndicator={false}
       >
-        <PathMap current={current} from={from} beaten={path?.bossesBeaten ?? 0} subject={subject} onNodePress={onNode} />
+        <PathMap current={current} from={from} beaten={path?.bossesBeaten ?? 0} subject={subject} lessons={lessons} onNodePress={onNode} />
       </ScrollView>
 
       <View style={[styles.header, { top: insets.top + 6 }]} pointerEvents="box-none">
@@ -159,13 +173,13 @@ export default function PathScreen() {
       <View style={[styles.cta, { bottom: barSpace + 12 }]}>
         <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
           <Text style={styles.ctaSmall} numberOfLines={1}>
-            {S.path.chapter(unitOf(current) + 1, subjectNames[subject], current % UNIT_SIZE, UNIT_SIZE)}
+            {lessonsAt(lessons, current)[0]?.chapter ?? S.path.chapter(unitOf(current) + 1, subjectNames[subject], current % UNIT_SIZE, UNIT_SIZE)}
           </Text>
           <Text style={styles.ctaTitle} numberOfLines={1}>
-            {lessonTitle(subject, current)}
+            {lessonTitle(subject, current, lessons)}
           </Text>
         </View>
-        <PressScale accessibilityRole="button" accessibilityLabel={`${S.path.start}: ${lessonTitle(subject, current)}`} onPress={start} style={styles.ctaBtn}>
+        <PressScale accessibilityRole="button" accessibilityLabel={`${S.path.start}: ${lessonTitle(subject, current, lessons)}`} onPress={start} style={styles.ctaBtn}>
           <Svg width={16} height={16} viewBox="0 0 24 24">
             <Path d="M7 4.5v15l13-7.5z" fill={colors.ink} />
           </Svg>

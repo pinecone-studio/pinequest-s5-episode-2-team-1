@@ -1,4 +1,4 @@
-import type { Subject } from '@shared/types';
+import type { BookLesson, Subject } from '@shared/types';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, {
@@ -50,6 +50,7 @@ export function PathMap({
   from,
   beaten,
   subject,
+  lessons,
   onNodePress,
 }: {
   current: number;
@@ -57,6 +58,8 @@ export function PathMap({
   /** ялсан boss-ын тоо: ялсан бүлэгт туг, бусдад boss */
   beaten: number;
   subject: Subject;
+  /** сурах бичгийн хичээлүүд (хоосон бол хуучин сэдвүүд) */
+  lessons: readonly BookLesson[];
   onNodePress: (i: number, status: NodeStatus) => void;
 }) {
   const cur = NODES[current];
@@ -95,7 +98,7 @@ export function PathMap({
           <Pressable
             key={n.i}
             accessibilityRole="button"
-            accessibilityLabel={`${n.i + 1}. ${lessonTitle(subject, n.i)}, ${
+            accessibilityLabel={`${n.i + 1}. ${lessonTitle(subject, n.i, lessons)}, ${
               status === 'done' ? S.path.done : status === 'current' ? S.path.youAreHere : S.path.locked
             }`}
             accessibilityState={{ disabled: status === 'lock' }}
@@ -124,7 +127,7 @@ export function PathMap({
           key={`${from}-${current}`}
           from={from}
           to={current}
-          label={`${S.path.youAreHere}: ${lessonTitle(subject, current)}`}
+          label={`${S.path.youAreHere}: ${lessonTitle(subject, current, lessons)}`}
           onPress={() => onNodePress(current, 'current')}
         />
       )}

@@ -1,12 +1,13 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
-import type { AuthResponse, MeResponse } from '../../../shared/types';
-import { DEFAULT_EQUIPPED, GAME } from '../config/game';
+import type { AuthResponse, LessonsResponse, MeResponse } from '../../../shared/types';
+import { DEFAULT_EQUIPPED, GAME, SUBJECTS } from '../config/game';
 import { tierForGrade } from '../domain/level';
 import type { AppEnv } from '../env';
 import { hashPassword, newSessionToken, normalizeUsername, sha256Hex, usernameError, verifyPassword } from '../lib/auth';
 import { ApiError, readBody } from '../lib/errors';
 import { bearerToken, createSession, requireAuth } from '../lib/session';
+import { loadLessons } from '../services/lessons';
 import { loadMe } from '../services/users';
 
 const registerSchema = z.object({
@@ -89,4 +90,13 @@ export const meRoutes = new Hono<AppEnv>();
 
 meRoutes.get('/', requireAuth, async (c) => {
   return c.json<MeResponse>({ me: await loadMe(c.env.DB, c.get('userId')) });
+});
+
+/** Сурах замын хичээлүүд: хэрэглэгчийн ангийн сурах бичгийн гарчгаас. */
+meRoutes.get('/lessons/:subject', requireAuth, async (c) => {
+  const subject = z.enum(SUBJECTS).safeParse(c.req.param('subject'));
+  if (!subject.success) throw new ApiError(400, 'BAD_REQUEST', 'Буруу хичээл');
+  const user = await c.env.DB.prepare('SELECT grade FROM users WHERE id = ?').bind(c.get('userId')).first<{ grade: number }>();
+  if (!user) throw new ApiError(401, 'UNAUTHORIZED', 'Нэвтрэх шаардлагатай');
+  return c.json<LessonsResponse>(await loadLessons(c.env, subject.data, user.grade));
 });
