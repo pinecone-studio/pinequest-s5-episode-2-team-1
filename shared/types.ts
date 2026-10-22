@@ -116,6 +116,22 @@ export interface SubjectPath {
   bossesBeaten: number;
 }
 
+/** Сурах бичгийн гарчгаас гаргасан нэг хичээл (сэдэв). */
+export interface BookLesson {
+  /** 'II БҮЛЭГ. АРАВТЫН БА ЭНГИЙН БУТАРХАЙ, ПРОЦЕНТ' */
+  chapter: string;
+  title: string;
+  /** хэвлэмэл хуудасны дугаар; гарчигт тодорхойгүй бол null */
+  page: number | null;
+}
+
+/** GET /me/lessons/:subject — хэрэглэгчийн ангийн номын хичээлүүд, сан дахь хуудсаар тасалсан. */
+export interface LessonsResponse {
+  /** 'Математик 7'; энэ анги, хичээлд ном байхгүй бол null (апп хуучин сэдвүүдээ харуулна) */
+  book: string | null;
+  lessons: BookLesson[];
+}
+
 export interface AuthResponse {
   token: string;
   me: Me;
