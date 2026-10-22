@@ -61,6 +61,11 @@ export default function TaskScreen() {
       setStrike(null);
       setIndex(Math.max(0, t.questions.findIndex((q) => !q.answered)));
     } catch (e) {
+      // Олон алдсан өмнөх даалгаврын салаа зам дуусаагүй бол түүн рүү.
+      if (e instanceof ApiError && e.code === 'RECOVERY_REQUIRED') {
+        router.replace(`/recovery/${subject}`);
+        return;
+      }
       const fatal = e instanceof ApiError && (e.code === 'DAILY_LIMIT' || e.code === 'NO_QUESTIONS');
       setError({ message: errorText(e), fatal });
     }
@@ -76,7 +81,8 @@ export default function TaskScreen() {
 
   function goNext() {
     if (pending) {
-      setResult(pending);
+      if (feedback?.recovery) router.replace(`/recovery/${subject}`);
+      else setResult(pending);
       return;
     }
     if (!task) return;
@@ -121,7 +127,8 @@ export default function TaskScreen() {
       setAnswered((n) => n + 1);
       if (r.result) {
         setMe(r.result.me);
-        setResult(r.result);
+        if (r.recovery) router.replace(`/recovery/${subject}`);
+        else setResult(r.result);
         return;
       }
       goNext();
@@ -269,13 +276,13 @@ export default function TaskScreen() {
                   <Text style={[styles.verdict, { color: feedback.correct ? colors.okText : colors.dangerText }]}>
                     {feedback.correct ? S.task.correct : S.task.wrong}
                   </Text>
-                  <Text style={styles.explainText}>{feedback.explanation}</Text>
+                  {feedback.explanation ? <Text style={styles.explainText}>{feedback.explanation}</Text> : null}
                 </Animated.View>
               ) : null}
 
               {feedback ? (
                 <Button
-                  title={pending ? S.lesson.result : S.lesson.next}
+                  title={pending ? (feedback.recovery ? S.lesson.toRecovery : S.lesson.result) : S.lesson.next}
                   variant={feedback.correct || pending ? 'lime' : 'primary'}
                   onPress={goNext}
                 />
