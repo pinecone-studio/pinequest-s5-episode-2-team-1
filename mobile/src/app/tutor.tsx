@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -33,7 +33,11 @@ export default function TutorScreen() {
   const parsed = Number(questionId);
   const talk = useBearTalk(questionId && Number.isInteger(parsed) && parsed > 0 ? parsed : undefined);
   const insets = useSafeAreaInsets();
-  const { width, height } = useWindowDimensions();
+  // web/tablet дээр дэлгэц 430px-ийн баганад (_layout) багтана: цонхны биш, энэ дэлгэцийн бодит хэмжээгээр байрлуулна,
+  // эс бөгөөс өргөн цонхонд анги томорч самбар дээд захаас гарч, бичиг харагдахгүй болно
+  const win = useWindowDimensions();
+  const [box, setBox] = useState<{ width: number; height: number } | null>(null);
+  const { width, height } = box ?? win;
   const scroll = useRef<ScrollView>(null);
   const lastHeight = useRef(0);
 
@@ -57,7 +61,13 @@ export default function TutorScreen() {
   const topic = talk.topic ? talk.topic.prompt : questionId ? null : S.tutor.recent;
 
   return (
-    <View style={styles.root}>
+    <View
+      style={styles.root}
+      onLayout={(e) => {
+        const { width: w, height: h } = e.nativeEvent.layout;
+        if (w !== box?.width || h !== box?.height) setBox({ width: w, height: h });
+      }}
+    >
       <Sprite id={ROOM} style={{ position: 'absolute', bottom: 0, left: roomLeft, width: room.size.w * k, height: room.size.h * k }} />
 
       <View style={[styles.board, board]}>
