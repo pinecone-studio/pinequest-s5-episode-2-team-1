@@ -7,7 +7,7 @@ import { ApiError, parseId } from '../lib/errors';
 import { socketUserId } from '../lib/session';
 import { isQuotaClose, LIVE_AUDIO_END, LIVE_URL, liveAudio, liveEvents, liveSetup, liveText, tutorKickoff, tutorSystemPrompt } from '../llm/live';
 import { SpeechQueue, speechChunkEnd } from '../llm/speech';
-import { cleanForSpeech, ttsAvailable, ttsStream } from '../llm/tts';
+import { cleanForSpeech, speechMode, ttsAvailable, ttsStream } from '../llm/tts';
 import { endTutorSession, loadTutorContext, startTutorSession } from '../services/tutor';
 
 export const tutorRoutes = new Hono<AppEnv>();
@@ -33,7 +33,7 @@ tutorRoutes.get('/ws', async (c) => {
       key,
       model: c.env.GEMINI_LIVE_MODEL || 'gemini-3.8-live',
       // TTS-ийн өдрийн квот дууссан бол (ttsAvailable) шууд Live-ийн дуугаар ярина.
-      ttsModel: GAME.TUTOR.SPEECH === 'tts' && ttsAvailable() ? c.env.GEMINI_TTS_MODEL || 'gemini-3.8-flash-lite-tts' : null,
+      ttsModel: speechMode(c.env.TUTOR_SPEECH) === 'tts' && ttsAvailable() ? c.env.GEMINI_TTS_MODEL || 'gemini-3.8-flash-lite-tts' : null,
       // Live-ийг үнэгүй багцын түлхүүрээр, TTS-ийг (үнэгүй багцад өдөрт 10 хүсэлт) billing-тэй түлхүүрээр ажиллуулж болно.
       ttsKey: c.env.GEMINI_TTS_API_KEY || key,
       session: {
