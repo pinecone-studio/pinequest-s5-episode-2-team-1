@@ -121,7 +121,6 @@ export function buildMe(
     streakDoneToday: user.last_streak_day === today,
     nextMultiplier: streakMultiplier(registerTaskDay(s, today).streak),
     todayTasks,
-    dailyLimit: GAME.DAILY_TASK_LIMIT,
     questionsPerTask: GAME.QUESTIONS_PER_TASK,
     pointsPerCorrect: GAME.POINTS_PER_CORRECT,
     xpPerCorrect: GAME.XP_PER_CORRECT,

@@ -22,7 +22,6 @@ export type ErrorCode =
   | 'INTERNAL'
   | 'USERNAME_TAKEN'
   | 'INVALID_CREDENTIALS'
-  | 'DAILY_LIMIT'
   | 'NO_QUESTIONS'
   | 'TASK_CLOSED'
   | 'ALREADY_ANSWERED'
@@ -90,7 +89,6 @@ export interface Me {
   /** Дараагийн даалгаврын оноонд хэрэглэгдэх үржвэр. */
   nextMultiplier: number;
   todayTasks: number;
-  dailyLimit: number;
   /** Тоглоомын тогтмолууд (клиент дээр дахин хатуу бичихгүйн тулд). */
   questionsPerTask: number;
   pointsPerCorrect: number;

@@ -96,10 +96,6 @@ export async function startTask(
     return loadTask(db, userId, existing.id);
   }
 
-  if ((await countTasksToday(db, userId, today)) >= GAME.DAILY_TASK_LIMIT) {
-    throw new ApiError(429, 'DAILY_LIMIT', 'Өнөөдрийн хязгаар дууссан');
-  }
-
   // Асуулт зөвхөн хэрэглэгчийн ангийн номынх (эсвэл номгүй), өөр ангийн номоос хэзээ ч биш. Апп-ын харуулж буй
   // зангилааны хичээлийн хуудсаас (харсан ч) түрүүлж; хараагүй нь дутвал тэр хуудсаар үүсгэнэ. Хичээлд асуулт огт
   // хүрэлцэхгүй үед л хүлээж (удвал хүлээхгүй), дутууг ангийн бусад асуултаар. Ном, хичээл байхгүй (boss) бол ангийн бүх асуултаас.
@@ -142,10 +138,9 @@ export async function startTask(
       .prepare(
         `INSERT INTO tasks (user_id, subject, day, status, boss, tx, created_at)
          SELECT ?, ?, ?, 'in_progress', ?, ?, ?
-         WHERE (SELECT COUNT(*) FROM tasks WHERE user_id = ? AND day = ?) < ?
-           AND NOT EXISTS (SELECT 1 FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress')`,
+         WHERE NOT EXISTS (SELECT 1 FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress')`,
       )
-      .bind(userId, subject, today, boss ?? null, tx, now, userId, today, GAME.DAILY_TASK_LIMIT, userId, subject, today),
+      .bind(userId, subject, today, boss ?? null, tx, now, userId, subject, today),
     ...picked.map((q, i) => tq.bind(tx, i, q.id, tx)),
     ...picked.map((q) => seen.bind(userId, q.id, now, tx)),
   ]);
@@ -157,7 +152,7 @@ export async function startTask(
       .bind(userId, subject, today)
       .first<{ id: number }>();
     if (other) return loadTask(db, userId, other.id);
-    throw new ApiError(429, 'DAILY_LIMIT', 'Өнөөдрийн хязгаар дууссан');
+    throw new ApiError(500, 'INTERNAL', 'Даалгавар үүсгэж чадсангүй');
   }
 
   // Дараагийн зангилааны хичээлийн асуултыг даалгавар хийх хооронд бэлдэнэ.

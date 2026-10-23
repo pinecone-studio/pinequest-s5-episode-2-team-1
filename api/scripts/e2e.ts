@@ -66,16 +66,15 @@ async function tasksScenario() {
   check(broken.streak === 0 && broken.shield.held, '2 өдөр алгасвал streak 0, хамгаалалт үлдэнэ', broken);
   await setStreak(a.me.id, { streak: 5, lastDay: today });
 
-  console.log('\n— Өдрийн хязгаар');
+  console.log('\n— Өдрийн хязгааргүй');
   const subjects = ['math', 'mongolian', 'physics'];
   let started = (await me(a.token)).todayTasks;
-  while (started < 10) {
+  while (started < 11) {
     await doTask(a.token, subjects[started % 3], false);
     started++;
   }
-  const limitMe = await me(a.token);
-  check(limitMe.todayTasks === 10, 'Өнөөдөр 10/10', limitMe.todayTasks);
-  await expectError(call('POST', '/tasks', { token: a.token, body: { subject: 'math' } }), 'DAILY_LIMIT', '11 дэх даалгаврыг эхлүүлэх боломжгүй');
+  const manyMe = await me(a.token);
+  check(manyMe.todayTasks === 11, 'Нэг өдөрт 11 даалгавар хийж болно', manyMe.todayTasks);
 
   console.log('\n— "Асуулт буруу байна"');
   const fresh = await register('e2e_flag', 8);
