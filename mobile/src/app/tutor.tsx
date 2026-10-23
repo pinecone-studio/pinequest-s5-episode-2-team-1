@@ -139,7 +139,8 @@ export default function TutorScreen() {
         </View>
       </View>
 
-      <LeafCurtain covered={talk.phase === 'connecting'} label={S.tutor.connecting} />
+      {/* Gemini бэлэн болмогц нээгдэнэ: баавгай нээгдэж дууссаны дараа ярьж эхэлнэ (useBearTalk) */}
+      <LeafCurtain covered={talk.phase === 'connecting' && !talk.ready} label={S.tutor.connecting} />
     </View>
   );
 }

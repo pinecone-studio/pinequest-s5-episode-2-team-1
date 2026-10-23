@@ -22,6 +22,11 @@ const SHORT = room.branch.frameSize.h * PX;
 const SWAY = [...Array.from({ length: room.branch.frames }, (_, i) => i), ...Array.from({ length: room.branch.frames - 2 }, (_, i) => room.branch.frames - 2 - i)];
 /** хөшиг бүрэн хаагдсаны дараа ядаж ийм удаан (ms) хаалттай байна: хурдан холбогдсон ч навч орж ирээд буцна */
 const MIN_SHUT = 2200;
+/** нээгдэж эхэлснээс мөчрүүд бүрэн гарч дуусах хүртэл (ms) */
+const OPEN_MS = 1300;
+
+/** `covered` нь shutAt-д true болж, одоо false болсон бол хөшиг бүрэн нээгдэх агшин (баавгай түүнээс өмнө ярихгүй). */
+export const curtainOpenAt = (shutAt: number) => Math.max(Date.now(), shutAt + MIN_SHUT) + OPEN_MS;
 
 /**
  * Мөчир бүр: [аль захаас, төрөл, захын дагуух төв (0–1), дэлгэц рүү хэр гүн орох (0–1), хоцрогдол ms].
@@ -75,7 +80,7 @@ export function LeafCurtain({ covered, label }: { covered: boolean; label: strin
       setVisible(true);
       return;
     }
-    const t = setTimeout(() => setVisible(false), reduce ? 0 : 1300); // мөчрүүд гарч дууссаны дараа
+    const t = setTimeout(() => setVisible(false), reduce ? 0 : OPEN_MS); // мөчрүүд гарч дууссаны дараа
     return () => clearTimeout(t);
   }, [closed, reduce, shade]);
 

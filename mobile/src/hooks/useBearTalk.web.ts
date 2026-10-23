@@ -1,6 +1,7 @@
 import type { Subject, TutorClientMsg, TutorServerMsg } from '@shared/types';
 import { useEffect, useRef, useState } from 'react';
 import { openTutorSocket } from '@/api/client';
+import { curtainOpenAt } from '@/components/LeafCurtain';
 import { S } from '@/i18n/strings';
 import { MOUTH_STEP, type MouthLevel, mouthLevels } from '@/lib/mouth';
 import type { TalkPhase } from './useBearTalk';
@@ -48,12 +49,17 @@ export function useBearTalk(questionId: number | undefined) {
   const [kidText, setKidText] = useState('');
   const [topic, setTopic] = useState<{ subject: Subject; prompt: string } | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  /** Gemini бэлэн: хөшиг нээгдэж эхэлнэ (баавгай нээгдэж дууссаны дараа ярина) */
+  const [ready, setReady] = useState(false);
   /** Баавгайн ам: тоглож буй хэсгийн тэр агшны чанга байдал */
   const [mouth, setMouth] = useState<MouthLevel>(0);
   const interruptRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     let alive = true;
+    const shutAt = Date.now();
+    /** баавгайн дуу эхлэх хамгийн эрт агшин: хөшиг бүрэн нээгдсэн үе */
+    let openAt = 0;
     let closedByUs = false;
     let ws: WebSocket | null = null;
     let mic = false;
@@ -80,6 +86,7 @@ export function useBearTalk(questionId: number | undefined) {
     setKidText('');
     setTopic(null);
     setNotice(null);
+    setReady(false);
 
     const send = (msg: TutorClientMsg) => {
       if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
@@ -139,8 +146,8 @@ export function useBearTalk(questionId: number | undefined) {
       const src = outCtx.createBufferSource();
       src.buffer = audio;
       src.connect(outCtx.destination);
-      // Бага зэрэг урьдчилж байрлуулбал сүлжээний хэлбэлзэлд тасрахгүй.
-      const at = Math.max(outCtx.currentTime + 0.08, nextAt);
+      // Бага зэрэг урьдчилж байрлуулбал сүлжээний хэлбэлзэлд тасрахгүй. Эхний дуу хөшиг нээгдэж дуусахыг хүлээнэ.
+      const at = Math.max(outCtx.currentTime + 0.08, nextAt, outCtx.currentTime + (openAt - Date.now()) / 1000);
       src.start(at);
       nextAt = at + audio.duration;
       lipTrack.push({ at, levels: mouthLevels(pcm, BEAR_RATE) });
@@ -156,6 +163,8 @@ export function useBearTalk(questionId: number | undefined) {
         case 'ready':
           clearTimeout(stall);
           setTopic(m.topic);
+          openAt = curtainOpenAt(shutAt);
+          setReady(true);
           break;
         case 'bear_text': {
           if (drop) break;
@@ -200,8 +209,10 @@ export function useBearTalk(questionId: number | undefined) {
 
     void (async () => {
       try {
+        // Echo cancellation асаалттай бол iPhone (Safari) mic нээлттэй байх хугацаанд бусад дууг намсгадаг: баавгай
+        // сул сонсогддог. Баавгай ярьж байхад mic-ийн дууг илгээдэггүй тул (ээлжилнэ) цуурай Gemini-д хүрэхгүй.
         media = await navigator.mediaDevices.getUserMedia({
-          audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+          audio: { channelCount: 1, echoCancellation: false, noiseSuppression: true, autoGainControl: true },
         });
       } catch {
         end(S.tutor.micDenied);
@@ -294,6 +305,7 @@ export function useBearTalk(questionId: number | undefined) {
 
   return {
     phase,
+    ready,
     mouth,
     bearText,
     kidText,

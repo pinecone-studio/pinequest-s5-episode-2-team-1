@@ -105,23 +105,28 @@ export class SpeechQueue {
   }
 }
 
-/** Эхний хэсгийг өгүүлбэр дуусахыг хүлээлгүй, ийм урттай болмогц таслал дээр нь тасална. */
-const FIRST_CLAUSE_MIN = 20;
-/** Таслал ч ирээгүй бол эхний хэсгийг ийм олон бүтэн үг болмогц тасална (дуу хурдан эхэлнэ). */
-const FIRST_WORDS = 4;
+/**
+ * Ээлжийн эхний хэсгийн доод урт (тэмдэгт). Үлдсэн хэсгийн TTS хүсэлт Gemini текстээ дуусгасны дараа л эхэлж,
+ * анхны дуу нь ирэх хүртэл 2–3 сек болдог: "Сайн уу дүү минь!" шиг богино хэсгийн (≈1.3 сек) дараа чимээгүй завсар
+ * гардаг байсан. ~60 тэмдэгт ≈ 4 сек яриа энэ хугацааг нөхнө.
+ */
+const FIRST_MIN = 60;
+/** Цэг, таслал ч ирээгүй бол эхний хэсгийг ийм олон бүтэн үг болмогц тасална. */
+const FIRST_WORDS = 12;
 
 /**
  * Дуу болгоход бэлэн хэсгийн төгсгөл, эсвэл -1. Хэсэг бүрийг бэлэн болмогц TTS-д өгвөл дуу хурдан эхэлж,
  * хэсгүүдийн хооронд тасрахгүй. Өгүүлбэрийн төгсгөлийг араас нь зай ирсэн үед л тооцно (2.5 шиг
- * аравтын бутархайг таслахгүй). Ээлжийн эхний хэсгийг (first) таслал эсвэл FIRST_WORDS үгээр ч тасална;
- * үг бүтэн эсэхийг араас нь зай ирснээр мэднэ.
+ * аравтын бутархайг таслахгүй). Ээлжийн эхний хэсгийг (first) FIRST_MIN-ээс богиносгохгүй: өгүүлбэр, эсвэл
+ * таслал, эсвэл FIRST_WORDS үгээр тасална; үг бүтэн эсэхийг араас нь зай ирснээр мэднэ.
  */
 export function speechChunkEnd(text: string, first: boolean): number {
-  const sentence = /[.!?…](?=\s)/.exec(text);
-  if (sentence) return sentence.index + 1;
+  const min = first ? FIRST_MIN : 0;
+  const sentence = /[.!?…](?=\s)/g;
+  for (let m = sentence.exec(text); m; m = sentence.exec(text)) if (m.index + 1 >= min) return m.index + 1;
   if (!first) return -1;
-  const re = /[,;:](?=\s)/g;
-  for (let m = re.exec(text); m; m = re.exec(text)) if (m.index + 1 >= FIRST_CLAUSE_MIN) return m.index + 1;
+  const clause = /[,;:](?=\s)/g;
+  for (let m = clause.exec(text); m; m = clause.exec(text)) if (m.index + 1 >= min) return m.index + 1;
   const words = /\S+(?=\s)/g;
   let count = 0;
   for (let m = words.exec(text); m; m = words.exec(text)) if (++count === FIRST_WORDS) return m.index + m[0].length;
