@@ -35,6 +35,7 @@ export default function TutorScreen() {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const scroll = useRef<ScrollView>(null);
+  const lastHeight = useRef(0);
 
   // анги: доод захад наалдаж, хэвтээгээр төвлөрнө; дэлгэц өргөн бол бүхэл pixel-ээр биш ч өргөнийг дүүргэнэ
   const k = Math.max(room.size.w * 3, width) / room.size.w;
@@ -64,10 +65,16 @@ export default function TutorScreen() {
             {topic}
           </Text>
         ) : null}
+        {/* Үг бүр ирэхэд доош автоматаар гүйлгэвэл эхний мөрүүд уншиж амжихаас өмнө алга болдог: самбар дээрээсээ
+            бичигдэж, хүүхэд өөрөө гүйлгэнэ. Шинэ ээлж (текст богиноссон) эхлэхэд л дээш нь буцаана. */}
         <ScrollView
           ref={scroll}
-          onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })}
-          showsVerticalScrollIndicator={false}
+          onContentSizeChange={(_, h) => {
+            if (h < lastHeight.current) scroll.current?.scrollTo({ y: 0, animated: false });
+            lastHeight.current = h;
+          }}
+          nestedScrollEnabled
+          style={styles.scroll}
         >
           <Text style={styles.chalk} accessibilityLiveRegion="polite">
             {chalk}
@@ -127,7 +134,10 @@ export default function TutorScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: WALL },
-  board: { position: 'absolute', paddingHorizontal: 12, paddingBottom: 10 },
+  // баавгайн тайзаас (дараа нь зурагдсан, flex: 1) дээр: эс бөгөөс самбарыг гүйлгэх хүрэлтийг тайз авна
+  board: { position: 'absolute', paddingHorizontal: 12, paddingBottom: 10, zIndex: 2 },
+  // web (утасны browser): самбарын төгсгөлд хүрэхэд гүйлгэлт хуудас руу шилжихгүй
+  scroll: { overscrollBehavior: 'contain' } as object,
   topic: { fontFamily: fonts.semibold, fontSize: 13, lineHeight: 18, color: colors.lemon, marginBottom: 6 },
   chalk: {
     fontFamily: fonts.bold,
