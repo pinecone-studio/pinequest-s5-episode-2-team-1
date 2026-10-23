@@ -1,0 +1,30 @@
+{
+  "size": {
+    "w": 132,
+    "h": 288
+  },
+  "board": [
+    12,
+    83,
+    95,
+    71
+  ],
+  "floor": 206,
+  "branch": {
+    "kinds": [
+      "leaf",
+      "blossom",
+      "pine"
+    ],
+    "frameSize": {
+      "w": 195,
+      "h": 63
+    },
+    "columns": {
+      "h": 2,
+      "v": 4
+    },
+    "frames": 7,
+    "duration": 140
+  }
+}

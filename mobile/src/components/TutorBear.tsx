@@ -6,10 +6,10 @@ import tutor from '@/lib/pixelBear/bear-tutor.json';
 import type { MouthLevel } from '@/lib/mouth';
 import type { SpriteKey } from '@/sprites';
 
-/** утасны texture-ийн хязгаарт багтаахын тулд frame-ууд хоёр sheet-д (scripts/tutor-sprites.ts) */
-const SHEETS: SpriteKey[] = ['bear_tutor_0_1320x1280', 'bear_tutor_1_1320x1024'];
+/** утасны texture-ийн хязгаарт багтахгүй бол frame-ууд хэд хэдэн sheet-д (scripts/tutor-sprites.ts); ангитай адил 3× */
+const SHEETS: SpriteKey[] = ['bear_tutor_0_1320x1344'];
 const PER_SHEET = tutor.sheets[0];
-const MOUTH: SpriteKey = 'bear_mouth_40x16';
+const MOUTH: SpriteKey = 'bear_mouth_30x12';
 const { width: FRAME_W, height: FRAME_H } = frameSize(SHEETS[0], PER_SHEET, tutor.columns);
 /** ярих үеийн дохионууд дараалан (нэг дохиог давтахгүй) */
 const GESTURES = ['teach', 'point', 'teach', 'present', 'shape'] as const;

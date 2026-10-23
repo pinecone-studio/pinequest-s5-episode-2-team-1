@@ -1,13 +1,12 @@
 {
   "sheets": [
-    30,
-    19
+    49
   ],
   "frameSize": {
     "w": 55,
     "h": 64
   },
-  "columns": 6,
+  "columns": 8,
   "feet": 63,
   "pivot": 28,
   "mouth": {

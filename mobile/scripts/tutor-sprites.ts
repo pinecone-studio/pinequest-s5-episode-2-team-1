@@ -16,8 +16,8 @@ import { blank, type Img, writeApng, writePng } from './png.ts';
 import { at, bbox, clone, contact, crop, type Frame, hex, type P, pixellab, SPRITES, scale, tagOf, toSheet, trim } from './sprite-kit.ts';
 
 const META = new URL('../src/lib/pixelBear/bear-tutor.json', import.meta.url);
-/** утсанд 4× харуулж 3× нягтралд хадгалдаг тул 1 pixel = 12 texture pixel; texture 4096 px-ээс хэтрэхгүй */
-const TEXTURE = Math.floor(4096 / 12);
+/** ангийн дэвсгэртэй адил 3× харуулж 3× нягтралд хадгалдаг тул 1 pixel = 9 texture pixel; texture 4096 px-ээс хэтрэхгүй */
+const TEXTURE = Math.floor(4096 / 9);
 const GESTURES = ['teach', 'point', 'present', 'shape'] as const;
 
 const bear = pixellab('bear');

@@ -49,7 +49,8 @@
     "sprites": "node scripts/build-sprites.ts",
     "sprites:bear": "node scripts/bear-sprites.ts",
     "sprites:lesson": "node scripts/lesson-sprites.ts",
-    "sprites:tutor": "node scripts/tutor-sprites.ts"
+    "sprites:tutor": "node scripts/tutor-sprites.ts",
+    "sprites:classroom": "node scripts/classroom-sprites.ts"
   },
   "private": true
 }

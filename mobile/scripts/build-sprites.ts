@@ -42,8 +42,9 @@ for (const n of ['map_boss_1', 'map_boss_2']) M[`${n}_white`] = [4];
 M.fx_scythe = [4];
 // хичээлийн дэлгэц (scripts/lesson-sprites.ts): дэвсгэр ба баавгай 3×
 for (const n of ['bear_lesson', 'lesson_bg', 'lesson_shadow']) M[n] = [3];
-// баавгайтай ярилцах дэлгэц (scripts/tutor-sprites.ts): баавгай ба амны хэлбэр 4×
-for (const n of ['bear_tutor_0', 'bear_tutor_1', 'bear_mouth']) M[n] = [4];
+// баавгайтай ярилцах дэлгэц (scripts/tutor-sprites.ts, classroom-sprites.ts): анги, баавгай, амны хэлбэр, хөшигний мөчир 3×
+for (const n of ['bear_tutor_0', 'bear_mouth', 'classroom']) M[n] = [3];
+for (const k of ['leaf', 'blossom', 'pine']) M[`branch_${k}`] = M[`branch_${k}_v`] = [3];
 // v2 (Charlie маягийн) nav icon ба Нүүрний товчнууд: 20px эх, 30dp-ээр (1.5×) — нарийн pixel
 for (const n of ['home', 'tasks', 'path', 'shop', 'crew', 'bag']) {
   M[`nav2_${n}_on`] = [[30, 30]];
