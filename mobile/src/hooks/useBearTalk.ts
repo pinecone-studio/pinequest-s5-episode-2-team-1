@@ -18,7 +18,8 @@ const START_BYTES = BEAR_RATE * 2 * 0.25;
  */
 const PLAYBACK_MODE = { playsInSilentMode: true, allowsRecording: false, interruptionMode: 'doNotMix' } as const;
 
-export type TalkPhase = 'connecting' | 'bear' | 'listening' | 'ended';
+/** 'tap': browser хүүхдийн даралтгүйгээр дуу асаахыг зөвшөөрсөнгүй (зөвхөн web); дарвал restart-аар дахин эхэлнэ. */
+export type TalkPhase = 'connecting' | 'tap' | 'bear' | 'listening' | 'ended';
 
 /**
  * Баавгайтай дуугаар ярилцах (GET /tutor/ws). Баавгайн дууг хэсэг хэсгээр нь WAV болгож дараалан тоглуулна:

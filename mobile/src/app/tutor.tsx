@@ -50,7 +50,8 @@ export default function TutorScreen() {
     paddingTop: Math.max(10, insets.top + 4 + TOP_BAR - boardTop + 6),
   };
 
-  const chalk = talk.phase === 'ended' ? (talk.notice ?? '') : talk.phase === 'connecting' ? '' : talk.bearText || '…';
+  const chalk =
+    talk.phase === 'ended' ? (talk.notice ?? '') : talk.phase === 'tap' ? S.tutor.tapHint : talk.phase === 'connecting' ? '' : talk.bearText || '…';
   const listening = talk.phase === 'listening';
   const topic = talk.topic ? talk.topic.prompt : questionId ? null : S.tutor.recent;
 
@@ -114,6 +115,7 @@ export default function TutorScreen() {
           ) : (
             <>
               {talk.phase === 'bear' ? <Button title={S.tutor.interrupt} variant="lime" onPress={talk.interrupt} style={styles.main} /> : null}
+              {talk.phase === 'tap' ? <Button title={S.tutor.tap} variant="lime" onPress={talk.restart} style={styles.main} /> : null}
               <Button title={S.tutor.finish} variant="white" onPress={() => goBack()} style={styles.action} />
             </>
           )}

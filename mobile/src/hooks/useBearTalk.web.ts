@@ -12,6 +12,13 @@ import type { TalkPhase } from './useBearTalk';
  */
 const MIC_RATE = 16_000;
 const BEAR_RATE = 24_000;
+/** Хуудсыг шууд хаягаар нээсэн, refresh хийсэн үед browser AudioContext-ийг хүүхэд дартал асаадаггүй: resume() дуусахгүй. */
+const RESUME_MS = 1_500;
+/** Mic зөвшөөрөгдсөнөөс хойш баавгай бэлэн болох хугацаа: хэтэрвэл үүрд эргэлдэхийн оронд алдаа харуулна. */
+const READY_MS = 20_000;
+
+const within = <T,>(p: Promise<T>, ms: number) =>
+  Promise.race([p.then(() => true), new Promise<boolean>((r) => setTimeout(() => r(false), ms))]);
 
 // Mic-ийн дууг 128 frame тутам main thread руу дамжуулна.
 const TAP_WORKLET = `class Tap extends AudioWorkletProcessor {
@@ -54,6 +61,7 @@ export function useBearTalk(questionId: number | undefined) {
     let micCtx: AudioContext | null = null;
     let outCtx: AudioContext | null = null;
     let nextAt = 0;
+    let stall: ReturnType<typeof setTimeout> | undefined;
     const sources = new Set<AudioBufferSourceNode>();
     let turnDone = false;
     let freshTurn = true;
@@ -93,6 +101,7 @@ export function useBearTalk(questionId: number | undefined) {
 
     const end = (message: string) => {
       if (!alive) return;
+      clearTimeout(stall);
       setNotice(message);
       setPhase('ended');
       mic = false;
@@ -145,6 +154,7 @@ export function useBearTalk(questionId: number | undefined) {
     const onMessage = (m: TutorServerMsg) => {
       switch (m.type) {
         case 'ready':
+          clearTimeout(stall);
           setTopic(m.topic);
           break;
         case 'bear_text': {
@@ -201,10 +211,17 @@ export function useBearTalk(questionId: number | undefined) {
         media.getTracks().forEach((t) => t.stop());
         return;
       }
+      stall = setTimeout(() => end(S.tutor.stalled), READY_MS);
       try {
         outCtx = new AudioContext();
         micCtx = new AudioContext();
-        await Promise.all([outCtx.resume(), micCtx.resume()]);
+        if (!(await within(Promise.all([outCtx.resume(), micCtx.resume()]), RESUME_MS))) {
+          // Дарахыг хүлээнэ: mic-ийг унтрааж, дарахад restart шинэ AudioContext үүсгэнэ (дараа нь зөвшөөрөгдсөн).
+          clearTimeout(stall);
+          media.getTracks().forEach((t) => t.stop());
+          if (alive) setPhase('tap');
+          return;
+        }
         const url = URL.createObjectURL(new Blob([TAP_WORKLET], { type: 'application/javascript' }));
         await micCtx.audioWorklet.addModule(url);
         URL.revokeObjectURL(url);
@@ -264,6 +281,7 @@ export function useBearTalk(questionId: number | undefined) {
       alive = false;
       closedByUs = true;
       clearInterval(lips);
+      clearTimeout(stall);
       mic = false;
       interruptRef.current = null;
       silence();
