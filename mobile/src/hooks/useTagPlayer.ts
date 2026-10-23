@@ -3,15 +3,19 @@ import { useReducedMotion } from 'react-native-reanimated';
 import { type SheetMeta, tagFrames } from '@/lib/pixelBear/anim';
 
 /**
- * Sprite sheet-ийн `once` tag-уудыг нэг удаа, дараа нь `loop`-ийг давтан тоглуулж одоогийн frame-ийг буцаана
- * (`loop` = null бол сүүлийн frame дээр зогсоно). «Motion бууруулах» үед хөдөлгөөнгүй.
+ * Sprite sheet-ийн `once` tag-уудыг нэг удаа, дараа нь `loop`-ийг (нэг эсвэл хэд хэдэн tag дараалан) давтан
+ * тоглуулж одоогийн frame-ийг буцаана (`loop` = null бол сүүлийн frame дээр зогсоно). «Motion бууруулах» үед хөдөлгөөнгүй.
  */
-export function useTagPlayer<M extends SheetMeta>(meta: M, once: (keyof M['tags'] & string)[], loop: (keyof M['tags'] & string) | null): number {
+export function useTagPlayer<M extends SheetMeta>(
+  meta: M,
+  once: (keyof M['tags'] & string)[],
+  loop: (keyof M['tags'] & string) | (keyof M['tags'] & string)[] | null,
+): number {
   const reduce = useReducedMotion();
   const seq = once.flatMap((t) => tagFrames(meta, t));
-  const cycle = loop ? tagFrames(meta, loop) : [];
+  const cycle = loop === null ? [] : [loop].flat().flatMap((t) => tagFrames(meta, t));
   const [frame, setFrame] = useState(seq[0] ?? cycle[0] ?? 0);
-  const key = `${once.join()}|${loop}`; // tag-ууд өөрчлөгдвөл шинээр эхэлнэ
+  const key = `${once.join()}|${[loop].flat().join()}`; // tag-ууд өөрчлөгдвөл шинээр эхэлнэ
 
   useEffect(() => {
     if (reduce) {
