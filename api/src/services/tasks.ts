@@ -12,7 +12,7 @@ import { isConstraintError, newTx } from '../lib/db';
 import { ApiError } from '../lib/errors';
 import type { PageRange } from './grounding';
 import { bookLessons, lessonPages } from './lessons';
-import { maybeRefill, pickArgs, pickSql, refillLesson, refillPool } from './pool';
+import { LESSON_COUNT_SQL, maybeRefill, pickArgs, pickSql, rangeArgs, refillLesson, refillPool } from './pool';
 import { hasPendingRecovery, recoveryCertain, recoveryStatements } from './recovery';
 import { countTasksToday, getUserRow, loadMe, loadSubjectPaths, streakStateOf, syncStreak } from './users';
 
@@ -101,8 +101,8 @@ export async function startTask(
   }
 
   // Асуулт зөвхөн хэрэглэгчийн ангийн номынх (эсвэл номгүй), өөр ангийн номоос хэзээ ч биш. Апп-ын харуулж буй
-  // зангилааны хичээлийн хуудсаас түрүүлж; хүрэлцэхгүй бол тэр хуудсаар үүсгэнэ (удвал хүлээхгүй, дутууг нь
-  // ангийн бусад асуултаар). Ном, хичээл байхгүй (boss) бол ангийн бүх асуултаас.
+  // зангилааны хичээлийн хуудсаас (харсан ч) түрүүлж; хараагүй нь дутвал тэр хуудсаар үүсгэнэ. Хичээлд асуулт огт
+  // хүрэлцэхгүй үед л хүлээж (удвал хүлээхгүй), дутууг ангийн бусад асуултаар. Ном, хичээл байхгүй (boss) бол ангийн бүх асуултаас.
   const node = currentNode(path.level, path.bossesBeaten);
   const book = await bookLessons(env, subject, user.grade).catch(() => null);
   const lesson = book && lessonPages(book, node);
@@ -111,7 +111,12 @@ export async function startTask(
   if (lesson) {
     const refill = lessonRefill(lesson);
     ctx.waitUntil(refill);
-    await Promise.race([refill, new Promise((r) => setTimeout(r, GAME.POOL.LESSON_WAIT_MS))]);
+    // Хичээлд нэг даалгаварт хүрэлцэх асуулт байвал (хүүхэд харсан ч) хүлээхгүй: тэднийг давтана, шинэ нь background-д.
+    const have = await db
+      .prepare(LESSON_COUNT_SQL)
+      .bind(tier, subject, ...rangeArgs(lesson))
+      .first<{ n: number }>();
+    if ((have?.n ?? 0) < GAME.QUESTIONS_PER_TASK) await Promise.race([refill, new Promise((r) => setTimeout(r, GAME.POOL.LESSON_WAIT_MS))]);
   }
 
   const { results: picked } = await db

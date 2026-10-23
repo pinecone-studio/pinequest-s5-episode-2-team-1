@@ -69,12 +69,19 @@ export const rangeArgs = (r: PageRange) => [r.slug.length + 1, `${r.slug}:`, r.s
  */
 export const OWN_GRADE = '(q.book_ref IS NULL OR q.grade = (SELECT grade FROM users WHERE id = ?))';
 
-/** Даалгаврын асуулт: хараагүйг (хичээлийнхийг түрүүлж) санамсаргүйгээр, дутвал хамгийн эрт харсныг нь. */
+/**
+ * Даалгаврын асуулт: хараагүйг санамсаргүйгээр, дутвал хамгийн эрт харсныг нь. Шатны хичээлийнх (харсан ч) үргэлж
+ * түрүүлнэ: шатанд өөр сэдвийн асуулт зөвхөн хичээлд нэг даалгаварт хүрэлцэх асуулт байхгүй үед л орно.
+ */
 export const pickSql = (lesson: boolean) => `SELECT q.id FROM questions q
        LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
        WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0 AND ${OWN_GRADE}
-       ORDER BY (s.seen_at IS NOT NULL), ${lesson ? `${IN_RANGE} DESC,` : ''} s.seen_at, RANDOM()
+       ORDER BY ${lesson ? `${IN_RANGE} DESC,` : ''} (s.seen_at IS NOT NULL), s.seen_at, RANDOM()
        LIMIT ?`;
+
+/** SQL: `range` хуудсанд үндэслэсэн (хэрэглэгчид гарч болох) асуултын тоо. Утгууд: tier, subject, ...rangeArgs. */
+export const LESSON_COUNT_SQL = `SELECT COUNT(*) AS n FROM questions q
+       WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0 AND ${IN_RANGE}`;
 /** pickSql-ийн утгууд. */
 export const pickArgs = (userId: number, tier: Tier, subject: Subject, lesson: PageRange | null, limit: number) => [
   userId, tier, subject, userId, ...(lesson ? rangeArgs(lesson) : []), limit,

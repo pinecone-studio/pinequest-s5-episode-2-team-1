@@ -58,6 +58,14 @@ describe('асуулт зөвхөн өөрийн ангийн номоос', () 
     expect(seven.some((r) => r?.startsWith('math-6:'))).toBe(false);
   });
 
+  it('хичээлийнхийг бүгдийг харсан ч өөр сэдвийн хараагүй асуултаас түрүүлнэ', () => {
+    db.prepare("INSERT INTO seen_questions (user_id, question_id, seen_at) SELECT 2, id, 1 FROM questions WHERE book_ref = 'math-7:5-6'").run();
+    const seven = pick(db, 2, { slug: 'math-7', from: 5, to: 7 });
+    expect(seven.slice(0, 2).sort()).toEqual(['math-7:5-6', 'math-7:7']);
+    expect(seven[0]).toBe('math-7:7'); // хичээлийн дотор хараагүй нь эхэнд
+    expect(seven).toHaveLength(5);
+  });
+
   it('анги нь тодорхойгүй номын асуулт хэнд ч гарахгүй', () => {
     db.prepare("UPDATE questions SET grade = NULL WHERE book_ref = 'math-6:7-8'").run();
     expect(pick(db, 1, null)).not.toContain('math-6:7-8');
