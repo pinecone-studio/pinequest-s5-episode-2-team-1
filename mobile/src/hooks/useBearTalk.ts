@@ -3,6 +3,7 @@ import { requestRecordingPermissionsAsync, setAudioModeAsync, useAudioPlayer, us
 import { File, Paths } from 'expo-file-system';
 import { useEffect, useRef, useState } from 'react';
 import { openTutorSocket } from '@/api/client';
+import { curtainOpenAt } from '@/components/LeafCurtain';
 import { S } from '@/i18n/strings';
 import { MOUTH_STEP, type MouthLevel, mouthLevels } from '@/lib/mouth';
 import { pcmToWav } from '@/lib/wav';
@@ -32,6 +33,8 @@ export function useBearTalk(questionId: number | undefined) {
   const [kidText, setKidText] = useState('');
   const [topic, setTopic] = useState<{ subject: Subject; prompt: string } | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  /** Gemini бэлэн: хөшиг нээгдэж эхэлнэ (баавгай нээгдэж дууссаны дараа ярина) */
+  const [ready, setReady] = useState(false);
   /** Баавгайн ам: тоглож буй хэсгийн тэр агшны чанга байдал */
   const [mouth, setMouth] = useState<MouthLevel>(0);
 
@@ -53,6 +56,9 @@ export function useBearTalk(questionId: number | undefined) {
 
   useEffect(() => {
     let alive = true;
+    const shutAt = Date.now();
+    /** баавгайн дуу эхлэх хамгийн эрт агшин: хөшиг бүрэн нээгдсэн үе */
+    let openAt = 0;
     let closedByUs = false;
     let ws: WebSocket | null = null;
     let pcm: Uint8Array[] = [];
@@ -78,6 +84,7 @@ export function useBearTalk(questionId: number | undefined) {
     setKidText('');
     setTopic(null);
     setNotice(null);
+    setReady(false);
 
     const send = (msg: TutorClientMsg) => {
       if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
@@ -121,6 +128,9 @@ export function useBearTalk(questionId: number | undefined) {
       if (!alive || playing || pcmBytes === 0) return;
       playing = true;
       await mode;
+      // Эхний хэсэг хөшиг нээгдэж дуусахыг хүлээнэ; хооронд ирсэн дуу энэ хэсэгт нэмэгдэнэ.
+      const wait = openAt - Date.now();
+      if (wait > 0) await new Promise((r) => setTimeout(r, wait));
       if (!alive) return;
       // Хүлээх хооронд хүүхэд баавгайг тасалсан бол (pcm хоосорсон) хоосон WAV тоглуулахгүй.
       if (pcmBytes === 0) {
@@ -175,6 +185,8 @@ export function useBearTalk(questionId: number | undefined) {
       switch (m.type) {
         case 'ready':
           setTopic(m.topic);
+          openAt = curtainOpenAt(shutAt);
+          setReady(true);
           break;
         case 'bear_text': {
           if (drop) break;
@@ -285,6 +297,7 @@ export function useBearTalk(questionId: number | undefined) {
 
   return {
     phase,
+    ready,
     mouth,
     bearText,
     kidText,

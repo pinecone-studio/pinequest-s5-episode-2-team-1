@@ -95,17 +95,25 @@ describe('speechChunkEnd', () => {
     expect(speechChunkEnd('x нь 2.5 болно', false)).toBe(-1);
   });
 
-  it('эхний хэсгийг хангалттай урт бол таслалаар тасална', () => {
-    const text = 'За, өнөөдөр бид тэгшитгэлийн тухай, хамтдаа ярилцъя';
-    expect(speechChunkEnd(text, false)).toBe(-1);
-    // "За," хэт богино тул алгасаад дараагийн таслал
-    expect(speechChunkEnd(text, true)).toBe(text.indexOf('тухай,') + 'тухай,'.length);
+  it('эхний хэсэг "Сайн уу дүү минь!" шиг богино бол дараагийн өгүүлбэрт тасална (дуу завсарлахгүй)', () => {
+    const text = 'Сайн уу дүү минь! Өнөөдөр бид тоонуудыг багаас нь их рүү эрэмбэлэх талаар ярилцъя. Төсөөлөөд үз';
+    expect(speechChunkEnd('Сайн уу дүү минь! Өнөөдөр бид', true)).toBe(-1);
+    expect(speechChunkEnd(text, true)).toBe(text.indexOf('ярилцъя.') + 'ярилцъя.'.length);
+    expect(speechChunkEnd(text, false)).toBe('Сайн уу дүү минь!'.length);
   });
 
-  it('эхний хэсгийг цэг таслал ирээгүй ч 4 бүтэн үг болмогц тасална', () => {
-    expect(speechChunkEnd('Сайн байна уу миний', true)).toBe(-1); // "миний" бүтэн эсэх нь тодорхойгүй
-    expect(speechChunkEnd('Сайн байна уу миний найз', true)).toBe('Сайн байна уу миний'.length);
-    expect(speechChunkEnd('Сайн байна уу миний найз', false)).toBe(-1);
+  it('эхний хэсгийг хангалттай урт бол таслалаар тасална', () => {
+    const text = 'За, өнөөдөр бид тэгшитгэлийн тухай, хамтдаа алхам алхмаар ярилцаж, жишээ бодно уу';
+    expect(speechChunkEnd(text, false)).toBe(-1);
+    // эхний хоёр таслал хэт эрт тул алгасаад дараагийн таслал
+    expect(speechChunkEnd(text, true)).toBe(text.indexOf('ярилцаж,') + 'ярилцаж,'.length);
+  });
+
+  it('эхний хэсгийг цэг таслал ирээгүй ч 12 бүтэн үг болмогц тасална', () => {
+    const words = 'нэг хоёр гурав дөрөв тав зургаа долоо найм ес арав арван нэг';
+    expect(speechChunkEnd(words, true)).toBe(-1); // сүүлийн "нэг" бүтэн эсэх нь тодорхойгүй
+    expect(speechChunkEnd(`${words} хоёр`, true)).toBe(words.length);
+    expect(speechChunkEnd(`${words} хоёр`, false)).toBe(-1);
   });
 });
 
