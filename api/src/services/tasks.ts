@@ -2,7 +2,7 @@ import type { AnswerResponse, FlagResponse, Me, TaskDto, TaskResult } from '../.
 import { GAME, type Subject, type Tier } from '../config/game';
 import { bossBlock, bossWon, gateNode } from '../domain/boss';
 import { levelFromXp } from '../domain/level';
-import { currentNode } from '../domain/path';
+import { currentNode, nodesAfter } from '../domain/path';
 import { taskReward } from '../domain/rewards';
 import { shieldBlock } from '../domain/shield';
 import { normalizeStreak, registerTaskDay } from '../domain/streak';
@@ -286,6 +286,8 @@ export async function completeTask(
   // Тухайн хичээлийн дараагийн boss-ыг ялбал тэр хичээлийн дараагийн бүлэг нээгдэнэ (bosses_beaten = boss нөхцөл
   // давхар тоолохоос сэргийлнэ).
   const beatBoss = cc.boss != null && cc.boss === path.bossesBeaten && bossWon(correctCount);
+  const nodes = path.level - 1;
+  const nodesNext = nodesAfter(nodes, path.bossesBeaten, correctCount, beatBoss);
 
   const tx = newTx();
   const guard = 'EXISTS (SELECT 1 FROM tasks WHERE id = ? AND tx = ?)';
@@ -328,14 +330,15 @@ export async function completeTask(
          ON CONFLICT (user_id, subject) DO UPDATE SET xp = xp + excluded.xp`,
       )
       .bind(userId, cc.subject, reward.xp, taskId, tx),
-    ...(beatBoss
+    // Зангилаа ба boss: уншсан утгаараа шалгаж (зэрэг дууссан даалгавар давхар ахиулахгүй).
+    ...(nodesNext !== nodes || beatBoss
       ? [
           db
             .prepare(
-              `UPDATE subject_progress SET bosses_beaten = bosses_beaten + 1
-               WHERE user_id = ? AND subject = ? AND bosses_beaten = ? AND ${guard}`,
+              `UPDATE subject_progress SET nodes = ?, bosses_beaten = ?
+               WHERE user_id = ? AND subject = ? AND nodes = ? AND bosses_beaten = ? AND ${guard}`,
             )
-            .bind(userId, cc.subject, path.bossesBeaten, taskId, tx),
+            .bind(nodesNext, path.bossesBeaten + (beatBoss ? 1 : 0), userId, cc.subject, nodes, path.bossesBeaten, taskId, tx),
         ]
       : []),
     ...extra,
@@ -353,6 +356,7 @@ export async function completeTask(
     shieldUsed: normalized.shieldConsumed,
     levelBefore: levelFromXp(user.xp),
     levelAfter: me.level,
+    nodeUp: me.paths[cc.subject].level > path.level,
     me,
   };
 }

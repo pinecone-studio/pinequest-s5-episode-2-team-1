@@ -161,17 +161,25 @@ adminRoutes.post('/debug/users/:id/streak', async (c) => {
   return c.json({ ok: true });
 });
 
-/** e2e-д сурах замыг шууд тавина: тухайн хичээлийн XP ба давсан тулааны хаалганы тоо. */
+/**
+ * e2e-д сурах замыг шууд тавина: тухайн хичээлийн XP, давсан зангилаа (өгөөгүй бол 50 XP тутамд нэг) ба давсан
+ * тулааны хаалганы тоо. Зангилаа нь дараагийн хаалганаас цааш гарахгүй (currentNode).
+ */
 adminRoutes.post('/debug/users/:id/path', async (c) => {
   const body = await readBody(
     c,
-    z.object({ subject: subjectSchema, xp: z.number().int().min(0), gatesBeaten: z.number().int().min(0).max(GAME.BOSS.GATES.length) }),
+    z.object({
+      subject: subjectSchema,
+      xp: z.number().int().min(0),
+      nodes: z.number().int().min(0).optional(),
+      gatesBeaten: z.number().int().min(0).max(GAME.BOSS.GATES.length),
+    }),
   );
   await c.env.DB.prepare(
-    `INSERT INTO subject_progress (user_id, subject, xp, bosses_beaten) VALUES (?, ?, ?, ?)
-     ON CONFLICT (user_id, subject) DO UPDATE SET xp = excluded.xp, bosses_beaten = excluded.bosses_beaten`,
+    `INSERT INTO subject_progress (user_id, subject, xp, nodes, bosses_beaten) VALUES (?, ?, ?, ?, ?)
+     ON CONFLICT (user_id, subject) DO UPDATE SET xp = excluded.xp, nodes = excluded.nodes, bosses_beaten = excluded.bosses_beaten`,
   )
-    .bind(parseId(c.req.param('id')), body.subject, body.xp, body.gatesBeaten)
+    .bind(parseId(c.req.param('id')), body.subject, body.xp, body.nodes ?? Math.floor(body.xp / 50), body.gatesBeaten)
     .run();
   return c.json({ ok: true });
 });

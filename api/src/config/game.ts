@@ -15,8 +15,8 @@ export const GAME = {
   XP_PER_CORRECT: 10,
   /** level = floor(xp / XP_PER_LEVEL) + 1 */
   XP_PER_LEVEL: 100,
-  /** Хичээлийн сурах зам дээр нэг зангилаа ахих XP: 5 зөв хариулт. Нийт шат (XP_PER_LEVEL)-аас тусдаа. */
-  PATH_XP_PER_NODE: 50,
+  /** Сурах замын ердийн даалгаварт ийм олон зөв бол дараагийн зангилаа нээгдэнэ (XP-ийн үлдэгдэл тооцохгүй). */
+  PATH_PASS_CORRECT: 4,
 
   /** Зөв хариулт бүрийн суурь оноо; streak үржвэрээр үржигдэнэ. */
   POINTS_PER_CORRECT: 10,

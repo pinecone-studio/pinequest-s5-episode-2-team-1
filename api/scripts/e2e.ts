@@ -6,7 +6,7 @@ import { runBooksScenario } from './e2e-books';
 import { runDuelScenario } from './e2e-duel';
 import { runFriendsScenario } from './e2e-friends';
 import { runProfilesScenario } from './e2e-profiles';
-import { check, correctIndex, doTask, expectError, failureCount, me, register } from './e2e-lib';
+import { check, clearRecovery, correctIndex, doTask, expectError, failureCount, me, register } from './e2e-lib';
 import { ADMIN_TOKEN, arg, call } from './lib';
 
 async function setStreak(userId: number, body: { streak: number; lastDay: string | null; shieldHeld?: number; shieldBoughtDay?: string | null }) {
@@ -106,6 +106,24 @@ async function pathsScenario() {
   check(m.paths.physics.xp === 0 && m.paths.mongolian.level === 1, 'Бусад хичээлийн зам хөдлөхгүй', m.paths);
   check(m.xp === 100 && m.level === 2, 'Нийт XP, шат хэвээр нэмэгдэнэ');
   await expectError(call('POST', '/tasks', { token: u.token, body: { subject: 'math', boss: 0 } }), 'BOSS_LOCKED', 'Тэр хичээлийн boss-ын зангилаанд хүрээгүй бол boss хаалттай');
+
+  // Зангилаа XP-ээр биш даалгавраар: 3/5 (30 XP) хоёр удаа хийсэн ч ахихгүй, 4/5 бол ахина.
+  const partial = async (correct: number) => {
+    const t = await call<TaskDto>('POST', '/tasks', { token: u.token, body: { subject: 'physics' } });
+    let last: AnswerResponse | null = null;
+    for (const [i, q] of t.questions.entries()) {
+      const ci = await correctIndex(q.id);
+      last = await call<AnswerResponse>('POST', `/tasks/${t.id}/answer`, { token: u.token, body: { questionId: q.id, choice: i < correct ? ci : (ci + 1) % 4 } });
+    }
+    if (last?.recovery) await clearRecovery(u.token, 'physics');
+    return last?.result;
+  };
+  const r3 = await partial(3);
+  await partial(3);
+  const p3 = (await me(u.token)).paths.physics;
+  check(p3.level === 1 && p3.xp === 60 && r3?.nodeUp === false, '3/5 зөвтэй 2 даалгавар (60 XP) ч зангилаа ахихгүй', p3);
+  const r4 = await partial(4);
+  check((await me(u.token)).paths.physics.level === 2 && r4?.nodeUp === true, '4/5 зөв бол дараагийн зангилаа нээгдэнэ');
 }
 
 /** Хаалганы тулааныг бүгдийг зөв хариулж ялна. */
