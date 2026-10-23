@@ -71,6 +71,8 @@ export const S = {
   },
   home: {
     hello: (name: string) => `Сайн уу, ${name}!`,
+    /** хичээл хийгээгүй үед баавгайн хэлэх үг */
+    upset: 'Чамд гомдлоо!',
     tier: (tier: number, grade: number) => `Түвшин ${tier} · ${grade}-р анги`,
     level: (level: number) => `${level}-р шат`,
     xpProgress: (cur: number, need: number) => `${cur} / ${need} туршлага`,

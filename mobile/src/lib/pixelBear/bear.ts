@@ -62,11 +62,11 @@ export const BEAR_CONFIG: Record<BearState, BearStateConfig> = {
     w: 164,
     h: 280,
     top: 18,
-    chip: 'Сүнсгүй',
-    dot: '#8A8C94',
+    chip: 'Гомдсон',
+    dot: '#E0564F',
     anim: 'sway',
     floatShadow: false,
-    alt: 'Хөхөрсөн нүдтэй, саарал болсон баавгай',
+    alt: 'Хичээл хийгээгүйд гомдож гараа зөрүүлсэн баавгай',
   },
   sleep: {
     sprite: 'bear_sleep_190x254',
@@ -108,7 +108,7 @@ export function moodLine(state: BearState, me: Pick<Me, 'streak' | 'todayTasks'>
     case 'tired':
       return 'Баавгай чинь ядарсан. Нэг хичээл хийгээд сэргээе.';
     case 'neglected':
-      return 'Streak тасарлаа. 2 хичээл хийвэл баавгай сэргэнэ.';
+      return 'Streak тасарлаа. 2 хичээл хийвэл баавгай уучилна.';
     case 'sleep':
       return 'Амралтын өдөр. Streak хамгаалагч ажиллаж байна.';
   }
