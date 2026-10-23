@@ -18,7 +18,7 @@
     },
     "sheet_size": {
       "width": 968,
-      "height": 880
+      "height": 968
     },
     "columns": 11,
     "pivot": "cell-center",
@@ -105,9 +105,17 @@
         "animation": "run",
         "animation_group_id": "c6deee8b-36d4-4131-983d-3997f1df8e57",
         "direction": "west"
+      },
+      {
+        "row": 10,
+        "type": "animation",
+        "frame_count": 9,
+        "animation": "teach",
+        "animation_group_id": "e6469fb4-0b43-4124-880e-20b3d5dcae15",
+        "direction": "south"
       }
     ]
   },
   "export_version": "1.0",
-  "export_date": "2026-10-22T05:20:46.026555+00:00"
+  "export_date": "2026-10-23T02:36:40.703082+00:00"
 }
