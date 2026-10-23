@@ -17,7 +17,6 @@ const SOFT = '#CFC6FF';
 export function RewardView({ result, onAgain, onRecovery }: { result: TaskResult; onAgain: () => void; onRecovery?: () => void }) {
   const insets = useSafeAreaInsets();
   const leveledUp = result.levelAfter > result.levelBefore;
-  const canAgain = result.me.todayTasks < result.me.dailyLimit;
   const happy = result.correctCount >= 2;
 
   return (
@@ -88,7 +87,7 @@ export function RewardView({ result, onAgain, onRecovery }: { result: TaskResult
           ) : (
             <>
               <Button title={S.reward.cont} variant="lime" onPress={() => goBack()} />
-              {canAgain ? <Button title={S.reward.again} variant="white" small onPress={onAgain} /> : null}
+              <Button title={S.reward.again} variant="white" small onPress={onAgain} />
               {result.correctCount < result.total ? (
                 <Button title={S.reward.talk} variant="white" small onPress={() => router.push('/tutor')} />
               ) : null}

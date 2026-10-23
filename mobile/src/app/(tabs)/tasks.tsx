@@ -4,7 +4,6 @@ import { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useAuth } from '@/auth/AuthContext';
-import { BracketBar } from '@/components/BracketBar';
 import { Enter, Motion, PressScale, Sprite } from '@/components/pixel';
 import { ShieldCard } from '@/components/ShieldCard';
 import { CountPill } from '@/components/StatPill';
@@ -29,7 +28,6 @@ export default function TasksScreen() {
   );
 
   if (!me) return null;
-  const limitReached = me.todayTasks >= me.dailyLimit;
   const maxReward = me.questionsPerTask * Math.round(me.pointsPerCorrect * me.nextMultiplier);
 
   return (
@@ -54,14 +52,8 @@ export default function TasksScreen() {
           <Sprite id={me.streakDoneToday ? 'head_happy_164x108' : 'head_idle_112x96'} />
         </Motion>
         <Text style={styles.progressLabel}>{S.tasks.today}</Text>
-        <Text style={styles.big}>
-          {me.todayTasks}
-          <Text style={styles.bigMuted}>/{me.dailyLimit}</Text>
-        </Text>
-        <View style={{ maxWidth: '58%' }}>
-          <BracketBar value={me.todayTasks} max={me.dailyLimit} segments={me.dailyLimit} label={S.tasks.progressLabel(me.todayTasks, me.dailyLimit)} />
-        </View>
-        <Text style={styles.status}>{limitReached ? S.home.limitReached : me.streakDoneToday ? S.home.streakDone : S.home.streakTodo}</Text>
+        <Text style={styles.big}>{me.todayTasks}</Text>
+        <Text style={styles.status}>{me.streakDoneToday ? S.home.streakDone : S.home.streakTodo}</Text>
       </Enter>
 
       {SUBJECTS.map((subject, i) => {
@@ -71,11 +63,9 @@ export default function TasksScreen() {
             <PressScale
               accessibilityRole="button"
               accessibilityLabel={`${S.tasks.start(subjectNames[subject])}, +${maxReward} coin`}
-              accessibilityState={{ disabled: limitReached }}
-              disabled={limitReached}
               onPress={() => router.push(`/task/${subject}`)}
               scaleTo={0.97}
-              style={[styles.quest, { backgroundColor: t.bg }, limitReached && { opacity: 0.45 }]}
+              style={[styles.quest, { backgroundColor: t.bg }]}
             >
               <Text
                 style={[styles.glyph, { color: t.fg, fontSize: subjectGlyphs[subject].length > 2 ? 46 : 72 }]}
@@ -119,7 +109,6 @@ const styles = StyleSheet.create({
   peek: { position: 'absolute', right: -16, bottom: -18 },
   progressLabel: { fontFamily: fonts.bold, fontSize: 13, letterSpacing: 1, color: colors.ink },
   big: { fontFamily: fonts.pixel, fontSize: 40, lineHeight: 44, color: colors.ink },
-  bigMuted: { fontFamily: fonts.pixel, fontSize: 24, color: colors.muted },
   status: { fontFamily: fonts.semibold, fontSize: 14, lineHeight: 19, color: colors.ink, maxWidth: '64%' },
   quest: {
     minHeight: 112,

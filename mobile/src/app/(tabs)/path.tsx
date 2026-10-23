@@ -94,13 +94,7 @@ export default function PathScreen() {
   }, [note]);
 
   if (!me) return null;
-  const limitReached = me.todayTasks >= me.dailyLimit;
-
   function start() {
-    if (limitReached) {
-      setNote(S.home.limitReached);
-      return;
-    }
     router.push(bossFight ? `/task/${subject}?boss=${unitOf(current)}` : `/task/${subject}`);
   }
 

@@ -1,8 +1,7 @@
 import { router, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useAuth } from '@/auth/AuthContext';
 import { BearStage } from '@/components/BearStage';
 import { BracketBar } from '@/components/BracketBar';
@@ -19,7 +18,6 @@ export default function HomeScreen() {
   const { me, refreshMe } = useAuth();
   const { bear, bgId, outfitId, cyclePreview, subject } = usePixelBear();
   const [refreshing, setRefreshing] = useState(false);
-  const [note, setNote] = useState<string | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -27,20 +25,8 @@ export default function HomeScreen() {
     }, [refreshMe]),
   );
 
-  useEffect(() => {
-    if (!note) return;
-    const t = setTimeout(() => setNote(null), 2400);
-    return () => clearTimeout(t);
-  }, [note]);
-
   if (!me || !bear) return null;
-  const limitReached = me.todayTasks >= me.dailyLimit;
-
   function feed() {
-    if (limitReached) {
-      setNote(S.home.limitReached);
-      return;
-    }
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     router.push(`/task/${subject ?? 'math'}`);
   }
@@ -83,13 +69,7 @@ export default function HomeScreen() {
 
       <View style={styles.bottom}>
         <PixelButton icon="btn_calendar_30x30" label={S.homeMin.calendar} onPress={() => router.push('/calendar')} />
-        {note ? (
-          <Animated.View entering={FadeIn} exiting={FadeOut} style={styles.note}>
-            <Text style={styles.noteText}>{note}</Text>
-          </Animated.View>
-        ) : (
-          <View style={{ flex: 1 }} />
-        )}
+        <View style={{ flex: 1 }} />
         <PixelButton icon="btn_honey_30x30" label={S.homeMin.feed} onPress={feed} />
       </View>
     </Screen>
@@ -105,6 +85,4 @@ const styles = StyleSheet.create({
   barWrap: { alignSelf: 'stretch', paddingHorizontal: 18, marginTop: 4 },
   mood: { fontFamily: fonts.semibold, fontSize: 17, lineHeight: 23, color: colors.ink, textAlign: 'center', paddingHorizontal: 12 },
   bottom: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  note: { flex: 1, paddingVertical: 8, paddingHorizontal: 12, borderRadius: 14, backgroundColor: colors.ink },
-  noteText: { fontFamily: fonts.semibold, fontSize: 13, color: colors.white, textAlign: 'center' },
 });
