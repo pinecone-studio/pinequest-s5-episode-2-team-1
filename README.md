@@ -263,7 +263,8 @@ Free plan дээр нэвтрэхэд CPU хязгаарын алдаа (1102) �
   (`tutor_sessions`, migration `0009`). Gemini-тэй холбогдож амжаагүй ярилцлага тоологдохгүй.
 - **Загвар:** `wrangler.jsonc` → `GEMINI_LIVE_MODEL` (анхдагч `gemini-3.8-live`).
 - **Тогтмол утгууд:** хоолой, ярианы дээд хугацаа (5 мин) нь `GAME.TUTOR`-д. Prompt нь `api/src/llm/live.ts`-д.
-- **Баавгайн дуу (`GAME.TUTOR.SPEECH`):**
+- **Баавгайн дуу (`GAME.TUTOR.SPEECH`):** env-ийн `TUTOR_SPEECH` (`tts` | `live`) үүнийг дарна, жишээ нь local дээр
+  `.env.local`-д `TUTOR_SPEECH=tts`, production-д `wrangler.jsonc`-ийн `vars`.
   - `'live'` (анхдагч): Live өөрөө ярина. Хамгийн хурдан, өдрийн хязгааргүй.
   - `'tts'`: Live хүүхдийг сонсож бодно, хэлэх үгийг нь (transcript) `GEMINI_TTS_MODEL` (`gemini-3.8-flash-lite-tts`)
     илүү байгалийн аялгаар дуу болгоно (`api/src/llm/tts.ts`, `speech.ts`). Хариу ~1 сек хойно ирнэ.

@@ -8,5 +8,9 @@ GEMINI_API_KEY=
 # Live-ийг дээрх үнэгүй түлхүүрээр, TTS-ийг энэ түлхүүрээр ажиллуулна. Хоосон бол GEMINI_API_KEY-г ашиглана.
 GEMINI_TTS_API_KEY=
 
+# Заавал биш: баавгайн дууны горим. tts = Live-ийн хэлэх үгийг GEMINI_TTS_MODEL (Achird хоолой) уншина,
+# live = Live өөрөө ярина. Хоосон бол GAME.TUTOR.SPEECH (live).
+TUTOR_SPEECH=
+
 # Admin endpoint (/admin/*) болон seed скриптэд. Дурын урт санамсаргүй мөр.
 ADMIN_TOKEN=change-me

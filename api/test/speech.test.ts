@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { GAME } from '../src/config/game';
 import { SpeechQueue, speechChunkEnd } from '../src/llm/speech';
-import { cleanForSpeech, noteQuota, splitSse, ttsAvailable } from '../src/llm/tts';
+import { cleanForSpeech, noteQuota, speechMode, splitSse, ttsAvailable } from '../src/llm/tts';
 
 const tick = (ms = 0) => new Promise((r) => setTimeout(r, ms));
 
@@ -128,5 +129,14 @@ describe('TTS өдрийн квот', () => {
     noteQuota('{"quotaId": "GenerateRequestsPerDayPerProjectPerModel", "retryDelay": "120s"}', now);
     expect(ttsAvailable(now + 60_000)).toBe(false);
     expect(ttsAvailable(now + 121_000)).toBe(true);
+  });
+});
+
+describe('speechMode', () => {
+  it('TUTOR_SPEECH нь горимыг дарна, бусад утгад GAME.TUTOR.SPEECH', () => {
+    expect(speechMode('tts')).toBe('tts');
+    expect(speechMode('live')).toBe('live');
+    expect(speechMode(undefined)).toBe(GAME.TUTOR.SPEECH);
+    expect(speechMode('TTS ')).toBe(GAME.TUTOR.SPEECH);
   });
 });

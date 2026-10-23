@@ -19,6 +19,11 @@ Pace: relaxed, not fast.
 ${text}`;
 }
 
+/** Баавгайн дууны горим: env-ийн TUTOR_SPEECH ('tts' | 'live') нь GAME.TUTOR.SPEECH-ийг дарна; бусад утга тоохгүй. */
+export function speechMode(value: string | undefined): 'tts' | 'live' {
+  return value === 'tts' || value === 'live' ? value : GAME.TUTOR.SPEECH;
+}
+
 /** Markdown тэмдэгт, илүү зай зэргийг хасна (TTS тэдгээрийг чангаар уншиж болзошгүй). */
 export function cleanForSpeech(text: string): string {
   return text.replace(/[*#_`]/g, '').replace(/\s+/g, ' ').trim();

@@ -112,6 +112,7 @@ export const GAME = {
     /**
      * 'live': Live өөрөө ярина (хамгийн хурдан, хязгааргүй). 'tts': Live сонсож бодно, хэлэх үгийг нь
      * GEMINI_TTS_MODEL илүү байгалийн аялгаар дуу болгоно (~1 сек хойно; Tier 1-д загвар бүрт өдөрт 100 хүсэлт).
+     * Анхдагч утга: env-ийн TUTOR_SPEECH (.env.local, wrangler vars) үүнийг дарна.
      */
     SPEECH: 'live' as 'tts' | 'live',
     /** Нэг ярианы дээд хугацаа (Gemini-ийн зардал). */
