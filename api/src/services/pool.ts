@@ -63,6 +63,13 @@ export interface GenerateReport {
 export const IN_RANGE = 'COALESCE(substr(q.book_ref, 1, ?) = ? AND CAST(substr(q.book_ref, ?) AS INTEGER) BETWEEN ? AND ?, 0)';
 export const rangeArgs = (r: PageRange) => [r.slug.length + 1, `${r.slug}:`, r.slug.length + 2, r.from, r.to];
 
+/** tasks.lesson_ref: { slug: 'math-6', from: 10, to: 13 } ↔ 'math-6:10-13' */
+export const lessonRef = (r: PageRange) => `${r.slug}:${r.from}-${r.to}`;
+export function parseLessonRef(ref: string | null): PageRange | null {
+  const m = ref ? /^([a-z0-9-]+):(\d+)-(\d+)$/.exec(ref) : null;
+  return m ? { slug: m[1], from: Number(m[2]), to: Number(m[3]) } : null;
+}
+
 /**
  * SQL: хэрэглэгчид гарч болох асуулт — номгүй (түвшний нийтлэг) эсвэл өөрийнх нь ангийн номынх. Өөр ангийн
  * (анги нь тодорхойгүй) номын асуулт хэзээ ч гарахгүй. Утга: userId.
