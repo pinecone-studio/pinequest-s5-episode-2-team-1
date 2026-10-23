@@ -86,6 +86,13 @@ cd api
 npm run questions:import
 ```
 
+Сурах замын шат бүр тухайн хичээлийн хуудасны бодлогыг авдаг. Математик 6-ын 63 хичээл тус бүрт 10 бодлого
+(630, `api/seed/lesson-questions.json`, `bookRef` = хичээлийн хуудас) бэлэн тул эдгээр хичээл Gemini-гүйгээр эхэлнэ:
+
+```bash
+npm run lessons:import
+```
+
 Асуулт нэмэх бол Gemini-ээр (хослол бүрийг 40 хүртэл):
 
 ```bash
@@ -208,6 +215,7 @@ npm run deploy
 
 ```bash
 ADMIN_TOKEN=... npm run questions:import -- --url https://surgalt-api.pinequest-team1.workers.dev
+ADMIN_TOKEN=... npm run lessons:import -- --url https://surgalt-api.pinequest-team1.workers.dev
 ```
 
 `mobile/.env`: `EXPO_PUBLIC_API_URL=https://surgalt-api.pinequest-team1.workers.dev`. Утас Metro-д LAN-аар

@@ -3,6 +3,7 @@
 //   npm run seed:questions -- --target 20  # өөр зорилтот тоо
 //   npm run seed:fixtures                  # LLM-гүй: seed/fixtures.json (хослол бүрт 6)
 //   npm run questions:export / questions:import   # шалгасан сангаа seed/questions.json-д хадгалах / сэргээх
+//   npm run lessons:import                 # сурах замын хичээлийн бодлого: seed/lesson-questions.json (bookRef-тэй)
 //   --url https://...workers.dev           # deploy хийсэн сервер рүү
 //   --model gemini-3.6-flash,gemini-3.5-flash-lite
 //                                          # загвар(ууд): эхнийх нь өдрийн квот дуусахад дараагийнх руу
@@ -144,7 +145,7 @@ async function main() {
     const questions = JSON.parse(readFileSync(file, 'utf8'));
     const r = await call<{ inserted: number; duplicates: number; rejected: number }>('POST', '/admin/import', {
       admin: true,
-      body: { source: file === fixturesPath ? 'fixture' : 'import', questions },
+      body: { source: arg('source') ?? (file === fixturesPath ? 'fixture' : 'import'), questions },
     });
     console.log(`${file}: +${r.inserted} (давхардсан ${r.duplicates}, татгалзсан ${r.rejected})`);
     printPool((await pool()).pool);
