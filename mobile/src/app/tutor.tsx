@@ -1,38 +1,83 @@
 import { useLocalSearchParams } from 'expo-router';
 import { useRef } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { Button } from '@/components/Button';
-import { Pop } from '@/components/pixel';
+import { LeafCurtain } from '@/components/LeafCurtain';
+import { Sprite } from '@/components/pixel';
 import { TutorBear } from '@/components/TutorBear';
 import { colors, fonts, radius } from '@/constants/theme';
 import { useBearTalk } from '@/hooks/useBearTalk';
 import { S, subjectNames } from '@/i18n/strings';
+import room from '@/lib/pixelBear/classroom.json';
 import { goBack } from '@/lib/nav';
+import type { SpriteKey } from '@/sprites';
 
 const SOFT = '#CFC6FF';
+const ROOM: SpriteKey = 'classroom_396x864';
+const SHADOW: SpriteKey = 'lesson_shadow_108x18';
+/** ангийн зургийн дээд мөрийн хана: өндөр дэлгэцэнд зургийн дээгүүр */
+const WALL = '#F3D2A9';
+const CHALK = '#F4F1E4';
+const TOP_BAR = 48;
 
 /**
- * Алдсан бодлогоо баавгайтай дуугаар ярилцах. `?questionId=` бол тэр бодлогын тухай, үгүй бол сүүлд алдсан
- * бодлогуудын тухай. Баавгай ба хүүхэд ээлжлэн ярина: баавгай дуусмагц mic автоматаар асна.
+ * Алдсан бодлогоо баавгайтай дуугаар ярилцах анги (scripts/classroom-sprites.ts, PixelLab). `?questionId=` бол тэр
+ * бодлогын тухай, үгүй бол сүүлд алдсан бодлогуудын тухай. Баавгай самбарын өмнө зогсож ярина, яриа нь самбар дээр
+ * шохойгоор бичигдэнэ; ээлжлэн ярина: баавгай дуусмагц mic автоматаар асна. Баавгай бэлдэж байх хооронд дөрвөн
+ * захаас мөчрүүд орж ирж дэлгэцийг бүрхээд, бэлэн болмогц буцаж татагдана.
  */
 export default function TutorScreen() {
   const { questionId } = useLocalSearchParams<{ questionId?: string }>();
   const parsed = Number(questionId);
   const talk = useBearTalk(questionId && Number.isInteger(parsed) && parsed > 0 ? parsed : undefined);
   const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
   const scroll = useRef<ScrollView>(null);
 
-  const bubble =
-    talk.phase === 'ended' ? (talk.notice ?? '') : talk.phase === 'connecting' ? S.tutor.connecting : talk.bearText || '…';
+  // анги: доод захад наалдаж, хэвтээгээр төвлөрнө; дэлгэц өргөн бол бүхэл pixel-ээр биш ч өргөнийг дүүргэнэ
+  const k = Math.max(room.size.w * 3, width) / room.size.w;
+  const roomLeft = (width - room.size.w * k) / 2;
+  const [bx, by, bw, bh] = room.board;
+  const boardTop = height - (room.size.h - by) * k;
+  const board = {
+    left: roomLeft + bx * k,
+    bottom: (room.size.h - by - bh) * k,
+    width: bw * k,
+    height: bh * k,
+    // богино дэлгэцэнд самбарын дээд хэсэг дээд мөрний ард орно
+    paddingTop: Math.max(10, insets.top + 4 + TOP_BAR - boardTop + 6),
+  };
+
+  const chalk = talk.phase === 'ended' ? (talk.notice ?? '') : talk.phase === 'connecting' ? '' : talk.bearText || '…';
   const listening = talk.phase === 'listening';
+  const topic = talk.topic ? talk.topic.prompt : questionId ? null : S.tutor.recent;
 
   return (
-    <View style={[styles.root, { paddingTop: insets.top + 4, paddingBottom: insets.bottom + 16 }]}>
-      <View style={styles.top}>
+    <View style={styles.root}>
+      <Sprite id={ROOM} style={{ position: 'absolute', bottom: 0, left: roomLeft, width: room.size.w * k, height: room.size.h * k }} />
+
+      <View style={[styles.board, board]}>
+        {topic ? (
+          <Text style={styles.topic} numberOfLines={2}>
+            {topic}
+          </Text>
+        ) : null}
+        <ScrollView
+          ref={scroll}
+          onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })}
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={styles.chalk} accessibilityLiveRegion="polite">
+            {chalk}
+          </Text>
+        </ScrollView>
+      </View>
+
+      <View style={[styles.top, { paddingTop: insets.top + 4 }]}>
         <Pressable accessibilityRole="button" accessibilityLabel={S.common.close} onPress={() => goBack()} style={styles.close}>
-          <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={colors.white} strokeWidth={2.6} strokeLinecap="round">
+          <Svg width={22} height={22} viewBox="0 0 24 24" fill="none" stroke={colors.ink} strokeWidth={2.8} strokeLinecap="round">
             <Path d="M6 6l12 12M18 6 6 18" />
           </Svg>
         </Pressable>
@@ -41,89 +86,71 @@ export default function TutorScreen() {
         </View>
       </View>
 
-      {talk.topic ? (
-        <Text style={styles.topic} numberOfLines={3}>
-          {talk.topic.prompt}
-        </Text>
-      ) : questionId ? null : (
-        <Text style={styles.topic}>{S.tutor.recent}</Text>
-      )}
-
       <View style={styles.stage}>
-        <Pop trigger={talk.phase} from={0.9} style={styles.bubbleWrap}>
-          <View style={styles.bubble}>
-            <ScrollView
-              ref={scroll}
-              style={{ maxHeight: 190 }}
-              onContentSizeChange={() => scroll.current?.scrollToEnd({ animated: true })}
-              showsVerticalScrollIndicator={false}
-            >
-              <Text style={styles.bubbleText} accessibilityLiveRegion="polite">
-                {bubble}
-              </Text>
-            </ScrollView>
-          </View>
-        </Pop>
-        <View style={styles.circle} />
+        <Sprite id={SHADOW} style={styles.shadow} />
         <TutorBear phase={talk.phase} mouth={talk.mouth} label={listening ? S.tutor.bearListening : S.tutor.bearTalking} />
       </View>
 
-      <View style={styles.status}>
-        {talk.phase === 'connecting' ? (
-          <ActivityIndicator color={colors.white} />
-        ) : talk.phase !== 'ended' ? (
-          <View style={[styles.dot, { backgroundColor: listening ? colors.lime : SOFT }]} />
+      <View style={[styles.controls, { paddingBottom: insets.bottom + 16 }]}>
+        {talk.phase === 'bear' || listening ? (
+          <View style={styles.status}>
+            <View style={styles.statusRow}>
+              <View style={[styles.dot, { backgroundColor: listening ? colors.lime : SOFT }]} />
+              <Text style={styles.statusText}>{listening ? S.tutor.listening : S.tutor.speaking}</Text>
+            </View>
+            {talk.kidText ? (
+              <Text style={styles.kid} numberOfLines={2}>
+                {S.tutor.you}: {talk.kidText}
+              </Text>
+            ) : null}
+          </View>
         ) : null}
-        <Text style={styles.statusText}>
-          {talk.phase === 'listening' ? S.tutor.listening : talk.phase === 'bear' ? S.tutor.speaking : ''}
-        </Text>
+        <View style={styles.actions}>
+          {talk.phase === 'ended' ? (
+            <>
+              <Button title={S.tutor.restart} variant="lime" onPress={talk.restart} style={styles.main} />
+              <Button title={S.common.back} variant="white" onPress={() => goBack()} style={styles.action} />
+            </>
+          ) : (
+            <>
+              {talk.phase === 'bear' ? <Button title={S.tutor.interrupt} variant="lime" onPress={talk.interrupt} style={styles.main} /> : null}
+              <Button title={S.tutor.finish} variant="white" onPress={() => goBack()} style={styles.action} />
+            </>
+          )}
+        </View>
       </View>
-      {talk.kidText ? (
-        <Text style={styles.kid} numberOfLines={3}>
-          {S.tutor.you}: {talk.kidText}
-        </Text>
-      ) : null}
 
-      <View style={styles.actions}>
-        {talk.phase === 'ended' ? (
-          <>
-            <Button title={S.tutor.restart} variant="lime" onPress={talk.restart} />
-            <Button title={S.common.back} variant="white" small onPress={() => goBack()} />
-          </>
-        ) : (
-          <>
-            {talk.phase === 'bear' ? <Button title={S.tutor.interrupt} variant="lime" onPress={talk.interrupt} /> : null}
-            <Button title={S.tutor.finish} variant="white" small onPress={() => goBack()} />
-          </>
-        )}
-      </View>
+      <LeafCurtain covered={talk.phase === 'connecting'} label={S.tutor.connecting} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.indigo, paddingHorizontal: 20 },
-  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  close: { width: 44, height: 44, alignItems: 'center', justifyContent: 'center', marginLeft: -6 },
+  root: { flex: 1, backgroundColor: WALL },
+  board: { position: 'absolute', paddingHorizontal: 12, paddingBottom: 10 },
+  topic: { fontFamily: fonts.semibold, fontSize: 13, lineHeight: 18, color: colors.lemon, marginBottom: 6 },
+  chalk: {
+    fontFamily: fonts.bold,
+    fontSize: 17,
+    lineHeight: 24,
+    color: CHALK,
+    textShadowColor: 'rgba(244, 241, 228, 0.35)',
+    textShadowRadius: 3,
+  },
+  top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, zIndex: 3 },
+  close: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.white },
   pill: { height: 36, paddingHorizontal: 14, borderRadius: radius.pill, backgroundColor: colors.white, justifyContent: 'center' },
   pillText: { fontFamily: fonts.bold, fontSize: 14, color: colors.ink },
-  topic: { marginTop: 12, fontFamily: fonts.semibold, fontSize: 16, lineHeight: 22, color: SOFT, textAlign: 'center' },
-  stage: { flex: 1, alignItems: 'center', justifyContent: 'flex-end', paddingBottom: 8 },
-  circle: { position: 'absolute', bottom: 0, width: 250, height: 250, borderRadius: 125, backgroundColor: '#34209A' },
-  bubbleWrap: { alignSelf: 'stretch', marginBottom: 14, zIndex: 2 },
-  bubble: {
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
-    borderBottomRightRadius: 22,
-    borderBottomLeftRadius: 4,
-  },
-  bubbleText: { fontFamily: fonts.bold, fontSize: 17, lineHeight: 23, color: colors.ink },
-  status: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 28, marginTop: 14 },
-  dot: { width: 12, height: 12, borderRadius: 6 },
+  stage: { flex: 1, alignItems: 'center', justifyContent: 'flex-end' },
+  shadow: { position: 'absolute', bottom: -9 },
+  controls: { paddingHorizontal: 20, paddingTop: 12, gap: 10 },
+  status: { alignSelf: 'center', alignItems: 'center', paddingVertical: 8, paddingHorizontal: 16, borderRadius: 18, backgroundColor: 'rgba(25, 21, 46, 0.82)' },
+  statusRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  dot: { width: 10, height: 10, borderRadius: 5 },
   statusText: { fontFamily: fonts.bold, fontSize: 15, color: colors.white },
-  kid: { marginTop: 6, fontFamily: fonts.medium, fontSize: 14, lineHeight: 19, color: SOFT, textAlign: 'center' },
-  actions: { gap: 6, marginTop: 14 },
+  kid: { marginTop: 4, fontFamily: fonts.medium, fontSize: 14, lineHeight: 19, color: SOFT, textAlign: 'center' },
+  actions: { flexDirection: 'row', gap: 10 },
+  // lime товч том үсэг, зайтай тул илүү өргөн
+  main: { flex: 1.8, paddingHorizontal: 12 },
+  action: { flex: 1, paddingHorizontal: 12 },
 });
