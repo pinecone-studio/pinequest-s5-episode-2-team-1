@@ -1,10 +1,12 @@
 /**
- * Баавгайтай ярилцах дэлгэцийн (tutor) баавгай: урагшаа харсан frame-ууд (bear_tutor.png, grid) + амны хэлбэр
- * (bear_mouth.png: хагас, нээлттэй) + metadata (mobile/src/lib/pixelBear/bear-tutor.json).
+ * Баавгайтай ярилцах дэлгэцийн (tutor) баавгай: урагшаа харсан frame-ууд (bear_tutor_<n>.png, grid; утасны 4096 px
+ * texture-ийн хязгаарт багтахгүй бол хэд хэдэн sheet) + амны хэлбэр (bear_mouth.png: хагас, нээлттэй) + metadata
+ * (mobile/src/lib/pixelBear/bear-tutor.json).
  *
- * Баавгай: PixelLab (docs/design/pixel-bear/pixellab/bear.png): idle, think (сонсох), teach (багш шиг сарвуугаа
- * өргөж тайлбарлана). teach-ийн бүх frame-д амыг хааж (PixelLab зарим frame-д амыг нээсэн байдаг), frame бүрт амны
- * байрлалыг JSON-д бичнэ: апп дуу тоглуулж байх үед түүний чанга байдлаар хагас/нээлттэй амыг дээр нь давхарлана.
+ * Баавгай: PixelLab (docs/design/pixel-bear/pixellab/bear.png): idle, think (сонсох) ба ярих үеийн дохио: teach
+ * (сарвуугаа өргөж тайлбарлах), point (чухал зүйлийг сарвуугаа өргөж онцлох), present (хоёр сарвуугаа дэлгэж
+ * санаа гаргах), shape (хоёр сарвуугаараа цээжний урд санааг «хэлбэржүүлэх»). Дохио бүрийн frame-д амыг хааж (PixelLab зарим frame-д амыг нээсэн
+ * байдаг), амны байрлалыг JSON-д бичнэ: апп дуу тоглуулж байх үед түүний чанга байдлаар хагас/нээлттэй амыг давхарлана.
  *
  * Ажиллуулах:  npm run sprites:tutor && npm run sprites   (mobile/)
  * Шалгах:      node scripts/tutor-sprites.ts --preview <dir>
@@ -14,7 +16,9 @@ import { blank, type Img, writeApng, writePng } from './png.ts';
 import { at, bbox, clone, contact, crop, type Frame, hex, type P, pixellab, SPRITES, scale, tagOf, toSheet, trim } from './sprite-kit.ts';
 
 const META = new URL('../src/lib/pixelBear/bear-tutor.json', import.meta.url);
-const COLS = 7;
+/** утсанд 4× харуулж 3× нягтралд хадгалдаг тул 1 pixel = 12 texture pixel; texture 4096 px-ээс хэтрэхгүй */
+const TEXTURE = Math.floor(4096 / 12);
+const GESTURES = ['teach', 'point', 'present', 'shape'] as const;
 
 const bear = pixellab('bear');
 const teach = bear.frames('teach', 'south');
@@ -55,10 +59,11 @@ function closeMouth(img: Img, [dx, dy]: P): Img {
 const all: (Frame & { mouth?: P })[] = [];
 bear.frames('idle', 'south').forEach((img, i) => all.push({ name: `idle${i}`, duration: 220, img }));
 bear.frames('think', 'south').forEach((img, i) => all.push({ name: `think${i}`, duration: 150, img })); // сонсох
-teach.forEach((img, i) => {
-  const off = faceOffset(img);
-  all.push({ name: `teach${i}`, duration: 150, img: closeMouth(img, off), mouth: [MOUTH[0] + off[0], MOUTH[1] + off[1]] });
-});
+for (const g of GESTURES)
+  bear.frames(g, 'south').forEach((img, i) => {
+    const off = faceOffset(img);
+    all.push({ name: `${g}${i}`, duration: 150, img: closeMouth(img, off), mouth: [MOUTH[0] + off[0], MOUTH[1] + off[1]] });
+  });
 const { frames, dx, dy } = trim(all);
 const [bx0, , bx1, by1] = bbox([bear.rotation('south')]);
 
@@ -84,16 +89,23 @@ const tags = {
   listen: tag('think0', 'think8', 'pingpong'),
   teachIn: tag('teach0', 'teach2'),
   teach: tag('teach3', 'teach8', 'pingpong'),
+  point: tag('point0', 'point8'),
+  present: tag('present0', 'present7'), // 8-р frame-д нүд бараантаж гажсан
+  shape: tag('shape0', 'shape8'),
 };
-const sheet = toSheet(frames, COLS);
+const { w: FW, h: FH } = frames[0].img;
+const COLS = Math.floor(TEXTURE / FW);
+const PER_SHEET = COLS * Math.floor(TEXTURE / FH);
+const sheets = Array.from({ length: Math.ceil(frames.length / PER_SHEET) }, (_, k) => toSheet(frames.slice(k * PER_SHEET, (k + 1) * PER_SHEET), COLS));
 
 const preview = process.argv.indexOf('--preview');
 if (preview < 0) {
-  writePng(new URL('bear_tutor.png', SPRITES), sheet);
+  sheets.forEach((sheet, k) => writePng(new URL(`bear_tutor_${k}.png`, SPRITES), sheet));
   writePng(new URL('bear_mouth.png', SPRITES), mouth);
   const meta = {
-    sheet: 'bear_tutor',
-    frameSize: { w: frames[0].img.w, h: frames[0].img.h },
+    /** sheet бүрийн frame-ийн тоо: frame i нь sheet ⌊i / sheets[0]⌋ дотор */
+    sheets: sheets.map((_, k) => Math.min(PER_SHEET, frames.length - k * PER_SHEET)),
+    frameSize: { w: FW, h: FH },
     columns: COLS,
     feet: by1 - dy,
     pivot: (bx0 + bx1) / 2 - dx,
@@ -102,12 +114,17 @@ if (preview < 0) {
     tags,
   };
   writeFileSync(META, `${JSON.stringify(meta, null, 2)}\n`);
-  console.log(`bear_tutor: ${frames.length} frame ${frames[0].img.w}×${frames[0].img.h}, ${Object.keys(tags).length} tag`);
+  console.log(`bear_tutor: ${frames.length} frame ${FW}×${FH}, ${sheets.length} sheet (${COLS} багана), ${Object.keys(tags).length} tag`);
 } else {
-  // ярьж буй мэт: teach давталт дээр ам 0 → 1 → 2 → 1 ээлжилнэ (апп-д энэ нь дууны чанга байдлаар явна)
+  // ярьж буй мэт: дохионуудыг дараалан, ам 0 → 1 → 2 → 1 ээлжилнэ (апп-д энэ нь дууны чанга байдлаар явна)
   const dir = `${process.argv[preview + 1]}/`;
-  writePng(`${dir}tutor_contact.png`, contact(sheet));
-  const ids = [...Array(3).keys(), ...[3, 4, 5, 6, 7, 8, 7, 6, 5, 4, 3, 4, 5, 6, 7, 8]].map((i) => 13 + i);
+  writePng(`${dir}tutor_contact.png`, contact(toSheet(frames, COLS)));
+  const seq = (t: keyof typeof tags) => {
+    const { from, to, direction } = tags[t];
+    const f = Array.from({ length: to - from + 1 }, (_, i) => from + i);
+    return direction === 'pingpong' ? [...f, ...f.slice(1, -1).reverse()] : f;
+  };
+  const ids = (['teachIn', 'teach', 'point', 'teach', 'present', 'shape'] as const).flatMap(seq);
   const levels = [0, 1, 2, 1, 2, 2, 1, 0, 1, 2, 1, 0, 0, 1, 2, 1, 2, 1, 0];
   const shots = ids.map((id, n) => {
     const f = frames[id];

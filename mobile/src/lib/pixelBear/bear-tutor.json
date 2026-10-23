@@ -1,12 +1,15 @@
 {
-  "sheet": "bear_tutor",
+  "sheets": [
+    30,
+    19
+  ],
   "frameSize": {
-    "w": 46,
-    "h": 63
+    "w": 55,
+    "h": 64
   },
-  "columns": 7,
-  "feet": 62,
-  "pivot": 25,
+  "columns": 6,
+  "feet": 63,
+  "pivot": 28,
   "mouth": {
     "w": 5,
     "h": 4,
@@ -70,72 +73,288 @@
       "name": "teach0",
       "duration": 150,
       "mouth": [
-        24,
-        23
+        27,
+        24
       ]
     },
     {
       "name": "teach1",
       "duration": 150,
       "mouth": [
-        24,
-        24
+        27,
+        25
       ]
     },
     {
       "name": "teach2",
       "duration": 150,
       "mouth": [
-        24,
-        26
+        27,
+        27
       ]
     },
     {
       "name": "teach3",
       "duration": 150,
       "mouth": [
-        24,
-        25
+        27,
+        26
       ]
     },
     {
       "name": "teach4",
       "duration": 150,
       "mouth": [
-        24,
-        23
+        27,
+        24
       ]
     },
     {
       "name": "teach5",
       "duration": 150,
       "mouth": [
-        24,
-        23
+        27,
+        24
       ]
     },
     {
       "name": "teach6",
       "duration": 150,
       "mouth": [
-        24,
-        25
+        27,
+        26
       ]
     },
     {
       "name": "teach7",
       "duration": 150,
       "mouth": [
-        24,
-        26
+        27,
+        27
       ]
     },
     {
       "name": "teach8",
       "duration": 150,
       "mouth": [
+        27,
+        27
+      ]
+    },
+    {
+      "name": "point0",
+      "duration": 150,
+      "mouth": [
+        27,
+        24
+      ]
+    },
+    {
+      "name": "point1",
+      "duration": 150,
+      "mouth": [
+        27,
+        26
+      ]
+    },
+    {
+      "name": "point2",
+      "duration": 150,
+      "mouth": [
+        26,
+        26
+      ]
+    },
+    {
+      "name": "point3",
+      "duration": 150,
+      "mouth": [
         24,
         26
+      ]
+    },
+    {
+      "name": "point4",
+      "duration": 150,
+      "mouth": [
+        24,
+        26
+      ]
+    },
+    {
+      "name": "point5",
+      "duration": 150,
+      "mouth": [
+        24,
+        26
+      ]
+    },
+    {
+      "name": "point6",
+      "duration": 150,
+      "mouth": [
+        24,
+        26
+      ]
+    },
+    {
+      "name": "point7",
+      "duration": 150,
+      "mouth": [
+        26,
+        26
+      ]
+    },
+    {
+      "name": "point8",
+      "duration": 150,
+      "mouth": [
+        27,
+        25
+      ]
+    },
+    {
+      "name": "present0",
+      "duration": 150,
+      "mouth": [
+        27,
+        24
+      ]
+    },
+    {
+      "name": "present1",
+      "duration": 150,
+      "mouth": [
+        27,
+        25
+      ]
+    },
+    {
+      "name": "present2",
+      "duration": 150,
+      "mouth": [
+        27,
+        24
+      ]
+    },
+    {
+      "name": "present3",
+      "duration": 150,
+      "mouth": [
+        27,
+        23
+      ]
+    },
+    {
+      "name": "present4",
+      "duration": 150,
+      "mouth": [
+        27,
+        22
+      ]
+    },
+    {
+      "name": "present5",
+      "duration": 150,
+      "mouth": [
+        27,
+        22
+      ]
+    },
+    {
+      "name": "present6",
+      "duration": 150,
+      "mouth": [
+        27,
+        23
+      ]
+    },
+    {
+      "name": "present7",
+      "duration": 150,
+      "mouth": [
+        27,
+        25
+      ]
+    },
+    {
+      "name": "present8",
+      "duration": 150,
+      "mouth": [
+        27,
+        25
+      ]
+    },
+    {
+      "name": "shape0",
+      "duration": 150,
+      "mouth": [
+        27,
+        24
+      ]
+    },
+    {
+      "name": "shape1",
+      "duration": 150,
+      "mouth": [
+        27,
+        26
+      ]
+    },
+    {
+      "name": "shape2",
+      "duration": 150,
+      "mouth": [
+        27,
+        27
+      ]
+    },
+    {
+      "name": "shape3",
+      "duration": 150,
+      "mouth": [
+        27,
+        27
+      ]
+    },
+    {
+      "name": "shape4",
+      "duration": 150,
+      "mouth": [
+        27,
+        26
+      ]
+    },
+    {
+      "name": "shape5",
+      "duration": 150,
+      "mouth": [
+        27,
+        26
+      ]
+    },
+    {
+      "name": "shape6",
+      "duration": 150,
+      "mouth": [
+        27,
+        26
+      ]
+    },
+    {
+      "name": "shape7",
+      "duration": 150,
+      "mouth": [
+        27,
+        25
+      ]
+    },
+    {
+      "name": "shape8",
+      "duration": 150,
+      "mouth": [
+        27,
+        25
       ]
     }
   ],
@@ -159,6 +378,21 @@
       "from": 16,
       "to": 21,
       "direction": "pingpong"
+    },
+    "point": {
+      "from": 22,
+      "to": 30,
+      "direction": "forward"
+    },
+    "present": {
+      "from": 31,
+      "to": 38,
+      "direction": "forward"
+    },
+    "shape": {
+      "from": 40,
+      "to": 48,
+      "direction": "forward"
     }
   }
 }

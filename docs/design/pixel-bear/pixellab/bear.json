@@ -18,7 +18,7 @@
     },
     "sheet_size": {
       "width": 968,
-      "height": 968
+      "height": 1320
     },
     "columns": 11,
     "pivot": "cell-center",
@@ -78,12 +78,28 @@
         "row": 6,
         "type": "animation",
         "frame_count": 9,
+        "animation": "shape",
+        "animation_group_id": "8a622fd6-8d6d-4a76-bc4c-d023750728f2",
+        "direction": "south"
+      },
+      {
+        "row": 7,
+        "type": "animation",
+        "frame_count": 9,
         "animation": "throw",
         "animation_group_id": "8a83a072-e741-4c28-8268-644f8ea2e5e6",
         "direction": "west"
       },
       {
-        "row": 7,
+        "row": 8,
+        "type": "animation",
+        "frame_count": 9,
+        "animation": "count",
+        "animation_group_id": "97e5d454-a0b6-4022-9a83-6a146ad3b386",
+        "direction": "south"
+      },
+      {
+        "row": 9,
         "type": "animation",
         "frame_count": 4,
         "animation": "idle",
@@ -91,7 +107,7 @@
         "direction": "south"
       },
       {
-        "row": 8,
+        "row": 10,
         "type": "animation",
         "frame_count": 4,
         "animation": "idle",
@@ -99,7 +115,23 @@
         "direction": "west"
       },
       {
-        "row": 9,
+        "row": 11,
+        "type": "animation",
+        "frame_count": 9,
+        "animation": "point",
+        "animation_group_id": "b76f6f31-769c-464d-9f71-a2f9a495e431",
+        "direction": "south"
+      },
+      {
+        "row": 12,
+        "type": "animation",
+        "frame_count": 9,
+        "animation": "present",
+        "animation_group_id": "c1aef179-3d25-4d26-b9a9-2ccc893b4fad",
+        "direction": "south"
+      },
+      {
+        "row": 13,
         "type": "animation",
         "frame_count": 8,
         "animation": "run",
@@ -107,7 +139,7 @@
         "direction": "west"
       },
       {
-        "row": 10,
+        "row": 14,
         "type": "animation",
         "frame_count": 9,
         "animation": "teach",
@@ -117,5 +149,5 @@
     ]
   },
   "export_version": "1.0",
-  "export_date": "2026-10-23T02:36:40.703082+00:00"
+  "export_date": "2026-10-23T03:01:27.298412+00:00"
 }
