@@ -10,13 +10,22 @@ interface Missed {
   id: number;
   tier: Tier;
   topic: string | null;
+  book_ref: string | null;
 }
 
-/** Алдсан асуултуудыг сэдвээр бүлэглэнэ; сэдэвгүй асуулт бүр өөрийн бүлэгтэй. Дараалал хадгалагдана. */
-export function groupByTopic<T extends { id: number; topic: string | null }>(missed: T[]): T[][] {
+/**
+ * Давтлагын асуулт алдсан асуулттай ижил хичээлийнх байна: сурах бичгийн хичээлээс үүссэн бол яг тэр хуудасны
+ * (book_ref), үгүй бол ижил сэдвийн (topic). `topic` нь өргөн (6-р ангийн математикийн 63 хичээл 13 сэдэвт) тул
+ * book_ref-тэй асуултад ашиглахгүй: ХИЕХ-д алдсан хүүхдэд анхны тооны бодлого өгөхгүй.
+ */
+const SAME_LESSON = '(q.book_ref = ? OR (? IS NULL AND q.topic = ?))';
+const sameLessonArgs = (q: { book_ref: string | null; topic: string | null }) => [q.book_ref, q.book_ref, q.topic];
+
+/** Алдсан асуултуудыг хичээлээр (book_ref, үгүй бол сэдвээр) бүлэглэнэ; аль нь ч үгүй асуулт бүр өөрийн бүлэгтэй. */
+export function groupByLesson<T extends { id: number; topic: string | null; book_ref: string | null }>(missed: T[]): T[][] {
   const groups = new Map<string, T[]>();
   for (const q of missed) {
-    const key = q.topic ?? `#${q.id}`;
+    const key = q.book_ref ? `ref:${q.book_ref}` : (q.topic ?? `#${q.id}`);
     groups.set(key, [...(groups.get(key) ?? []), q]);
   }
   return [...groups.values()];
@@ -40,7 +49,7 @@ export async function recoveryStatements(db: D1Database, userId: number, taskId:
   // Flag (-1) бол жинхэнэ алдаа биш.
   const { results: missed } = await db
     .prepare(
-      `SELECT q.id, q.tier, q.topic FROM task_questions tq JOIN questions q ON q.id = tq.question_id
+      `SELECT q.id, q.tier, q.topic, q.book_ref FROM task_questions tq JOIN questions q ON q.id = tq.question_id
        WHERE tq.task_id = ? AND tq.choice >= 0 AND tq.correct = 0 ORDER BY tq.position`,
     )
     .bind(taskId)
@@ -50,17 +59,16 @@ export async function recoveryStatements(db: D1Database, userId: number, taskId:
   const pick = db.prepare(
     `SELECT q.id FROM questions q
      LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
-     WHERE q.tier = ? AND q.subject = ? AND q.topic = ? AND q.flagged = 0 AND ${OWN_GRADE}
+     WHERE q.tier = ? AND q.subject = ? AND ${SAME_LESSON} AND q.flagged = 0 AND ${OWN_GRADE}
        AND q.id NOT IN (SELECT question_id FROM task_questions WHERE task_id = ?)
      ORDER BY (s.seen_at IS NOT NULL), s.seen_at, RANDOM() LIMIT ?`,
   );
   const groups: { missed: number[]; picked: number[] }[] = [];
-  for (const group of groupByTopic(missed)) {
-    const { tier, topic } = group[0];
-    const picked =
-      topic === null
-        ? []
-        : (await pick.bind(userId, tier, task.subject, topic, userId, taskId, GAME.RECOVERY_PRACTICE).all<{ id: number }>()).results.map((r) => r.id);
+  for (const group of groupByLesson(missed)) {
+    const first = group[0];
+    const picked = (
+      await pick.bind(userId, first.tier, task.subject, ...sameLessonArgs(first), userId, taskId, GAME.RECOVERY_PRACTICE).all<{ id: number }>()
+    ).results.map((r) => r.id);
     groups.push({ missed: group.map((q) => q.id), picked });
   }
 
@@ -100,6 +108,7 @@ interface PracticeQuestion {
   explanation: string;
   tier: Tier;
   topic: string | null;
+  book_ref: string | null;
 }
 
 async function pending(db: D1Database, userId: number, subject: Subject) {
@@ -110,7 +119,7 @@ async function pending(db: D1Database, userId: number, subject: Subject) {
   if (!row) throw new ApiError(404, 'NOT_FOUND', 'Давтлага алга');
   const { results: questions } = await db
     .prepare(
-      `SELECT q.id, q.prompt, q.options, q.correct_index, q.explanation, q.tier, q.topic
+      `SELECT q.id, q.prompt, q.options, q.correct_index, q.explanation, q.tier, q.topic, q.book_ref
        FROM json_each(?) j JOIN questions q ON q.id = j.value ORDER BY j.key`,
     )
     .bind(row.questions)
@@ -176,21 +185,18 @@ export async function answerRecovery(
     return { correct: false, recovery: toDto(subject, p.questions, p.passed) };
   }
 
-  // Ижил сэдвийн, салаа замд болон тэр даалгаварт ороогүй асуулт (хараагүйг түрүүлж)
-  const next =
-    q.topic === null
-      ? null
-      : await db
-          .prepare(
-            `SELECT q.id FROM questions q
-             LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
-             WHERE q.tier = ? AND q.subject = ? AND q.topic = ? AND q.flagged = 0 AND ${OWN_GRADE}
-               AND q.id NOT IN (SELECT value FROM json_each(?))
-               AND q.id NOT IN (SELECT question_id FROM task_questions WHERE task_id = ?)
-             ORDER BY (s.seen_at IS NOT NULL), s.seen_at, RANDOM() LIMIT 1`,
-          )
-          .bind(userId, q.tier, subject, q.topic, userId, p.row.questions, p.row.task_id)
-          .first<{ id: number }>();
+  // Ижил хичээлийн, салаа замд болон тэр даалгаварт ороогүй асуулт (хараагүйг түрүүлж)
+  const next = await db
+    .prepare(
+      `SELECT q.id FROM questions q
+       LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
+       WHERE q.tier = ? AND q.subject = ? AND ${SAME_LESSON} AND q.flagged = 0 AND ${OWN_GRADE}
+         AND q.id NOT IN (SELECT value FROM json_each(?))
+         AND q.id NOT IN (SELECT question_id FROM task_questions WHERE task_id = ?)
+       ORDER BY (s.seen_at IS NOT NULL), s.seen_at, RANDOM() LIMIT 1`,
+    )
+    .bind(userId, q.tier, subject, ...sameLessonArgs(q), userId, p.row.questions, p.row.task_id)
+    .first<{ id: number }>();
   const ids = p.questions.map((x) => (x.id === q.id && next ? next.id : x.id));
   const [upd] = await db.batch([
     db.prepare(`UPDATE recoveries SET questions = ?, misses = 0 ${guard}`).bind(JSON.stringify(ids), p.row.task_id, p.row.passed, p.row.misses),

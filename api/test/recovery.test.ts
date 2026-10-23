@@ -1,13 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { groupByTopic, practiceIds, recoveryCertain } from '../src/services/recovery';
+import { groupByLesson, practiceIds, recoveryCertain } from '../src/services/recovery';
 
 describe('салаа замын асуулт сонголт', () => {
   it('алдсан асуултыг сэдвээр бүлэглэж, сэдэвгүйг тус тусад нь үлдээнэ', () => {
-    const groups = groupByTopic([
-      { id: 1, topic: 'percent' },
-      { id: 2, topic: null },
-      { id: 3, topic: 'percent' },
-      { id: 4, topic: null },
+    const groups = groupByLesson([
+      { id: 1, topic: 'percent', book_ref: null },
+      { id: 2, topic: null, book_ref: null },
+      { id: 3, topic: 'percent', book_ref: null },
+      { id: 4, topic: null, book_ref: null },
+    ]);
+    expect(groups.map((g) => g.map((q) => q.id))).toEqual([[1, 3], [2], [4]]);
+  });
+
+  it('сурах бичгийн асуултыг сэдвээр биш хичээлийн хуудсаар (book_ref) бүлэглэнэ', () => {
+    const groups = groupByLesson([
+      { id: 1, topic: 'divisibility', book_ref: 'math-6:14' },
+      { id: 2, topic: 'divisibility', book_ref: 'math-6:17' },
+      { id: 3, topic: 'divisibility', book_ref: 'math-6:14' },
+      { id: 4, topic: 'divisibility', book_ref: null },
     ]);
     expect(groups.map((g) => g.map((q) => q.id))).toEqual([[1, 3], [2], [4]]);
   });
