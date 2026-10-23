@@ -4,7 +4,8 @@ import type { RecoveryAnswerResponse, RecoveryDto, Subject } from '../../../shar
 import { GAME, type Tier } from '../config/game';
 import { TOPICS } from '../config/topics';
 import { ApiError } from '../lib/errors';
-import { IN_RANGE, OWN_GRADE, parseLessonRef, rangeArgs } from './pool';
+import { generate, type Template, templateById, templatesFor } from '../templates';
+import { IN_RANGE, OWN_GRADE, parseLessonRef, rangeArgs, storeGenerated } from './pool';
 
 interface Missed {
   id: number;
@@ -41,6 +42,13 @@ export function mainGroup<T extends { id: number; topic: string | null; book_ref
   return groupByLesson(missed).reduce((best, g) => (g.length > best.length ? g : best));
 }
 
+/** Зангилааны хичээлүүдийн загвар; алдсан хичээлийнх (book_ref) байвал зөвхөн түүнийх. */
+function lessonTemplates(lesson: NonNullable<ReturnType<typeof parseLessonRef>>, bookRef: string | null): Template[] {
+  const all = templatesFor(lesson);
+  const own = all.filter((t) => t.ref === bookRef);
+  return own.length ? own : all;
+}
+
 /** Ийм олон алдаа гарсан бол салаа зам заавал нээгдэнэ: зөв хариуг тэнд өөрөө дахин бодож олно. */
 export const recoveryCertain = (wrong: number) => wrong >= GAME.RECOVERY_MIN_WRONG;
 
@@ -51,9 +59,11 @@ export const recoveryCertain = (wrong: number) => wrong >= GAME.RECOVERY_MIN_WRO
 export async function recoveryStatements(db: D1Database, userId: number, taskId: number, now = Date.now()): Promise<D1PreparedStatement[]> {
   // Admin-д нөхөх давтлага үүсэхгүй.
   const task = await db
-    .prepare('SELECT t.subject, t.lesson_ref FROM tasks t JOIN users u ON u.id = t.user_id WHERE t.id = ? AND t.user_id = ? AND u.is_admin = 0')
+    .prepare(
+      'SELECT t.subject, t.lesson_ref, u.grade FROM tasks t JOIN users u ON u.id = t.user_id WHERE t.id = ? AND t.user_id = ? AND u.is_admin = 0',
+    )
     .bind(taskId, userId)
-    .first<{ subject: Subject; lesson_ref: string | null }>();
+    .first<{ subject: Subject; lesson_ref: string | null; grade: number }>();
   if (!task) return [];
   // Flag (-1) бол жинхэнэ алдаа биш.
   const { results: missed } = await db
@@ -69,6 +79,9 @@ export async function recoveryStatements(db: D1Database, userId: number, taskId:
   // нэг хичээл/сэдвээс. 2 хичээлтэй зангилаанд хамгийн олон алдсан хичээлийнхийг түрүүлнэ.
   const lesson = parseLessonRef(task.lesson_ref);
   const group = mainGroup(missed);
+  // Хамгийн олон алдсан хичээлд загвар байвал ижил төрлийн шинэ бодлого (тоо нь өөр) үүсгэнэ.
+  const templates = lesson ? lessonTemplates(lesson, group[0].book_ref) : [];
+  const made = await storeGenerated(db, group[0].tier, task.subject, task.grade, generate(templates, GAME.RECOVERY_PRACTICE), now);
   const same = lesson ? IN_RANGE : SAME_LESSON;
   const { results } = await db
     .prepare(
@@ -89,7 +102,7 @@ export async function recoveryStatements(db: D1Database, userId: number, taskId:
       GAME.RECOVERY_PRACTICE,
     )
     .all<{ id: number }>();
-  const picked = results.map((r) => r.id);
+  const picked = [...made, ...results.map((r) => r.id).filter((id) => !made.includes(id))];
   const ids = practiceIds(picked, (lesson ? missed : group).map((q) => q.id));
 
   // Шинэ асуултуудыг "харсан" болгоно: удахгүй ердийн даалгаварт дахин гарахгүй.
@@ -129,6 +142,7 @@ interface PracticeQuestion {
   tier: Tier;
   topic: string | null;
   book_ref: string | null;
+  source: string;
 }
 
 async function pending(db: D1Database, userId: number, subject: Subject) {
@@ -139,7 +153,7 @@ async function pending(db: D1Database, userId: number, subject: Subject) {
   if (!row) throw new ApiError(404, 'NOT_FOUND', 'Давтлага алга');
   const { results: questions } = await db
     .prepare(
-      `SELECT q.id, q.prompt, q.options, q.correct_index, q.explanation, q.tier, q.topic, q.book_ref
+      `SELECT q.id, q.prompt, q.options, q.correct_index, q.explanation, q.tier, q.topic, q.book_ref, q.source
        FROM json_each(?) j JOIN questions q ON q.id = j.value ORDER BY j.key`,
     )
     .bind(row.questions)
@@ -205,18 +219,24 @@ export async function answerRecovery(
     return { correct: false, recovery: toDto(subject, p.questions, p.passed) };
   }
 
-  // Ижил хичээлийн, салаа замд болон тэр даалгаварт ороогүй асуулт (хараагүйг түрүүлж)
-  const next = await db
-    .prepare(
-      `SELECT q.id FROM questions q
-       LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
-       WHERE q.tier = ? AND q.subject = ? AND ${SAME_LESSON} AND q.flagged = 0 AND ${OWN_GRADE}
-         AND q.id NOT IN (SELECT value FROM json_each(?))
-         AND q.id NOT IN (SELECT question_id FROM task_questions WHERE task_id = ?)
-       ORDER BY (s.seen_at IS NOT NULL), s.seen_at, RANDOM() LIMIT 1`,
-    )
-    .bind(userId, q.tier, subject, ...sameLessonArgs(q), userId, p.row.questions, p.row.task_id)
-    .first<{ id: number }>();
+  // Загвараас гарсан бол ижил төрлийн шинэ хувилбар; үгүй бол ижил хичээлийн, салаа замд болон тэр даалгаварт ороогүй
+  // асуулт (хараагүйг түрүүлж).
+  const template = q.source.startsWith('template:') ? templateById(q.source.slice('template:'.length)) : undefined;
+  const grade = template ? (await db.prepare('SELECT grade FROM users WHERE id = ?').bind(userId).first<{ grade: number }>())?.grade : undefined;
+  const fresh = template && grade !== undefined ? await storeGenerated(db, q.tier, subject, grade, generate([template], 1), now) : [];
+  const next = fresh.length
+    ? { id: fresh[0] }
+    : await db
+        .prepare(
+          `SELECT q.id FROM questions q
+           LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
+           WHERE q.tier = ? AND q.subject = ? AND ${SAME_LESSON} AND q.flagged = 0 AND ${OWN_GRADE}
+             AND q.id NOT IN (SELECT value FROM json_each(?))
+             AND q.id NOT IN (SELECT question_id FROM task_questions WHERE task_id = ?)
+           ORDER BY (s.seen_at IS NOT NULL), s.seen_at, RANDOM() LIMIT 1`,
+        )
+        .bind(userId, q.tier, subject, ...sameLessonArgs(q), userId, p.row.questions, p.row.task_id)
+        .first<{ id: number }>();
   const ids = p.questions.map((x) => (x.id === q.id && next ? next.id : x.id));
   const [upd] = await db.batch([
     db.prepare(`UPDATE recoveries SET questions = ?, misses = 0 ${guard}`).bind(JSON.stringify(ids), p.row.task_id, p.row.passed, p.row.misses),

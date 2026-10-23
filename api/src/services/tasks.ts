@@ -12,7 +12,8 @@ import { isConstraintError, newTx } from '../lib/db';
 import { ApiError } from '../lib/errors';
 import type { PageRange } from './grounding';
 import { bookLessons, lessonPages } from './lessons';
-import { LESSON_COUNT_SQL, lessonRef, maybeRefill, pickArgs, pickSql, rangeArgs, refillLesson, refillPool } from './pool';
+import { generate, templatesFor } from '../templates';
+import { LESSON_COUNT_SQL, lessonRef, maybeRefill, pickArgs, pickSql, rangeArgs, refillLesson, refillPool, storeGenerated } from './pool';
 import { hasPendingRecovery, recoveryCertain, recoveryStatements } from './recovery';
 import { countTasksToday, getUserRow, loadMe, loadSubjectPaths, streakStateOf, syncStreak } from './users';
 
@@ -112,7 +113,10 @@ export async function startTask(
   const lesson = book && lessonPages(book, node);
   const lessonRefill = (range: PageRange) =>
     refillLesson(env, tier, subject, { grade: user.grade, range }, userId).catch((e) => console.error('[pool] lesson refill failed', e));
-  if (lesson) {
+  // Хичээлд бодлогын загвар байвал нэг төрлийн бодлогыг тоо, нөхцөлийг нь сольж үүсгэнэ (Gemini хэрэггүй).
+  const templates = lesson ? templatesFor(lesson) : [];
+  const made = templates.length ? await storeGenerated(db, tier, subject, user.grade, generate(templates, GAME.QUESTIONS_PER_TASK), now) : [];
+  if (lesson && made.length < GAME.QUESTIONS_PER_TASK) {
     const refill = lessonRefill(lesson);
     ctx.waitUntil(refill);
     // Хичээлд нэг даалгаварт хүрэлцэх асуулт байвал (хүүхэд харсан ч) хүлээхгүй: тэднийг давтана, шинэ нь background-д.
@@ -123,10 +127,15 @@ export async function startTask(
     if ((have?.n ?? 0) < GAME.QUESTIONS_PER_TASK) await Promise.race([refill, new Promise((r) => setTimeout(r, GAME.POOL.LESSON_WAIT_MS))]);
   }
 
-  const { results: picked } = await db
-    .prepare(pickSql(lesson !== null))
-    .bind(...pickArgs(userId, tier, subject, lesson, GAME.QUESTIONS_PER_TASK))
-    .all<{ id: number }>();
+  const picked =
+    made.length >= GAME.QUESTIONS_PER_TASK
+      ? made.map((id) => ({ id }))
+      : (
+          await db
+            .prepare(pickSql(lesson !== null))
+            .bind(...pickArgs(userId, tier, subject, lesson, GAME.QUESTIONS_PER_TASK))
+            .all<{ id: number }>()
+        ).results;
   if (picked.length < GAME.QUESTIONS_PER_TASK) {
     ctx.waitUntil(refillPool(env, tier, subject, { grade: user.grade }));
     throw new ApiError(503, 'NO_QUESTIONS', 'Асуулт хүрэлцэхгүй байна');
@@ -165,7 +174,7 @@ export async function startTask(
 
   // Дараагийн зангилааны хичээлийн асуултыг даалгавар хийх хооронд бэлдэнэ.
   const next = book && lessonPages(book, node + 1);
-  if (next) ctx.waitUntil(lessonRefill(next));
+  if (next && templatesFor(next).length === 0) ctx.waitUntil(lessonRefill(next));
   await maybeRefill(env, ctx, tier, subject, userId, user.grade);
   return loadTask(db, userId, created.id);
 }
