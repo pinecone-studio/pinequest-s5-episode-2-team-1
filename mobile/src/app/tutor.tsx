@@ -4,7 +4,8 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { Button } from '@/components/Button';
-import { Motion, Pop, Sprite } from '@/components/pixel';
+import { Pop } from '@/components/pixel';
+import { TutorBear } from '@/components/TutorBear';
 import { colors, fonts, radius } from '@/constants/theme';
 import { useBearTalk } from '@/hooks/useBearTalk';
 import { S, subjectNames } from '@/i18n/strings';
@@ -64,14 +65,7 @@ export default function TutorScreen() {
           </View>
         </Pop>
         <View style={styles.circle} />
-        <Pop trigger={listening ? 'listen' : 'talk'} from={0.85}>
-          <Motion preset={talk.phase === 'bear' ? 'bob' : 'breathe'}>
-            <Sprite
-              id={listening ? 'outfit_glasses_164x280' : 'bear_idle_scarf_164x280'}
-              label={listening ? S.tutor.bearListening : S.tutor.bearTalking}
-            />
-          </Motion>
-        </Pop>
+        <TutorBear phase={talk.phase} mouth={talk.mouth} label={listening ? S.tutor.bearListening : S.tutor.bearTalking} />
       </View>
 
       <View style={styles.status}>
