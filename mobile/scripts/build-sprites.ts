@@ -23,6 +23,8 @@ const M: Record<string, (number | [number, number])[]> = {};
 for (const n of ['icon_coin', 'icon_flame', 'icon_star', 'icon_heart']) M[n] = [1, 2, 3];
 M.icon_mystery_box = [2, 4];
 for (const n of ['bear_idle_scarf', 'bear_tired_scarf', 'bear_neglected_scarf', 'bear_sleep']) M[n] = [2];
+// нүүрний баавгайн амьд хөдөлгөөн (scripts/home-sprites.ts, PixelLab)
+for (const n of ['thriving', 'happy', 'tired', 'neglected', 'sleep']) M[`bear_home_${n}`] = [2];
 M.bear_cheer_scarf = [2, 3];
 for (const n of ['outfit_scarf', 'outfit_glasses', 'outfit_gradcap', 'outfit_headphones']) M[n] = [1, 2];
 // толгойнууд: аватар (49x42, 44x38, 112x96), хуанлийн царай (өндөр 34), загварын 2x
