@@ -65,8 +65,8 @@ export async function recoveryStatements(db: D1Database, userId: number, taskId:
     .all<Missed>();
   if (!recoveryCertain(missed.length)) return [];
 
-  // Нэг сэдвийн нийт RECOVERY_PRACTICE асуулт: даалгаврын зангилааны номын хичээлээс (2 хичээлтэй зангилаа ч нэг
-  // хүрээ), номгүй бол хамгийн олон алдсан нэг хичээл/сэдвээс.
+  // Нэг сэдвийн нийт RECOVERY_PRACTICE асуулт: даалгаврын зангилааны номын хичээлээс, номгүй бол хамгийн олон алдсан
+  // нэг хичээл/сэдвээс. 2 хичээлтэй зангилаанд хамгийн олон алдсан хичээлийнхийг түрүүлнэ.
   const lesson = parseLessonRef(task.lesson_ref);
   const group = mainGroup(missed);
   const same = lesson ? IN_RANGE : SAME_LESSON;
@@ -76,9 +76,18 @@ export async function recoveryStatements(db: D1Database, userId: number, taskId:
        LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
        WHERE q.tier = ? AND q.subject = ? AND ${same} AND q.flagged = 0 AND ${OWN_GRADE}
          AND q.id NOT IN (SELECT question_id FROM task_questions WHERE task_id = ?)
-       ORDER BY (s.seen_at IS NOT NULL), s.seen_at, RANDOM() LIMIT ?`,
+       ORDER BY ${SAME_LESSON} DESC, (s.seen_at IS NOT NULL), s.seen_at, RANDOM() LIMIT ?`,
     )
-    .bind(userId, group[0].tier, task.subject, ...(lesson ? rangeArgs(lesson) : sameLessonArgs(group[0])), userId, taskId, GAME.RECOVERY_PRACTICE)
+    .bind(
+      userId,
+      group[0].tier,
+      task.subject,
+      ...(lesson ? rangeArgs(lesson) : sameLessonArgs(group[0])),
+      userId,
+      taskId,
+      ...sameLessonArgs(group[0]),
+      GAME.RECOVERY_PRACTICE,
+    )
     .all<{ id: number }>();
   const picked = results.map((r) => r.id);
   const ids = practiceIds(picked, (lesson ? missed : group).map((q) => q.id));
