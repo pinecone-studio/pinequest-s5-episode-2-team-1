@@ -62,6 +62,13 @@ adminRoutes.get('/excerpt', async (c) => {
 });
 
 /** Бэлэн асуулт (seed/fixtures.json) оруулах. */
+/** 'math-6:7-9' → номын анги 6 (slug '<хичээл>-<анги>', migration 0012-той ижил); буруу бол null. */
+export function bookOfRef(ref: unknown): { ref: string; grade: number } | null {
+  if (typeof ref !== 'string') return null;
+  const m = /^[a-z]+-(\d+)[a-z0-9-]*:\d+(?:-\d+)?$/.exec(ref);
+  return m ? { ref, grade: Number(m[1]) } : null;
+}
+
 adminRoutes.post('/import', async (c) => {
   const body = await readBody(
     c,
@@ -70,10 +77,12 @@ adminRoutes.post('/import', async (c) => {
       questions: z.array(z.looseObject({ tier: tierSchema, subject: subjectSchema })),
     }),
   );
-  const groups = new Map<string, { tier: Tier; subject: Subject; items: unknown[] }>();
+  // bookRef ('math-6:7-9'): сурах замын хичээлийн бодлого (seed/lesson-questions.json) тэр хуудас, номын ангитай хадгалагдана.
+  const groups = new Map<string, { tier: Tier; subject: Subject; book: { ref: string; grade: number } | null; items: unknown[] }>();
   for (const q of body.questions) {
-    const key = `${q.tier}:${q.subject}`;
-    const g = groups.get(key) ?? { tier: q.tier, subject: q.subject, items: [] };
+    const book = bookOfRef(q.bookRef);
+    const key = `${q.tier}:${q.subject}:${book?.ref ?? ''}`;
+    const g = groups.get(key) ?? { tier: q.tier, subject: q.subject, book, items: [] };
     g.items.push(q);
     groups.set(key, g);
   }
@@ -83,7 +92,7 @@ adminRoutes.post('/import', async (c) => {
   for (const g of groups.values()) {
     const v = validateDrafts(g.items, topicIds(g.tier, g.subject));
     rejected += v.rejected.length;
-    const r = await insertDrafts(c.env.DB, g.tier, g.subject, v.drafts, body.source);
+    const r = await insertDrafts(c.env.DB, g.tier, g.subject, v.drafts, body.source, Date.now(), g.book);
     inserted += r.inserted;
     duplicates += r.duplicates;
   }

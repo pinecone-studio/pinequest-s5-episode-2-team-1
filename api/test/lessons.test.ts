@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { bookOfRef } from '../src/routes/admin';
 import type { BookLesson } from '../../shared/types';
 import { currentNode, lessonsAt } from '../src/domain/path';
 import { type BookLessons, lessonPages, parseToc } from '../src/services/lessons';
@@ -122,5 +123,14 @@ describe('lessonPages', () => {
 
   it('дараагийн хичээл ижил хуудаснаас эхэлбэл тэр нэг хуудас', () => {
     expect(lessonPages(book([5, 5, ...pages.slice(2)]), 0)).toEqual({ slug: 'math-7', from: 5, to: 5 });
+  });
+});
+
+describe('bookOfRef', () => {
+  it('сурах замын бодлогын bookRef-ээс номын анги', () => {
+    expect(bookOfRef('math-6:7-9')).toEqual({ ref: 'math-6:7-9', grade: 6 });
+    expect(bookOfRef('math-10-2019:3')).toEqual({ ref: 'math-10-2019:3', grade: 10 });
+    expect(bookOfRef('буруу')).toBeNull();
+    expect(bookOfRef(undefined)).toBeNull();
   });
 });

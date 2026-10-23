@@ -19,6 +19,7 @@
     "seed:fixtures": "tsx scripts/seed-questions.ts --fixtures",
     "questions:export": "tsx scripts/seed-questions.ts --export seed/questions.json",
     "questions:import": "tsx scripts/seed-questions.ts --fixtures --file seed/questions.json",
+    "lessons:import": "tsx scripts/seed-questions.ts --fixtures --file seed/lesson-questions.json --source lesson-seed",
     "books:import": "tsx scripts/books.ts import",
     "books:list": "tsx scripts/books.ts list",
     "books:page": "tsx scripts/books.ts page",
