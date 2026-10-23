@@ -1,8 +1,6 @@
-import { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import { useReducedMotion } from 'react-native-reanimated';
 import { frameSize, SheetFrame, Sprite } from '@/components/pixel';
-import { tagFrames } from '@/lib/pixelBear/anim';
+import { useTagPlayer } from '@/hooks/useTagPlayer';
 import lesson from '@/lib/pixelBear/bear-lesson.json';
 import type { SpriteKey } from '@/sprites';
 
@@ -19,9 +17,6 @@ const RUG_X = (lesson.background.rug[0] + 0.5) * PX - BG_W / 2;
 const RUG_Y = (lesson.background.h - lesson.background.rug[1] - 0.5) * PX;
 const FEET_GAP = (lesson.frameSize.h - lesson.feet) * PX;
 
-type Tag = keyof typeof lesson.tags;
-const ms = (f: number) => lesson.frames[f].duration;
-
 export type LessonMood = 'think' | 'right' | 'wrong';
 
 /** Хичээлийн самбарын дэвсгэр (хичээлийн булан): самбарын доод талд наалдаж, хэвтээгээр төвлөрнө. */
@@ -34,31 +29,12 @@ export function LessonBackdrop() {
  * зөв хариултад гараа дэлгэж баярлаад даллана; буруу бол гунигтай бөхийнө. «Motion бууруулах» үед хөдөлгөөнгүй.
  */
 export function LessonBear({ mood, label }: { mood: LessonMood; label: string }) {
-  const reduce = useReducedMotion();
-  const [frame, setFrame] = useState(tagFrames(lesson, 'think')[0]);
-
-  useEffect(() => {
-    const once: Tag[] = mood === 'right' ? ['cheer', 'wave', 'wave'] : mood === 'wrong' ? ['oops'] : [];
-    const after: Tag = mood === 'think' ? 'think' : 'idle';
-    if (reduce) {
-      setFrame(tagFrames(lesson, mood === 'wrong' ? 'oops' : after).at(-1) ?? 0);
-      return;
-    }
-    // нэг удаа тоглох tag-ууд → (буруу бол гунигтай frame дээр зогсоно) → давталт
-    const seq = once.flatMap((t) => tagFrames(lesson, t));
-    const loop = mood === 'wrong' ? [] : tagFrames(lesson, after);
-    let i = 0;
-    let timer: ReturnType<typeof setTimeout>;
-    const next = () => {
-      const f = i < seq.length ? seq[i] : loop.length ? loop[(i - seq.length) % loop.length] : undefined;
-      if (f === undefined) return;
-      i++;
-      setFrame(f);
-      timer = setTimeout(next, ms(f));
-    };
-    next();
-    return () => clearTimeout(timer);
-  }, [mood, reduce]);
+  // нэг удаа тоглох tag-ууд → (буруу бол гунигтай frame дээр зогсоно) → давталт
+  const frame = useTagPlayer(
+    lesson,
+    mood === 'right' ? ['cheer', 'wave', 'wave'] : mood === 'wrong' ? ['oops'] : [],
+    mood === 'wrong' ? null : mood === 'think' ? 'think' : 'idle',
+  );
 
   return (
     <View style={styles.stage} pointerEvents="none">

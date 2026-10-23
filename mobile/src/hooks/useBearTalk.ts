@@ -4,6 +4,7 @@ import { File, Paths } from 'expo-file-system';
 import { useEffect, useRef, useState } from 'react';
 import { openTutorSocket } from '@/api/client';
 import { S } from '@/i18n/strings';
+import { MOUTH_STEP, type MouthLevel, mouthLevels } from '@/lib/mouth';
 import { pcmToWav } from '@/lib/wav';
 
 /** Сервер mic-ийн дууг 16 kHz гэж Gemini-д дамжуулна; баавгайн дуу 24 kHz ирнэ (shared/types TutorServerMsg). */
@@ -30,6 +31,8 @@ export function useBearTalk(questionId: number | undefined) {
   const [kidText, setKidText] = useState('');
   const [topic, setTopic] = useState<{ subject: Subject; prompt: string } | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  /** Баавгайн ам: тоглож буй хэсгийн тэр агшны чанга байдал */
+  const [mouth, setMouth] = useState<MouthLevel>(0);
 
   const wsRef = useRef<WebSocket | null>(null);
   const micRef = useRef(false);
@@ -63,6 +66,11 @@ export function useBearTalk(questionId: number | undefined) {
     let mode: Promise<unknown> = Promise.resolve();
     let seg = 0;
     const files: File[] = [];
+    /** тоглож буй хэсгийн MOUTH_STEP тутмын амны нээлт */
+    let levels: MouthLevel[] = [];
+    const lips = setInterval(() => {
+      setMouth(playing ? (levels[Math.floor(player.currentTime / MOUTH_STEP)] ?? 0) : 0);
+    }, MOUTH_STEP * 1000);
 
     setPhase('connecting');
     setBearText('');
@@ -122,12 +130,14 @@ export function useBearTalk(questionId: number | undefined) {
       pcm = [];
       pcmBytes = 0;
       const file = new File(Paths.cache, `bear-${Date.now()}-${seg++}.wav`);
+      const wav = pcmToWav(chunks, BEAR_RATE);
       try {
-        file.write(pcmToWav(chunks, BEAR_RATE));
+        file.write(wav);
       } catch {
         playing = false;
         return;
       }
+      levels = mouthLevels(new Int16Array(wav.buffer, 44, (wav.byteLength - 44) >> 1), BEAR_RATE);
       files.push(file);
       player.replace({ uri: file.uri });
       player.play();
@@ -250,6 +260,7 @@ export function useBearTalk(questionId: number | undefined) {
     return () => {
       alive = false;
       closedByUs = true;
+      clearInterval(lips);
       interruptRef.current = null;
       sub.remove();
       stopMic();
@@ -273,6 +284,7 @@ export function useBearTalk(questionId: number | undefined) {
 
   return {
     phase,
+    mouth,
     bearText,
     kidText,
     topic,

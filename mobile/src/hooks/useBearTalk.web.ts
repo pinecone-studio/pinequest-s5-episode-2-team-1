@@ -2,6 +2,7 @@ import type { Subject, TutorClientMsg, TutorServerMsg } from '@shared/types';
 import { useEffect, useRef, useState } from 'react';
 import { openTutorSocket } from '@/api/client';
 import { S } from '@/i18n/strings';
+import { MOUTH_STEP, type MouthLevel, mouthLevels } from '@/lib/mouth';
 import type { TalkPhase } from './useBearTalk';
 
 /**
@@ -40,6 +41,8 @@ export function useBearTalk(questionId: number | undefined) {
   const [kidText, setKidText] = useState('');
   const [topic, setTopic] = useState<{ subject: Subject; prompt: string } | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  /** Баавгайн ам: тоглож буй хэсгийн тэр агшны чанга байдал */
+  const [mouth, setMouth] = useState<MouthLevel>(0);
   const interruptRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
@@ -55,6 +58,14 @@ export function useBearTalk(questionId: number | undefined) {
     let turnDone = false;
     let freshTurn = true;
     let drop = false;
+    /** дараалсан хэсэг бүрийн эхлэх агшин (outCtx-ийн цаг) ба MOUTH_STEP тутмын амны нээлт */
+    let lipTrack: { at: number; levels: MouthLevel[] }[] = [];
+    const lips = setInterval(() => {
+      const t = outCtx?.currentTime ?? 0;
+      lipTrack = lipTrack.filter((s) => s.at + s.levels.length * MOUTH_STEP > t);
+      const s = lipTrack.find((x) => x.at <= t);
+      setMouth(s ? (s.levels[Math.floor((t - s.at) / MOUTH_STEP)] ?? 0) : 0);
+    }, MOUTH_STEP * 1000);
 
     setPhase('connecting');
     setBearText('');
@@ -77,6 +88,7 @@ export function useBearTalk(questionId: number | undefined) {
       }
       sources.clear();
       nextAt = 0;
+      lipTrack = [];
     };
 
     const end = (message: string) => {
@@ -122,6 +134,7 @@ export function useBearTalk(questionId: number | undefined) {
       const at = Math.max(outCtx.currentTime + 0.08, nextAt);
       src.start(at);
       nextAt = at + audio.duration;
+      lipTrack.push({ at, levels: mouthLevels(pcm, BEAR_RATE) });
       sources.add(src);
       src.onended = () => {
         sources.delete(src);
@@ -250,6 +263,7 @@ export function useBearTalk(questionId: number | undefined) {
     return () => {
       alive = false;
       closedByUs = true;
+      clearInterval(lips);
       mic = false;
       interruptRef.current = null;
       silence();
@@ -262,6 +276,7 @@ export function useBearTalk(questionId: number | undefined) {
 
   return {
     phase,
+    mouth,
     bearText,
     kidText,
     topic,
