@@ -449,7 +449,7 @@
       },
       {
         "name": "ouch6",
-        "duration": 500,
+        "duration": 600,
         "head": [
           4,
           13
@@ -460,11 +460,11 @@
       "in": {
         "from": 0,
         "to": 6,
-        "direction": "forward"
+        "direction": "pingpong"
       },
       "loop": {
-        "from": 6,
-        "to": 6,
+        "from": 0,
+        "to": 0,
         "direction": "forward"
       }
     }
