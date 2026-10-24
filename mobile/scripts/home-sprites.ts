@@ -53,6 +53,8 @@ interface State {
    * `blink` frame-ийн дараа анисан (эх) хувилбарыг нь нэг удаа оруулж ирмүүлнэ. `hold`, tag-ууд шинэ дарааллаар.
    */
   eyes?: { open: number[]; blink?: number };
+  /** PixelLab дээрээс орж ирсэн гадны зүйл (жишээ нь толгойг хурууддаг хүний гар) зурсан бол арилгана */
+  noProp?: boolean;
   /** sheet-ийн баганын тоо (өгөөгүй бол нэг мөр); апп-д 3× харуулбал texture 4096 px-д багтаахын тулд */
   cols?: number;
 }
@@ -78,6 +80,8 @@ const STATES: Record<string, State> = {
     loop: [0, 8, 'pingpong'],
     cols: 4,
   },
+  // 2–3 товшиход: цочоод нүдээ жуумайлгаж «ёоё» гэнэ, толгойгоо хоёр сарвуугаараа бариад илнэ (нэг удаа)
+  ouch: { src: 'bear_idle_scarf', pad: [4, 10, 4, 0], ms: 130, hold: { 4: 260, 5: 260, 6: 500 }, noProp: true, in: [0, 6], loop: [6, 6] },
   // хичээл хийгээгүй: хөмсгөө зангидаж гараа зөрүүлнэ → нүдээ аниад «хмф», хөлөө дэвсэнэ
   neglected: { src: 'bear_idle_scarf', pad: [4, 4, 4, 0], ms: 170, in: [0, 3], loop: [3, 6, 'pingpong'] },
 };
@@ -124,6 +128,59 @@ function headAt(img: Img): [number, number] {
   return [best[0], best[1]];
 }
 
+/**
+ * Дээд захаас орж ирсэн гадны зүйлийг арилгана: дээд мөрнөөс эхлэн арьс (цайвар шаргал) ба цэнхэр (ханцуй) pixel-ээр
+ * тархаж, түүний хүрээний бараан зураасыг хамт авна; ард нь далдлагдсан хэсгийг сэргэлэн баавгайн толгойгоор нөхнө.
+ */
+function withoutProp(img: Img): Img {
+  const o = clone(img);
+  const rgb = (x: number, y: number) => img.d.subarray(at(img, x, y), at(img, x, y) + 4);
+  const prop = (x: number, y: number) => {
+    const [r, g, b, a] = rgb(x, y);
+    return a > 0 && ((r > 215 && g > 160 && b > 100) || b > r);
+  };
+  const seen = new Set<number>();
+  const stack: [number, number][] = [];
+  for (let x = 0; x < img.w; x++) if (prop(x, 0)) stack.push([x, 0]);
+  while (stack.length) {
+    const [x, y] = stack.pop() as [number, number];
+    if (x < 0 || y < 0 || x >= img.w || y >= img.h || seen.has(y * img.w + x) || !prop(x, y)) continue;
+    seen.add(y * img.w + x);
+    stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+  }
+  if (!seen.size) return img;
+  const gone = new Set(seen);
+  for (const p of seen)
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]]) {
+      const [x, y] = [(p % img.w) + dx, Math.floor(p / img.w) + dy];
+      if (x >= 0 && y >= 0 && x < img.w && y < img.h && rgb(x, y)[3] && rgb(x, y)[0] < 90) gone.add(y * img.w + x);
+    }
+  const [hx, hy] = headAt(img);
+  for (const p of gone) {
+    const [x, y] = [p % img.w, Math.floor(p / img.w)];
+    const [rx, ry] = [x - hx + HEAD[0], y - hy + HEAD[1]];
+    const inRef = rx >= 0 && ry >= 0 && rx < REF.w && ry < REF.h && REF.d[at(REF, rx, ry) + 3];
+    o.d.set(inRef ? REF.d.subarray(at(REF, rx, ry), at(REF, rx, ry) + 4) : [0, 0, 0, 0], p * 4);
+  }
+  // гарын хүрээнээс үлдсэн, биетэй холбогдоогүй жижиг арлууд
+  const done = new Set<number>();
+  for (let p = 0; p < o.w * o.h; p++) {
+    if (done.has(p) || !o.d[p * 4 + 3]) continue;
+    const blob: number[] = [];
+    const st = [p];
+    while (st.length) {
+      const q = st.pop() as number;
+      const [x, y] = [q % o.w, Math.floor(q / o.w)];
+      if (done.has(q) || !o.d[q * 4 + 3]) continue;
+      done.add(q);
+      blob.push(q);
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) if (x + dx >= 0 && y + dy >= 0 && x + dx < o.w && y + dy < o.h) st.push((y + dy) * o.w + x + dx);
+    }
+    if (blob.length < 20) for (const q of blob) o.d.set([0, 0, 0, 0], q * 4);
+  }
+  return o;
+}
+
 /** frame-ийн толгойд сэргэлэн баавгайн нээлттэй нүдийг тавина */
 function withOpenEyes(img: Img): Img {
   const o = clone(img);
@@ -146,6 +203,7 @@ for (const [name, s] of Object.entries(STATES)) {
   const [l, t] = s.pad;
   const w = bbox([source(s.src)])[2] - x0 + l + s.pad[2];
   let imgs = Array.from({ length: strip.w / w }, (_, i) => crop(strip, i * w, 0, w, strip.h));
+  if (s.noProp) imgs = imgs.map(withoutProp);
   if (s.eyes) {
     const { open, blink } = s.eyes;
     const opened = imgs.map((img, i) => (open.includes(i) ? withOpenEyes(img) : img));

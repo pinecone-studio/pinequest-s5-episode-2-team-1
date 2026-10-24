@@ -1,10 +1,13 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { useEffect, useRef, useState } from 'react';
+import { type GestureResponderEvent, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Rect } from 'react-native-svg';
 import { LiveBear } from '@/components/LiveBear';
-import { AnimatedBar, ColorFade, Motion, Pop, Sprite } from '@/components/pixel';
+import { AnimatedBar, ColorFade, Motion, Pop, Sprite, ZoomEnter } from '@/components/pixel';
 import { colors, fonts, halo as haloColors, radius } from '@/constants/theme';
 import { S } from '@/i18n/strings';
 import { BEAR_CONFIG, type BearView } from '@/lib/pixelBear/bear';
+import home from '@/lib/pixelBear/bear-home.json';
 import { bgById, outfitById, type OutfitId } from '@/lib/pixelBear/catalog';
 
 const NIGHT_MOON = '#F3F66C';
@@ -26,52 +29,95 @@ export function BearStage({
   const ink = bg.dark ? colors.white : colors.ink;
   // сонгосон item-ээ бүх төлөвт өмсөнө
   const item = outfitById(outfitId).item;
+  const ouch = useOuch();
 
   return (
     <Pressable
+      ref={ouch.stage}
+      onPress={ouch.tap}
       onLongPress={onLongPress}
       delayLongPress={600}
       accessible
       accessibilityLabel={`${cfg.alt}. ${cfg.chip}, энерги ${view.energy}%`}
       style={styles.stage}
     >
-      <ColorFade color={bg.hex} style={StyleSheet.absoluteFill} />
-      <ColorFade color={bg.dark ? haloColors.night : haloColors.light} style={styles.halo} />
-      <Decor state={view.state} ink={ink} dark={!!bg.dark} />
+      {/* товшилтын байрлал (locationX/Y) stage-ээс тооцогдохын тулд дотор талын зүйлс хүрэлт авахгүй */}
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <ColorFade color={bg.hex} style={StyleSheet.absoluteFill} />
+        <ColorFade color={bg.dark ? haloColors.night : haloColors.light} style={styles.halo} />
+        <Decor state={view.state} ink={ink} dark={!!bg.dark} />
 
-      {cfg.floatShadow ? (
-        <Motion preset="shadow" style={styles.shadow} />
-      ) : (
-        <View style={[styles.shadow, { opacity: 0.18 }]} />
-      )}
-      <View style={[styles.bearWrap, { top: cfg.top }]}>
-        <Pop trigger={view.state} from={0.6}>
-          <LiveBear key={view.state} anim={view.state} w={cfg.w} items={item ? [item] : []} />
-        </Pop>
-      </View>
-
-      {view.state === 'neglected' ? (
-        <Motion preset="wiggle" style={[styles.abs, styles.say]}>
-          <View style={styles.bubble}>
-            <Text style={styles.bubbleText}>{S.home.upset}</Text>
-          </View>
-          <View style={styles.tail} />
-        </Motion>
-      ) : null}
-
-      <View style={styles.chip}>
-        <View style={[styles.chipDot, { backgroundColor: cfg.dot }]} />
-        <Text style={styles.chipText}>{cfg.chip}</Text>
-      </View>
-      <View style={styles.energy} accessible accessibilityLabel={`Энерги ${view.energy}%`}>
-        <Sprite id="icon_heart_24x24" />
-        <View style={styles.energyTrack}>
-          <AnimatedBar value={view.energy / 100} color={cfg.dot} height={6} />
+        {cfg.floatShadow ? (
+          <Motion preset="shadow" style={styles.shadow} />
+        ) : (
+          <View style={[styles.shadow, { opacity: 0.18 }]} />
+        )}
+        <View style={[styles.bearWrap, { top: cfg.top }]}>
+          <Pop trigger={view.state} from={0.6}>
+            <LiveBear key={ouch.at ? `ouch${ouch.at.n}` : view.state} anim={ouch.at ? 'ouch' : view.state} w={cfg.w} items={item ? [item] : []} />
+          </Pop>
         </View>
-        <Text style={styles.energyNum}>{view.energy}%</Text>
+
+        {ouch.at ? (
+          <ZoomEnter key={ouch.at.n} style={[styles.abs, { left: ouch.at.x - 18, top: ouch.at.y - 18 }]}>
+            <Sprite id="icon_star_36x36" />
+          </ZoomEnter>
+        ) : null}
+        {ouch.at || view.state === 'neglected' ? (
+          <Motion preset="wiggle" style={[styles.abs, styles.say]}>
+            <View style={styles.bubble}>
+              <Text style={styles.bubbleText}>{ouch.at ? S.home.ouch : S.home.upset}</Text>
+            </View>
+            <View style={styles.tail} />
+          </Motion>
+        ) : null}
+
+        <View style={styles.chip}>
+          <View style={[styles.chipDot, { backgroundColor: cfg.dot }]} />
+          <Text style={styles.chipText}>{cfg.chip}</Text>
+        </View>
+        <View style={styles.energy} accessible accessibilityLabel={`Энерги ${view.energy}%`}>
+          <Sprite id="icon_heart_24x24" />
+          <View style={styles.energyTrack}>
+            <AnimatedBar value={view.energy / 100} color={cfg.dot} height={6} />
+          </View>
+          <Text style={styles.energyNum}>{view.energy}%</Text>
+        </View>
       </View>
     </Pressable>
   );
+}
+
+/** ойрхон 2 дахь товшилт ба түүнээс хойших товшилтын хоорондох хамгийн их зай (ms) */
+const DOUBLE_TAP = 700;
+/** «өвдлөө» хөдөлгөөний урт: frame-уудын хугацаа + хэсэг зогсолт */
+const OUCH_MS = home.ouch.frames.reduce((t, f) => t + f.duration, 0) + 400;
+
+/**
+ * Баавгайг хуруугаараа ойрхон 2–3 удаа товшиход товшсон газарт од гарч, утас чичирнэ, баавгай толгойгоо бариад
+ * «Ёоё, өвдөж байна!» гэнэ. Нэг товшилт юу ч хийхгүй (санамсаргүй хүрэлт).
+ */
+function useOuch() {
+  const [at, setAt] = useState<{ x: number; y: number; n: number } | null>(null);
+  const last = useRef(0);
+  const stage = useRef<View>(null);
+  useEffect(() => {
+    if (!at) return;
+    const t = setTimeout(() => setAt(null), OUCH_MS);
+    return () => clearTimeout(t);
+  }, [at]);
+  const tap = (e: GestureResponderEvent) => {
+    const now = Date.now();
+    const double = now - last.current < DOUBLE_TAP;
+    last.current = now;
+    if (!double || at) return;
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const { locationX, locationY, pageX, pageY } = e.nativeEvent;
+    // web-ийн товшилтод locationX байхгүй: stage-ийн байрлалаас тооцно
+    if (typeof locationX === 'number') setAt({ x: locationX, y: locationY, n: now });
+    else stage.current?.measure((_x, _y, _w, _h, sx, sy) => setAt({ x: pageX - sx, y: pageY - sy, n: now }));
+  };
+  return { at, tap, stage };
 }
 
 function Twinkle({ delay = 0, children, style }: { delay?: number; children: React.ReactNode; style: object }) {

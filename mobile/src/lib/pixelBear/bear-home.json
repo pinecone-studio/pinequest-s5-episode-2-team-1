@@ -388,6 +388,87 @@
       }
     }
   },
+  "ouch": {
+    "frameSize": {
+      "w": 78,
+      "h": 136
+    },
+    "columns": 7,
+    "offset": [
+      2,
+      4
+    ],
+    "frames": [
+      {
+        "name": "ouch0",
+        "duration": 130,
+        "head": [
+          4,
+          10
+        ]
+      },
+      {
+        "name": "ouch1",
+        "duration": 130,
+        "head": [
+          4,
+          9
+        ]
+      },
+      {
+        "name": "ouch2",
+        "duration": 130,
+        "head": [
+          4,
+          8
+        ]
+      },
+      {
+        "name": "ouch3",
+        "duration": 130,
+        "head": [
+          4,
+          12
+        ]
+      },
+      {
+        "name": "ouch4",
+        "duration": 260,
+        "head": [
+          4,
+          15
+        ]
+      },
+      {
+        "name": "ouch5",
+        "duration": 260,
+        "head": [
+          4,
+          14
+        ]
+      },
+      {
+        "name": "ouch6",
+        "duration": 500,
+        "head": [
+          4,
+          13
+        ]
+      }
+    ],
+    "tags": {
+      "in": {
+        "from": 0,
+        "to": 6,
+        "direction": "forward"
+      },
+      "loop": {
+        "from": 6,
+        "to": 6,
+        "direction": "forward"
+      }
+    }
+  },
   "neglected": {
     "frameSize": {
       "w": 78,

@@ -24,7 +24,7 @@ for (const n of ['icon_coin', 'icon_flame', 'icon_star', 'icon_heart']) M[n] = [
 M.icon_mystery_box = [2, 4];
 for (const n of ['bear_idle_scarf', 'bear_tired_scarf', 'bear_neglected_scarf', 'bear_sleep']) M[n] = [2];
 // нүүрний баавгайн амьд хөдөлгөөн (scripts/home-sprites.ts, PixelLab)
-for (const n of ['thriving', 'happy', 'tired', 'neglected', 'sleep']) M[`bear_home_${n}`] = [2];
+for (const n of ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch']) M[`bear_home_${n}`] = [2];
 M.bear_home_welcome = [3];
 // өмсөх item-ийн давхарга (home-sprites.ts): амьд баавгайн frame бүрийн толгойд тааруулж зурна
 for (const n of ['glasses', 'gradcap', 'headphones']) M[`item_${n}`] = [2];
