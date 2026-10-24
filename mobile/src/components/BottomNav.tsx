@@ -1,10 +1,12 @@
 import { type ComponentProps, useEffect, useState } from 'react';
-import { type LayoutChangeEvent, Pressable, StyleSheet, View } from 'react-native';
+import { type LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useReducedMotion, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { Tabs } from 'expo-router';
 import { Pop, Sprite } from '@/components/pixel';
-import { colors } from '@/constants/theme';
+import { colors, fonts, radius } from '@/constants/theme';
+import { S } from '@/i18n/strings';
+import { useOnline } from '@/lib/online';
 import type { SpriteKey } from '@/sprites';
 
 type TabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>['tabBar']>>[0];
@@ -25,21 +27,31 @@ const ITEMS: NavItem[] = [
   { route: 'duel', label: 'Баг', on: 'nav2_crew_on_30x30', off: 'nav2_crew_off_30x30' },
 ];
 
+/** Офлайн үед нээгдэхгүй tab-ууд: серверийн өгөгдөл (сурах бичгийн хичээл, тулааны лобби) шаарддаг. */
+const ONLINE_ONLY = new Set(['path', 'duel']);
+
 const BAR_H = 64;
 const PAD = 6;
+/** Офлайн үед цэсний дээрх «Офлайн горим» шошго */
+const BADGE_H = 30;
+const BADGE_GAP = 8;
 
 /** Доод цэсний эзлэх өндөр (дэлгэцүүд контентоо үүнээс дээш байрлуулна). */
 export function useTabBarSpace(): number {
   const insets = useSafeAreaInsets();
-  return BAR_H + Math.max(insets.bottom, 12) + 12;
+  const online = useOnline();
+  return BAR_H + Math.max(insets.bottom, 12) + 12 + (online ? 0 : BADGE_H + BADGE_GAP);
 }
 
 /**
- * Хөвдөг цагаан pill цэс. Идэвхтэй tab-ын ард саарал капсул spring-ээр гулсана.
+ * Хөвдөг цагаан pill цэс. Идэвхтэй tab-ын ард саарал капсул spring-ээр гулсана. Офлайн үед Сурах зам, Баг
+ * бүдгэрч түгжигдэнэ, цэсний дээр «Офлайн горим» шошго гарна.
  */
 export function BottomNav({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const reduce = useReducedMotion();
+  const online = useOnline();
+  const [hint, setHint] = useState(false);
   const activeName = state.routes[state.index]?.name;
   const items = ITEMS.filter((it) => state.routes.some((r) => r.name === it.route));
   const activeIndex = Math.max(0, items.findIndex((it) => it.route === activeName));
@@ -54,8 +66,24 @@ export function BottomNav({ state, navigation }: TabBarProps) {
 
   const capsule = useAnimatedStyle(() => ({ transform: [{ translateX: x.value }] }));
 
+  // Түгжигдсэн tab дээр байхад офлайн болбол Нүүр рүү
+  useEffect(() => {
+    if (!online && activeName && ONLINE_ONLY.has(activeName)) navigation.navigate('index');
+  }, [online, activeName, navigation]);
+
+  useEffect(() => {
+    if (!hint) return;
+    const t = setTimeout(() => setHint(false), 2500);
+    return () => clearTimeout(t);
+  }, [hint]);
+
   return (
     <View style={[styles.wrap, { paddingBottom: Math.max(insets.bottom, 12) }]} pointerEvents="box-none">
+      {online ? null : (
+        <View style={[styles.badge, hint && styles.badgeHint]} pointerEvents="none" accessibilityLiveRegion="polite">
+          <Text style={styles.badgeText}>{hint ? S.offline.locked : S.offline.badge}</Text>
+        </View>
+      )}
       <View
         accessibilityRole="tablist"
         accessibilityLabel="Үндсэн цэс"
@@ -66,17 +94,22 @@ export function BottomNav({ state, navigation }: TabBarProps) {
         {items.map((item) => {
           const route = state.routes.find((r) => r.name === item.route)!;
           const active = activeName === item.route;
+          const locked = !online && ONLINE_ONLY.has(item.route);
           return (
             <Pressable
               key={item.route}
               accessibilityRole="tab"
-              accessibilityLabel={item.label}
-              accessibilityState={{ selected: active }}
+              accessibilityLabel={locked ? S.offline.lockedTab(item.label) : item.label}
+              accessibilityState={{ selected: active, disabled: locked }}
               onPress={() => {
+                if (locked) {
+                  setHint(true);
+                  return;
+                }
                 const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
                 if (!active && !event.defaultPrevented) navigation.navigate(route.name);
               }}
-              style={styles.item}
+              style={[styles.item, locked && { opacity: 0.3 }]}
             >
               <Pop trigger={active} from={0.7}>
                 <Sprite id={active ? item.on : item.off} />
@@ -115,4 +148,15 @@ const styles = StyleSheet.create({
     backgroundColor: '#ECEBF1',
   },
   item: { flex: 1, height: BAR_H - 4, alignItems: 'center', justifyContent: 'center', minWidth: 44 },
+  badge: {
+    alignSelf: 'center',
+    height: BADGE_H,
+    marginBottom: BADGE_GAP,
+    paddingHorizontal: 14,
+    borderRadius: radius.pill,
+    backgroundColor: colors.ink,
+    justifyContent: 'center',
+  },
+  badgeHint: { backgroundColor: colors.violet },
+  badgeText: { fontFamily: fonts.bold, fontSize: 13, color: colors.white },
 });

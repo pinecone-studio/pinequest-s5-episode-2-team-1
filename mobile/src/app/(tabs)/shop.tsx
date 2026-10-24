@@ -16,6 +16,7 @@ import { type } from '@/constants/type';
 import { S } from '@/i18n/strings';
 import { confirm } from '@/lib/confirm';
 import { usePixelBear } from '@/lib/mock/pixelBear';
+import { useOnline } from '@/lib/online';
 import { BACKGROUNDS, bgById, outfitById, type OutfitId } from '@/lib/pixelBear/catalog';
 import { type OutfitView, useOutfits } from '@/lib/pixelBear/useOutfits';
 
@@ -32,10 +33,11 @@ function statusOf(opts: { equipped: boolean; owned: boolean; price: number; coin
   return { text: formatNumber(price), color: colors.ink, showCoin: true, locked: false };
 }
 
-/** 07 · Дэлгүүр: дэвсгэр өнгө (MVP) ба хувцас. */
+/** 07 · Дэлгүүр: дэвсгэр өнгө (MVP) ба хувцас. Офлайн үед үзэж, авсан зүйлсээ сонгоно; худалдаж авахгүй. */
 export default function ShopScreen() {
   const bear = usePixelBear();
   const outfits = useOutfits();
+  const online = useOnline();
   const [tab, setTab] = useState<Tab>('bg');
   const [selBg, setSelBg] = useState(bear.bgId);
   const [selOutfit, setSelOutfit] = useState<OutfitId>(bear.outfitId);
@@ -71,11 +73,13 @@ export default function ShopScreen() {
     ? { title: S.shop.equipped, bg: colors.white, fg: colors.okText, disabled: true }
     : cur.owned
       ? { title: S.shop.equip, bg: colors.indigo, fg: colors.white, disabled: false }
-      : cur.lockedLevel
-        ? { title: S.shop.levelNeeded(cur.lockedLevel), bg: colors.stoneAlt, fg: colors.muted, disabled: true }
-        : cantAfford
-          ? { title: S.shop.noCoins, bg: colors.stoneAlt, fg: colors.muted, disabled: true }
-          : { title: S.shop.buyFor(formatNumber(cur.price)), bg: colors.indigo, fg: colors.white, disabled: false };
+      : !online
+        ? { title: S.offline.needsInternet, bg: colors.stoneAlt, fg: colors.muted, disabled: true }
+        : cur.lockedLevel
+          ? { title: S.shop.levelNeeded(cur.lockedLevel), bg: colors.stoneAlt, fg: colors.muted, disabled: true }
+          : cantAfford
+            ? { title: S.shop.noCoins, bg: colors.stoneAlt, fg: colors.muted, disabled: true }
+            : { title: S.shop.buyFor(formatNumber(cur.price)), bg: colors.indigo, fg: colors.white, disabled: false };
 
   async function onAction() {
     if (busy || action.disabled) return;
@@ -137,6 +141,7 @@ export default function ShopScreen() {
         }
       />
 
+      {online ? null : <Text style={styles.offline}>{S.offline.shopNote}</Text>}
       {message ? (
         <Animated.Text entering={FadeIn} style={styles.message}>
           {message}
@@ -211,4 +216,5 @@ const styles = StyleSheet.create({
   action: { height: 44, paddingHorizontal: 16, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', minWidth: 96 },
   actionText: { fontFamily: fonts.bold, fontSize: 14 },
   message: { fontFamily: fonts.semibold, fontSize: 14, color: colors.okText, textAlign: 'center' },
+  offline: { fontFamily: fonts.semibold, fontSize: 14, lineHeight: 19, color: colors.muted, textAlign: 'center' },
 });

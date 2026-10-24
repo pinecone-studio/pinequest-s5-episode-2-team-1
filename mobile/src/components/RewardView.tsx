@@ -9,6 +9,7 @@ import { colors, fonts, radius } from '@/constants/theme';
 import { S } from '@/i18n/strings';
 import type { SpriteKey } from '@/sprites';
 import { goBack } from '@/lib/nav';
+import { useOnline } from '@/lib/online';
 
 const TILE = '#33208F';
 const SOFT = '#CFC6FF';
@@ -16,6 +17,7 @@ const SOFT = '#CFC6FF';
 /** 06 · Хичээл дууслаа / шагнал. Бүх тоо серверийн TaskResult-аас. `onRecovery` = нөхөх салаа зам нээгдсэн (дараагийн алхам). */
 export function RewardView({ result, onAgain, onRecovery }: { result: TaskResult; onAgain: () => void; onRecovery?: () => void }) {
   const insets = useSafeAreaInsets();
+  const online = useOnline();
   const leveledUp = result.levelAfter > result.levelBefore;
   const happy = result.correctCount >= 2;
 
@@ -31,34 +33,8 @@ export function RewardView({ result, onAgain, onRecovery }: { result: TaskResult
           </Svg>
         </Pressable>
 
-        <View style={styles.hero} accessible accessibilityLabel={`${result.correctCount}/${result.total} ${S.reward.correctOf}`}>
-          <View style={styles.bigRow}>
-            <CountUp value={result.correctCount} duration={700} style={styles.big} />
-            <Text style={styles.bigOf}>/{result.total}</Text>
-          </View>
-          <Text style={styles.bigLabel}>{S.reward.correctOf}</Text>
-        </View>
-
-        <View style={styles.stage}>
-          <View style={styles.circle} />
-          {result.me.streakDoneToday ? (
-            <Pop trigger="bubble" style={styles.bubble}>
-              <Text style={styles.bubbleText}>{S.reward.goalHit}</Text>
-            </Pop>
-          ) : null}
-          <Rising sprite="icon_heart_36x36" left="76%" bottom={190} />
-          <Rising sprite="icon_heart_24x24" left="82%" bottom={150} delay={900} />
-          <Rising sprite="icon_coin_36x36" left="12%" bottom={90} delay={500} />
-          <Rising sprite="icon_star_24x24" left="20%" bottom={160} delay={1500} />
-          <View style={styles.bear}>
-            <Motion preset="float">
-              <Sprite
-                id={happy ? 'bear_cheer_scarf_180x252' : 'bear_idle_scarf_164x280'}
-                label={happy ? 'Баярлан хөвж буй pixel баавгай' : 'Ороолттой зогсож буй баавгай'}
-              />
-            </Motion>
-          </View>
-        </View>
+        <Score correct={result.correctCount} total={result.total} />
+        <Cheer happy={happy} bubble={result.me.streakDoneToday ? S.reward.goalHit : null} coin />
 
         <View style={styles.tiles}>
           <RewardTile icon="icon_coin_24x24" value={result.pointsGained} prefix="+" label={`${S.reward.coin} · ×${result.multiplier.toFixed(1)}`} index={0} />
@@ -88,13 +64,89 @@ export function RewardView({ result, onAgain, onRecovery }: { result: TaskResult
             <>
               <Button title={S.reward.cont} variant="lime" onPress={() => goBack()} />
               <Button title={S.reward.again} variant="white" small onPress={onAgain} />
-              {result.correctCount < result.total ? (
+              {result.correctCount < result.total && online ? (
                 <Button title={S.reward.talk} variant="white" small onPress={() => router.push('/tutor')} />
               ) : null}
             </>
           )}
         </Enter>
       </ScrollView>
+    </View>
+  );
+}
+
+/**
+ * Офлайн дасгалын дүн: XP, оноо, дараалал тоологдохгүй тул зөвхөн зөв хариултын тоо (сервертэй тааруулахгүй).
+ */
+export function PracticeResultView({ correct, total, onAgain }: { correct: number; total: number; onAgain: () => void }) {
+  const insets = useSafeAreaInsets();
+
+  return (
+    <View style={styles.root}>
+      <ScrollView
+        contentContainerStyle={{ paddingTop: insets.top + 4, paddingBottom: insets.bottom + 24, paddingHorizontal: 20, gap: 14 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <Pressable accessibilityRole="button" accessibilityLabel={S.common.close} onPress={() => goBack()} style={styles.close}>
+          <Svg width={24} height={24} viewBox="0 0 24 24" fill="none" stroke={colors.white} strokeWidth={2.6} strokeLinecap="round">
+            <Path d="M6 6l12 12M18 6 6 18" />
+          </Svg>
+        </Pressable>
+
+        <Score correct={correct} total={total} />
+        <Cheer happy={correct >= 2} bubble={null} />
+
+        <Enter index={0} style={styles.lemon}>
+          <Sprite id="icon_star_36x36" />
+          <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+            <Text style={styles.lemonTitle}>{S.offline.resultTitle}</Text>
+            <Text style={styles.lemonSub}>{S.offline.resultSub}</Text>
+          </View>
+        </Enter>
+
+        <Enter index={1} style={{ gap: 6, marginTop: 4 }}>
+          <Button title={S.reward.cont} variant="lime" onPress={() => goBack()} />
+          <Button title={S.reward.again} variant="white" small onPress={onAgain} />
+        </Enter>
+      </ScrollView>
+    </View>
+  );
+}
+
+function Score({ correct, total }: { correct: number; total: number }) {
+  return (
+    <View style={styles.hero} accessible accessibilityLabel={`${correct}/${total} ${S.reward.correctOf}`}>
+      <View style={styles.bigRow}>
+        <CountUp value={correct} duration={700} style={styles.big} />
+        <Text style={styles.bigOf}>/{total}</Text>
+      </View>
+      <Text style={styles.bigLabel}>{S.reward.correctOf}</Text>
+    </View>
+  );
+}
+
+/** Баярласан (эсвэл зогсож буй) баавгай, хөвөх зүрх, од. `coin` = шагнал авсан (онлайн даалгавар). */
+function Cheer({ happy, bubble, coin }: { happy: boolean; bubble: string | null; coin?: boolean }) {
+  return (
+    <View style={styles.stage}>
+      <View style={styles.circle} />
+      {bubble ? (
+        <Pop trigger="bubble" style={styles.bubble}>
+          <Text style={styles.bubbleText}>{bubble}</Text>
+        </Pop>
+      ) : null}
+      <Rising sprite="icon_heart_36x36" left="76%" bottom={190} />
+      <Rising sprite="icon_heart_24x24" left="82%" bottom={150} delay={900} />
+      {coin ? <Rising sprite="icon_coin_36x36" left="12%" bottom={90} delay={500} /> : null}
+      <Rising sprite="icon_star_24x24" left="20%" bottom={160} delay={1500} />
+      <View style={styles.bear}>
+        <Motion preset="float">
+          <Sprite
+            id={happy ? 'bear_cheer_scarf_180x252' : 'bear_idle_scarf_164x280'}
+            label={happy ? 'Баярлан хөвж буй pixel баавгай' : 'Ороолттой зогсож буй баавгай'}
+          />
+        </Motion>
+      </View>
     </View>
   );
 }
