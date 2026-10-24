@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import { useEffect, useRef, useState } from 'react';
+import { type ComponentRef, useEffect, useRef, useState } from 'react';
 import { type GestureResponderEvent, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Rect } from 'react-native-svg';
 import { LiveBear } from '@/components/LiveBear';
@@ -100,7 +100,7 @@ const OUCH_MS = home.ouch.frames.reduce((t, f) => t + f.duration, 0) + 400;
 function useOuch() {
   const [at, setAt] = useState<{ x: number; y: number; n: number } | null>(null);
   const last = useRef(0);
-  const stage = useRef<View>(null);
+  const stage = useRef<ComponentRef<typeof View>>(null);
   useEffect(() => {
     if (!at) return;
     const t = setTimeout(() => setAt(null), OUCH_MS);
