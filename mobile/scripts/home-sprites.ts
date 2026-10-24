@@ -43,6 +43,8 @@ interface State {
   hold?: Record<number, number>;
   in: Tag;
   loop: Tag;
+  /** sheet-ийн баганын тоо (өгөөгүй бол нэг мөр); апп-д 3× харуулбал texture 4096 px-д багтаахын тулд */
+  cols?: number;
 }
 
 const STATES: Record<string, State> = {
@@ -54,6 +56,8 @@ const STATES: Record<string, State> = {
   happy: { src: 'bear_idle_scarf', pad: [4, 4, 16, 0], ms: 150, hold: { 0: 1800 }, in: [0, 0], loop: [0, 6] },
   // ядарсан: зүүрмэглэж зогсоод том эвшээж, сарвуугаараа амаа дарна
   tired: { src: 'bear_tired_scarf', pad: [4, 4, 4, 0], ms: 170, hold: { 0: 1600, 4: 500 }, in: [0, 0], loop: [0, 6] },
+  // нээх дэлгэц (welcome, 3×): шинэ найзаа угтаж гараа дэлгээд өөрийгөө чанга тэвэрнэ
+  welcome: { src: 'bear_cheer_scarf', pad: [10, 14, 10, 0], ms: 140, hold: { 0: 700, 6: 1100 }, in: [0, 0], loop: [0, 6, 'pingpong'], cols: 4 },
   // хичээл хийгээгүй: хөмсгөө зангидаж гараа зөрүүлнэ → нүдээ аниад «хмф», хөлөө дэвсэнэ
   neglected: { src: 'bear_idle_scarf', pad: [4, 4, 4, 0], ms: 170, in: [0, 3], loop: [3, 6, 'pingpong'] },
 };
@@ -125,6 +129,7 @@ for (const [name, s] of Object.entries(STATES)) {
   const tag = ([from, to, direction]: Tag) => ({ from, to, direction: direction ?? 'forward' });
   meta[name] = {
     frameSize: { w, h: strip.h },
+    columns: s.cols ?? frames.length,
     /** frame-ийн зүүн дээд булан анхны sprite-ийн координатаар */
     offset: [x0 - l, y0 - t],
     /** frame бүрийн хугацаа ба толгойн (HEAD) зүүн дээд булан: item-ийг үүнд тааруулж өмсгөнө */
@@ -140,7 +145,7 @@ for (const [name, s] of Object.entries(STATES)) {
 
 const preview = process.argv.indexOf('--preview');
 if (preview < 0) {
-  for (const [name, { frames }] of Object.entries(sheets)) writePng(new URL(`bear_home_${name}.png`, SPRITES), toSheet(frames, frames.length));
+  for (const [name, { frames }] of Object.entries(sheets)) writePng(new URL(`bear_home_${name}.png`, SPRITES), toSheet(frames, STATES[name].cols ?? frames.length));
   for (const [id, { img }] of Object.entries(items)) writePng(new URL(`item_${id}.png`, SPRITES), img);
   writeFileSync(META, `${JSON.stringify(meta, null, 2)}\n`);
   const itemMeta = Object.fromEntries(Object.entries(items).map(([id, { at: a }]) => [id, { at: a, loose: ITEMS[id].loose }]));

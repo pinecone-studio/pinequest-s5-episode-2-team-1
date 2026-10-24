@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
+import { LiveBear } from '@/components/LiveBear';
 import { Motion, Sprite } from '@/components/pixel';
 import { APP_NAME } from '@/constants/app';
 import { colors, fonts } from '@/constants/theme';
@@ -47,9 +48,7 @@ export default function WelcomeScreen() {
       </Motion>
 
       <View style={[styles.bear, { bottom: sheetHeight - 38 }]}>
-        <Motion preset="float">
-          <Sprite id="bear_cheer_scarf_270x378" label="Гараа өргөн баярласан pixel хүрэн баавгай, ногоон ороолттой" />
-        </Motion>
+        <LiveBear anim="welcome" w={270} px={3} label="Шинэ найзаа угтаж гараа дэлгээд өөрийгөө тэврэх pixel хүрэн баавгай, ногоон ороолттой" />
       </View>
 
       <View style={[styles.sheet, { height: sheetHeight }]}>
