@@ -8,10 +8,12 @@ import { Sprite } from '@/components/pixel';
 import { Muted } from '@/components/ui';
 import { colors, fonts, radius } from '@/constants/theme';
 import { S } from '@/i18n/strings';
+import { useOnline } from '@/lib/online';
 
-/** Streak хамгаалалтын төлөв + худалдаж авах товч (Нүүр, Дэлгүүр хоёуланд). */
+/** Streak хамгаалалтын төлөв + худалдаж авах товч (Нүүр, Дэлгүүр хоёуланд). Офлайн үед зөвхөн төлөв. */
 export function ShieldCard() {
   const { me, setMe } = useAuth();
+  const online = useOnline();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   if (!me) return null;
@@ -40,7 +42,7 @@ export function ShieldCard() {
       <Muted>{shield.held ? S.home.shieldOn : S.home.shieldOff}</Muted>
       {shield.usedDay ? <Muted>{S.home.shieldUsed(shield.usedDay)}</Muted> : null}
       {!shield.held && shield.nextBuyDay ? <Muted>{S.home.shieldCooldown(shield.nextBuyDay)}</Muted> : null}
-      {shield.canBuy && <Button title={S.home.shieldBuy(shield.price)} variant="primary" small loading={busy} onPress={buy} />}
+      {shield.canBuy && online && <Button title={S.home.shieldBuy(shield.price)} variant="primary" small loading={busy} onPress={buy} />}
       {error ? <Muted>{error}</Muted> : null}
     </View>
   );
