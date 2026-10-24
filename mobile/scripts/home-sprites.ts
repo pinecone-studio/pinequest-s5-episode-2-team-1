@@ -28,6 +28,11 @@ const ITEMS: Record<string, { loose: boolean }> = {
   gradcap: { loose: true },
   headphones: { loose: true },
 };
+/** bear_idle_scarf-ийн нээлттэй нүд (хөмсөгтэй нь): нүд анисан frame-д тавьж нээнэ */
+const EYES = [
+  [19, 37, 35, 56],
+  [46, 37, 62, 56],
+] as const;
 /** item-ийн байрлалыг хэмжих толгой: bear_idle_scarf дээрх чих + нүүр (ороолтоос дээш) */
 const HEAD = [6, 14, 76, 66] as const;
 const CONTACT_SHADOW = [42, 20, 10, 80] as const; // item-ийн доорх үсэн дээрх зөөлөн сүүдэр
@@ -43,6 +48,11 @@ interface State {
   hold?: Record<number, number>;
   in: Tag;
   loop: Tag;
+  /**
+   * Нүдийг хөдөлгөөнд тааруулах: `open` frame-уудад сэргэлэн баавгайн нээлттэй нүдийг (EYES) толгойд нь тааруулж тавина,
+   * `blink` frame-ийн дараа анисан (эх) хувилбарыг нь нэг удаа оруулж ирмүүлнэ. `hold`, tag-ууд шинэ дарааллаар.
+   */
+  eyes?: { open: number[]; blink?: number };
   /** sheet-ийн баганын тоо (өгөөгүй бол нэг мөр); апп-д 3× харуулбал texture 4096 px-д багтаахын тулд */
   cols?: number;
 }
@@ -57,7 +67,17 @@ const STATES: Record<string, State> = {
   // ядарсан: зүүрмэглэж зогсоод том эвшээж, сарвуугаараа амаа дарна
   tired: { src: 'bear_tired_scarf', pad: [4, 4, 4, 0], ms: 170, hold: { 0: 1600, 4: 500 }, in: [0, 0], loop: [0, 6] },
   // нээх дэлгэц (welcome, 3×): шинэ найзаа угтаж гараа дэлгээд өөрийгөө чанга тэвэрнэ
-  welcome: { src: 'bear_cheer_scarf', pad: [10, 14, 10, 0], ms: 140, hold: { 0: 700, 6: 1100 }, in: [0, 0], loop: [0, 6, 'pingpong'], cols: 4 },
+  // гараа дэлгэхдээ нүдээ нээж нэг ирмэнэ (0 → ирмэх → 2), тэврэхдээ баярлан анина (6 → 8)
+  welcome: {
+    src: 'bear_cheer_scarf',
+    pad: [10, 14, 10, 0],
+    ms: 140,
+    hold: { 0: 600, 1: 110, 2: 500, 8: 1100 },
+    eyes: { open: [0, 1, 2], blink: 0 },
+    in: [0, 0],
+    loop: [0, 8, 'pingpong'],
+    cols: 4,
+  },
   // хичээл хийгээгүй: хөмсгөө зангидаж гараа зөрүүлнэ → нүдээ аниад «хмф», хөлөө дэвсэнэ
   neglected: { src: 'bear_idle_scarf', pad: [4, 4, 4, 0], ms: 170, in: [0, 3], loop: [3, 6, 'pingpong'] },
 };
@@ -104,6 +124,19 @@ function headAt(img: Img): [number, number] {
   return [best[0], best[1]];
 }
 
+/** frame-ийн толгойд сэргэлэн баавгайн нээлттэй нүдийг тавина */
+function withOpenEyes(img: Img): Img {
+  const o = clone(img);
+  const [hx, hy] = headAt(img);
+  for (const [x0, y0, x1, y1] of EYES)
+    for (let y = y0; y < y1; y++)
+      for (let x = x0; x < x1; x++) {
+        const [px, py] = [hx + x - HEAD[0], hy + y - HEAD[1]];
+        if (px >= 0 && py >= 0 && px < o.w && py < o.h && REF.d[at(REF, x, y) + 3]) o.d.set(REF.d.subarray(at(REF, x, y), at(REF, x, y) + 4), at(o, px, py));
+      }
+  return o;
+}
+
 const items = Object.fromEntries(Object.keys(ITEMS).map((id) => [id, itemLayer(id)]));
 const meta: Record<string, unknown> = {};
 const sheets: Record<string, { frames: Frame[]; heads: [number, number][]; seq: number[] }> = {};
@@ -112,11 +145,13 @@ for (const [name, s] of Object.entries(STATES)) {
   const strip = readPng(new URL(`home-${name}.png`, PIXELLAB));
   const [l, t] = s.pad;
   const w = bbox([source(s.src)])[2] - x0 + l + s.pad[2];
-  const frames: Frame[] = Array.from({ length: strip.w / w }, (_, i) => ({
-    name: `${name}${i}`,
-    duration: s.hold?.[i] ?? s.ms,
-    img: crop(strip, i * w, 0, w, strip.h),
-  }));
+  let imgs = Array.from({ length: strip.w / w }, (_, i) => crop(strip, i * w, 0, w, strip.h));
+  if (s.eyes) {
+    const { open, blink } = s.eyes;
+    const opened = imgs.map((img, i) => (open.includes(i) ? withOpenEyes(img) : img));
+    imgs = opened.flatMap((img, i) => (i === blink ? [img, imgs[i], img] : [img]));
+  }
+  const frames: Frame[] = imgs.map((img, i) => ({ name: `${name}${i}`, duration: s.hold?.[i] ?? s.ms, img }));
   // PixelLab зургийн хүрээнээс гарсан хэсгийг тайрдаг: зүүн/баруун захад олон pixel хүрсэн frame = тасарсан гар,
   // `pad`-ийг томруулж дахин үүсгэ (shortcut: 8 хүртэл pixel = гарын хүрээ л хүрсэн, нүдэнд үл мэдэгдэнэ)
   frames.forEach(({ img }, i) => {

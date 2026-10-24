@@ -18,7 +18,7 @@ const SHEETS: Record<BearAnim, SpriteKey> = {
   tired: 'bear_home_tired_1092x260',
   neglected: 'bear_home_neglected_1092x260',
   sleep: 'bear_home_sleep_970x260',
-  welcome: 'bear_home_welcome_1320x840',
+  welcome: 'bear_home_welcome_1320x1260',
 };
 const ITEM_SPRITES: Record<ItemId, SpriteKey> = {
   glasses: 'item_glasses_98x44',

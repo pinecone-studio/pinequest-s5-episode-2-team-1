@@ -31,7 +31,7 @@ export const sprites = {
   bear_home_tired_1092x260: { source: require('../../assets/sprites/bear_home_tired_1092x260.png'), width: 1092, height: 260 },
   bear_home_neglected_1092x260: { source: require('../../assets/sprites/bear_home_neglected_1092x260.png'), width: 1092, height: 260 },
   bear_home_sleep_970x260: { source: require('../../assets/sprites/bear_home_sleep_970x260.png'), width: 970, height: 260 },
-  bear_home_welcome_1320x840: { source: require('../../assets/sprites/bear_home_welcome_1320x840.png'), width: 1320, height: 840 },
+  bear_home_welcome_1320x1260: { source: require('../../assets/sprites/bear_home_welcome_1320x1260.png'), width: 1320, height: 1260 },
   item_glasses_98x44: { source: require('../../assets/sprites/item_glasses_98x44.png'), width: 98, height: 44 },
   item_gradcap_78x44: { source: require('../../assets/sprites/item_gradcap_78x44.png'), width: 78, height: 44 },
   item_headphones_142x70: { source: require('../../assets/sprites/item_headphones_142x70.png'), width: 142, height: 70 },

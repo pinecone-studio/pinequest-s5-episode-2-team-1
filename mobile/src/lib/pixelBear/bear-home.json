@@ -304,7 +304,7 @@
     "frames": [
       {
         "name": "welcome0",
-        "duration": 700,
+        "duration": 600,
         "head": [
           20,
           14
@@ -312,18 +312,18 @@
       },
       {
         "name": "welcome1",
-        "duration": 140,
+        "duration": 110,
         "head": [
           20,
-          12
+          14
         ]
       },
       {
         "name": "welcome2",
-        "duration": 140,
+        "duration": 500,
         "head": [
           20,
-          13
+          14
         ]
       },
       {
@@ -331,7 +331,7 @@
         "duration": 140,
         "head": [
           20,
-          16
+          12
         ]
       },
       {
@@ -339,7 +339,7 @@
         "duration": 140,
         "head": [
           20,
-          16
+          13
         ]
       },
       {
@@ -347,11 +347,27 @@
         "duration": 140,
         "head": [
           20,
-          18
+          16
         ]
       },
       {
         "name": "welcome6",
+        "duration": 140,
+        "head": [
+          20,
+          16
+        ]
+      },
+      {
+        "name": "welcome7",
+        "duration": 140,
+        "head": [
+          20,
+          18
+        ]
+      },
+      {
+        "name": "welcome8",
         "duration": 1100,
         "head": [
           20,
@@ -367,7 +383,7 @@
       },
       "loop": {
         "from": 0,
-        "to": 6,
+        "to": 8,
         "direction": "pingpong"
       }
     }
