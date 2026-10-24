@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
   circle: { position: 'absolute' },
   head: { position: 'absolute', left: 28, right: 28, gap: 14 },
   wordmark: { fontFamily: fonts.pixel, fontSize: 66, lineHeight: 60, letterSpacing: -1, color: colors.lemon },
-  tagline: { fontFamily: fonts.medium, fontSize: 27, lineHeight: 31, letterSpacing: -0.5, color: colors.white },
+  tagline: { fontFamily: fonts.medium, fontSize: 23, lineHeight: 29, letterSpacing: -0.5, color: colors.white },
   bear: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
   sheet: {
     position: 'absolute',
