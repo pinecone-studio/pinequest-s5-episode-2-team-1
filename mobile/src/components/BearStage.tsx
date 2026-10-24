@@ -1,5 +1,5 @@
 import * as Haptics from 'expo-haptics';
-import { useEffect, useRef, useState } from 'react';
+import { type ComponentRef, useEffect, useRef, useState } from 'react';
 import { type GestureResponderEvent, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Rect } from 'react-native-svg';
 import { LiveBear } from '@/components/LiveBear';
@@ -7,6 +7,7 @@ import { AnimatedBar, ColorFade, Motion, Pop, Sprite, ZoomEnter } from '@/compon
 import { colors, fonts, halo as haloColors, radius } from '@/constants/theme';
 import { S } from '@/i18n/strings';
 import { BEAR_CONFIG, type BearView } from '@/lib/pixelBear/bear';
+import { tagFrames } from '@/lib/pixelBear/anim';
 import home from '@/lib/pixelBear/bear-home.json';
 import { bgById, outfitById, type OutfitId } from '@/lib/pixelBear/catalog';
 
@@ -90,8 +91,8 @@ export function BearStage({
 
 /** ойрхон 2 дахь товшилт ба түүнээс хойших товшилтын хоорондох хамгийн их зай (ms) */
 const DOUBLE_TAP = 700;
-/** «өвдлөө» хөдөлгөөний урт: frame-уудын хугацаа + хэсэг зогсолт */
-const OUCH_MS = home.ouch.frames.reduce((t, f) => t + f.duration, 0) + 400;
+/** «өвдлөө» хөдөлгөөний урт: гараа өргөөд буулгах (ping-pong) frame-уудын хугацаа + хэвийн зогсолт дээр бага зэрэг */
+const OUCH_MS = tagFrames(home.ouch, 'in').reduce((t, f) => t + home.ouch.frames[f].duration, 0) + 250;
 
 /**
  * Баавгайг хуруугаараа ойрхон 2–3 удаа товшиход товшсон газарт од гарч, утас чичирнэ, баавгай толгойгоо бариад
@@ -100,7 +101,7 @@ const OUCH_MS = home.ouch.frames.reduce((t, f) => t + f.duration, 0) + 400;
 function useOuch() {
   const [at, setAt] = useState<{ x: number; y: number; n: number } | null>(null);
   const last = useRef(0);
-  const stage = useRef<View>(null);
+  const stage = useRef<ComponentRef<typeof View>>(null);
   useEffect(() => {
     if (!at) return;
     const t = setTimeout(() => setAt(null), OUCH_MS);

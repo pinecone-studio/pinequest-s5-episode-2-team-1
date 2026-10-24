@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router';
-import { useRef, useState } from 'react';
+import { type ComponentRef, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -38,7 +38,7 @@ export default function TutorScreen() {
   const win = useWindowDimensions();
   const [box, setBox] = useState<{ width: number; height: number } | null>(null);
   const { width, height } = box ?? win;
-  const scroll = useRef<ScrollView>(null);
+  const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
   const lastHeight = useRef(0);
 
   // анги: доод захад наалдаж, хэвтээгээр төвлөрнө; дэлгэц өргөн бол бүхэл pixel-ээр биш ч өргөнийг дүүргэнэ

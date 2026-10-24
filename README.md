@@ -4,7 +4,7 @@
 цуглуулна; дараалал (streak) өсөх тусам оноо нь үржинэ. Оноогоороо дүрдээ хувцас авч, ижил түвшний
 хүүхдүүдтэй бооцоотой real-time тулаан хийнэ.
 
-- `mobile/` — Expo SDK 57 (Expo Go), expo-router, TypeScript, react-native-svg, expo-secure-store
+- `mobile/` — Expo SDK 58 (Expo Go), expo-router, TypeScript, react-native-svg, expo-secure-store
 - `api/` — Cloudflare Workers (Hono) + D1 + Durable Objects (`DuelRoom`, WebSocket Hibernation)
 - `shared/types.ts` — API ба WebSocket-ийн гэрээ (хоёр тал `import type`-аар хуваалцана)
 
@@ -24,7 +24,7 @@
     ```
 
   - nvm ашигладаг бол repo дотор `nvm install && nvm use` (`.nvmrc` = 24).
-- Утсан дээр **Expo Go** (SDK 57-г дэмждэг хувилбар).
+- Утсан дээр **Expo Go** (SDK 58-г дэмждэг хувилбар).
 - Компьютер ба утаснууд **нэг Wi-Fi**-д байна.
 
 ## 2. Анх удаа тохируулах (clone хийсний дараа)
@@ -202,7 +202,8 @@ npm run e2e
    уншуулна (API-г дахин асаах шаардлагагүй). Expo буруу сүлжээний IP сонговол
    `REACT_NATIVE_PACKAGER_HOSTNAME=<IP> npx expo start -c`.
 5. Expo Go "Project is incompatible" гэвэл утсан дээрх Expo Go-ийн SDK-тэй тааруулна
-   (одоо SDK 57): `npm install expo@~57.0.0 && npx expo install --fix`.
+   (одоо SDK 58). Төслийг шинэ SDK руу шилжүүлэхдээ `npx expo install --fix` нэг нэгээр нь шинэчлэхэд peer
+   зөрчил гардаг тул `npx expo install --check`-ийн бүх хувилбарыг `package.json`-д бичээд lock-ыг дахин үүсгэнэ.
 
 **Нөөц хувилбар: workers.dev руу deploy** (Free plan хангалттай; DuelRoom нь SQLite-backed):
 

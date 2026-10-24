@@ -1,6 +1,6 @@
 import type { BookLesson, LessonsResponse, Subject } from '@shared/types';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { type ComponentRef, useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -29,7 +29,7 @@ export default function PathScreen() {
   const subject: Subject = savedSubject ?? 'math';
   const insets = useSafeAreaInsets();
   const barSpace = useTabBarSpace();
-  const scroll = useRef<ScrollView>(null);
+  const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
   // ScrollView бүтэн дэлгэцийг эзэлдэг (толгой, цэс дээр нь хөвнө); web дээр onLayout анх ажилладаггүй
   const viewH = useWindowDimensions().height;
   const [menu, setMenu] = useState(false);

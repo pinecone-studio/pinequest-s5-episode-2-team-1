@@ -47,7 +47,7 @@ export function useTabBarSpace(): number {
  * Хөвдөг цагаан pill цэс. Идэвхтэй tab-ын ард саарал капсул spring-ээр гулсана. Офлайн үед Сурах зам, Баг
  * бүдгэрч түгжигдэнэ, цэсний дээр «Офлайн горим» шошго гарна.
  */
-export function BottomNav({ state, navigation }: TabBarProps) {
+export function BottomNav({ state, emitter, navigateToTab }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const reduce = useReducedMotion();
   const online = useOnline();
@@ -68,8 +68,9 @@ export function BottomNav({ state, navigation }: TabBarProps) {
 
   // Түгжигдсэн tab дээр байхад офлайн болбол Нүүр рүү
   useEffect(() => {
-    if (!online && activeName && ONLINE_ONLY.has(activeName)) navigation.navigate('index');
-  }, [online, activeName, navigation]);
+    const home = state.routes.find((r) => r.name === 'index');
+    if (!online && activeName && ONLINE_ONLY.has(activeName) && home) navigateToTab(home.key);
+  }, [online, activeName, state.routes, navigateToTab]);
 
   useEffect(() => {
     if (!hint) return;
@@ -106,8 +107,8 @@ export function BottomNav({ state, navigation }: TabBarProps) {
                   setHint(true);
                   return;
                 }
-                const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
-                if (!active && !event.defaultPrevented) navigation.navigate(route.name);
+                const event = emitter.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
+                if (!active && !event.defaultPrevented) navigateToTab(route.key);
               }}
               style={[styles.item, locked && { opacity: 0.3 }]}
             >
