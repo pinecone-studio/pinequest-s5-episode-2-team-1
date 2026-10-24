@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
@@ -131,6 +132,7 @@ export default function CalendarScreen() {
 
       <View style={styles.profile}>
         <Text style={styles.profileText}>{S.calendar.profile(me.username, me.grade)}</Text>
+        <Button title={S.calendar.toProfile} variant="lemon" small onPress={() => router.push('/profile')} />
         <Button title={S.calendar.logout} variant="white" small onPress={onLogout} />
       </View>
     </Screen>

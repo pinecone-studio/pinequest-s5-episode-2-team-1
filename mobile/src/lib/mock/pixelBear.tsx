@@ -1,6 +1,6 @@
-import type { CosmeticItem, CosmeticKind, CosmeticsResponse, Subject } from '@shared/types';
+import type { CosmeticItem, CosmeticKind, CosmeticsResponse, LookBody, MeResponse, Subject } from '@shared/types';
 import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { api, errorText } from '@/api/client';
+import { api, ApiError, errorText } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
 import { kvGet, kvSet } from '@/lib/kv';
 import { DEFAULT_BG_ID, DEFAULT_OUTFIT_ID, type OutfitId } from '@/lib/pixelBear/catalog';
@@ -10,6 +10,7 @@ import { BEAR_STATES, type BearState, type BearView, deriveBear, previewBear } f
  * Pixel Bear-ийн төлөв.
  * - Дэвсгэр, хувцасны үнэ, эзэмшил, худалдан авалт серверт (`/cosmetics`); Coin = серверийн оноо.
  * - Аль дэвсгэр/хувцсыг өмссөн, сонгосон хичээл нь зөвхөн харагдац тул төхөөрөмж дээр хэрэглэгч бүрээр хадгалагдана.
+ *   Өмссөн дэвсгэр, хувцсыг серверт ч илгээнэ (`PUT /me/look`): профайлаа хуваалцахад бусдад ингэж харагдана.
  */
 
 interface Persisted {
@@ -102,6 +103,25 @@ export function PixelBearProvider({ children }: { children: ReactNode }) {
     [userId],
   );
 
+  // Аваагүй (жишээ нь хуучин mock-оор "авсан") дэвсгэр хадгалагдсан бол анхдагч руу буцна.
+  const bgId = !cosmetics || cosmetics.some((c) => c.kind === 'bg' && c.key === data.bgId && c.owned) ? data.bgId : DEFAULT_BG_ID;
+
+  // Өмссөнөө серверт хадгална. Сервер татгалзсан сонголтыг (жишээ нь аваагүй хувцас) дахин илгээхгүй, сүлжээний
+  // алдаа бол дараагийн шинэчлэлтээр (refreshMe) дахин оролдоно.
+  const sentLook = useRef<string | null>(null);
+  useEffect(() => {
+    if (!ready || !me || !cosmetics) return;
+    const look: LookBody = { bg: bgId, outfit: data.outfitId };
+    const key = `${me.id}:${look.bg}:${look.outfit}`;
+    if ((me.look?.bg === look.bg && me.look.outfit === look.outfit) || sentLook.current === key) return;
+    sentLook.current = key;
+    api<MeResponse>('/me/look', { method: 'PUT', body: look })
+      .then((r) => setMe(r.me))
+      .catch((e) => {
+        if (e instanceof ApiError && e.status === 0) sentLook.current = null;
+      });
+  }, [ready, me, cosmetics, bgId, data.outfitId, setMe]);
+
   const value = useMemo<PixelBearValue>(() => {
     const find = (kind: CosmeticKind, key: string) => cosmetics?.find((c) => c.kind === kind && c.key === key);
     const ownedKeys = (kind: CosmeticKind, fallback: string) =>
@@ -124,8 +144,7 @@ export function PixelBearProvider({ children }: { children: ReactNode }) {
 
     return {
       ready,
-      // Аваагүй (жишээ нь хуучин mock-оор "авсан") дэвсгэр хадгалагдсан бол анхдагч руу буцна.
-      bgId: ownedBgs.includes(data.bgId) || !cosmetics ? data.bgId : DEFAULT_BG_ID,
+      bgId,
       outfitId: data.outfitId,
       ownedBgs,
       ownedOutfits: ownedKeys('outfit', DEFAULT_OUTFIT_ID),
@@ -149,7 +168,7 @@ export function PixelBearProvider({ children }: { children: ReactNode }) {
       buyBg: (id) => buy('bg', id, (d) => ({ ...d, bgId: id })),
       buyOutfit: (id) => buy('outfit', id, (d) => ({ ...d, outfitId: id })),
     };
-  }, [ready, data, cosmetics, me, preview, update, setMe, reloadCosmetics]);
+  }, [ready, bgId, data, cosmetics, me, preview, update, setMe, reloadCosmetics]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

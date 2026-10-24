@@ -4,10 +4,11 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useAuth } from '@/auth/AuthContext';
 import { Avatar } from '@/components/Avatar';
 import { CountPill, XpPill } from '@/components/StatPill';
+import { S } from '@/i18n/strings';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 
 /**
- * Нүүр, Сурах зам дээрх дээд мөр: аватар (→ хуанли), XP, дараалал, coin. `path` өгвөл шатны XP-г тэр хичээлийн
+ * Нүүр, Сурах зам дээрх дээд мөр: аватар (→ миний профайл), XP, дараалал, coin. `path` өгвөл шатны XP-г тэр хичээлийн
  * сурах замаас харуулна (газрын зураг хичээл бүрт тусдаа).
  */
 export function TopBar({ xp = 'total', onMap, path }: { xp?: 'total' | 'level' | 'none'; onMap?: boolean; path?: SubjectPath }) {
@@ -20,8 +21,8 @@ export function TopBar({ xp = 'total', onMap, path }: { xp?: 'total' | 'level' |
     <View style={styles.row}>
       <Pressable
         accessibilityRole="link"
-        accessibilityLabel="Профайл ба хуанли"
-        onPress={() => router.push('/calendar')}
+        accessibilityLabel={S.profile.open}
+        onPress={() => router.push('/profile')}
         style={styles.avatarTap}
       >
         <Avatar size={48} border={onMap ? 2 : undefined} />
