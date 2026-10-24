@@ -1,6 +1,7 @@
 import type { Me, SubjectPath } from '../../../shared/types';
 import { GAME, SUBJECTS, type Subject } from '../config/game';
 import { levelProgress } from '../domain/level';
+import { parseBearLook } from '../domain/profile';
 import { shieldBlock, shieldNextBuyDay } from '../domain/shield';
 import { maxStake } from '../domain/stake';
 import { normalizeStreak, registerTaskDay, type StreakState, streakMultiplier } from '../domain/streak';
@@ -21,11 +22,12 @@ export interface UserRow {
   shield_bought_day: string | null;
   shield_used_day: string | null;
   equipped: string;
+  bear_look: string | null;
   created_at: number;
 }
 
 const USER_COLUMNS =
-  'id, username, grade, tier, xp, points, streak, last_streak_day, shield_held, shield_bought_day, shield_used_day, equipped, created_at';
+  'id, username, grade, tier, xp, points, streak, last_streak_day, shield_held, shield_bought_day, shield_used_day, equipped, bear_look, created_at';
 
 export async function getUserRow(db: D1Database, id: number): Promise<UserRow> {
   const row = await db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE id = ?`).bind(id).first<UserRow>();
@@ -136,6 +138,7 @@ export function buildMe(
     avatar: avatarLook(equipped, catalog),
     maxStake: maxStake(user.points),
     paths,
+    look: parseBearLook(user.bear_look),
     today,
   };
 }

@@ -1,0 +1,148 @@
+import type { BearLook, Me, MyProfileResponse, ProfileResponse, PublicProfile, SubjectSkill } from '../../../shared/types';
+import { COSMETICS, type Cosmetic, OUTFIT_ITEMS } from '../config/cosmetics';
+import { GAME, SUBJECTS, type Subject } from '../config/game';
+import { levelProgress } from '../domain/level';
+import { newProfileCode, normalizeProfileCode, parseBearLook } from '../domain/profile';
+import { normalizeStreak } from '../domain/streak';
+import { ubDay } from '../domain/time';
+import { isConstraintError } from '../lib/db';
+import { ApiError } from '../lib/errors';
+import { getCatalog } from './items';
+import { getUserRow, loadMe, loadSubjectPaths, streakStateOf } from './users';
+
+/** Эзэмшиж буй дэвсгэр, хувцасны key (үнэгүйг оролцуулна; нүдний шил, чихэвч нь items хүснэгтээс). */
+async function loadCollection(db: D1Database, userId: number): Promise<PublicProfile['collection']> {
+  const [cosmetics, items, catalog] = await Promise.all([
+    db.prepare('SELECT cosmetic_id FROM user_cosmetics WHERE user_id = ?').bind(userId).all<{ cosmetic_id: string }>(),
+    db.prepare('SELECT item_id FROM user_items WHERE user_id = ?').bind(userId).all<{ item_id: string }>(),
+    getCatalog(db),
+  ]);
+  const ownedCosmetics = new Set(cosmetics.results.map((r) => r.cosmetic_id));
+  const ownedItems = new Set(items.results.map((r) => r.item_id));
+  const owned = (kind: Cosmetic['kind']) =>
+    COSMETICS.filter((c) => c.kind === kind && (c.price === 0 || ownedCosmetics.has(c.id))).map((c) => c.key);
+  const itemOutfits = Object.entries(OUTFIT_ITEMS)
+    .filter(([, itemId]) => ownedItems.has(itemId) || catalog.get(itemId)?.price === 0)
+    .map(([key]) => key);
+  return { bgs: owned('bg'), outfits: [...owned('outfit'), ...itemOutfits] };
+}
+
+/** Хичээл бүрийн сурах зам ба даалгаврын зөв/нийт хариулт. */
+async function loadSkills(db: D1Database, userId: number): Promise<SubjectSkill[]> {
+  const [paths, answers] = await Promise.all([
+    loadSubjectPaths(db, userId),
+    // choice: NULL = хариулаагүй, -1 = "Асуулт буруу байна" (алгассан) тул хоёулаа тоологдохгүй.
+    db
+      .prepare(
+        `SELECT t.subject, COALESCE(SUM(tq.correct = 1), 0) AS correct, COALESCE(SUM(tq.choice >= 0), 0) AS answered
+         FROM tasks t JOIN task_questions tq ON tq.task_id = t.id
+         WHERE t.user_id = ? GROUP BY t.subject`,
+      )
+      .bind(userId)
+      .all<{ subject: Subject; correct: number; answered: number }>(),
+  ]);
+  return SUBJECTS.map((subject) => {
+    const row = answers.results.find((r) => r.subject === subject);
+    const path = paths[subject];
+    return { subject, level: path.level, bossesBeaten: path.bossesBeaten, correct: row?.correct ?? 0, answered: row?.answered ?? 0 };
+  });
+}
+
+/** Бусдад харагдах профайл. Харж буй хүн бусдын өгөгдлийг өөрчлөхгүйн тулд streak-ийг DB-д бичилгүй тооцно. */
+export async function loadPublicProfile(db: D1Database, userId: number, now = Date.now()): Promise<PublicProfile> {
+  const user = await getUserRow(db, userId);
+  const [skills, collection, days, duels] = await Promise.all([
+    loadSkills(db, userId),
+    loadCollection(db, userId),
+    db
+      .prepare(`SELECT COUNT(DISTINCT day) AS n FROM tasks WHERE user_id = ? AND status = 'completed'`)
+      .bind(userId)
+      .first<{ n: number }>(),
+    db
+      .prepare(
+        `SELECT COUNT(*) AS played, COALESCE(SUM(winner_id = ?), 0) AS won
+         FROM duels WHERE status = 'finished' AND (creator_id = ? OR opponent_id = ?)`,
+      )
+      .bind(userId, userId, userId)
+      .first<{ played: number; won: number }>(),
+  ]);
+  const progress = levelProgress(user.xp);
+  return {
+    username: user.username,
+    grade: user.grade,
+    level: progress.level,
+    levelXp: progress.current,
+    levelXpNeeded: progress.needed,
+    streak: normalizeStreak(streakStateOf(user), ubDay(now)).state.streak,
+    studyDays: days?.n ?? 0,
+    look: parseBearLook(user.bear_look),
+    collection,
+    skills,
+    duels: { played: duels?.played ?? 0, won: duels?.won ?? 0 },
+    joinedAt: user.created_at,
+  };
+}
+
+/**
+ * Профайлын код онооно (`replace` = false бол код байхгүй үед л: зэрэг ирсэн хоёр хүсэлт хоёр өөр код өгөхгүй).
+ * Өөр хэрэглэгчийн кодтой давхцвал (UNIQUE index) шинэ кодоор дахин оролдоно.
+ */
+async function assignProfileCode(db: D1Database, userId: number, replace: boolean): Promise<string> {
+  const update = db.prepare(`UPDATE users SET profile_code = ? WHERE id = ?${replace ? '' : ' AND profile_code IS NULL'}`);
+  for (let attempt = 0; ; attempt++) {
+    try {
+      await update.bind(newProfileCode(), userId).run();
+      break;
+    } catch (e) {
+      if (attempt < 4 && isConstraintError(e, 'UNIQUE')) continue;
+      throw e;
+    }
+  }
+  const code = await currentProfileCode(db, userId);
+  if (!code) throw new ApiError(500, 'INTERNAL');
+  return code;
+}
+
+async function currentProfileCode(db: D1Database, userId: number): Promise<string | null> {
+  const row = await db.prepare('SELECT profile_code FROM users WHERE id = ?').bind(userId).first<{ profile_code: string | null }>();
+  if (!row) throw new ApiError(401, 'UNAUTHORIZED', 'Хэрэглэгч олдсонгүй');
+  return row.profile_code;
+}
+
+/** Миний профайл ба хуваалцах код (анх нээхэд код үүснэ). */
+export async function myProfile(db: D1Database, userId: number): Promise<MyProfileResponse> {
+  const [code, profile] = await Promise.all([
+    currentProfileCode(db, userId).then((c) => c ?? assignProfileCode(db, userId, false)),
+    loadPublicProfile(db, userId),
+  ]);
+  return { profile, code };
+}
+
+/** Кодоо солино: хуучин кодоор профайл олдохоо болино. */
+export async function rotateProfileCode(db: D1Database, userId: number): Promise<MyProfileResponse> {
+  const code = await assignProfileCode(db, userId, true);
+  return { profile: await loadPublicProfile(db, userId), code };
+}
+
+/** Бусдын профайлыг кодоор нь олно (нэр, id-аар хайхгүй: кодыг нь мэдэх хүн л харна). */
+export async function findProfile(db: D1Database, viewerId: number, input: string): Promise<ProfileResponse> {
+  const code = normalizeProfileCode(input);
+  if (!code) throw new ApiError(400, 'BAD_REQUEST', `Код ${GAME.PROFILE.CODE_LENGTH} оронтой тоо байна`);
+  const row = await db.prepare('SELECT id FROM users WHERE profile_code = ?').bind(code).first<{ id: number }>();
+  if (!row) throw new ApiError(404, 'PROFILE_NOT_FOUND', 'Ийм кодтой профайл алга');
+  return { profile: await loadPublicProfile(db, row.id), isMe: row.id === viewerId };
+}
+
+/** Нүүрэн дээр сонгосон дэвсгэр, хувцсыг хадгална (профайл дээр бусдад харагдана). Зөвхөн эзэмшиж буйгаа. */
+export async function setBearLook(db: D1Database, userId: number, look: BearLook): Promise<Me> {
+  const known = (kind: Cosmetic['kind'], key: string) =>
+    COSMETICS.some((c) => c.kind === kind && c.key === key) || (kind === 'outfit' && Object.keys(OUTFIT_ITEMS).includes(key));
+  if (!known('bg', look.bg) || !known('outfit', look.outfit)) throw new ApiError(400, 'BAD_REQUEST', 'Дэвсгэр эсвэл хувцас буруу');
+  const { bgs, outfits } = await loadCollection(db, userId);
+  if (!bgs.includes(look.bg) || !outfits.includes(look.outfit)) throw new ApiError(403, 'NOT_OWNED', 'Эхлээд авна уу');
+  await db
+    .prepare('UPDATE users SET bear_look = ? WHERE id = ?')
+    .bind(JSON.stringify({ bg: look.bg, outfit: look.outfit } satisfies BearLook), userId)
+    .run();
+  return loadMe(db, userId);
+}

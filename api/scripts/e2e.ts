@@ -1,9 +1,10 @@
 // Ажиллаж буй dev сервер дээр демо сценарийн гол урсгалыг автоматаар шалгана.
 //   npm run e2e                 # даалгавар, оноо, streak, хамгаалалт, өдрийн хязгаар, тулаан
-//   npm run e2e -- --only tasks # зөвхөн нэг хэсэг (tasks | paths | recovery | shop | duel | books)
+//   npm run e2e -- --only tasks # зөвхөн нэг хэсэг (tasks | paths | recovery | shop | profiles | duel | books)
 import type { AnswerResponse, CosmeticsResponse, MeResponse, RecoveryAnswerResponse, RecoveryDto, ShopResponse, TaskDto } from '../../shared/types';
 import { runBooksScenario } from './e2e-books';
 import { runDuelScenario } from './e2e-duel';
+import { runProfilesScenario } from './e2e-profiles';
 import { check, correctIndex, doTask, expectError, failureCount, me, register } from './e2e-lib';
 import { ADMIN_TOKEN, arg, call } from './lib';
 
@@ -211,6 +212,7 @@ async function main() {
   if (!only || only === 'paths') await pathsScenario();
   if (!only || only === 'recovery') await recoveryScenario();
   if (!only || only === 'shop') await shopScenario();
+  if (!only || only === 'profiles') await runProfilesScenario();
   if (!only || only === 'duel') await runDuelScenario();
   if (!only || only === 'books') await runBooksScenario();
   console.log('\n— Ledger');

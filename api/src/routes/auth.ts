@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
-import type { AuthResponse, LessonsResponse, MeResponse } from '../../../shared/types';
+import type { AuthResponse, LessonsResponse, MeResponse, MyProfileResponse } from '../../../shared/types';
 import { DEFAULT_EQUIPPED, GAME, SUBJECTS } from '../config/game';
 import { tierForGrade } from '../domain/level';
 import type { AppEnv } from '../env';
@@ -8,6 +8,7 @@ import { hashPassword, newSessionToken, normalizeUsername, sha256Hex, usernameEr
 import { ApiError, readBody } from '../lib/errors';
 import { bearerToken, createSession, requireAuth } from '../lib/session';
 import { loadLessons } from '../services/lessons';
+import { myProfile, rotateProfileCode, setBearLook } from '../services/profiles';
 import { loadMe } from '../services/users';
 
 const registerSchema = z.object({
@@ -99,4 +100,16 @@ meRoutes.get('/lessons/:subject', requireAuth, async (c) => {
   const user = await c.env.DB.prepare('SELECT grade FROM users WHERE id = ?').bind(c.get('userId')).first<{ grade: number }>();
   if (!user) throw new ApiError(401, 'UNAUTHORIZED', 'Нэвтрэх шаардлагатай');
   return c.json<LessonsResponse>(await loadLessons(c.env, subject.data, user.grade));
+});
+
+/** Миний профайл (бусдад ингэж харагдана) ба хуваалцах код. */
+meRoutes.get('/profile', requireAuth, async (c) => c.json<MyProfileResponse>(await myProfile(c.env.DB, c.get('userId'))));
+
+/** Кодоо солино: хуучин кодоор профайл олдохоо болино. */
+meRoutes.post('/profile/code', requireAuth, async (c) => c.json<MyProfileResponse>(await rotateProfileCode(c.env.DB, c.get('userId'))));
+
+/** Нүүрэн дээр сонгосон дэвсгэр, хувцас (профайл дээр бусдад харагдана). */
+meRoutes.put('/look', requireAuth, async (c) => {
+  const body = await readBody(c, z.object({ bg: z.string().min(1).max(40), outfit: z.string().min(1).max(40) }));
+  return c.json<MeResponse>({ me: await setBearLook(c.env.DB, c.get('userId'), body) });
 });
