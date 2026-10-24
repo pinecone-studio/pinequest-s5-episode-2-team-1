@@ -45,7 +45,8 @@ export type ErrorCode =
   | 'LLM_FAILED'
   | 'BOSS_LOCKED'
   | 'TUTOR_UNAVAILABLE'
-  | 'TUTOR_LIMIT';
+  | 'TUTOR_LIMIT'
+  | 'PROFILE_NOT_FOUND';
 
 export interface ApiErrorBody {
   error: { code: ErrorCode; message: string };
@@ -99,7 +100,15 @@ export interface Me {
   maxStake: number;
   /** Хичээл бүрийн сурах зам: газрын зураг дээрх байрлал ба ялсан boss хичээлээр тусдаа. */
   paths: Record<Subject, SubjectPath>;
+  /** Нүүрэн дээр сонгосон дэвсгэр, хувцас (серверт хадгалагдсан хувилбар): профайл дээр бусдад ингэж харагдана. */
+  look: BearLook;
   today: string;
+}
+
+/** Баавгайн дэвсгэр, хувцас: mobile catalog-ийн key ('nimbeg', 'gradcap'…). */
+export interface BearLook {
+  bg: string;
+  outfit: string;
 }
 
 export interface SubjectPath {
@@ -138,6 +147,60 @@ export interface AuthResponse {
 export interface MeResponse {
   me: Me;
 }
+
+// ---------- Профайл хуваалцах ----------
+
+/** Нэг хичээлийн ахиц: сурах зам ба даалгаврын хариултууд. */
+export interface SubjectSkill {
+  subject: Subject;
+  /** Сурах замын шат (SubjectPath.level) */
+  level: number;
+  bossesBeaten: number;
+  /** Даалгаварт зөв хариулсан асуулт */
+  correct: number;
+  /** Хариулсан асуулт ("Асуулт буруу байна" гэж алгассаныг тооцохгүй) */
+  answered: number;
+}
+
+/**
+ * Бусдад харагдах профайл: баавгай, шат, ахиц. Оноо, хамгаалалт, нууц үг зэрэг хувийн мэдээлэл орохгүй,
+ * хэрэглэгчийн id ч орохгүй (профайлыг зөвхөн кодоор нь олно).
+ */
+export interface PublicProfile {
+  username: string;
+  grade: number;
+  level: number;
+  levelXp: number;
+  levelXpNeeded: number;
+  streak: number;
+  /** Даалгавар дуусгасан өдрийн тоо */
+  studyDays: number;
+  look: BearLook;
+  /** Эзэмшиж буй дэвсгэр, хувцас (үнэгүйг оролцуулна), mobile catalog-ийн key */
+  collection: { bgs: string[]; outfits: string[] };
+  skills: SubjectSkill[];
+  /** Дууссан тулаан (цуцлагдсаныг тооцохгүй) */
+  duels: { played: number; won: number };
+  /** Бүртгүүлсэн хугацаа (epoch ms) */
+  joinedAt: number;
+}
+
+/** GET /me/profile, POST /me/profile/code */
+export interface MyProfileResponse {
+  profile: PublicProfile;
+  /** Профайлын код: үүнийг мэдэх хүн л профайлыг харна. Солибол хуучин код ажиллахаа болино. */
+  code: string;
+}
+
+/** GET /profiles/:code */
+export interface ProfileResponse {
+  profile: PublicProfile;
+  /** Өөрийнхөө кодыг оруулсан */
+  isMe: boolean;
+}
+
+/** PUT /me/look */
+export type LookBody = BearLook;
 
 // ---------- Даалгавар ----------
 

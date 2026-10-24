@@ -12,13 +12,15 @@ import { colors, fonts, radius, subjectTheme } from '@/constants/theme';
 import { type } from '@/constants/type';
 import { S, subjectGlyphs, subjectNames } from '@/i18n/strings';
 import { usePixelBear } from '@/lib/mock/pixelBear';
+import { useOnline } from '@/lib/online';
 
 const SUBJECTS: Subject[] = ['math', 'mongolian', 'physics'];
 
-/** Өнөөдрийн даалгавар (доод цэсний тусдаа хэсэг). */
+/** Өнөөдрийн даалгавар (доод цэсний тусдаа хэсэг). Офлайн үед даалгавар нь XP, оноогүй дасгал болно. */
 export default function TasksScreen() {
   const { me, refreshMe } = useAuth();
   const { coins } = usePixelBear();
+  const online = useOnline();
   const [refreshing, setRefreshing] = useState(false);
 
   useFocusEffect(
@@ -47,13 +49,20 @@ export default function TasksScreen() {
         <CountPill icon="icon_coin_24x24" value={coins} label="Coin" />
       </View>
 
+      {online ? null : (
+        <View style={styles.offline} accessibilityRole="summary">
+          <Text style={styles.offlineTitle}>{S.offline.tasksTitle}</Text>
+          <Text style={styles.offlineText}>{S.offline.tasksHint}</Text>
+        </View>
+      )}
+
       <Enter index={0} style={[styles.progress, { backgroundColor: me.streakDoneToday ? colors.lime : colors.pink }]}>
         <Motion preset="bob" style={styles.peek}>
           <Sprite id={me.streakDoneToday ? 'head_happy_164x108' : 'head_idle_112x96'} />
         </Motion>
         <Text style={styles.progressLabel}>{S.tasks.today}</Text>
         <Text style={styles.big}>{me.todayTasks}</Text>
-        <Text style={styles.status}>{me.streakDoneToday ? S.home.streakDone : S.home.streakTodo}</Text>
+        <Text style={styles.status}>{me.streakDoneToday ? S.home.streakDone : online ? S.home.streakTodo : S.offline.streakTodo}</Text>
       </Enter>
 
       {SUBJECTS.map((subject, i) => {
@@ -62,7 +71,7 @@ export default function TasksScreen() {
           <Enter key={subject} index={i + 1}>
             <PressScale
               accessibilityRole="button"
-              accessibilityLabel={`${S.tasks.start(subjectNames[subject])}, +${maxReward} coin`}
+              accessibilityLabel={online ? `${S.tasks.start(subjectNames[subject])}, +${maxReward} coin` : `${S.tasks.start(subjectNames[subject])}, ${S.offline.practice}`}
               onPress={() => router.push(`/task/${subject}`)}
               scaleTo={0.97}
               style={[styles.quest, { backgroundColor: t.bg }]}
@@ -77,14 +86,16 @@ export default function TasksScreen() {
               <View style={{ flex: 1, gap: 6 }}>
                 <View style={styles.questTop}>
                   <Text style={[styles.questLabel, { color: t.fg }]}>
-                    {S.tasks.questions(me.questionsPerTask)} · {S.tasks.multiplier(me.nextMultiplier)}
+                    {S.tasks.questions(me.questionsPerTask)} · {online ? S.tasks.multiplier(me.nextMultiplier) : S.offline.practice}
                   </Text>
                 </View>
                 <Text style={[styles.questTitle, { color: t.fg }]}>{subjectNames[subject]}</Text>
-                <View style={styles.reward}>
-                  <Sprite id="icon_coin_12x12" />
-                  <Text style={styles.rewardNum}>+{maxReward}</Text>
-                </View>
+                {online ? (
+                  <View style={styles.reward}>
+                    <Sprite id="icon_coin_12x12" />
+                    <Text style={styles.rewardNum}>+{maxReward}</Text>
+                  </View>
+                ) : null}
               </View>
               <View style={styles.play}>
                 <Svg width={18} height={18} viewBox="0 0 24 24">
@@ -105,6 +116,9 @@ export default function TasksScreen() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  offline: { borderRadius: radius.lg, padding: 16, gap: 4, backgroundColor: colors.lemon },
+  offlineTitle: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink },
+  offlineText: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 19, color: colors.ink },
   progress: { borderRadius: radius.lg, padding: 18, gap: 6, overflow: 'hidden', minHeight: 150 },
   peek: { position: 'absolute', right: -16, bottom: -18 },
   progressLabel: { fontFamily: fonts.bold, fontSize: 13, letterSpacing: 1, color: colors.ink },

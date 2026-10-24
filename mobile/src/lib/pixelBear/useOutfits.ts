@@ -1,9 +1,10 @@
 import type { ShopItem, ShopResponse } from '@shared/types';
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { api, errorText } from '@/api/client';
+import { api, errorText, isOfflineError } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
 import { S } from '@/i18n/strings';
+import { cacheGet, cacheKeys, cacheSet } from '@/lib/cache';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 import { OUTFITS, type OutfitDef } from './catalog';
 
@@ -19,10 +20,12 @@ export interface OutfitView {
 
 /**
  * Баавгайн хувцас: нүдний шил, чихэвч нь /shop-ийн эд зүйл (acc_glasses, acc_headphones, шатны хязгаартай);
- * ороолт, төгсөгчийн малгай нь /cosmetics-оос. Үнэ, эзэмшил, худалдан авалт бүгд серверт.
+ * ороолт, төгсөгчийн малгай нь /cosmetics-оос. Үнэ, эзэмшил, худалдан авалт бүгд серверт. Офлайн үед сүүлд ирсэн
+ * жагсаалтаар (cache) харуулна.
  */
 export function useOutfits() {
-  const { setMe } = useAuth();
+  const { me, setMe } = useAuth();
+  const userId = me?.id;
   const bear = usePixelBear();
   const { reloadCosmetics } = bear;
   const [items, setItems] = useState<ShopItem[] | null>(null);
@@ -34,10 +37,15 @@ export function useOutfits() {
       setItems(r.items);
       setMe(r.me);
       setError('');
+      if (userId !== undefined) cacheSet(cacheKeys.shop(userId), r.items);
     } catch (e) {
-      setError(errorText(e));
+      const cached = userId !== undefined && isOfflineError(e) ? await cacheGet<ShopItem[]>(cacheKeys.shop(userId)) : null;
+      if (cached) {
+        setItems((cur) => cur ?? cached);
+        setError('');
+      } else setError(errorText(e));
     }
-  }, [setMe, reloadCosmetics]);
+  }, [userId, setMe, reloadCosmetics]);
 
   useFocusEffect(
     useCallback(() => {
@@ -60,6 +68,7 @@ export function useOutfits() {
       try {
         const r = await api<ShopResponse>(`/shop/${v.def.serverItemId}/buy`, { method: 'POST' });
         setItems(r.items);
+        if (userId !== undefined) cacheSet(cacheKeys.shop(userId), r.items);
         setMe(r.me);
         bear.equipOutfit(v.def.id);
         return null;

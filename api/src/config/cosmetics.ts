@@ -1,7 +1,7 @@
 // Баавгайн дэвсгэр өнгө, хувцас (Pixel Bear UI). Харагдац нь mobile/src/lib/pixelBear/catalog.ts-д,
 // үнэ, эзэмшил, худалдан авалт энд (серверт). price = 0 бол бүх хүнд анхнаасаа байгаа.
 // Нүдний шил, чихэвч нь items хүснэгтийн бодит эд зүйл (acc_glasses, acc_headphones) тул энд байхгүй.
-import type { CosmeticKind } from '../../../shared/types';
+import type { BearLook, CosmeticKind } from '../../../shared/types';
 
 export interface Cosmetic {
   id: string;
@@ -25,3 +25,9 @@ export const COSMETICS: readonly Cosmetic[] = [
 ];
 
 export const cosmeticById = (id: string): Cosmetic | undefined => COSMETICS.find((c) => c.id === id);
+
+/** Хувцас болж өмсөгддөг дэлгүүрийн эд зүйл (mobile catalog-ийн serverItemId): хувцасны key → items.id */
+export const OUTFIT_ITEMS: Readonly<Record<string, string>> = { glasses: 'acc_glasses', headphones: 'acc_headphones' };
+
+/** Сонголт хадгалаагүй хэрэглэгчийн баавгай (mobile catalog-ийн DEFAULT_BG_ID, DEFAULT_OUTFIT_ID). */
+export const DEFAULT_LOOK: BearLook = { bg: 'nimbeg', outfit: 'scarf' };

@@ -9,6 +9,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
+import { ConfirmHost } from '@/components/ConfirmHost';
 import { Sprite } from '@/components/pixel';
 import { ServerStatus } from '@/components/ServerStatus';
 import { colors, fonts } from '@/constants/theme';
@@ -45,6 +46,7 @@ export default function RootLayout() {
           <View style={styles.outer}>
             <View style={styles.column}>
               <RootNavigator />
+              <ConfirmHost />
             </View>
           </View>
         </PixelBearProvider>
@@ -85,6 +87,8 @@ function RootNavigator() {
         <Stack.Screen name="onboarding" />
         <Stack.Screen name="calendar" options={{ animation: 'slide_from_bottom' }} />
         <Stack.Screen name="bag" />
+        <Stack.Screen name="profile" />
+        <Stack.Screen name="u/[code]" />
         <Stack.Screen name="task/[subject]" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />
         <Stack.Screen name="recovery/[subject]" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />
         <Stack.Screen name="duel/[id]" options={{ gestureEnabled: false }} />
