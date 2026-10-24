@@ -1,8 +1,13 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { useEffect, useRef, useState } from 'react';
+import { type GestureResponderEvent, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Rect } from 'react-native-svg';
-import { AnimatedBar, ColorFade, Motion, Pop, Sprite } from '@/components/pixel';
+import { LiveBear } from '@/components/LiveBear';
+import { AnimatedBar, ColorFade, Motion, Pop, Sprite, ZoomEnter } from '@/components/pixel';
 import { colors, fonts, halo as haloColors, radius } from '@/constants/theme';
+import { S } from '@/i18n/strings';
 import { BEAR_CONFIG, type BearView } from '@/lib/pixelBear/bear';
+import home from '@/lib/pixelBear/bear-home.json';
 import { bgById, outfitById, type OutfitId } from '@/lib/pixelBear/catalog';
 
 const NIGHT_MOON = '#F3F66C';
@@ -22,47 +27,97 @@ export function BearStage({
   const bg = bgById(bgId);
   const cfg = BEAR_CONFIG[view.state];
   const ink = bg.dark ? colors.white : colors.ink;
-  // Happy төлөв = зогсож буй (idle) поз тул сонгосон хувцастай нь харуулна
-  const sprite = view.state === 'happy' && outfitId !== 'scarf' ? outfitById(outfitId).stage : cfg.sprite;
+  // сонгосон item-ээ бүх төлөвт өмсөнө
+  const item = outfitById(outfitId).item;
+  const ouch = useOuch();
 
   return (
     <Pressable
+      ref={ouch.stage}
+      onPress={ouch.tap}
       onLongPress={onLongPress}
       delayLongPress={600}
       accessible
       accessibilityLabel={`${cfg.alt}. ${cfg.chip}, энерги ${view.energy}%`}
       style={styles.stage}
     >
-      <ColorFade color={bg.hex} style={StyleSheet.absoluteFill} />
-      <ColorFade color={bg.dark ? haloColors.night : haloColors.light} style={styles.halo} />
-      <Decor state={view.state} ink={ink} dark={!!bg.dark} />
+      {/* товшилтын байрлал (locationX/Y) stage-ээс тооцогдохын тулд дотор талын зүйлс хүрэлт авахгүй */}
+      <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <ColorFade color={bg.hex} style={StyleSheet.absoluteFill} />
+        <ColorFade color={bg.dark ? haloColors.night : haloColors.light} style={styles.halo} />
+        <Decor state={view.state} ink={ink} dark={!!bg.dark} />
 
-      {cfg.floatShadow ? (
-        <Motion preset="shadow" style={styles.shadow} />
-      ) : (
-        <View style={[styles.shadow, { opacity: 0.18 }]} />
-      )}
-      <View style={[styles.bearWrap, { top: cfg.top }]}>
-        <Pop trigger={sprite} from={0.6}>
-          <Motion preset={cfg.anim} originBottom={cfg.anim === 'breathe' || cfg.anim === 'sway'}>
-            <Sprite id={sprite} />
-          </Motion>
-        </Pop>
-      </View>
-
-      <View style={styles.chip}>
-        <View style={[styles.chipDot, { backgroundColor: cfg.dot }]} />
-        <Text style={styles.chipText}>{cfg.chip}</Text>
-      </View>
-      <View style={styles.energy} accessible accessibilityLabel={`Энерги ${view.energy}%`}>
-        <Sprite id="icon_heart_24x24" />
-        <View style={styles.energyTrack}>
-          <AnimatedBar value={view.energy / 100} color={cfg.dot} height={6} />
+        {cfg.floatShadow ? (
+          <Motion preset="shadow" style={styles.shadow} />
+        ) : (
+          <View style={[styles.shadow, { opacity: 0.18 }]} />
+        )}
+        <View style={[styles.bearWrap, { top: cfg.top }]}>
+          <Pop trigger={view.state} from={0.6}>
+            <LiveBear key={ouch.at ? `ouch${ouch.at.n}` : view.state} anim={ouch.at ? 'ouch' : view.state} w={cfg.w} items={item ? [item] : []} />
+          </Pop>
         </View>
-        <Text style={styles.energyNum}>{view.energy}%</Text>
+
+        {ouch.at ? (
+          <ZoomEnter key={ouch.at.n} style={[styles.abs, { left: ouch.at.x - 18, top: ouch.at.y - 18 }]}>
+            <Sprite id="icon_star_36x36" />
+          </ZoomEnter>
+        ) : null}
+        {ouch.at || view.state === 'neglected' ? (
+          <Motion preset="wiggle" style={[styles.abs, styles.say]}>
+            <View style={styles.bubble}>
+              <Text style={styles.bubbleText}>{ouch.at ? S.home.ouch : S.home.upset}</Text>
+            </View>
+            <View style={styles.tail} />
+          </Motion>
+        ) : null}
+
+        <View style={styles.chip}>
+          <View style={[styles.chipDot, { backgroundColor: cfg.dot }]} />
+          <Text style={styles.chipText}>{cfg.chip}</Text>
+        </View>
+        <View style={styles.energy} accessible accessibilityLabel={`Энерги ${view.energy}%`}>
+          <Sprite id="icon_heart_24x24" />
+          <View style={styles.energyTrack}>
+            <AnimatedBar value={view.energy / 100} color={cfg.dot} height={6} />
+          </View>
+          <Text style={styles.energyNum}>{view.energy}%</Text>
+        </View>
       </View>
     </Pressable>
   );
+}
+
+/** ойрхон 2 дахь товшилт ба түүнээс хойших товшилтын хоорондох хамгийн их зай (ms) */
+const DOUBLE_TAP = 700;
+/** «өвдлөө» хөдөлгөөний урт: frame-уудын хугацаа + хэсэг зогсолт */
+const OUCH_MS = home.ouch.frames.reduce((t, f) => t + f.duration, 0) + 400;
+
+/**
+ * Баавгайг хуруугаараа ойрхон 2–3 удаа товшиход товшсон газарт од гарч, утас чичирнэ, баавгай толгойгоо бариад
+ * «Ёоё, өвдөж байна!» гэнэ. Нэг товшилт юу ч хийхгүй (санамсаргүй хүрэлт).
+ */
+function useOuch() {
+  const [at, setAt] = useState<{ x: number; y: number; n: number } | null>(null);
+  const last = useRef(0);
+  const stage = useRef<View>(null);
+  useEffect(() => {
+    if (!at) return;
+    const t = setTimeout(() => setAt(null), OUCH_MS);
+    return () => clearTimeout(t);
+  }, [at]);
+  const tap = (e: GestureResponderEvent) => {
+    const now = Date.now();
+    const double = now - last.current < DOUBLE_TAP;
+    last.current = now;
+    if (!double || at) return;
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const { locationX, locationY, pageX, pageY } = e.nativeEvent;
+    // web-ийн товшилтод locationX байхгүй: stage-ийн байрлалаас тооцно
+    if (typeof locationX === 'number') setAt({ x: locationX, y: locationY, n: now });
+    else stage.current?.measure((_x, _y, _w, _h, sx, sy) => setAt({ x: pageX - sx, y: pageY - sy, n: now }));
+  };
+  return { at, tap, stage };
 }
 
 function Twinkle({ delay = 0, children, style }: { delay?: number; children: React.ReactNode; style: object }) {
@@ -120,30 +175,7 @@ function Decor({ state, ink, dark }: { state: BearView['state']; ink: string; da
         </>
       );
     case 'neglected':
-      return (
-        <>
-          <View style={[styles.abs, { right: 38, top: 30 }]}>
-            <Svg width={96} height={72} viewBox="0 0 24 18">
-              <Rect x={6} y={2} width={8} height={2} fill="#8A8C94" />
-              <Rect x={4} y={4} width={14} height={2} fill="#8A8C94" />
-              <Rect x={2} y={6} width={20} height={4} fill="#8A8C94" />
-              <Rect x={4} y={10} width={16} height={2} fill="#73757D" />
-              <Rect x={6} y={13} width={1} height={2} fill="#7FC6EF" />
-              <Rect x={11} y={14} width={1} height={2} fill="#7FC6EF" />
-              <Rect x={16} y={13} width={1} height={2} fill="#7FC6EF" />
-              <Rect x={8} y={16} width={1} height={2} fill="#7FC6EF" />
-              <Rect x={14} y={16} width={1} height={2} fill="#7FC6EF" />
-            </Svg>
-          </View>
-          <View style={[styles.abs, { left: 70, top: 86 }]}>
-            <Svg width={24} height={18} viewBox="0 0 8 6">
-              <Rect x={0} y={0} width={3} height={2} fill="#FFFFFF" opacity={0.8} />
-              <Rect x={5} y={0} width={3} height={2} fill="#FFFFFF" opacity={0.8} />
-              <Rect x={2} y={2} width={4} height={3} fill="#19152E" />
-            </Svg>
-          </View>
-        </>
-      );
+      return null; // баавгайн үг (Upset) баавгайн дээр зурагдана
     case 'sleep': {
       const moon = dark ? NIGHT_MOON : '#FFFFFF';
       return (
@@ -218,4 +250,20 @@ const styles = StyleSheet.create({
   energyTrack: { width: 52, height: 6, borderRadius: 3, backgroundColor: colors.trackAlt, overflow: 'hidden' },
   energyNum: { fontFamily: fonts.pixel, fontSize: 15, color: colors.ink },
   zz: { fontFamily: fonts.pixel, fontSize: 22 },
+  // толгойн баруун талд, толгойг халхлахгүй
+  say: { right: 10, top: 58, width: 92, alignItems: 'flex-start' },
+  bubble: { paddingVertical: 7, paddingHorizontal: 10, borderRadius: 14, borderWidth: 2, borderColor: colors.ink, backgroundColor: colors.white },
+  bubbleText: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, color: colors.ink, textAlign: 'center' },
+  // хэлж буй баавгай руу (зүүн доош) чиглэсэн сүүл
+  tail: {
+    width: 12,
+    height: 12,
+    marginTop: -7,
+    marginLeft: 12,
+    borderRightWidth: 2,
+    borderBottomWidth: 2,
+    borderColor: colors.ink,
+    backgroundColor: colors.white,
+    transform: [{ rotate: '45deg' }],
+  },
 });

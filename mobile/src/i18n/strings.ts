@@ -89,6 +89,10 @@ export const S = {
   },
   home: {
     hello: (name: string) => `Сайн уу, ${name}!`,
+    /** хичээл хийгээгүй үед баавгайн хэлэх үг */
+    upset: 'Чамд гомдлоо!',
+    /** баавгайг ойрхон товшиход */
+    ouch: 'Ёоё, өвдөж байна!',
     tier: (tier: number, grade: number) => `Түвшин ${tier} · ${grade}-р анги`,
     level: (level: number) => `${level}-р шат`,
     xpProgress: (cur: number, need: number) => `${cur} / ${need} туршлага`,
@@ -237,7 +241,7 @@ export const S = {
     feed: 'Баавгайгаа хооллох: хичээл эхлэх',
   },
   welcome: {
-    tagline: 'Өдөр бүр бага зэрэг сур. Баавгай чинь чамтай хамт өснө.',
+    tagline: 'Өдөр бүр шинийг сурч,\nбаавгайтайгаа хамт өсөөрэй.',
     start: 'Эхлэх',
     haveAccount: 'Надад бүртгэл байгаа',
   },

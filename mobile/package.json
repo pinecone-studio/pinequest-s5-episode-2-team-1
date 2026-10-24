@@ -51,6 +51,7 @@
     "sprites:lesson": "node scripts/lesson-sprites.ts",
     "sprites:tutor": "node scripts/tutor-sprites.ts",
     "sprites:classroom": "node scripts/classroom-sprites.ts",
+    "sprites:home": "node scripts/home-sprites.ts",
     "offline:questions": "node scripts/offline-questions.ts"
   },
   "private": true
