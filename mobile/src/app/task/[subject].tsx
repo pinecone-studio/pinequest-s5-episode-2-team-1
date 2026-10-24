@@ -6,18 +6,20 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
-import { ApiError, api, errorText } from '@/api/client';
+import { ApiError, api, errorText, isOfflineError } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
 import { BossArena, type Strike } from '@/components/BossArena';
 import { Button } from '@/components/Button';
 import { LessonBackdrop, LessonBear, type LessonMood } from '@/components/LessonBear';
 import { OptionButton, type OptionState } from '@/components/OptionButton';
 import { AnimatedBar, Pop } from '@/components/pixel';
-import { RewardView } from '@/components/RewardView';
+import { PracticeResultView, RewardView } from '@/components/RewardView';
 import { colors, fonts, radius } from '@/constants/theme';
 import { S, subjectNames } from '@/i18n/strings';
 import { confirm } from '@/lib/confirm';
 import { goBack } from '@/lib/nav';
+import { type Practice, startPractice } from '@/lib/offline/practice';
+import { isOnline, useOnline } from '@/lib/online';
 import { BOSSES } from '@/lib/pixelBear/path';
 
 /** хичээлийн дэвсгэрийн хананы дээд өнгө (scripts/lesson-sprites.ts): өндөр дэлгэцэнд дэвсгэрээс дээш хэсгийг дүүргэнэ */
@@ -26,13 +28,22 @@ const LESSON_WALL = '#3b2a8f';
 /**
  * 05 · Хичээл (асуулт) ба 06 · Шагнал. Логик: сонгох → ШАЛГАХ → серверт хариулт → тайлбар → дараагийн асуулт.
  * `?boss=<бүлэг>` бол дээд самбар нь boss тулаан болно (асуултууд нь ижил даалгавар).
+ * Сервер хүрэхгүй бол офлайн дасгал: апп доторх асуултаар, хариуг утсан дээр шалгана, XP/оноо цуглуулахгүй.
  */
 export default function TaskScreen() {
   const { subject, boss } = useLocalSearchParams<{ subject: Subject; boss?: string }>();
   const foe = boss === undefined ? undefined : BOSSES[Number(boss)];
   const { me, setMe } = useAuth();
+  const online = useOnline();
   const insets = useSafeAreaInsets();
+  const tier = me?.tier;
+  const grade = me?.grade;
+  const size = me?.questionsPerTask ?? 5;
   const [task, setTask] = useState<TaskDto | null>(null);
+  const [practice, setPractice] = useState<Practice | null>(null);
+  /** офлайн дасгал дууссан: зөв хариултын тоо (null = дуусаагүй); showScore = дүнгийн дэлгэц */
+  const [practiceScore, setPracticeScore] = useState<number | null>(null);
+  const [showScore, setShowScore] = useState(false);
   const [index, setIndex] = useState(0);
   const [answered, setAnswered] = useState(0);
   const [hits, setHits] = useState(0);
@@ -52,28 +63,42 @@ export default function TaskScreen() {
     setResult(null);
     setRecovery(false);
     setPending(null);
+    setPractice(null);
+    setPracticeScore(null);
+    setShowScore(false);
     setFeedback(null);
     setSelected(null);
     setError(null);
     setNote('');
-    try {
-      const t = await api<TaskDto>('/tasks', { body: foe ? { subject, boss: Number(boss) } : { subject } });
+    const begin = (t: TaskDto) => {
       setTask(t);
       setAnswered(t.answeredCount);
       setHits(t.correctCount);
       setMisses(t.answeredCount - t.correctCount);
       setStrike(null);
       setIndex(Math.max(0, t.questions.findIndex((q) => !q.answered)));
+    };
+    const offline = () => {
+      if (foe) return setError({ message: S.offline.bossLocked, fatal: true });
+      const p = tier === undefined || grade === undefined ? null : startPractice(tier, grade, subject, size);
+      if (!p) return setError({ message: S.offline.noQuestions, fatal: true });
+      setPractice(p);
+      begin(p.task);
+    };
+    if (!isOnline()) return offline();
+    try {
+      begin(await api<TaskDto>('/tasks', { body: foe ? { subject, boss: Number(boss) } : { subject } }));
     } catch (e) {
       // Олон алдсан өмнөх даалгаврын салаа зам дуусаагүй бол түүн рүү.
       if (e instanceof ApiError && e.code === 'RECOVERY_REQUIRED') {
         router.replace(`/recovery/${subject}`);
         return;
       }
+      if (isOfflineError(e)) return offline();
       const fatal = e instanceof ApiError && (e.code === 'NO_QUESTIONS' || e.code === 'BOSS_LOCKED');
       setError({ message: errorText(e), fatal });
     }
-  }, [subject, foe, boss]);
+  }, [subject, foe, boss, tier, grade, size]);
 
   useEffect(() => {
     void load();
@@ -88,6 +113,10 @@ export default function TaskScreen() {
       setResult(pending);
       return;
     }
+    if (practiceScore !== null) {
+      setShowScore(true);
+      return;
+    }
     if (!task) return;
     const nextIndex = task.questions.findIndex((x, i) => i > index && !x.answered);
     setIndex(nextIndex === -1 ? index : nextIndex);
@@ -96,18 +125,28 @@ export default function TaskScreen() {
     setNote('');
   }
 
+  function reveal(r: AnswerResponse) {
+    setFeedback(r);
+    setAnswered((n) => n + 1);
+    if (r.correct) setHits((n) => n + 1);
+    else setMisses((n) => n + 1);
+    setStrike({ n: answered + 1, correct: r.correct });
+    void Haptics.notificationAsync(r.correct ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error);
+  }
+
   async function check() {
     if (!task || !q || feedback || busy || selected === null) return;
-    setBusy(true);
     setNote('');
+    if (practice) {
+      const r = practice.answer(q.id, selected);
+      reveal(r);
+      if (r.finished) setPracticeScore(r.correctCount);
+      return;
+    }
+    setBusy(true);
     try {
       const r = await api<AnswerResponse>(`/tasks/${task.id}/answer`, { body: { questionId: q.id, choice: selected } });
-      setFeedback(r);
-      setAnswered((n) => n + 1);
-      if (r.correct) setHits((n) => n + 1);
-      else setMisses((n) => n + 1);
-      setStrike({ n: answered + 1, correct: r.correct });
-      void Haptics.notificationAsync(r.correct ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error);
+      reveal(r);
       if (r.result) {
         setPending(r.result);
         setRecovery(!!r.recovery);
@@ -141,6 +180,7 @@ export default function TaskScreen() {
     }
   }
 
+  if (showScore && practiceScore !== null) return <PracticeResultView correct={practiceScore} total={total} onAgain={load} />;
   // Шагналаа (XP, шат, streak) эхлээд харуулна; салаа зам нээгдсэн бол тэндээс шууд руу нь орно
   if (result) return <RewardView result={result} onAgain={load} onRecovery={recovery ? () => router.replace(`/recovery/${subject}`) : undefined} />;
 
@@ -148,7 +188,7 @@ export default function TaskScreen() {
   const mood: LessonMood = feedback ? (feedback.correct ? 'right' : 'wrong') : 'think';
   const bear: { alt: string; bubble: string } =
     mood === 'right'
-      ? { alt: S.lesson.bearCorrect, bubble: S.lesson.correctBubble(me?.xpPerCorrect ?? 0) }
+      ? { alt: S.lesson.bearCorrect, bubble: practice ? S.offline.correctBubble : S.lesson.correctBubble(me?.xpPerCorrect ?? 0) }
       : mood === 'wrong'
         ? { alt: S.lesson.bearWrong, bubble: S.lesson.wrongBubble }
         : { alt: S.lesson.bearThinking, bubble: error ? error.message : S.lesson.thinking };
@@ -210,7 +250,7 @@ export default function TaskScreen() {
               </Svg>
             </Pressable>
             <View style={styles.subjectPill}>
-              <Text style={styles.subjectText}>{subjectName}</Text>
+              <Text style={styles.subjectText}>{practice ? S.offline.pill(subjectName) : subjectName}</Text>
             </View>
           </View>
 
@@ -283,14 +323,14 @@ export default function TaskScreen() {
                 </Animated.View>
               ) : null}
 
-              {feedback && !feedback.correct ? (
+              {feedback && !feedback.correct && online && !practice ? (
                 <Button title={S.tutor.ask} variant="white" small onPress={() => router.push(`/tutor?questionId=${q.id}`)} />
               ) : null}
 
               {feedback ? (
                 <Button
-                  title={pending ? S.lesson.result : S.lesson.next}
-                  variant={feedback.correct || pending ? 'lime' : 'primary'}
+                  title={pending || practiceScore !== null ? S.lesson.result : S.lesson.next}
+                  variant={feedback.correct || pending || practiceScore !== null ? 'lime' : 'primary'}
                   onPress={goNext}
                 />
               ) : (
@@ -298,9 +338,13 @@ export default function TaskScreen() {
               )}
 
               {note ? <Text style={styles.note}>{note}</Text> : null}
-              <Pressable accessibilityRole="button" onPress={flag} hitSlop={8} style={styles.flag}>
-                <Text style={styles.flagText}>{S.task.flag}</Text>
-              </Pressable>
+              {/* Даалгаврын дунд сүлжээ тасарвал серверийн даалгавар хадгалагдана; одоохондоо офлайн дасгал хийж болно */}
+              {!online && !practice && !foe ? <Button title={S.offline.toPractice} variant="white" small onPress={load} /> : null}
+              {practice ? null : (
+                <Pressable accessibilityRole="button" onPress={flag} hitSlop={8} style={styles.flag}>
+                  <Text style={styles.flagText}>{S.task.flag}</Text>
+                </Pressable>
+              )}
             </Animated.View>
           )}
         </View>
