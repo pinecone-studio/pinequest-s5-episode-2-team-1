@@ -11,23 +11,43 @@
     "frames": [
       {
         "name": "thriving0",
-        "duration": 130
+        "duration": 130,
+        "head": [
+          12,
+          14
+        ]
       },
       {
         "name": "thriving1",
-        "duration": 130
+        "duration": 130,
+        "head": [
+          12,
+          12
+        ]
       },
       {
         "name": "thriving2",
-        "duration": 130
+        "duration": 130,
+        "head": [
+          12,
+          9
+        ]
       },
       {
         "name": "thriving3",
-        "duration": 130
+        "duration": 130,
+        "head": [
+          12,
+          11
+        ]
       },
       {
         "name": "thriving4",
-        "duration": 130
+        "duration": 130,
+        "head": [
+          12,
+          13
+        ]
       }
     ],
     "tags": {
@@ -55,23 +75,43 @@
     "frames": [
       {
         "name": "sleep0",
-        "duration": 700
+        "duration": 700,
+        "head": [
+          14,
+          4
+        ]
       },
       {
         "name": "sleep1",
-        "duration": 300
+        "duration": 300,
+        "head": [
+          14,
+          5
+        ]
       },
       {
         "name": "sleep2",
-        "duration": 300
+        "duration": 300,
+        "head": [
+          13,
+          6
+        ]
       },
       {
         "name": "sleep3",
-        "duration": 300
+        "duration": 300,
+        "head": [
+          14,
+          7
+        ]
       },
       {
         "name": "sleep4",
-        "duration": 1400
+        "duration": 1400,
+        "head": [
+          14,
+          6
+        ]
       }
     ],
     "tags": {
@@ -89,7 +129,7 @@
   },
   "happy": {
     "frameSize": {
-      "w": 78,
+      "w": 90,
       "h": 130
     },
     "offset": [
@@ -99,31 +139,59 @@
     "frames": [
       {
         "name": "happy0",
-        "duration": 1800
+        "duration": 1800,
+        "head": [
+          4,
+          4
+        ]
       },
       {
         "name": "happy1",
-        "duration": 150
+        "duration": 150,
+        "head": [
+          4,
+          6
+        ]
       },
       {
         "name": "happy2",
-        "duration": 150
+        "duration": 150,
+        "head": [
+          4,
+          5
+        ]
       },
       {
         "name": "happy3",
-        "duration": 150
+        "duration": 150,
+        "head": [
+          4,
+          2
+        ]
       },
       {
         "name": "happy4",
-        "duration": 150
+        "duration": 150,
+        "head": [
+          4,
+          1
+        ]
       },
       {
         "name": "happy5",
-        "duration": 150
+        "duration": 150,
+        "head": [
+          4,
+          2
+        ]
       },
       {
         "name": "happy6",
-        "duration": 150
+        "duration": 150,
+        "head": [
+          4,
+          3
+        ]
       }
     ],
     "tags": {
@@ -151,31 +219,59 @@
     "frames": [
       {
         "name": "tired0",
-        "duration": 1600
+        "duration": 1600,
+        "head": [
+          4,
+          4
+        ]
       },
       {
         "name": "tired1",
-        "duration": 170
+        "duration": 170,
+        "head": [
+          4,
+          2
+        ]
       },
       {
         "name": "tired2",
-        "duration": 170
+        "duration": 170,
+        "head": [
+          4,
+          1
+        ]
       },
       {
         "name": "tired3",
-        "duration": 170
+        "duration": 170,
+        "head": [
+          4,
+          2
+        ]
       },
       {
         "name": "tired4",
-        "duration": 500
+        "duration": 500,
+        "head": [
+          4,
+          3
+        ]
       },
       {
         "name": "tired5",
-        "duration": 170
+        "duration": 170,
+        "head": [
+          4,
+          3
+        ]
       },
       {
         "name": "tired6",
-        "duration": 170
+        "duration": 170,
+        "head": [
+          4,
+          5
+        ]
       }
     ],
     "tags": {
@@ -203,31 +299,59 @@
     "frames": [
       {
         "name": "neglected0",
-        "duration": 170
+        "duration": 170,
+        "head": [
+          4,
+          4
+        ]
       },
       {
         "name": "neglected1",
-        "duration": 170
+        "duration": 170,
+        "head": [
+          4,
+          5
+        ]
       },
       {
         "name": "neglected2",
-        "duration": 170
+        "duration": 170,
+        "head": [
+          4,
+          6
+        ]
       },
       {
         "name": "neglected3",
-        "duration": 170
+        "duration": 170,
+        "head": [
+          4,
+          6
+        ]
       },
       {
         "name": "neglected4",
-        "duration": 170
+        "duration": 170,
+        "head": [
+          3,
+          6
+        ]
       },
       {
         "name": "neglected5",
-        "duration": 170
+        "duration": 170,
+        "head": [
+          3,
+          6
+        ]
       },
       {
         "name": "neglected6",
-        "duration": 170
+        "duration": 170,
+        "head": [
+          3,
+          5
+        ]
       }
     ],
     "tags": {

@@ -1,5 +1,4 @@
 import type { Me } from '@shared/types';
-import type { SpriteKey } from '@/sprites';
 
 // Баавгайн төлөв (DESIGN.md §5). Төлөвийг серверээс ирсэн бодит өгөгдлөөс (дараалал, өнөөдрийн
 // даалгавар, хамгаалалт) гаргана; тусдаа "energy" талбар backend-д байхгүй тул энд тооцоолно.
@@ -7,75 +6,61 @@ import type { SpriteKey } from '@/sprites';
 export type BearState = 'thriving' | 'happy' | 'tired' | 'neglected' | 'sleep';
 export const BEAR_STATES: BearState[] = ['thriving', 'happy', 'tired', 'neglected', 'sleep'];
 
-export type StageAnim = 'float' | 'bob' | 'breathe' | 'sway';
-
 export interface BearStateConfig {
-  sprite: SpriteKey;
-  /** харагдах хэмжээ (dp) */
+  /** анхны sprite-ийн харагдах хэмжээ (dp): амьд хөдөлгөөний frame-ууд түүний байранд таарна (components/LiveBear) */
   w: number;
   h: number;
   /** stage дотор баавгайн дээд зай */
   top: number;
   chip: string;
   dot: string;
-  anim: StageAnim;
   floatShadow: boolean;
   alt: string;
 }
 
 export const BEAR_CONFIG: Record<BearState, BearStateConfig> = {
   thriving: {
-    sprite: 'bear_cheer_scarf_180x252',
     w: 180,
     h: 252,
     top: 30,
     chip: 'Гэрэлтэж байна',
     dot: '#E0A82E',
-    anim: 'float',
     floatShadow: true,
     alt: 'Баярлан хөвж буй баавгай',
   },
   happy: {
-    sprite: 'bear_idle_scarf_164x280',
     w: 164,
     h: 280,
     top: 18,
     chip: 'Сэргэлэн',
     dot: '#4F9A57',
-    anim: 'bob',
     floatShadow: false,
     alt: 'Ороолттой зогсож буй баавгай',
   },
   tired: {
-    sprite: 'bear_tired_scarf_164x280',
     w: 164,
     h: 280,
     top: 18,
     chip: 'Ядарсан',
     dot: '#7A5CF5',
-    anim: 'breathe',
     floatShadow: false,
     alt: 'Ядарсан, нүдний доогуур бараантсан баавгай',
   },
   neglected: {
-    sprite: 'bear_neglected_scarf_164x280',
     w: 164,
     h: 280,
     top: 18,
     chip: 'Гомдсон',
     dot: '#E0564F',
-    anim: 'sway',
     floatShadow: false,
     alt: 'Хичээл хийгээгүйд гомдож гараа зөрүүлсэн баавгай',
   },
   sleep: {
-    sprite: 'bear_sleep_190x254',
     w: 190,
     h: 254,
     top: 46,
     chip: 'Амарч байна',
     dot: '#AEDDF3',
-    anim: 'breathe',
     floatShadow: false,
     alt: 'Хөнжил нөмөрч унтаж буй баавгай',
   },

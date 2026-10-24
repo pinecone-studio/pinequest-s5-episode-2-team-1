@@ -1,10 +1,14 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { ColorFade, Motion, Pop, Sprite } from '@/components/pixel';
+import { LiveBear } from '@/components/LiveBear';
+import { ColorFade, Pop } from '@/components/pixel';
 import { colors, fonts, halo, radius } from '@/constants/theme';
 import type { BgDef, OutfitDef } from '@/lib/pixelBear/catalog';
 
-/** Дэлгүүр/Цүнхний урьдчилан харах stage (350×290): дэвсгэр + хувцастай баавгай + нэр + үйлдэл. */
+/** баавгайн анхны sprite-ийн өргөн (bear_idle_scarf 2×): амьд frame-ууд түүний байранд таарна */
+const STAGE_W = 164;
+
+/** Дэлгүүр/Цүнхний урьдчилан харах stage (350×290): дэвсгэр + хувцсаа гайхуулж буй амьд баавгай + нэр + үйлдэл. */
 export function PreviewStage({ bg, outfit, name, alt, action }: { bg: BgDef; outfit: OutfitDef; name: string; alt: string; action?: ReactNode }) {
   return (
     <View style={styles.stage}>
@@ -13,9 +17,8 @@ export function PreviewStage({ bg, outfit, name, alt, action }: { bg: BgDef; out
       <View style={styles.shadow} />
       <View style={styles.bear}>
         <Pop trigger={outfit.id} from={0.75}>
-          <Motion preset="bob">
-            <Sprite id={outfit.stage} label={alt} />
-          </Motion>
+          {/* дэлгүүрт орж ирсэн хүнтэй мэндэлж даллана, сонгосон item-ээ өмссөн */}
+          <LiveBear anim="happy" w={STAGE_W} items={outfit.item ? [outfit.item] : []} label={alt} />
         </Pop>
       </View>
       <View style={styles.chip}>

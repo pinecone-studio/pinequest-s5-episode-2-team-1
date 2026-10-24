@@ -1,0 +1,23 @@
+{
+  "glasses": {
+    "at": [
+      10,
+      24
+    ],
+    "loose": false
+  },
+  "gradcap": {
+    "at": [
+      16,
+      -11
+    ],
+    "loose": true
+  },
+  "headphones": {
+    "at": [
+      0,
+      -7
+    ],
+    "loose": true
+  }
+}

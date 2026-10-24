@@ -1,3 +1,4 @@
+import type { ItemId } from '@/components/LiveBear';
 import type { SpriteKey } from '@/sprites';
 
 // DESIGN.md §3 (дэвсгэр өнгө) ба §8-07 (хувцас). Зөвхөн харагдац: үнэ, эзэмшил серверээс
@@ -31,30 +32,31 @@ export interface OutfitDef {
   tile: string;
   /** картын дээд хэсэгт баавгайн толгойг харуулах босоо шилжилт */
   imgTop: number;
-  stage: SpriteKey;
   card: SpriteKey;
+  /** амьд баавгайн толгойд өмсгөх давхарга (scripts/home-sprites.ts); ороолт нь баавгайн хөдөлгөөнд шингэсэн */
+  item?: ItemId;
   /** backend-д бодитоор байдаг эд зүйл (items хүснэгт): худалдан авалт сервер дээр хийгдэнэ */
   serverItemId?: string;
 }
 
 export const OUTFITS: OutfitDef[] = [
-  { id: 'scarf', name: 'Монгол ороолт', tile: '#D4F55E', imgTop: -26, stage: 'outfit_scarf_164x280', card: 'outfit_scarf_82x140' },
+  { id: 'scarf', name: 'Монгол ороолт', tile: '#D4F55E', imgTop: -26, card: 'outfit_scarf_82x140' },
   {
     id: 'glasses',
     name: 'Нүдний шил',
     tile: '#AEDDF3',
     imgTop: -12,
-    stage: 'outfit_glasses_164x280',
+    item: 'glasses',
     card: 'outfit_glasses_82x140',
     serverItemId: 'acc_glasses',
   },
-  { id: 'gradcap', name: 'Төгсөгчийн малгай', tile: '#F3F66C', imgTop: 0, stage: 'outfit_gradcap_164x280', card: 'outfit_gradcap_82x140' },
+  { id: 'gradcap', name: 'Төгсөгчийн малгай', tile: '#F3F66C', imgTop: 0, card: 'outfit_gradcap_82x140', item: 'gradcap' },
   {
     id: 'headphones',
     name: 'Чихэвч',
     tile: '#D9D2F2',
     imgTop: -4,
-    stage: 'outfit_headphones_164x280',
+    item: 'headphones',
     card: 'outfit_headphones_82x140',
     serverItemId: 'acc_headphones',
   },

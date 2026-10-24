@@ -1,23 +1,13 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Rect } from 'react-native-svg';
-import { AnimatedBar, ColorFade, Motion, Pop, SheetFrame, Sprite } from '@/components/pixel';
+import { LiveBear } from '@/components/LiveBear';
+import { AnimatedBar, ColorFade, Motion, Pop, Sprite } from '@/components/pixel';
 import { colors, fonts, halo as haloColors, radius } from '@/constants/theme';
-import { useTagPlayer } from '@/hooks/useTagPlayer';
 import { S } from '@/i18n/strings';
-import { BEAR_CONFIG, type BearState, type BearView } from '@/lib/pixelBear/bear';
-import home from '@/lib/pixelBear/bear-home.json';
+import { BEAR_CONFIG, type BearView } from '@/lib/pixelBear/bear';
 import { bgById, outfitById, type OutfitId } from '@/lib/pixelBear/catalog';
-import type { SpriteKey } from '@/sprites';
 
 const NIGHT_MOON = '#F3F66C';
-/** scripts/home-sprites.ts: төлөв бүрийн амьд хөдөлгөөн (PixelLab animate_image), 2× */
-const LIVE: Record<BearState, SpriteKey> = {
-  thriving: 'bear_home_thriving_940x280',
-  happy: 'bear_home_happy_1092x260',
-  tired: 'bear_home_tired_1092x260',
-  sleep: 'bear_home_sleep_970x260',
-  neglected: 'bear_home_neglected_1092x260',
-};
 
 /** Нүүрний баавгайн stage (DESIGN.md §7 BearStage, §8-03). Төлөв = sprite + chip + energy + чимэглэл. */
 export function BearStage({
@@ -34,8 +24,8 @@ export function BearStage({
   const bg = bgById(bgId);
   const cfg = BEAR_CONFIG[view.state];
   const ink = bg.dark ? colors.white : colors.ink;
-  // Happy төлөв = зогсож буй (idle) поз тул сонгосон хувцастай нь харуулна
-  const sprite = view.state === 'happy' && outfitId !== 'scarf' ? outfitById(outfitId).stage : cfg.sprite;
+  // сонгосон item-ээ бүх төлөвт өмсөнө
+  const item = outfitById(outfitId).item;
 
   return (
     <Pressable
@@ -55,15 +45,8 @@ export function BearStage({
         <View style={[styles.shadow, { opacity: 0.18 }]} />
       )}
       <View style={[styles.bearWrap, { top: cfg.top }]}>
-        <Pop trigger={sprite} from={0.6}>
-          {/* сонгосон хувцастай (happy) баавгай хөдөлгөөнгүй sprite хэвээр */}
-          {sprite === cfg.sprite ? (
-            <LiveBear key={view.state} state={view.state} w={cfg.w} />
-          ) : (
-            <Motion preset={cfg.anim} originBottom={cfg.anim === 'breathe' || cfg.anim === 'sway'}>
-              <Sprite id={sprite} />
-            </Motion>
-          )}
+        <Pop trigger={view.state} from={0.6}>
+          <LiveBear key={view.state} anim={view.state} w={cfg.w} items={item ? [item] : []} />
         </Pop>
       </View>
 
@@ -88,21 +71,6 @@ export function BearStage({
         <Text style={styles.energyNum}>{view.energy}%</Text>
       </View>
     </Pressable>
-  );
-}
-
-/**
- * PixelLab-ийн frame-уудаар амьд хөдөлдөг баавгай: төлөв солигдоход `in` (жишээ нь гомдож гараа зөрүүлэх) нэг удаа,
- * дараа нь `loop` (хөлөө дэвсэх, хөнжилдөө нойрмоглох) давтагдана. Frame нь анхны sprite-аас `offset`-оор шилжсэн.
- */
-function LiveBear({ state, w }: { state: BearState; w: number }) {
-  const meta = home[state];
-  const frame = useTagPlayer(meta, ['in'], 'loop');
-  const shift = meta.offset[0] * 2 + meta.frameSize.w - w / 2; // frame-ийн төв анхны sprite-ийн төвөөс
-  return (
-    <View style={{ marginTop: meta.offset[1] * 2, transform: [{ translateX: shift }] }}>
-      <SheetFrame id={LIVE[state]} frames={meta.frames.length} frame={frame} />
-    </View>
   );
 }
 
