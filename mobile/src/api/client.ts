@@ -2,6 +2,7 @@ import type { ApiErrorBody, ErrorCode } from '@shared/types';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { errorMessages } from '@/i18n/strings';
+import { setOnline } from '@/lib/online';
 
 const API_PORT = 8787;
 const TIMEOUT_MS = 15_000;
@@ -54,6 +55,11 @@ export function openTutorSocket(questionId?: number): WebSocket {
   return new WebSocket(`${API_URL.replace(/^http/, 'ws')}/tutor/ws${query}`, ['bearer', session.token ?? '']);
 }
 
+/** Сервер хүрэхгүй байна (офлайн горимд шилжих шалтгаан), серверийн алдаа биш. */
+export function isOfflineError(e: unknown): boolean {
+  return e instanceof ApiError && (e.code === 'NETWORK' || e.code === 'TIMEOUT');
+}
+
 export function errorText(e: unknown): string {
   if (e instanceof ApiError) return e.message;
   return errorMessages.INTERNAL;
@@ -76,10 +82,12 @@ export async function api<T>(path: string, opts: { method?: string; body?: unkno
     });
   } catch {
     const code = controller.signal.aborted ? 'TIMEOUT' : 'NETWORK';
+    setOnline(false);
     throw new ApiError(0, code, errorMessages[code]);
   } finally {
     clearTimeout(timer);
   }
+  setOnline(true);
 
   const text = await res.text();
   let data: unknown = null;
