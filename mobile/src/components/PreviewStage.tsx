@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { LiveBear } from '@/components/LiveBear';
-import { ColorFade, Pop } from '@/components/pixel';
+import { ColorFade } from '@/components/pixel';
 import { colors, fonts, halo, radius } from '@/constants/theme';
 import type { BgDef, OutfitDef } from '@/lib/pixelBear/catalog';
 
@@ -16,10 +16,8 @@ export function PreviewStage({ bg, outfit, name, alt, action }: { bg: BgDef; out
       <ColorFade color={bg.dark ? halo.night : halo.light} style={styles.halo} />
       <View style={styles.shadow} />
       <View style={styles.bear}>
-        <Pop trigger={outfit.id} from={0.75}>
-          {/* дэлгүүрт орж ирсэн хүнтэй мэндэлж даллана, сонгосон item-ээ өмссөн */}
-          <LiveBear anim="happy" w={STAGE_W} items={outfit.item ? [outfit.item] : []} label={alt} />
-        </Pop>
+        {/* дэлгүүрт орж ирсэн хүнтэй мэндэлж даллана; item солиход баавгай тасралтгүй хөдөлсөөр, зөвхөн item солигдоно */}
+        <LiveBear anim="happy" w={STAGE_W} items={outfit.item ? [outfit.item] : []} label={alt} />
       </View>
       <View style={styles.chip}>
         <Text style={styles.chipText}>{name}</Text>
