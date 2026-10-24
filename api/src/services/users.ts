@@ -35,7 +35,9 @@ export async function getUserRow(db: D1Database, id: number): Promise<UserRow> {
   return row;
 }
 
-export function streakStateOf(u: UserRow): StreakState {
+export function streakStateOf(
+  u: Pick<UserRow, 'streak' | 'last_streak_day' | 'shield_held' | 'shield_bought_day' | 'shield_used_day'>,
+): StreakState {
   return {
     streak: u.streak,
     lastDay: u.last_streak_day,
@@ -82,6 +84,15 @@ export async function countTasksToday(db: D1Database, userId: number, today: str
   return row?.n ?? 0;
 }
 
+/** Хариулаагүй, надад ирсэн найзын хүсэлт (аватар дээрх цэг). */
+export async function countFriendRequests(db: D1Database, userId: number): Promise<number> {
+  const row = await db
+    .prepare(`SELECT COUNT(*) AS n FROM friendships WHERE to_id = ? AND status = 'pending'`)
+    .bind(userId)
+    .first<{ n: number }>();
+  return row?.n ?? 0;
+}
+
 /** Хичээл бүрийн сурах замын ахиц (subject_progress); тухайн хичээлд даалгавар хийгээгүй бол 0. */
 export async function loadSubjectPaths(db: D1Database, userId: number): Promise<Record<Subject, SubjectPath>> {
   const { results } = await db
@@ -104,6 +115,7 @@ export function buildMe(
   todayTasks: number,
   catalog: Map<string, CatalogItem>,
   paths: Record<Subject, SubjectPath>,
+  friendRequests: number,
 ): Me {
   const s = streakStateOf(user);
   const progress = levelProgress(user.xp);
@@ -139,6 +151,7 @@ export function buildMe(
     maxStake: maxStake(user.points),
     paths,
     look: parseBearLook(user.bear_look),
+    friendRequests,
     today,
   };
 }
@@ -146,6 +159,11 @@ export function buildMe(
 export async function loadMe(db: D1Database, userId: number, now = Date.now()): Promise<Me> {
   const today = ubDay(now);
   const user = await syncStreak(db, await getUserRow(db, userId), today);
-  const [todayTasks, catalog, paths] = await Promise.all([countTasksToday(db, userId, today), getCatalog(db), loadSubjectPaths(db, userId)]);
-  return buildMe(user, today, todayTasks, catalog, paths);
+  const [todayTasks, catalog, paths, friendRequests] = await Promise.all([
+    countTasksToday(db, userId, today),
+    getCatalog(db),
+    loadSubjectPaths(db, userId),
+    countFriendRequests(db, userId),
+  ]);
+  return buildMe(user, today, todayTasks, catalog, paths, friendRequests);
 }

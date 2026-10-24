@@ -7,6 +7,7 @@ import { errorHandler } from './lib/errors';
 import { adminRoutes } from './routes/admin';
 import { authRoutes, meRoutes } from './routes/auth';
 import { duelRoutes } from './routes/duels';
+import { friendRoutes } from './routes/friends';
 import { profileRoutes } from './routes/profiles';
 import { recoveryRoutes } from './routes/recovery';
 import { avatarRoutes, cosmeticRoutes, shopRoutes } from './routes/shop';
@@ -33,6 +34,7 @@ app.get('/health', async (c) => {
 app.route('/auth', authRoutes);
 app.route('/me', meRoutes);
 app.route('/profiles', profileRoutes);
+app.route('/friends', friendRoutes);
 app.route('/tasks', taskRoutes);
 app.route('/questions', questionRoutes);
 app.route('/shield', shieldRoutes);

@@ -1,13 +1,14 @@
 import type { BearLook, Me, MyProfileResponse, ProfileResponse, PublicProfile, SubjectSkill } from '../../../shared/types';
 import { COSMETICS, type Cosmetic, OUTFIT_ITEMS } from '../config/cosmetics';
-import { GAME, SUBJECTS, type Subject } from '../config/game';
+import { SUBJECTS, type Subject } from '../config/game';
 import { levelProgress } from '../domain/level';
-import { newProfileCode, normalizeProfileCode, parseBearLook } from '../domain/profile';
+import { parseBearLook } from '../domain/profile';
 import { normalizeStreak } from '../domain/streak';
 import { ubDay } from '../domain/time';
-import { isConstraintError } from '../lib/db';
 import { ApiError } from '../lib/errors';
+import { friendStatus } from './friends';
 import { getCatalog } from './items';
+import { assignProfileCode, ensureProfileCode, profileOwner } from './profileCodes';
 import { getUserRow, loadMe, loadSubjectPaths, streakStateOf } from './users';
 
 /** Эзэмшиж буй дэвсгэр, хувцасны key (үнэгүйг оролцуулна; нүдний шил, чихэвч нь items хүснэгтээс). */
@@ -83,38 +84,9 @@ export async function loadPublicProfile(db: D1Database, userId: number, now = Da
   };
 }
 
-/**
- * Профайлын код онооно (`replace` = false бол код байхгүй үед л: зэрэг ирсэн хоёр хүсэлт хоёр өөр код өгөхгүй).
- * Өөр хэрэглэгчийн кодтой давхцвал (UNIQUE index) шинэ кодоор дахин оролдоно.
- */
-async function assignProfileCode(db: D1Database, userId: number, replace: boolean): Promise<string> {
-  const update = db.prepare(`UPDATE users SET profile_code = ? WHERE id = ?${replace ? '' : ' AND profile_code IS NULL'}`);
-  for (let attempt = 0; ; attempt++) {
-    try {
-      await update.bind(newProfileCode(), userId).run();
-      break;
-    } catch (e) {
-      if (attempt < 4 && isConstraintError(e, 'UNIQUE')) continue;
-      throw e;
-    }
-  }
-  const code = await currentProfileCode(db, userId);
-  if (!code) throw new ApiError(500, 'INTERNAL');
-  return code;
-}
-
-async function currentProfileCode(db: D1Database, userId: number): Promise<string | null> {
-  const row = await db.prepare('SELECT profile_code FROM users WHERE id = ?').bind(userId).first<{ profile_code: string | null }>();
-  if (!row) throw new ApiError(401, 'UNAUTHORIZED', 'Хэрэглэгч олдсонгүй');
-  return row.profile_code;
-}
-
 /** Миний профайл ба хуваалцах код (анх нээхэд код үүснэ). */
 export async function myProfile(db: D1Database, userId: number): Promise<MyProfileResponse> {
-  const [code, profile] = await Promise.all([
-    currentProfileCode(db, userId).then((c) => c ?? assignProfileCode(db, userId, false)),
-    loadPublicProfile(db, userId),
-  ]);
+  const [code, profile] = await Promise.all([ensureProfileCode(db, userId), loadPublicProfile(db, userId)]);
   return { profile, code };
 }
 
@@ -126,11 +98,9 @@ export async function rotateProfileCode(db: D1Database, userId: number): Promise
 
 /** Бусдын профайлыг кодоор нь олно (нэр, id-аар хайхгүй: кодыг нь мэдэх хүн л харна). */
 export async function findProfile(db: D1Database, viewerId: number, input: string): Promise<ProfileResponse> {
-  const code = normalizeProfileCode(input);
-  if (!code) throw new ApiError(400, 'BAD_REQUEST', `Код ${GAME.PROFILE.CODE_LENGTH} оронтой тоо байна`);
-  const row = await db.prepare('SELECT id FROM users WHERE profile_code = ?').bind(code).first<{ id: number }>();
-  if (!row) throw new ApiError(404, 'PROFILE_NOT_FOUND', 'Ийм кодтой профайл алга');
-  return { profile: await loadPublicProfile(db, row.id), isMe: row.id === viewerId };
+  const ownerId = await profileOwner(db, input);
+  const [profile, friend] = await Promise.all([loadPublicProfile(db, ownerId), friendStatus(db, viewerId, ownerId)]);
+  return { profile, isMe: ownerId === viewerId, friend };
 }
 
 /** Нүүрэн дээр сонгосон дэвсгэр, хувцсыг хадгална (профайл дээр бусдад харагдана). Зөвхөн эзэмшиж буйгаа. */
