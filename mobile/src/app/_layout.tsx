@@ -9,6 +9,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
+import { ConfirmHost } from '@/components/ConfirmHost';
 import { Sprite } from '@/components/pixel';
 import { ServerStatus } from '@/components/ServerStatus';
 import { colors, fonts } from '@/constants/theme';
@@ -45,6 +46,7 @@ export default function RootLayout() {
           <View style={styles.outer}>
             <View style={styles.column}>
               <RootNavigator />
+              <ConfirmHost />
             </View>
           </View>
         </PixelBearProvider>
