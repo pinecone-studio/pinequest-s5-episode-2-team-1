@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { useAuth } from '@/auth/AuthContext';
 import { Avatar } from '@/components/Avatar';
 import { CountPill, XpPill } from '@/components/StatPill';
+import { colors } from '@/constants/theme';
 import { S } from '@/i18n/strings';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 
@@ -21,11 +22,12 @@ export function TopBar({ xp = 'total', onMap, path }: { xp?: 'total' | 'level' |
     <View style={styles.row}>
       <Pressable
         accessibilityRole="link"
-        accessibilityLabel={S.profile.open}
+        accessibilityLabel={me.friendRequests > 0 ? `${S.profile.open}, ${S.friends.dot(me.friendRequests)}` : S.profile.open}
         onPress={() => router.push('/profile')}
         style={styles.avatarTap}
       >
         <Avatar size={48} border={onMap ? 2 : undefined} />
+        {me.friendRequests > 0 ? <View style={styles.dot} /> : null}
       </Pressable>
       {xp === 'none' ? null : (
         <XpPill
@@ -44,4 +46,16 @@ export function TopBar({ xp = 'total', onMap, path }: { xp?: 'total' | 'level' |
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   avatarTap: { minWidth: 48, minHeight: 48 },
+  // Хариулаагүй найзын хүсэлт
+  dot: {
+    position: 'absolute',
+    right: -1,
+    top: -1,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 3,
+    borderColor: colors.paper,
+    backgroundColor: colors.dangerText,
+  },
 });
