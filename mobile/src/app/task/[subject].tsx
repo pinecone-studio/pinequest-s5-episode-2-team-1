@@ -87,7 +87,7 @@ export default function TaskScreen() {
     };
     if (!isOnline()) return offline();
     try {
-      begin(await api<TaskDto>('/tasks', { body: foe ? { subject, boss: Number(boss) } : node ? { subject, node: Number(node) } : { subject } }));
+      begin(await api<TaskDto>('/tasks', { body: foe ? { subject, gate: Number(boss) } : node ? { subject, node: Number(node) } : { subject } }));
     } catch (e) {
       // Олон алдсан өмнөх даалгаврын салаа зам дуусаагүй бол түүн рүү.
       if (e instanceof ApiError && e.code === 'RECOVERY_REQUIRED') {

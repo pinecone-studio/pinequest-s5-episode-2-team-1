@@ -8,6 +8,9 @@ export const gateNode = (g: number) => GATES[g];
 /** Бүлгийн сүүлийн зангилаа = жинхэнэ boss (бусад хаалга нь түүний зүүн/баруун гар). */
 const isBossNode = (i: number) => i % UNIT_SIZE === UNIT_SIZE - 1;
 
+/** `unit`-р бүлгийн boss-ын хаалга (хуучин апп boss-ыг бүлгийн дугаараар илгээдэг). */
+export const unitGate = (unit: number) => (GATES as readonly number[]).indexOf(unit * UNIT_SIZE + UNIT_SIZE - 1);
+
 /** Давсан `gates` хаалганаас хэд нь жинхэнэ boss вэ (профайл дээр харуулна). */
 export const bossesIn = (gates: number) => GATES.slice(0, gates).filter(isBossNode).length;
 
