@@ -161,6 +161,21 @@ adminRoutes.post('/debug/users/:id/streak', async (c) => {
   return c.json({ ok: true });
 });
 
+/** e2e-д сурах замыг шууд тавина: тухайн хичээлийн XP ба давсан тулааны хаалганы тоо. */
+adminRoutes.post('/debug/users/:id/path', async (c) => {
+  const body = await readBody(
+    c,
+    z.object({ subject: subjectSchema, xp: z.number().int().min(0), gatesBeaten: z.number().int().min(0).max(GAME.BOSS.GATES.length) }),
+  );
+  await c.env.DB.prepare(
+    `INSERT INTO subject_progress (user_id, subject, xp, bosses_beaten) VALUES (?, ?, ?, ?)
+     ON CONFLICT (user_id, subject) DO UPDATE SET xp = excluded.xp, bosses_beaten = excluded.bosses_beaten`,
+  )
+    .bind(parseId(c.req.param('id')), body.subject, body.xp, body.gatesBeaten)
+    .run();
+  return c.json({ ok: true });
+});
+
 /** Оноо ба point_ledger-ийн нийлбэр зөрсөн хэрэглэгчид (e2e шалгалтад). */
 adminRoutes.get('/audit', async (c) => {
   const { results } = await c.env.DB.prepare(

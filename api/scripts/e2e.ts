@@ -1,6 +1,6 @@
 // Ажиллаж буй dev сервер дээр демо сценарийн гол урсгалыг автоматаар шалгана.
 //   npm run e2e                 # даалгавар, оноо, streak, хамгаалалт, өдрийн хязгаар, тулаан
-//   npm run e2e -- --only tasks # зөвхөн нэг хэсэг (tasks | paths | recovery | shop | profiles | friends | duel | books)
+//   npm run e2e -- --only tasks # зөвхөн нэг хэсэг (tasks | paths | gates | recovery | shop | profiles | friends | duel | books)
 import type { AnswerResponse, CosmeticsResponse, MeResponse, RecoveryAnswerResponse, RecoveryDto, ShopResponse, TaskDto } from '../../shared/types';
 import { runBooksScenario } from './e2e-books';
 import { runDuelScenario } from './e2e-duel';
@@ -108,6 +108,33 @@ async function pathsScenario() {
   await expectError(call('POST', '/tasks', { token: u.token, body: { subject: 'math', boss: 0 } }), 'BOSS_LOCKED', 'Тэр хичээлийн boss-ын зангилаанд хүрээгүй бол boss хаалттай');
 }
 
+/** Хаалганы тулааныг бүгдийг зөв хариулж ялна. */
+async function winGate(token: string, gate: number) {
+  const t = await call<TaskDto>('POST', '/tasks', { token, body: { subject: 'math', gate } });
+  for (const q of t.questions.filter((x) => !x.answered))
+    await call<AnswerResponse>('POST', `/tasks/${t.id}/answer`, { token, body: { questionId: q.id, choice: await correctIndex(q.id) } });
+}
+
+async function gatesScenario() {
+  console.log('\n— 2-р бүлгийн хаалга: зүүн гар → баруун гар → boss');
+  const u = await register('e2e_gates', 7);
+  // 1-р boss-ыг давсан, 2-р бүлгийн төгсгөл хүртэл XP-тэй (40-р шат)
+  await call('POST', `/admin/debug/users/${u.me.id}/path`, { admin: true, body: { subject: 'math', xp: 1950, gatesBeaten: 1 } });
+  const gates = async () => (await me(u.token)).paths.math.bossesBeaten;
+  await expectError(call('POST', '/tasks', { token: u.token, body: { subject: 'math', gate: 2 } }), 'BOSS_LOCKED', 'Зүүн гарыг давахаас өмнө баруун гар хаалттай');
+  await expectError(call('POST', '/tasks', { token: u.token, body: { subject: 'math', gate: 3 } }), 'BOSS_LOCKED', 'Зүүн гарыг давахаас өмнө boss хаалттай');
+  await expectError(call('POST', '/tasks', { token: u.token, body: { subject: 'math', boss: 1 } }), 'BOSS_LOCKED', 'Хуучин апп (boss = бүлэг) ч гарыг алгасахгүй');
+  await winGate(u.token, 1);
+  check((await gates()) === 2, 'Зүүн гарыг ялахад давсан хаалга 2');
+  await expectError(call('POST', '/tasks', { token: u.token, body: { subject: 'math', gate: 3 } }), 'BOSS_LOCKED', 'Баруун гарыг давахаас өмнө boss хаалттай');
+  await winGate(u.token, 2);
+  check((await gates()) === 3, 'Баруун гарыг ялахад давсан хаалга 3');
+  await winGate(u.token, 3);
+  check((await gates()) === 4, 'Хадан аваргыг ялахад давсан хаалга 4');
+  const p = await call<{ profile: { skills: { subject: string; bossesBeaten: number }[] } }>('GET', '/me/profile', { token: u.token });
+  check(p.profile.skills.find((s) => s.subject === 'math')?.bossesBeaten === 2, 'Профайлд зөвхөн жинхэнэ boss тоологдоно (2)');
+}
+
 async function recoveryScenario() {
   console.log('\n— Нөхөх салаа зам');
   const u = await register('e2e_rec', 7);
@@ -211,6 +238,7 @@ async function main() {
   const only = arg('only');
   if (!only || only === 'tasks') await tasksScenario();
   if (!only || only === 'paths') await pathsScenario();
+  if (!only || only === 'gates') await gatesScenario();
   if (!only || only === 'recovery') await recoveryScenario();
   if (!only || only === 'shop') await shopScenario();
   if (!only || only === 'profiles') await runProfilesScenario();
