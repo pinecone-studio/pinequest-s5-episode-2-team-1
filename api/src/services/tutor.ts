@@ -96,10 +96,13 @@ export async function startTutorSession(db: D1Database, userId: number, now = Da
   throw new ApiError(429, 'TUTOR_LIMIT', `Өнөөдрийн ${GAME.TUTOR.DAILY_SESSIONS} ярилцлага дууслаа. Маргааш дахин ярилцъя!`);
 }
 
-/** Ярилцлага дууссан. Gemini-тэй холбогдож чадаагүй бол (counted = false) тоолохгүйн тулд устгана. */
-export async function endTutorSession(db: D1Database, id: number, counted: boolean, now = Date.now()): Promise<void> {
+/**
+ * Ярилцлага дууссан: баавгайн ярьсан хугацааг (bearMs, TTS-ийн зардал) хадгална. Gemini-тэй холбогдож чадаагүй бол
+ * (counted = false) тоолохгүйн тулд устгана.
+ */
+export async function endTutorSession(db: D1Database, id: number, counted: boolean, bearMs = 0, now = Date.now()): Promise<void> {
   await (counted
-    ? db.prepare('UPDATE tutor_sessions SET ended_at = ? WHERE id = ? AND ended_at IS NULL').bind(now, id)
+    ? db.prepare('UPDATE tutor_sessions SET ended_at = ?, bear_ms = ? WHERE id = ? AND ended_at IS NULL').bind(now, bearMs, id)
     : db.prepare('DELETE FROM tutor_sessions WHERE id = ?').bind(id)
   ).run();
 }

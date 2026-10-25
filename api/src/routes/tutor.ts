@@ -5,7 +5,19 @@ import type { AppEnv } from '../env';
 import { fromB64, toB64 } from '../lib/auth';
 import { ApiError, parseId } from '../lib/errors';
 import { socketUserId } from '../lib/session';
-import { isQuotaClose, LIVE_AUDIO_END, LIVE_URL, liveAudio, liveEvents, liveSetup, liveText, tutorKickoff, tutorSystemPrompt } from '../llm/live';
+import {
+  isQuotaClose,
+  LIVE_AUDIO_END,
+  LIVE_URL,
+  liveAudio,
+  liveEvents,
+  liveSetup,
+  liveText,
+  speechBudget,
+  TUTOR_WRAP_UP,
+  tutorKickoff,
+  tutorSystemPrompt,
+} from '../llm/live';
 import { SpeechQueue, speechChunkEnd } from '../llm/speech';
 import { cleanForSpeech, speechMode, ttsAvailable, ttsStream } from '../llm/tts';
 import { endTutorSession, loadTutorContext, startTutorSession } from '../services/tutor';
@@ -38,7 +50,8 @@ tutorRoutes.get('/ws', async (c) => {
       ttsKey: c.env.GEMINI_TTS_API_KEY || key,
       session: {
         start: () => startTutorSession(c.env.DB, userId),
-        end: (id, counted) => c.executionCtx.waitUntil(endTutorSession(c.env.DB, id, counted).catch((e) => console.error('[tutor] session', e))),
+        end: (id, counted, bearMs) =>
+          c.executionCtx.waitUntil(endTutorSession(c.env.DB, id, counted, bearMs).catch((e) => console.error('[tutor] session', e))),
       },
       load: async () => {
         // Upgrade-ийн өмнө HTTP 503 өгвөл клиент зөвхөн "холбоо тасарлаа" л хардаг тул socket-оор мэдэгдэнэ.
@@ -75,7 +88,7 @@ async function relay(
     ttsModel: string | null;
     ttsKey: string;
     /** Хэрэглэгчийн өдрийн / зэрэг ярилцлагын хязгаар (services/tutor). */
-    session: { start: () => Promise<number>; end: (id: number, counted: boolean) => void };
+    session: { start: () => Promise<number>; end: (id: number, counted: boolean, bearMs: number) => void };
     load: () => ReturnType<typeof loadTutorContext>;
   },
 ) {
@@ -102,28 +115,52 @@ async function relay(
     if (clientGone) return;
     sessionId = await opts.session.start();
     if (clientGone) {
-      opts.session.end(sessionId, false);
+      opts.session.end(sessionId, false, 0);
       return;
     }
     upstream = await connectLive(opts.key);
     if (clientGone) {
-      opts.session.end(sessionId, false);
+      opts.session.end(sessionId, false, 0);
       safeClose(upstream);
       return;
     }
   } catch (e) {
-    if (sessionId !== null) opts.session.end(sessionId, false);
+    if (sessionId !== null) opts.session.end(sessionId, false, 0);
     if (!(e instanceof ApiError)) console.error('[tutor]', e);
     send({ type: 'end', reason: 'error', message: e instanceof ApiError ? e.message : 'Баавгайтай холбогдож чадсангүй' });
     safeClose(client, 1011, 'error');
     return;
   }
 
+  /** Баавгайн ярьсан хугацаа (зардал) ба клиент дээр дуу нь тоглож дуусах агшин (ойролцоогоор). */
+  let bearMs = 0;
+  let playedUntil = 0;
+  /** Дуусгах заавар (TUTOR_WRAP_UP) өгсөн; turnStartMs = энэ ээлж эхлэхэд bearMs. */
+  let wrapping = false;
+  let turnStartMs = 0;
   const sendAudio = (pcm: Uint8Array) => {
+    const ms = pcm.byteLength / ((GAME.TUTOR.OUTPUT_RATE * 2) / 1000);
+    bearMs += ms;
+    playedUntil = Math.max(playedUntil, Date.now()) + ms;
     try {
       client.send(pcm);
     } catch {
       // клиент салсан
+    }
+    // Дуусгах ээлж ч хэт удаан бол хүлээхгүй.
+    if (bearMs >= GAME.TUTOR.BEAR_SPEECH_MS + GAME.TUTOR.WRAP_UP_MS) shutdown({ type: 'end', reason: 'time' });
+  };
+  /** Баавгайн ээлж клиентэд дууссан: хугацаа нь дуусах гэж байвал дуусгах ээлж, дууссан бол баяртай гэснийх нь дараа хаана. */
+  const bearTurnEnd = () => {
+    send({ type: 'turn_end' });
+    const next = speechBudget(bearMs, wrapping, bearMs > turnStartMs);
+    turnStartMs = bearMs;
+    if (next === 'wrap') {
+      wrapping = true;
+      sendUp(liveText(TUTOR_WRAP_UP, false));
+    } else if (next === 'end' && endTimer === undefined) {
+      // Клиент баавгайн сүүлийн үгийг тоглож дуусахыг хүлээнэ.
+      endTimer = setTimeout(() => shutdown({ type: 'end', reason: 'time' }), Math.max(0, playedUntil - Date.now()) + 500);
     }
   };
 
@@ -144,7 +181,7 @@ async function relay(
         },
         turnEnd: () => {
           ttsAudioInTurn = false;
-          send({ type: 'turn_end' });
+          bearTurnEnd();
         },
         error: (e) => {
           if (useLiveVoice) return;
@@ -153,7 +190,7 @@ async function relay(
           speech?.clear();
           if (!ttsAudioInTurn) for (const chunk of liveTurnAudio) sendAudio(chunk);
           ttsAudioInTurn = false;
-          if (!liveTurnOpen) send({ type: 'turn_end' });
+          if (!liveTurnOpen) bearTurnEnd();
         },
       })
     : null;
@@ -173,13 +210,15 @@ async function relay(
 
   let ready = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
+  let endTimer: ReturnType<typeof setTimeout> | undefined;
   const shutdown = (msg?: TutorServerMsg) => {
     if (closed) return;
     closed = true;
     // Gemini бэлэн болоогүй (хүүхэд баавгайтай ярьж амжаагүй) ярилцлагыг тоолохгүй.
-    if (sessionId !== null) opts.session.end(sessionId, ready);
+    if (sessionId !== null) opts.session.end(sessionId, ready, Math.round(bearMs));
     speech?.clear();
     if (timer !== undefined) clearTimeout(timer);
+    if (endTimer !== undefined) clearTimeout(endTimer);
     if (msg) send(msg);
     safeClose(client);
     safeClose(upstream);
@@ -267,7 +306,7 @@ async function relay(
           case 'turn_end':
             liveTurnOpen = false;
             if (speech && !useLiveVoice) flushTurn();
-            else send({ type: 'turn_end' });
+            else bearTurnEnd();
             break;
           case 'go_away':
             shutdown({ type: 'end', reason: 'time' });
