@@ -63,6 +63,12 @@ describe('tutorSystemPrompt хичээлийн урсгал', () => {
     expect(text).not.toContain('шинэ, тоо нь өөр бодлого өг');
   });
 
+  it('тооцоог шалгаж, Тайлбар дахь бодолтыг дагана (баавгай тооцоогоо андуурдаг байсан)', () => {
+    const text = tutorSystemPrompt({ grade: 9, questions: [], focused: false });
+    expect(text).toContain('дотроо алхам алхмаар бодож шалгаад хэл');
+    expect(text).toContain('Таны тооцоо Тайлбараас');
+  });
+
   it('хүүхдийг "дүү минь" гэж дуудахгүй, ах гэж өөрийгөө нэрлэхгүй', () => {
     const text = tutorSystemPrompt({ grade: 6, questions: [], focused: false });
     expect(text).toContain('"дүү минь"');
