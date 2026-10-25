@@ -1,3 +1,5 @@
+import { GATES } from '../../../shared/gates';
+
 // Тоглоомын бүх тогтмол энд төвлөрнө. Логик эдгээрээс л уншина.
 
 export const SUBJECTS = ['math', 'mongolian', 'physics'] as const;
@@ -50,11 +52,8 @@ export const GAME = {
   BOSS: {
     UNIT_SIZE: 16,
     COUNT: 3,
-    /**
-     * Дарааллаар давах тулааны зангилаа (хаалга): бүлэг бүрийн сүүлийн зангилаа boss; 2-р бүлэгт boss-ын өмнөх 2 алхамд
-     * зүүн гар (29), баруун гар (30). subject_progress.bosses_beaten = давсан хаалганы тоо. Апп: mobile/src/lib/pixelBear/path.ts GATES.
-     */
-    GATES: [15, 29, 30, 31, 47],
+    /** Дарааллаар давах тулааны зангилаа (shared/gates.ts: апп-ын газрын зурагтай нэг эх) */
+    GATES,
   },
 
   DUEL: {

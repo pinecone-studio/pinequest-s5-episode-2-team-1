@@ -1,6 +1,6 @@
 import type { AnswerResponse, FlagResponse, Me, TaskDto, TaskResult } from '../../../shared/types';
 import { GAME, type Subject, type Tier } from '../config/game';
-import { bossBlock, bossWon } from '../domain/boss';
+import { bossBlock, bossWon, gateNode } from '../domain/boss';
 import { levelFromXp } from '../domain/level';
 import { currentNode } from '../domain/path';
 import { taskReward } from '../domain/rewards';
@@ -69,6 +69,7 @@ export async function startTask(
   ctx: Ctx,
   userId: number,
   subject: Subject,
+  /** тулааны хаалга (GAME.BOSS.GATES-ийн индекс) */
   boss?: number,
   /** Admin-д л: газрын зургийн сонгосон зангилаа (бусдад одоогийн зангилаа). */
   pick?: number,
@@ -90,10 +91,13 @@ export async function startTask(
   }
 
   const existing = await db
-    .prepare(`SELECT id FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress' ORDER BY id DESC LIMIT 1`)
+    .prepare(`SELECT id, boss FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress' ORDER BY id DESC LIMIT 1`)
     .bind(userId, subject, today)
-    .first<{ id: number }>();
-  if (existing) {
+    .first<{ id: number; boss: number | null }>();
+  if (existing && admin && (pick !== undefined || (boss !== undefined && boss !== existing.boss))) {
+    // Admin өөр зангилаа/хаалга сонговол өнөөдрийн дуусаагүй даалгаврыг орхино (оноо, XP зөвхөн дуусгахад олгогддог)
+    await db.prepare(`DELETE FROM tasks WHERE id = ? AND status = 'in_progress'`).bind(existing.id).run();
+  } else if (existing) {
     // Дуусаагүй даалгаврыг хаанаас нээсэн нь (газрын зургийн boss эсвэл ердийн) түүний төрлийг шийднэ.
     await db.prepare('UPDATE tasks SET boss = ? WHERE id = ?').bind(boss ?? null, existing.id).run();
     return loadTask(db, userId, existing.id);
@@ -102,7 +106,8 @@ export async function startTask(
   // Асуулт зөвхөн хэрэглэгчийн ангийн номынх (эсвэл номгүй), өөр ангийн номоос хэзээ ч биш. Апп-ын харуулж буй
   // зангилааны хичээлийн хуудсаас (харсан ч) түрүүлж; хараагүй нь дутвал тэр хуудсаар үүсгэнэ. Хичээлд асуулт огт
   // хүрэлцэхгүй үед л хүлээж (удвал хүлээхгүй), дутууг ангийн бусад асуултаар. Ном, хичээл байхгүй (boss) бол ангийн бүх асуултаас.
-  const node = admin && pick !== undefined ? pick : currentNode(path.level, path.bossesBeaten);
+  // хаалганы тулаан тэр зангилааны хичээлээр (энгийн хэрэглэгчид bossBlock-ийн дараа одоогийн зангилаа = хаалга)
+  const node = boss !== undefined ? gateNode(boss) : admin && pick !== undefined ? pick : currentNode(path.level, path.bossesBeaten);
   const book = await bookLessons(env, subject, user.grade).catch(() => null);
   const lesson = book && lessonPages(book, node);
   const lessonRefill = (range: PageRange) =>

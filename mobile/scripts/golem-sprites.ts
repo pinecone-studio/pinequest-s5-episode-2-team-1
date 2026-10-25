@@ -13,7 +13,7 @@
  */
 import { existsSync, writeFileSync } from 'node:fs';
 import { blank, type Img, readPng, writePng } from './png.ts';
-import { at, bbox, crop, type Frame, groundShadow, has, largest, put, SPRITES, tagOf, toSheet, trim, white } from './sprite-kit.ts';
+import { at, bbox, crop, flipX, type Frame, groundShadow, has, largest, put, SPRITES, tagOf, toSheet, trim, white } from './sprite-kit.ts';
 
 const REF = new URL('../../docs/design/pixel-bear/reference/', import.meta.url);
 const PIXELLAB = new URL('../../docs/design/pixel-bear/pixellab/', import.meta.url);
@@ -100,17 +100,12 @@ function base(name: Name): Img {
 const NAMES = Object.keys(GOLEMS) as Name[];
 /** эх зураг нь зүүн тийш (баавгайгаас холдож) харсан дүр */
 const MIRROR: Name[] = ['right'];
-const mirror = (img: Img): Img => {
-  const o = blank(img.w, img.h);
-  for (let y = 0; y < img.h; y++) for (let x = 0; x < img.w; x++) o.d.set(img.d.subarray(at(img, x, y), at(img, x, y) + 4), at(o, img.w - 1 - x, y));
-  return o;
-};
 for (const n of NAMES) {
   writePng(new URL(`golem-${n}-base.png`, PIXELLAB), base(n));
   const corrected = new URL(`golem-${n}-corrected.png`, PIXELLAB);
   if (existsSync(corrected)) {
     const img = largest(readPng(corrected));
-    writePng(new URL(`golem-${n}.png`, PIXELLAB), MIRROR.includes(n) ? mirror(img) : img);
+    writePng(new URL(`golem-${n}.png`, PIXELLAB), MIRROR.includes(n) ? flipX(img) : img);
   }
 }
 console.log(`golem bases: ${NAMES.join(', ')}`);

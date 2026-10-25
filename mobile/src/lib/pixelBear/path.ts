@@ -1,3 +1,4 @@
+import { GATES } from '@shared/gates';
 import type { BookLesson, Subject, SubjectPath } from '@shared/types';
 import { S } from '@/i18n/strings';
 import type { SpriteKey } from '@/sprites';
@@ -61,14 +62,14 @@ export interface Boss {
   weapon?: { sheet: SpriteKey; left: number; top: number };
 }
 /** PixelLab-аар хөдөлгөсөн 2-р бүлгийн дайсан: sheet газрын зураг дээр 1×, тулаанд 2× (boss 2.5×) */
-const golem = (anim: keyof typeof golems, map: SpriteKey, battle: SpriteKey) => ({
+const golem = (anim: keyof typeof golems, map: SpriteKey, battle: SpriteKey, lair: SpriteKey) => ({
   anim,
   map,
   battle,
   frames: golems[anim].frames.length,
   cols: golems[anim].columns,
   floats: false,
-  lair: 'lair_1_430x464' as const,
+  lair,
   impact: { id: 'fx_golem_impact_192x128' as const, frames: 4, cols: 3 },
 });
 /** Тулааны хаалганы дараалал (GATES-тэй ижил): 1-р boss, 2-р бүлгийн зүүн гар, баруун гар, boss, 3-р boss */
@@ -76,11 +77,11 @@ export const BOSSES: Boss[] = [
   { name: 'Хулуун шидтэн', map: 'boss_pumpkin_sheet_376x71', battle: 'boss_pumpkin_sheet_992x188', frames: 8, floats: true, lair: 'lair_0_430x464',
     // хадуурын барьцаа (20,32) нь нөмрөгийн урд талын гарт (24,30) таарна: 4× → (96−80, 120−128)
     weapon: { sheet: 'fx_scythe_576x240', left: 16, top: -8 } },
-  { name: 'Сарны хамгаалагч', role: 'left', ...golem('left', 'golem_left_sheet_456x234', 'golem_left_sheet_912x468'),
+  { name: 'Сарны хамгаалагч', role: 'left', ...golem('left', 'golem_left_sheet_456x234', 'golem_left_sheet_912x468', 'lair_1_left_430x464'),
     shot: { id: 'fx_moon_crescent_144x96', frames: 6, cols: 3 } },
-  { name: 'Болор шидтэн', role: 'right', ...golem('right', 'golem_right_sheet_492x252', 'golem_right_sheet_984x504'),
+  { name: 'Болор шидтэн', role: 'right', ...golem('right', 'golem_right_sheet_492x252', 'golem_right_sheet_984x504', 'lair_1_right_430x464'),
     shot: { id: 'fx_crystal_bolt_144x144', frames: 8, cols: 3 } },
-  { name: 'Хадан аварга', ...golem('boss', 'golem_boss_sheet_516x258', 'golem_boss_sheet_1290x645'),
+  { name: 'Хадан аварга', ...golem('boss', 'golem_boss_sheet_516x258', 'golem_boss_sheet_1290x645', 'lair_1_430x464'),
     shot: { id: 'fx_golem_orb_144x144', frames: 8, cols: 3 } },
   { name: 'Мөсөн мангас', map: 'map_boss_2_75x70', battle: 'map_boss_2_120x112', frames: 1, white: 'map_boss_2_white_120x112', floats: false, lair: 'lair_2_430x464' },
 ];
@@ -99,13 +100,10 @@ export const unitOf = (i: number) => Math.floor(i / UNIT_SIZE);
 /** Бүлгийн сүүлийн зангилаа: жинхэнэ boss (1.5× арал) */
 export const isBossNode = (i: number) => i % UNIT_SIZE === UNIT_SIZE - 1;
 
-/**
- * Дарааллаар давах тулааны зангилаа (хаалга), BOSSES-тай ижил дараалал: бүлэг бүрийн boss + 2-р бүлэгт boss-ын
- * өмнөх 2 алхамд зүүн гар (29), баруун гар (30). Сервер: api/src/config/game.ts GAME.BOSS.GATES.
- */
-export const GATES = [15, 29, 30, 31, 47];
+/** Дарааллаар давах тулааны зангилаа (shared/gates.ts, сервертэй нэг эх); BOSSES ижил дараалалтай */
+export { GATES };
 /** Зангилааны хаалганы дугаар (BOSSES-ийн индекс), хаалга биш бол −1 */
-export const gateOf = (i: number) => GATES.indexOf(i);
+export const gateOf = (i: number) => (GATES as readonly number[]).indexOf(i);
 
 /**
  * Хичээлийн сурах зам дээрх одоогийн зангилаа = тэр хичээлийн шат − 1, гэхдээ давж амжаагүй хаалганы (boss, түүний
