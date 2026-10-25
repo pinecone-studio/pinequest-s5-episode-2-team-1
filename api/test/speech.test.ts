@@ -102,18 +102,11 @@ describe('speechChunkEnd', () => {
     expect(speechChunkEnd(text, false)).toBe('Сайн уу дүү минь!'.length);
   });
 
-  it('эхний хэсгийг хангалттай урт бол таслалаар тасална', () => {
-    const text = 'За, өнөөдөр бид тэгшитгэлийн тухай, хамтдаа алхам алхмаар ярилцаж, жишээ бодно уу';
+  it('өгүүлбэрийн дундуур (таслал, үг) хэзээ ч таслахгүй', () => {
+    const text = 'За, өнөөдөр бид тэгшитгэлийн тухай, хамтдаа алхам алхмаар ярилцаж, жишээ бодно уу гэж бодож байна';
+    expect(speechChunkEnd(text, true)).toBe(-1);
     expect(speechChunkEnd(text, false)).toBe(-1);
-    // эхний хоёр таслал хэт эрт тул алгасаад дараагийн таслал
-    expect(speechChunkEnd(text, true)).toBe(text.indexOf('ярилцаж,') + 'ярилцаж,'.length);
-  });
-
-  it('эхний хэсгийг цэг таслал ирээгүй ч 12 бүтэн үг болмогц тасална', () => {
-    const words = 'нэг хоёр гурав дөрөв тав зургаа долоо найм ес арав арван нэг';
-    expect(speechChunkEnd(words, true)).toBe(-1); // сүүлийн "нэг" бүтэн эсэх нь тодорхойгүй
-    expect(speechChunkEnd(`${words} хоёр`, true)).toBe(words.length);
-    expect(speechChunkEnd(`${words} хоёр`, false)).toBe(-1);
+    expect(speechChunkEnd(`${text}. Тэгэхээр`, true)).toBe(text.length + 1);
   });
 });
 
