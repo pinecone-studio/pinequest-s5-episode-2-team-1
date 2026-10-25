@@ -1,5 +1,6 @@
 // Gemini TTS (streamGenerateContent, SSE): баавгайн хэлэх текстийг илүү байгалийн монгол аялгаар дуу болгоно.
 // Live загварууд зөвхөн дуу гаргадаг тул routes/tutor.ts нь Live-ийн transcript-ийг энд дамжуулна.
+import { fixTranscript } from '../../../shared/transcript';
 import { fromB64 } from '../lib/auth';
 import { GAME } from '../config/game';
 import { LlmError } from './types';
@@ -24,9 +25,9 @@ export function speechMode(value: string | undefined): 'tts' | 'live' {
   return value === 'tts' || value === 'live' ? value : GAME.TUTOR.SPEECH;
 }
 
-/** Markdown тэмдэгт, илүү зай зэргийг хасна (TTS тэдгээрийг чангаар уншиж болзошгүй). */
+/** Markdown тэмдэгт, илүү зай зэргийг хасаж, transcript-ийн мэдэгдэж буй алдааг засна (TTS чангаар уншина). */
 export function cleanForSpeech(text: string): string {
-  return text.replace(/[*#_`]/g, '').replace(/\s+/g, ' ').trim();
+  return fixTranscript(text.replace(/[*#_`]/g, '').replace(/\s+/g, ' ').trim());
 }
 
 /** SSE-ийн нэг хэсгээс бүрэн `data:` мөрүүдийг салгана; үлдсэнийг дараагийн хэсэгт залгана. */

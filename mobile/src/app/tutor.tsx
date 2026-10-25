@@ -1,3 +1,4 @@
+import { fixTranscript } from '@shared/transcript';
 import { useLocalSearchParams } from 'expo-router';
 import { type ComponentRef, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
@@ -56,7 +57,7 @@ export default function TutorScreen() {
   };
 
   const chalk =
-    talk.phase === 'ended' ? (talk.notice ?? '') : talk.phase === 'tap' ? S.tutor.tapHint : talk.phase === 'connecting' ? '' : talk.bearText || '…';
+    talk.phase === 'ended' ? (talk.notice ?? '') : talk.phase === 'tap' ? S.tutor.tapHint : talk.phase === 'connecting' ? '' : fixTranscript(talk.bearText) || '…';
   const listening = talk.phase === 'listening';
   const topic = talk.topic ? talk.topic.prompt : questionId ? null : S.tutor.recent;
 

@@ -122,6 +122,14 @@ describe('tts туслахууд', () => {
     expect(cleanForSpeech('  **Тэгшитгэл**  гэдэг\n# нь ')).toBe('Тэгшитгэл гэдэг нь');
   });
 
+  it('cleanForSpeech transcript-ийн "Төсөөлөө дөө", "үз дөө" алдааг засна, бусад үгэнд хүрэхгүй', () => {
+    expect(cleanForSpeech('Төсөөлөө дөө, гадаа хүйтэн.')).toBe('Төсөөлөөд үз дээ, гадаа хүйтэн.');
+    expect(cleanForSpeech('Тэгвэл төсөөлөө дөө.')).toBe('Тэгвэл төсөөлөөд үз дээ.');
+    expect(cleanForSpeech('Төсөөлөөд үз дөө, гадаа')).toBe('Төсөөлөөд үз дээ, гадаа');
+    expect(cleanForSpeech('Төсөөлөөд үз дээ, бүүз дөө')).toBe('Төсөөлөөд үз дээ, бүүз дөө');
+    expect(cleanForSpeech('төсөөл дөө')).toBe('төсөөл дөө');
+  });
+
   it('splitSse дутуу мөрийг дараагийн хэсэгт үлдээнэ', () => {
     const a = splitSse('data: {"a":1}\r\n\r\ndata: {"b"');
     expect(a.events).toEqual(['{"a":1}']);
