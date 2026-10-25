@@ -71,6 +71,8 @@ export const sprites = {
   fx_magic_22x22: { source: require('../../assets/sprites/fx_magic_22x22.png'), width: 22, height: 22 },
   lair_0_430x464: { source: require('../../assets/sprites/lair_0_430x464.png'), width: 430, height: 464 },
   lair_1_430x464: { source: require('../../assets/sprites/lair_1_430x464.png'), width: 430, height: 464 },
+  lair_1_left_430x464: { source: require('../../assets/sprites/lair_1_left_430x464.png'), width: 430, height: 464 },
+  lair_1_right_430x464: { source: require('../../assets/sprites/lair_1_right_430x464.png'), width: 430, height: 464 },
   lair_2_430x464: { source: require('../../assets/sprites/lair_2_430x464.png'), width: 430, height: 464 },
   bear_battle_1050x1188: { source: require('../../assets/sprites/bear_battle_1050x1188.png'), width: 1050, height: 1188 },
   fx_honey_shatter_414x456: { source: require('../../assets/sprites/fx_honey_shatter_414x456.png'), width: 414, height: 456 },

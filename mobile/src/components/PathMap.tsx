@@ -1,7 +1,8 @@
 import type { BookLesson, Subject } from '@shared/types';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
+import Svg, { Path } from 'react-native-svg';
 import { frameSize, Motion, SheetFrame, SheetLoop, Sprite } from '@/components/pixel';
 import { colors, fonts, radius } from '@/constants/theme';
 import { S } from '@/i18n/strings';
@@ -44,20 +45,15 @@ const unitTop = (k: number) => NODES[k * UNIT_SIZE].y - NODES[0].y;
 /** Баавгайн зогсох цэг: энгийн зангилаан дээр, boss-ынх бол арлын хажууд. */
 const standAt = (i: number) => (isBossNode(i) ? { x: NODES[i].x + CHALLENGER_DX, y: NODES[i].y + CHALLENGER_DY } : NODES[i]);
 
-/** Зангилаа хоорондын нарийн цэгэн зам (дууссан хэсэг нь ногоон). Зангилааны чулуу, арлын доор нуугдах цэгийг зурахгүй. */
-const DOTS = TRAIL.slice(1).flatMap((b, k) => {
+/** Зангилаа хоорондын нарийн цэгэн зам (дууссан хэсэг нь ногоон): хэсэг бүр SVG шугам, зангилааны чулуу, арлын доор нуугдах хэсгийг тайрна. */
+const SEGMENTS = TRAIL.slice(1).flatMap((b, k) => {
   const a = TRAIL[k];
   const rA = a.i === undefined ? 0 : isBossNode(a.i) ? 40 : 26;
   const rB = b.i === undefined ? 0 : isBossNode(b.i) ? 40 : 26;
   const len = Math.hypot(b.x - a.x, b.y - a.y);
-  const out: { x: number; y: number; seg: number }[] = [];
-  for (let d = rA + DOT_GAP / 2; d < len - rB; d += DOT_GAP)
-    out.push({
-      x: a.x + ((b.x - a.x) * d) / len,
-      y: a.y + 4 + ((b.y - a.y) * d) / len,
-      seg: k + 1,
-    });
-  return out;
+  if (len <= rA + rB) return [];
+  const at = (d: number) => `${(a.x + ((b.x - a.x) * d) / len).toFixed(1)},${(a.y + 4 + ((b.y - a.y) * d) / len).toFixed(1)}`;
+  return [{ seg: k + 1, d: `M${at(rA + DOT_GAP / 2 - DOT / 2)}L${at(len - rB)}` }];
 });
 
 /**
@@ -83,6 +79,13 @@ export function PathMap({
   onNodePress: (i: number, status: NodeStatus) => void;
 }) {
   const curTrail = trailIndex(current);
+  const trail = useMemo(
+    () => ({
+      done: SEGMENTS.filter((s) => s.seg <= curTrail).map((s) => s.d).join('') || 'M0,0',
+      todo: SEGMENTS.filter((s) => s.seg > curTrail).map((s) => s.d).join('') || 'M0,0',
+    }),
+    [curTrail],
+  );
   // 390 dp-ээс өргөн дэлгэцэд хажуугийн зай: ижил дэвсгэрийг хэвтээгээр сунгаж ард нь тавина (хурц газрын зураг голд)
   const width = Math.max(MAP_W, useWindowDimensions().width);
 
@@ -111,11 +114,10 @@ export function PathMap({
           </View>
         ))}
 
-        <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          {DOTS.map((d, n) => (
-            <View key={n} style={[styles.dot, { left: d.x - DOT / 2, top: d.y - DOT / 2 }, d.seg <= curTrail ? styles.dotDone : null]} />
-          ))}
-        </View>
+        <Svg width={MAP_W} height={MAP_H} style={StyleSheet.absoluteFill} pointerEvents="none">
+          <Path d={trail.todo} stroke="rgba(255,255,255,0.55)" strokeWidth={DOT} strokeDasharray={`${DOT} ${DOT_GAP - DOT}`} fill="none" />
+          <Path d={trail.done} stroke="#9CF06A" strokeWidth={DOT} strokeDasharray={`${DOT} ${DOT_GAP - DOT}`} fill="none" />
+        </Svg>
 
         {/* Алхмууд: дээд талынх нь ард (эхэлж зурна) */}
         {NODES.map((n) => {
@@ -364,13 +366,6 @@ const styles = StyleSheet.create({
   abs: { position: 'absolute' },
   hit: { width: HIT, height: HIT, alignItems: 'center' },
   islandHit: { width: 72, height: 56 },
-  dot: {
-    position: 'absolute',
-    width: DOT,
-    height: DOT,
-    backgroundColor: 'rgba(255,255,255,0.55)',
-  },
-  dotDone: { backgroundColor: '#9CF06A' },
   // баавгай 26×46; дарах талбай 56×56 (баавгайн төвд)
   bear: { left: 0, top: 0, width: 26, height: 46 },
   bearHit: {

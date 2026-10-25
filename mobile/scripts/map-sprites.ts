@@ -7,7 +7,7 @@
  *   map_world_1             — reference/river_map_bg.png (2-р бүлэг, Хадан аваргын бүс); дээд зах нь map_world_2 руу ууссан
  *   map_world_0             — reference/pumpkin_map_bg.png (1-р бүлэг, Хулуун шидтэний бүс); дээд зах нь map_world_1 руу dither-ээр ууссан
  *   lair_0                  — reference/pumpkin_battle_bg.png (тулааны дэвсгэр)
- *   lair_1                  — pixellab/golem-lair.png (2-р бүлгийн тулааны дэвсгэр, PixelLab)
+ *   lair_1_left/right, lair_1 — reference/golem_{left,right,boss}_battle_bg.png (2-р бүлгийн гарууд ба boss-ын тулааны дэвсгэр)
  *
  * Ажиллуулах:  npm run sprites:map && npm run sprites   (mobile/) — mapgen_world.py-г дахин ажиллуулсны дараа ч (map_world_0/1, lair_0/1-г дарж бичдэг)
  */
@@ -147,14 +147,10 @@ save('map_world_0', blendTop(depixelize(readPng(new URL('pumpkin_map_bg.png', RE
 // ---------- Тулааны дэвсгэр ----------
 // 8 мөр: зургийн дээд талын дугуй булангийн хар зурвас
 save('lair_0', depixelize(readPng(new URL('pumpkin_battle_bg.png', REF)), 215, 232, 8));
-// 2-р бүлэг (Хадан аварга, түүний гарууд): PixelLab create_image_pixflux (pixellab/golem-lair.png, голын бүсийн өнгөөр).
-// Чулуун шал тулаанчдын хөлд (гэрийн 181-р мөр, BossArena GROUND) таарахаар 14 мөр дээш; доод зах нь шалны толин тусгал
-const golemLair = readPng(new URL('../../docs/design/pixel-bear/pixellab/golem-lair.png', import.meta.url));
-const lair1 = blank(215, 232);
-for (let y = 0; y < lair1.h; y++) {
-  const sy = y + 14 < golemLair.h ? y + 14 : 2 * golemLair.h - 1 - (y + 14);
-  lair1.d.set(golemLair.d.subarray(at(golemLair, 0, sy), at(golemLair, 215, sy)), at(lair1, 0, y));
-}
-save('lair_1', lair1);
+// 2-р бүлэг: зүүн гар (сарны цайз), баруун гар (болор танхим), boss (сарны хүрхрээт туурь) тус бүр өөрийн дэвсгэртэй.
+// Шал нь зургийн доод 40%-д тул тулаанчдын хөл (гэрийн 181-р мөр, BossArena GROUND) шал дээр буна
+save('lair_1_left', depixelize(readPng(new URL('golem_left_battle_bg.png', REF)), 215, 232));
+save('lair_1_right', depixelize(readPng(new URL('golem_right_battle_bg.png', REF)), 215, 232));
+save('lair_1', depixelize(readPng(new URL('golem_boss_battle_bg.png', REF)), 215, 232));
 
-console.log('map sprites: tile_step_{lock,cur}, map_bear_small(_blink), map_world_0/1, lair_0/1');
+console.log('map sprites: tile_step_{lock,cur}, map_bear_small(_blink), map_world_0/1, lair_0, lair_1(_left/_right)');

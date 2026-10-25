@@ -155,12 +155,20 @@ export function scale(a: Img, k: number): Img {
   return o;
 }
 
+/** хэвтээ толин тусгал */
+export function flipX(img: Img): Img {
+  const o = blank(img.w, img.h);
+  for (let y = 0; y < img.h; y++) for (let x = 0; x < img.w; x++) o.d.set(img.d.subarray(at(img, x, y), at(img, x, y) + 4), at(o, img.w - 1 - x, y));
+  return o;
+}
+
 /** `fr`-ийг дэвсгэр дээр alpha-тай давхарлана (`mirror` = толин тусгал). */
-export function compose(bg: Img, fr: Img, x0: number, y0: number, mirror = false): Img {
+export function compose(bg: Img, front: Img, x0: number, y0: number, mirror = false): Img {
   const o = clone(bg);
+  const fr = mirror ? flipX(front) : front;
   for (let y = 0; y < fr.h; y++)
     for (let x = 0; x < fr.w; x++) {
-      const i = at(fr, mirror ? fr.w - 1 - x : x, y);
+      const i = at(fr, x, y);
       const a = fr.d[i + 3] / 255;
       if (!a || !has(o, x0 + x, y0 + y)) continue;
       const j = at(o, x0 + x, y0 + y);

@@ -46,7 +46,7 @@ for (const n of ['tile_stone_done', 'tile_pedestal_end', 'tile_pedestal_sapling'
 for (const n of ['tile_step_lock', 'tile_step_cur']) M[n] = [2];
 for (const n of ['map_bear_small', 'map_bear_small_blink']) M[n] = [1];
 // адал явдлын газрын зураг (docs/design/pixel-bear/tools/mapgen_world.py), тулааны баавгай (scripts/bear-sprites.ts)
-for (const n of ['map_world_0', 'map_world_1', 'map_world_2', 'map_flag', 'fx_magic', 'lair_0', 'lair_1', 'lair_2', 'bear_battle', 'fx_honey_shatter', 'fx_spark', 'fx_spark_magic', 'fx_slash']) M[n] = [2];
+for (const n of ['map_world_0', 'map_world_1', 'map_world_2', 'map_flag', 'fx_magic', 'lair_0', 'lair_1', 'lair_1_left', 'lair_1_right', 'lair_2', 'bear_battle', 'fx_honey_shatter', 'fx_spark', 'fx_spark_magic', 'fx_slash']) M[n] = [2];
 // boss: тулаанд 4× (boss_pumpkin.py, mapgen_world.py); газрын зураг дээр ~70 dp өндөр (хулуу 1.5×, бусад 2.5×)
 M.boss_pumpkin_sheet = [[376, 71], 4];
 M.map_boss_2 = [[75, 70], 4];
@@ -57,7 +57,7 @@ for (const n of ['hud_cap', 'hud_skull', 'fx_dizzy_sheet', 'fx_soul_sheet']) M[n
 // 2-р бүлгийн дайснууд (scripts/golem-sprites.ts, PixelLab): газрын зураг дээр 1×, тулаанд гарууд 2×, boss 2.5× (frame тэгш
 // хэмжээтэй тул бүхэл dp); довтолгооны эффект 1×
 for (const n of ['golem_left_sheet', 'golem_right_sheet']) M[n] = [1, 2];
-M.golem_boss_sheet = [1, [1290, 645]];
+M.golem_boss_sheet = [1, 2.5];
 for (const n of ['fx_crystal_bolt', 'fx_golem_orb', 'fx_moon_crescent', 'fx_golem_impact']) M[n] = [1];
 // хичээлийн дэлгэц (scripts/lesson-sprites.ts): дэвсгэр ба баавгай 3×
 for (const n of ['bear_lesson', 'lesson_bg', 'lesson_shadow']) M[n] = [3];
@@ -90,6 +90,8 @@ for (const [name, variants] of Object.entries(M)) {
   const img = readPng(new URL(`${name}.png`, SRC));
   for (const v of variants) {
     const [w, h] = typeof v === 'number' ? [img.w * v, img.h * v] : v;
+    // бутархай томруулалт (2.5×) нь бүхэл хэмжээ өгөх ёстой: үгүй бол frame-ийн шилжилт хагас pixel-ээр гулсана
+    if (!Number.isInteger(w) || !Number.isInteger(h)) throw new Error(`${name}: ${img.w}×${img.h} ×${v} бүхэл биш`);
     const key = `${name}_${w}x${h}`;
     for (const [d, suffix] of [[1, ''], [2, '@2x'], [3, '@3x']] as const) {
       const file = new URL(`${key}${suffix}.png`, OUT);
