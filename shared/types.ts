@@ -119,11 +119,8 @@ export interface BearLook {
 export interface SubjectPath {
   /** Энэ хичээлийн даалгавраас авсан XP (нийт XP-ийн хэсэг). */
   xp: number;
-  /** floor(xp / PATH_XP_PER_NODE) + 1: газрын зураг дээрх зангилаа = level − 1 (5 зөв хариулт тутамд нэг). */
+  /** Давсан зангилаа + 1: газрын зураг дээрх зангилаа = level − 1 (даалгаварт 4/5+ зөв бол нэг ахина). */
   level: number;
-  /** Дараагийн зангилаа хүртэлх явц: nodeXp / nodeXpNeeded. */
-  nodeXp: number;
-  nodeXpNeeded: number;
   /**
    * Дарааллаар давсан тулааны хаалганы (boss, 2-р бүлгийн зүүн/баруун гар) тоо: дараагийнхаа хаалгыг давах хүртэл
    * баавгай түүний дэргэд зогсоно.
@@ -276,6 +273,8 @@ export interface TaskResult {
   shieldUsed: boolean;
   levelBefore: number;
   levelAfter: number;
+  /** Энэ даалгавраар сурах замын дараагийн зангилаа нээгдсэн (4/5+ зөв эсвэл boss ялсан). */
+  nodeUp: boolean;
   me: Me;
 }
 

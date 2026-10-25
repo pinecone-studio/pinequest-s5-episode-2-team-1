@@ -117,7 +117,7 @@ export default function PathScreen() {
       </ScrollView>
 
       <View style={[styles.header, { top: insets.top + 6 }]} pointerEvents="box-none">
-        <TopBar xp="level" onMap path={path} />
+        <TopBar onMap />
         <View style={styles.row2} pointerEvents="box-none">
           <Pressable
             accessibilityRole="button"
