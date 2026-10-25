@@ -1,4 +1,4 @@
-import { GATES } from '@shared/gates';
+import { currentNode as nodeAt, gateNodes, gateOf, isBossNode, pathLessons, unitOf, UNITS } from '@shared/path';
 import type { BookLesson, Subject, SubjectPath } from '@shared/types';
 import { S } from '@/i18n/strings';
 import type { SpriteKey } from '@/sprites';
@@ -7,8 +7,8 @@ import world from './world.json';
 
 // Адал явдлын газрын зураг: DESIGN.md §8-04-ийн бүлгийг доороос дээш 3 бүлэг (ой → тал → мөсөн уул) болгосон.
 // Зангилааны байрлал ба дэвсгэр зураг хоёулаа docs/design/pixel-bear/tools/mapgen_world.py-аас үүснэ.
-// Түвшин (Шат) бүр нэг зангилаа, бүлэг бүрийн төгсгөлд boss. Зангилааны сэдэв нь сурах бичгийн гарчгаас
-// (GET /me/lessons/:subject); ном байхгүй бол доорх TITLES.
+// Зангилаа бүр сурах бичгийн нэг хичээл (GET /me/lessons/:subject; ном байхгүй бол доорх TITLES), бүлэг бүрийн төгсгөлд
+// boss: замын урт хичээлийн тооноос (shared/path.ts, сервертэй нэг эх). `n` = замын хичээлийн тоо (pathLessons).
 
 export type NodeKind = 'stone' | 'sapling' | 'gift' | 'myst' | 'boss';
 export type NodeStatus = 'done' | 'current' | 'lock';
@@ -30,10 +30,7 @@ export interface PathNode {
 
 export const MAP_W = world.width;
 export const MAP_H = world.height;
-export const UNIT_SIZE = world.unitSize;
-export const UNIT_COUNT = world.units;
-/** Баавгайн алхах зам: зангилаа + гүүр чулуу, доороос дээш */
-export const TRAIL: TrailPoint[] = world.trail;
+export const UNIT_COUNT = UNITS;
 /** Дэвсгэрийн хэсгүүд, дээрээс доош */
 export const MAP_PIECES = ['map_world_2_390x448', 'map_world_1_390x760', 'map_world_0_390x760'] as const satisfies readonly SpriteKey[];
 
@@ -90,40 +87,95 @@ export const BOSS_FRAME = { cast: 3, hurt: 4, flash: 5, dash: 6, strike: 7 } as 
 /** Хөвөх давталт: 0 → 1 → 2 → 1 (pixel алхмаар дээш доош) */
 export const HOVER = [0, 1, 2, 1];
 
-const KIND_AT: Partial<Record<number, NodeKind>> = { 3: 'sapling', 9: 'gift', 12: 'myst', [UNIT_SIZE - 1]: 'boss' };
-export const NODES: PathNode[] = TRAIL.flatMap((t) =>
-  t.i === undefined ? [] : [{ i: t.i, x: t.x, y: t.y, kind: KIND_AT[t.i % UNIT_SIZE] ?? 'stone' }],
-);
-export const NODE_COUNT = NODES.length;
+export { gateOf, isBossNode, pathLessons, unitOf };
 
-export const unitOf = (i: number) => Math.floor(i / UNIT_SIZE);
-/** Бүлгийн сүүлийн зангилаа: жинхэнэ boss (1.5× арал) */
-export const isBossNode = (i: number) => i % UNIT_SIZE === UNIT_SIZE - 1;
+export interface PathUnit {
+  /** бүлгийн эхний зангилаа, нахиа, бэлэг, хэцүү сорил, boss */
+  start: number;
+  sapling: number;
+  gift: number;
+  myst: number;
+  boss: number;
+  /** 0-р бүлгийн хуучин 390×760 газрын зурагтай харьцуулсан бүлгийн шилжилт: декорын байрлал бүлэг бүрт адил */
+  top: number;
+}
 
-/** Дарааллаар давах тулааны зангилаа (shared/gates.ts, сервертэй нэг эх); BOSSES ижил дараалалтай */
-export { GATES };
-/** Зангилааны хаалганы дугаар (BOSSES-ийн индекс), хаалга биш бол −1 */
-export const gateOf = (i: number) => (GATES as readonly number[]).indexOf(i);
+export interface PathLayout {
+  /** замын хичээлийн тоо */
+  n: number;
+  nodes: PathNode[];
+  /** Баавгайн алхах зам: зангилаа + гүүр чулуу, доороос дээш */
+  trail: TrailPoint[];
+  units: PathUnit[];
+  /** тулааны хаалганы зангилаа (BOSSES ижил дараалалтай) */
+  gates: number[];
+}
+
+/** world.json-ийн бүлэг бүрийн 16 цэгтэй зам (mapgen_world.py мод тарихгүй орхидог), гүүр чулуутай. */
+const BASE: TrailPoint[] = world.trail;
+const BASE_UNIT = world.unitSize;
+
+/** Шугаман замын `t` (0–1) хэсэгт байх цэг. */
+function along(pts: readonly TrailPoint[], t: number): { x: number; y: number } {
+  const seg = pts.slice(1).map((p, k) => Math.hypot(p.x - pts[k].x, p.y - pts[k].y));
+  let left = t * seg.reduce((a, b) => a + b, 0);
+  for (let k = 0; k < seg.length; k++) {
+    if (left <= seg[k] || k === seg.length - 1) {
+      const f = seg[k] ? Math.min(1, left / seg[k]) : 0;
+      return { x: Math.round(pts[k].x + (pts[k + 1].x - pts[k].x) * f), y: Math.round(pts[k].y + (pts[k + 1].y - pts[k].y) * f) };
+    }
+    left -= seg[k];
+  }
+  return pts[0];
+}
+
+/**
+ * `n` хичээлтэй замын газрын зураг: бүлэг бүрийн хичээлүүдийг world.json-ийн тэр бүлгийн зам дагуу жигд зайтай
+ * байрлуулна (хичээл олон бол ойр, цөөн бол алс), boss нь бүлгийн замын төгсгөлд. Нахиа, бэлэг, хэцүү сорил нь
+ * бүлгийн ижил хэсэгт (16 зангилаатай анхны зургийн 3, 9, 12).
+ */
+export function pathLayout(n: number): PathLayout {
+  const gates = gateNodes(n);
+  const nodes: PathNode[] = [];
+  const trail: TrailPoint[] = [];
+  const units: PathUnit[] = [];
+  for (let u = 0; u < UNIT_COUNT; u++) {
+    const base = BASE.filter((t) => t.i !== undefined && Math.floor(t.i / BASE_UNIT) === u);
+    const boss = gates[[0, 3, 4][u]];
+    const start = u === 0 ? 0 : units[u - 1].boss + 1;
+    const m = boss - start;
+    const at = (f: number) => start + Math.min(m - 1, Math.round(f * m));
+    const unit = { start, sapling: at(3 / 15), gift: at(9 / 15), myst: at(12 / 15), boss, top: base[0].y - BASE[0].y };
+    units.push(unit);
+    const kind = (i: number): NodeKind =>
+      i === boss ? 'boss' : i === unit.myst ? 'myst' : i === unit.gift ? 'gift' : i === unit.sapling ? 'sapling' : 'stone';
+    // бүлэг хоорондын гүүр чулуу
+    if (u > 0) trail.push(...BASE.slice(BASE.findIndex((t) => t.i === u * BASE_UNIT - 1) + 1, BASE.findIndex((t) => t.i === u * BASE_UNIT)));
+    for (let k = 0; k <= m; k++) {
+      const p = along(base, m ? k / m : 1);
+      nodes.push({ i: start + k, x: p.x, y: p.y, kind: kind(start + k) });
+      trail.push({ ...p, i: start + k });
+    }
+  }
+  return { n, nodes, trail, units, gates };
+}
 
 /**
  * Хичээлийн сурах зам дээрх одоогийн зангилаа = тэр хичээлийн шат − 1, гэхдээ давж амжаагүй хаалганы (boss, түүний
- * зүүн/баруун гар) дэргэд зогсоно (XP-ээр ахисан ч ялж байж цааш явна). `bossesBeaten` = давсан хаалганы тоо.
- * shortcut: сүүлийн boss дээр зогсоно; 48-р шатнаас цааш бүлэг нэмэхэд газрын зургийг өргөтгөнө.
+ * зүүн/баруун гар) дэргэд зогсоно, давсан хаалганаас өмнө буцахгүй. `bossesBeaten` = давсан хаалганы тоо.
  */
-export function currentNode(path: Pick<SubjectPath, 'level' | 'bossesBeaten'>): number {
-  const gate = path.bossesBeaten < GATES.length ? GATES[path.bossesBeaten] : NODE_COUNT - 1;
-  return Math.max(0, Math.min(NODE_COUNT - 1, gate, path.level - 1));
-}
+export const currentNode = (n: number, path: Pick<SubjectPath, 'level' | 'bossesBeaten'>) => nodeAt(n, path.level, path.bossesBeaten);
 
 /** Энэ зангилаанд давж амжаагүй хаалга хүлээж байна уу (тэгвэл даалгавар нь тулаан). */
-export const bossAhead = (i: number, bossesBeaten: number) => gateOf(i) >= bossesBeaten;
+export const bossAhead = (n: number, i: number, bossesBeaten: number) => gateOf(n, i) >= bossesBeaten;
 
 export const statusOf = (i: number, current: number): NodeStatus => (i < current ? 'done' : i === current ? 'current' : 'lock');
 
-export const trailIndex = (i: number) => TRAIL.findIndex((t) => t.i === i);
+export const trailIndex = (layout: PathLayout, i: number) => layout.trail.findIndex((t) => t.i === i);
 
 /** `from` зангилаанаас `to` хүртэл алхах цэгүүд (`from` өөрөө ороогүй). */
-export const walkPoints = (from: number, to: number) => TRAIL.slice(trailIndex(from) + 1, trailIndex(to) + 1);
+export const walkPoints = (layout: PathLayout, from: number, to: number) =>
+  layout.trail.slice(trailIndex(layout, from) + 1, trailIndex(layout, to) + 1);
 
 /** Алхмын төлөв: дууссан = ногоон ✓, одоогийн = шар хүрээтэй тод, түгжээтэй = бүдэг саарал + цоож; boss = 1.5× том арал. */
 export function tileFor(node: PathNode, status: NodeStatus): SpriteKey {
@@ -131,24 +183,14 @@ export function tileFor(node: PathNode, status: NodeStatus): SpriteKey {
   return status === 'done' ? 'tile_stone_done_48x36' : status === 'current' ? 'tile_step_cur_56x44' : 'tile_step_lock_48x36';
 }
 
-/** Boss-гүй зангилааны тоо: номын бүх хичээл эдгээрт жигд тарна. */
-const LESSON_NODES = NODE_COUNT - UNIT_COUNT;
-
-/**
- * Зангилаанд ногдох номын хичээлүүд. Номын хичээлүүдийг boss-гүй зангилаанд дарааллаар нь жигд тараана:
- * сүүлийн зангилаа = номын сүүлийн хичээл, дараа нь сүүлийн boss (ялбал ном дууссан). Хичээл цөөн бол нэг
- * хичээл хэд хэдэн зангилаа эзэлнэ, олон бол нэг зангилаанд хоёр хичээл орно.
- * Сервер (api/src/domain/path.ts) даалгаврын асуултыг ижил тооцоогоор сонгодог: өөрчилбөл хоёуланг нь.
- */
-export function lessonsAt(lessons: readonly BookLesson[], i: number): BookLesson[] {
-  if (lessons.length === 0 || isBossNode(i)) return [];
-  const k = i - unitOf(i);
-  const from = Math.floor((k * lessons.length) / LESSON_NODES);
-  const to = Math.max(from + 1, Math.floor(((k + 1) * lessons.length) / LESSON_NODES));
-  return lessons.slice(from, to);
+/** Зангилааны номын хичээл (boss эсвэл номгүй бол null). */
+export function lessonAt(lessons: readonly BookLesson[], i: number): BookLesson | null {
+  const n = lessons.length;
+  if (pathLessons(n) !== n || isBossNode(n, i)) return null;
+  return lessons[i - unitOf(n, i)] ?? null;
 }
 
-// Ном байхгүй үед: бүлэг бүрт 8 сэдэв, сэдэв бүр 2 зангилаа (boss-ыг тооцохгүй)
+// Ном байхгүй үед: бүлэг бүрт 8 сэдэв, сэдэв бүр нэг зангилаа (shared/path.ts DEFAULT_LESSONS)
 const TITLES: Record<Subject, string[]> = {
   math: [
     'Бутархай тоо', 'Бутархай нэмэх', 'Бутархай хасах', 'Аравтын бутархай', 'Харьцаа', 'Хувь', 'Тэгшитгэл', 'Геометр',
@@ -168,9 +210,8 @@ const TITLES: Record<Subject, string[]> = {
 };
 
 export function lessonTitle(subject: Subject, i: number, lessons: readonly BookLesson[] = []): string {
-  const g = gateOf(i);
-  if (g >= 0) return isBossNode(i) ? S.path.boss(BOSSES[g].name) : S.path.guard(BOSSES[g].role === 'left', BOSSES[g].name);
-  const book = lessonsAt(lessons, i);
-  if (book.length) return book.map((l) => l.title).join(' · ');
-  return TITLES[subject][unitOf(i) * 8 + Math.floor((i % UNIT_SIZE) / 2)];
+  const n = pathLessons(lessons.length);
+  const g = gateOf(n, i);
+  if (g >= 0) return isBossNode(n, i) ? S.path.boss(BOSSES[g].name) : S.path.guard(BOSSES[g].role === 'left', BOSSES[g].name);
+  return lessonAt(lessons, i)?.title ?? TITLES[subject][i - unitOf(n, i)];
 }

@@ -172,7 +172,7 @@ adminRoutes.post('/debug/users/:id/path', async (c) => {
       subject: subjectSchema,
       xp: z.number().int().min(0),
       nodes: z.number().int().min(0).optional(),
-      gatesBeaten: z.number().int().min(0).max(GAME.BOSS.GATES.length),
+      gatesBeaten: z.number().int().min(0).max(GAME.BOSS.GATES),
     }),
   );
   await c.env.DB.prepare(

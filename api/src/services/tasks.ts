@@ -1,8 +1,8 @@
 import type { AnswerResponse, FlagResponse, Me, TaskDto, TaskResult } from '../../../shared/types';
 import { GAME, type Subject, type Tier } from '../config/game';
-import { bossBlock, bossWon, gateNode } from '../domain/boss';
+import { bossBlock, bossWon } from '../domain/boss';
 import { levelFromXp } from '../domain/level';
-import { currentNode, nodesAfter } from '../domain/path';
+import { currentNode, gateNodes, nodesAfter, pathLessons } from '../domain/path';
 import { taskReward } from '../domain/rewards';
 import { shieldBlock } from '../domain/shield';
 import { normalizeStreak, registerTaskDay } from '../domain/streak';
@@ -85,9 +85,12 @@ export async function startTask(
     throw new ApiError(409, 'RECOVERY_REQUIRED', 'Эхлээд давтлагаа дуусгаарай');
   }
   const path = (await loadSubjectPaths(db, userId))[subject];
+  // Замын урт = номын хичээлийн тоо (+ boss): зангилаа бүр нэг хичээл.
+  const book = await bookLessons(env, subject, user.grade).catch(() => null);
+  const pathLen = pathLessons(book?.lessons.length ?? 0);
   if (boss !== undefined && !admin) {
     // Boss хаалт хичээл бүрийн сурах замаар: математикийн boss-ыг ялсан нь физикийн бүлгийг нээхгүй.
-    const block = bossBlock(path.level, path.bossesBeaten, boss);
+    const block = bossBlock(pathLen, path.level, path.bossesBeaten, boss);
     if (block) throw new ApiError(409, block, 'Энэ boss-той тулалдах боломжгүй');
   }
 
@@ -108,8 +111,8 @@ export async function startTask(
   // зангилааны хичээлийн хуудсаас (харсан ч) түрүүлж; хараагүй нь дутвал тэр хуудсаар үүсгэнэ. Хичээлд асуулт огт
   // хүрэлцэхгүй үед л хүлээж (удвал хүлээхгүй), дутууг ангийн бусад асуултаар. Ном, хичээл байхгүй (boss) бол ангийн бүх асуултаас.
   // хаалганы тулаан тэр зангилааны хичээлээр (энгийн хэрэглэгчид bossBlock-ийн дараа одоогийн зангилаа = хаалга)
-  const node = boss !== undefined ? gateNode(boss) : admin && pick !== undefined ? pick : currentNode(path.level, path.bossesBeaten);
-  const book = await bookLessons(env, subject, user.grade).catch(() => null);
+  const node =
+    boss !== undefined ? gateNodes(pathLen)[boss] : admin && pick !== undefined ? pick : currentNode(pathLen, path.level, path.bossesBeaten);
   const lesson = book && lessonPages(book, node);
   const lessonRefill = (range: PageRange) =>
     refillLesson(env, tier, subject, { grade: user.grade, range }, userId).catch((e) => console.error('[pool] lesson refill failed', e));
@@ -153,11 +156,11 @@ export async function startTask(
   await db.batch([
     db
       .prepare(
-        `INSERT INTO tasks (user_id, subject, day, status, boss, lesson_ref, tx, created_at)
-         SELECT ?, ?, ?, 'in_progress', ?, ?, ?, ?
+        `INSERT INTO tasks (user_id, subject, day, status, boss, lesson_ref, path_lessons, tx, created_at)
+         SELECT ?, ?, ?, 'in_progress', ?, ?, ?, ?, ?
          WHERE NOT EXISTS (SELECT 1 FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress')`,
       )
-      .bind(userId, subject, today, boss ?? null, lesson ? lessonRef(lesson) : null, tx, now, userId, subject, today),
+      .bind(userId, subject, today, boss ?? null, lesson ? lessonRef(lesson) : null, pathLen, tx, now, userId, subject, today),
     ...picked.map((q, i) => tq.bind(tx, i, q.id, tx)),
     ...picked.map((q) => seen.bind(userId, q.id, now, tx)),
   ]);
@@ -285,9 +288,11 @@ export async function completeTask(
   const normalized = normalizeStreak(streakStateOf(user), today);
   const after = registerTaskDay(normalized.state, today);
   const cc = await db
-    .prepare('SELECT t.subject, t.boss, (SELECT COUNT(*) FROM task_questions WHERE task_id = t.id AND correct = 1) AS n FROM tasks t WHERE t.id = ?')
+    .prepare(
+      'SELECT t.subject, t.boss, t.path_lessons, (SELECT COUNT(*) FROM task_questions WHERE task_id = t.id AND correct = 1) AS n FROM tasks t WHERE t.id = ?',
+    )
     .bind(taskId)
-    .first<{ subject: Subject; boss: number | null; n: number }>();
+    .first<{ subject: Subject; boss: number | null; path_lessons: number | null; n: number }>();
   if (!cc) throw new ApiError(404, 'NOT_FOUND', 'Даалгавар олдсонгүй');
   const correctCount = cc.n;
   const reward = taskReward(correctCount, after.streak);
@@ -296,7 +301,8 @@ export async function completeTask(
   // давхар тоолохоос сэргийлнэ).
   const beatBoss = cc.boss != null && cc.boss === path.bossesBeaten && bossWon(correctCount);
   const nodes = path.level - 1;
-  const nodesNext = nodesAfter(nodes, path.bossesBeaten, correctCount, beatBoss);
+  // Даалгавар эхлэх үеийн замын урт (дунд нь ном солигдсон ч тэр зангилааг дуусгана)
+  const nodesNext = nodesAfter(pathLessons(cc.path_lessons ?? 0), nodes, path.bossesBeaten, correctCount, beatBoss);
 
   const tx = newTx();
   const guard = 'EXISTS (SELECT 1 FROM tasks WHERE id = ? AND tx = ?)';
