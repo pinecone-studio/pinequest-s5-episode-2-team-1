@@ -1,15 +1,23 @@
 {
   "sheet": "bear_battle",
   "frameSize": {
-    "w": 64,
-    "h": 65
+    "w": 75,
+    "h": 66
   },
   "columns": 7,
   "feet": 62,
-  "pad": 19,
+  "pad": 23,
   "paw": [
-    1,
+    5,
     23
+  ],
+  "head": [
+    30,
+    4
+  ],
+  "down": [
+    38,
+    39
   ],
   "frames": [
     {
@@ -175,6 +183,70 @@
     {
       "name": "brake",
       "duration": 130
+    },
+    {
+      "name": "daze1",
+      "duration": 150
+    },
+    {
+      "name": "daze2",
+      "duration": 150
+    },
+    {
+      "name": "daze3",
+      "duration": 150
+    },
+    {
+      "name": "daze4",
+      "duration": 220
+    },
+    {
+      "name": "daze5",
+      "duration": 220
+    },
+    {
+      "name": "daze6",
+      "duration": 220
+    },
+    {
+      "name": "daze7",
+      "duration": 220
+    },
+    {
+      "name": "daze8",
+      "duration": 220
+    },
+    {
+      "name": "fall1",
+      "duration": 140
+    },
+    {
+      "name": "fall2",
+      "duration": 140
+    },
+    {
+      "name": "fall3",
+      "duration": 120
+    },
+    {
+      "name": "fall4",
+      "duration": 110
+    },
+    {
+      "name": "fall5",
+      "duration": 90
+    },
+    {
+      "name": "fall6",
+      "duration": 90
+    },
+    {
+      "name": "fall7",
+      "duration": 130
+    },
+    {
+      "name": "fall8",
+      "duration": 400
     }
   ],
   "tags": {
@@ -221,6 +293,21 @@
     "brake": {
       "from": 40,
       "to": 40,
+      "direction": "forward"
+    },
+    "dazeIn": {
+      "from": 41,
+      "to": 43,
+      "direction": "forward"
+    },
+    "daze": {
+      "from": 44,
+      "to": 48,
+      "direction": "pingpong"
+    },
+    "fall": {
+      "from": 49,
+      "to": 56,
       "direction": "forward"
     }
   },

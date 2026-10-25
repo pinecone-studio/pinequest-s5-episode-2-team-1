@@ -1,0 +1,283 @@
+{
+  "boss": {
+    "sheet": "golem_boss_sheet",
+    "frameSize": {
+      "w": 86,
+      "h": 86
+    },
+    "columns": 6,
+    "feet": 82,
+    "cx": 43,
+    "bw": 63,
+    "head": 21,
+    "frames": [
+      {
+        "name": "idle0",
+        "duration": 220
+      },
+      {
+        "name": "idle1",
+        "duration": 220
+      },
+      {
+        "name": "idle2",
+        "duration": 220
+      },
+      {
+        "name": "attack0",
+        "duration": 110
+      },
+      {
+        "name": "attack1",
+        "duration": 110
+      },
+      {
+        "name": "attack2",
+        "duration": 130
+      },
+      {
+        "name": "attack3",
+        "duration": 140
+      },
+      {
+        "name": "attack4",
+        "duration": 70
+      },
+      {
+        "name": "impact",
+        "duration": 160
+      },
+      {
+        "name": "attack6",
+        "duration": 110
+      },
+      {
+        "name": "attack7",
+        "duration": 110
+      },
+      {
+        "name": "flash",
+        "duration": 80
+      },
+      {
+        "name": "hurt0",
+        "duration": 100
+      },
+      {
+        "name": "hurt1",
+        "duration": 100
+      },
+      {
+        "name": "hurt2",
+        "duration": 100
+      },
+      {
+        "name": "hurt3",
+        "duration": 100
+      }
+    ],
+    "tags": {
+      "idle": {
+        "from": 0,
+        "to": 2,
+        "direction": "pingpong"
+      },
+      "attack": {
+        "from": 3,
+        "to": 10,
+        "direction": "forward"
+      },
+      "hurt": {
+        "from": 11,
+        "to": 15,
+        "direction": "forward"
+      }
+    }
+  },
+  "left": {
+    "sheet": "golem_left_sheet",
+    "frameSize": {
+      "w": 76,
+      "h": 78
+    },
+    "columns": 6,
+    "feet": 75,
+    "cx": 39,
+    "bw": 52,
+    "head": 30,
+    "frames": [
+      {
+        "name": "idle0",
+        "duration": 220
+      },
+      {
+        "name": "idle1",
+        "duration": 220
+      },
+      {
+        "name": "idle2",
+        "duration": 220
+      },
+      {
+        "name": "idle3",
+        "duration": 220
+      },
+      {
+        "name": "attack0",
+        "duration": 110
+      },
+      {
+        "name": "attack1",
+        "duration": 110
+      },
+      {
+        "name": "attack2",
+        "duration": 130
+      },
+      {
+        "name": "attack3",
+        "duration": 140
+      },
+      {
+        "name": "attack4",
+        "duration": 70
+      },
+      {
+        "name": "impact",
+        "duration": 160
+      },
+      {
+        "name": "attack6",
+        "duration": 110
+      },
+      {
+        "name": "attack7",
+        "duration": 110
+      },
+      {
+        "name": "flash",
+        "duration": 80
+      },
+      {
+        "name": "hurt0",
+        "duration": 100
+      },
+      {
+        "name": "hurt1",
+        "duration": 100
+      },
+      {
+        "name": "hurt2",
+        "duration": 100
+      },
+      {
+        "name": "hurt3",
+        "duration": 100
+      }
+    ],
+    "tags": {
+      "idle": {
+        "from": 0,
+        "to": 3,
+        "direction": "pingpong"
+      },
+      "attack": {
+        "from": 4,
+        "to": 11,
+        "direction": "forward"
+      },
+      "hurt": {
+        "from": 12,
+        "to": 16,
+        "direction": "forward"
+      }
+    }
+  },
+  "right": {
+    "sheet": "golem_right_sheet",
+    "frameSize": {
+      "w": 82,
+      "h": 84
+    },
+    "columns": 6,
+    "feet": 80,
+    "cx": 40,
+    "bw": 45,
+    "head": 15,
+    "frames": [
+      {
+        "name": "idle0",
+        "duration": 220
+      },
+      {
+        "name": "idle1",
+        "duration": 220
+      },
+      {
+        "name": "idle2",
+        "duration": 220
+      },
+      {
+        "name": "attack0",
+        "duration": 110
+      },
+      {
+        "name": "attack1",
+        "duration": 110
+      },
+      {
+        "name": "attack2",
+        "duration": 130
+      },
+      {
+        "name": "attack3",
+        "duration": 140
+      },
+      {
+        "name": "attack4",
+        "duration": 70
+      },
+      {
+        "name": "impact",
+        "duration": 160
+      },
+      {
+        "name": "attack6",
+        "duration": 110
+      },
+      {
+        "name": "attack7",
+        "duration": 110
+      },
+      {
+        "name": "flash",
+        "duration": 80
+      },
+      {
+        "name": "hurt0",
+        "duration": 100
+      },
+      {
+        "name": "hurt1",
+        "duration": 100
+      }
+    ],
+    "tags": {
+      "idle": {
+        "from": 0,
+        "to": 2,
+        "direction": "pingpong"
+      },
+      "attack": {
+        "from": 3,
+        "to": 10,
+        "direction": "forward"
+      },
+      "hurt": {
+        "from": 11,
+        "to": 13,
+        "direction": "forward"
+      }
+    }
+  }
+}

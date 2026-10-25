@@ -15,7 +15,7 @@ import { colors, fonts, hardShadow, radius } from '@/constants/theme';
 import { S, subjectNames } from '@/i18n/strings';
 import { kvGet, kvSet } from '@/lib/kv';
 import { usePixelBear } from '@/lib/mock/pixelBear';
-import { bossAhead, currentNode, lessonsAt, lessonTitle, NODES, type NodeStatus, UNIT_SIZE, unitOf } from '@/lib/pixelBear/path';
+import { bossAhead, currentNode, gateOf, lessonsAt, lessonTitle, NODES, type NodeStatus, UNIT_SIZE, unitOf } from '@/lib/pixelBear/path';
 
 const SUBJECTS: Subject[] = ['math', 'mongolian', 'physics'];
 const CTA_SPACE = 112;
@@ -95,10 +95,12 @@ export default function PathScreen() {
 
   if (!me) return null;
   function start() {
-    router.push(bossFight ? `/task/${subject}?boss=${unitOf(current)}` : `/task/${subject}`);
+    router.push(bossFight ? `/task/${subject}?boss=${gateOf(current)}` : `/task/${subject}`);
   }
 
   function onNode(i: number, status: NodeStatus) {
+    // Admin: дурын зангилаа (boss бол тэр бүлгийн boss) руу шууд орно
+    if (me?.admin) return router.push(gateOf(i) >= 0 ? `/task/${subject}?boss=${gateOf(i)}` : `/task/${subject}?node=${i}`);
     if (status === 'lock') setNote(S.path.locked);
     else if (status === 'done') setNote(`${lessonTitle(subject, i, lessons)} · ${S.path.done}`);
     else start();
@@ -185,7 +187,8 @@ export default function PathScreen() {
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#D6E6C3' },
+  // газрын зургийн доод захын (1-р бүлэг) өнгө: доод карт, цэсний ард хоосон ногоон зурвас гарахгүй
+  root: { flex: 1, backgroundColor: '#2E1766' },
   scrollContent: { alignItems: 'center' },
   header: { position: 'absolute', left: 20, right: 20, gap: 10 },
   row2: { flexDirection: 'row', alignItems: 'center', gap: 8 },

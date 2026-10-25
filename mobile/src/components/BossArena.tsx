@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, {
   Easing,
@@ -7,14 +7,16 @@ import Animated, {
   useReducedMotion,
   useSharedValue,
   withDelay,
+  withRepeat,
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import { AnimatedBar, frameSize, Motion, Pop, SheetFrame, Sprite } from '@/components/pixel';
+import { AnimatedBar, frameSize, Motion, Pop, SheetFrame, SheetLoop, Sprite } from '@/components/pixel';
 import { colors, fonts, radius } from '@/constants/theme';
 import { S } from '@/i18n/strings';
 import { tagFrames } from '@/lib/pixelBear/anim';
 import bear from '@/lib/pixelBear/bear.json';
+import golems from '@/lib/pixelBear/golems.json';
 import { BOSS_FRAME, type Boss, HOVER } from '@/lib/pixelBear/path';
 import type { SpriteKey } from '@/sprites';
 
@@ -57,7 +59,7 @@ const TICK_MS = 160; // frame анимацийн хурд (~6 fps, pixel art-и�
 const GROUND = 300;
 const BOSS_LEFT = 28;
 const BEAR_RIGHT = 44;
-const BEAR_SHEET: SpriteKey = 'bear_battle_896x780';
+const BEAR_SHEET: SpriteKey = 'bear_battle_1050x1188';
 const { width: BEAR_W } = frameSize(BEAR_SHEET, bear.frames.length, bear.columns);
 /** sheet-ийн pixel → dp */
 const PX = BEAR_W / bear.frameSize.w;
@@ -68,6 +70,18 @@ const BEAR_PAD = bear.pad * PX;
 /** гаргах frame-ийн сарвуу (frame-ийн зүүн дээд булангаас, dp): од эндээс ниснэ */
 const PAW = { x: bear.paw[0] * PX, y: bear.paw[1] * PX };
 const BLINK = frames('blink')[0];
+/** манарсан баавгайн толгойн орой (frame-ийн зүүн дээд булангаас, dp): эргүүлэг үүн дээр эргэлдэнэ */
+const HEAD = { x: bear.head[0] * PX, y: bear.head[1] * PX };
+const DIZZY: SpriteKey = 'fx_dizzy_sheet_204x26';
+const DIZZY_LOOP = [0, 1, 2, 3, 4, 5];
+/** дараалан хэдэн удаа цохиулбал баавгай манарна */
+const DAZE_AFTER = 2;
+/** амь дуусахад унаад хэвтэх frame; сүнс хэвтсэн биеийн дээд талаас (dp) гарч дээшилнэ */
+const FALLEN = frames('fall').at(-1) as number;
+const DOWN = { x: bear.down[0] * PX, y: bear.down[1] * PX };
+const SOUL: SpriteKey = 'fx_soul_sheet_248x122';
+const SOUL_LOOP = [0, 1, 2, 3];
+const SOUL_RISE = 22;
 /** баавгайн шидэх зөгийн балны сав ба boss-д тусаж хагарах эффект (scripts/bear-sprites.ts: PixelLab VFX) */
 const HONEY_JAR: SpriteKey = 'btn_honey_30x30';
 const SHATTER: SpriteKey = 'fx_honey_shatter_414x456';
@@ -77,10 +91,24 @@ const smooth = Easing.inOut(Easing.sin);
 
 type Point = { x: number; y: number };
 type BossPose = 'idle' | keyof typeof BOSS_FRAME;
+/** сум / оч: нэг зураг эсвэл grid sheet-ийн давталт */
+type Fx = { id: SpriteKey; frames: number; cols: number };
+const HONEY_SHOT: Fx = { id: HONEY_JAR, frames: 1, cols: 1 };
+const MAGIC_SHOT: Fx = { id: 'fx_magic_22x22', frames: 1, cols: 1 };
+
+/** PixelLab-аар хөдөлгөсөн дайсны (golems.json) tag-ийн frame-ууд ба хугацаа */
+type Golem = (typeof golems)[keyof typeof golems];
+const gFrames = (g: Golem, tag: keyof Golem['tags']) => tagFrames(g, tag);
+const gUntil = (g: Golem, tag: keyof Golem['tags'], name: string) => {
+  const fs = gFrames(g, tag);
+  return fs.slice(0, fs.findIndex((f) => g.frames[f].name === name)).reduce((t, f) => t + g.frames[f].duration, 0);
+};
+
+const bossSize = (boss: Boss) => frameSize(boss.battle, boss.frames, boss.cols);
 
 /** Boss-ын нүд ба баавгайн сарвууны од: сум эндээс ниснэ / энд онох */
 function aim(boss: Boss, width: number): { boss: Point; bear: Point; bossTop: number } {
-  const { width: w, height: h } = frameSize(boss.battle, boss.frames);
+  const { width: w, height: h } = bossSize(boss);
   const bossTop = GROUND - h - (boss.floats ? 24 : 0);
   return {
     boss: { x: BOSS_LEFT + w / 2, y: bossTop + h * 0.35 },
@@ -125,8 +153,25 @@ export function BossArena({
   const width = useWindowDimensions().width;
   const won = hits >= needed;
   const lost = misses >= hearts;
-  const size = frameSize(boss.battle, boss.frames);
+  const size = bossSize(boss);
   const { bossTop } = aim(boss, width);
+  // PixelLab-аар хөдөлгөсөн дайсан: амьсгалын давталт (idle tag), довтлох/цочих үед `bossAct` frame
+  const golem: Golem | null = boss.anim ? golems[boss.anim] : null;
+  const [bossIdle, setBossIdle] = useState(golem ? gFrames(golem, 'idle')[0] : 0);
+  const [bossAct, setBossAct] = useState<number | null>(null);
+  useEffect(() => {
+    if (!golem || reduce) return;
+    const seq = gFrames(golem, 'idle');
+    let i = 0;
+    let t: ReturnType<typeof setTimeout>;
+    const next = () => {
+      const f = seq[i++ % seq.length];
+      setBossIdle(f);
+      t = setTimeout(next, golem.frames[f].duration);
+    };
+    next();
+    return () => clearTimeout(t);
+  }, [golem, reduce]);
 
   const [tick, setTick] = useState(0);
   const [bossPose, setBossPose] = useState<BossPose>('idle');
@@ -134,31 +179,42 @@ export function BossArena({
   // Баавгай: тайван үед idle tag (амьсгал, ping-pong), хааяа нүдээ ирмэнэ; цохилтын үед `act` (mirror = буцаж гүйх)
   const [idle, setIdle] = useState(frames('idle')[0]);
   const [act, setAct] = useState<{ frame: number; mirror: boolean } | null>(null);
+  // Дараалан DAZE_AFTER удаа цохиулбал манарна (толгой унжиж, дээр нь эргүүлэг эргэлдэнэ); дараагийн цохилт хүртэл
+  const [dazed, setDazed] = useState(false);
+  const wrongRun = useRef({ n: -1, run: 0 });
+  // Амь дуусах цохилт: баавгай унаж хэвтээд биеэс нь сүнс гарна
+  const [down, setDown] = useState(false);
+  // цохилтгүйгээр (аль хэдийн ялагдсан даалгаврыг дахин нээх, шинэ даалгавар) хэвтсэн/зогссон байдал шууд тогтоно
+  useEffect(() => {
+    if (strike) return;
+    const t = setTimeout(() => setDown(lost), 0);
+    return () => clearTimeout(t);
+  }, [strike, lost]);
   useEffect(() => {
     if (reduce) return;
     const t = setInterval(() => setTick((n) => n + 1), TICK_MS);
     return () => clearInterval(t);
   }, [reduce]);
   useEffect(() => {
-    if (reduce) return;
-    const seq = frames('idle');
+    if (reduce || down) return;
+    const seq = frames(dazed ? 'daze' : 'idle');
     let i = 0;
     let t: ReturnType<typeof setTimeout>;
     const next = () => {
-      const f = i > 0 && i % (seq.length * 3) === 0 ? BLINK : seq[i % seq.length]; // 3 амьсгал тутам ирмэнэ
+      const f = !dazed && i > 0 && i % (seq.length * 3) === 0 ? BLINK : seq[i % seq.length]; // 3 амьсгал тутам ирмэнэ
       i++;
       setIdle(f);
       t = setTimeout(next, ms(f));
     };
     next();
     return () => clearTimeout(t);
-  }, [reduce]);
+  }, [reduce, dazed, down]);
   // Boss хөвөх: 2 tick тутам дараагийн давхарга (0/1/2px), ялагдсан бол газардана
   const hover = bossPose === 'idle' && !won ? HOVER[Math.floor(tick / 2) % HOVER.length] : 0;
   const bossFrame = bossPose === 'idle' ? hover : BOSS_FRAME[bossPose];
 
   // Сум ба оч: сум үргэлж mount, харагдах эсэхийг shared value удирдана (worklet JS state уншихгүй)
-  const [shot, setShot] = useState<SpriteKey>(HONEY_JAR);
+  const [shot, setShot] = useState<Fx>(HONEY_SHOT);
   const [spark, setSpark] = useState<Spark | null>(null);
   const [damage, setDamage] = useState(0); // boss-д онох бүрт шинэ «-1» хөвөн гарна
   const fly = useSharedValue(0);
@@ -170,7 +226,19 @@ export function BossArena({
   const shakeY = useSharedValue(0);
 
   useEffect(() => {
-    if (!strike || reduce) return;
+    if (!strike) return;
+    // дараалсан буруу хариултын тоо (effect дахин ажиллахад давхар тоолохгүй)
+    if (wrongRun.current.n !== strike.n) wrongRun.current = { n: strike.n, run: strike.correct ? 0 : wrongRun.current.run + 1 };
+    // `lost` нь strike-тэй нэг render-т өөрчлөгддөг тул энэ effect-ийг дахин тоглуулахгүй
+    const dead = !strike.correct && lost;
+    const daze = !dead && wrongRun.current.run >= DAZE_AFTER;
+    if (reduce) {
+      const t = setTimeout(() => {
+        setDazed(daze);
+        setDown(dead);
+      }, 0);
+      return () => clearTimeout(t);
+    }
     const at = aim(boss, width);
     const melee = strike.n % 2 === 0; // давхиж очоод ойроос
     const claw = strike.correct && melee;
@@ -181,7 +249,10 @@ export function BossArena({
     const dir = strike.correct ? -1 : 1; // зөв: баавгай зүүн тийш дайрна, boss зүүн тийш түлхэгдэнэ; буруу: эсрэгээрээ
     const [attacker, target]: SharedValue<number>[] = strike.correct ? [bearX, bossX] : [bossX, bearX];
 
-    const bossRight = BOSS_LEFT + frameSize(boss.battle, boss.frames).width;
+    // boss-ын биеийн баруун зах: PixelLab дайсны frame-д довтолгооны эффектийн хоосон зай байдаг тул биеэр нь
+    const bossRight = golem
+      ? BOSS_LEFT + ((golem.cx + golem.bw / 2) * bossSize(boss).width) / golem.frameSize.w
+      : BOSS_LEFT + bossSize(boss).width;
     const bearBody = width - BEAR_RIGHT - BEAR_W + BEAR_PAD;
     if (claw) {
       // суугаад арагш бага зэрэг (anticipation) → boss-ын дэргэд хүртэл гүйж сарвуудаад → эргэж харан буцаж гүйнэ
@@ -198,7 +269,7 @@ export function BossArena({
       );
     } else {
       route.value = { fx: from.x, fy: from.y, tx: to.x, ty: to.y, spin: strike.correct ? 1 : 0 };
-      setShot(strike.correct ? HONEY_JAR : 'fx_magic_22x22');
+      setShot(strike.correct ? HONEY_SHOT : (boss.shot ?? MAGIC_SHOT));
       attacker.value = withSequence(
         withTiming(-dir * 7, { duration: WINDUP_MS, easing: Easing.out(Easing.quad) }), // бэлдэх: арагшаа
         withTiming(dir * 26, { duration: RELEASE_AT - WINDUP_MS + STRIKE_MS, easing: Easing.in(Easing.quad) }), // цохих: огцом урагш
@@ -238,14 +309,41 @@ export function BossArena({
       }
     };
     const rest = (t: number) => later(t, () => setAct(null));
+    later(0, () => setDazed(false)); // цохилт эхлэхэд манаралаас сэргэнэ
     // оносон boss анивчаад цочино
     const hit = (set: (p: 'flash' | 'hurt' | 'idle') => void) => {
       later(hitAt, () => set('flash'));
       later(hitAt + HITSTOP_MS + 40, () => set('hurt'));
       later(hitAt + 560, () => set('idle'));
     };
-    // оносон баавгай: цагаан анивчиж (hit-stop) цочино
-    const hurt = () => rest(play('hurt', hitAt));
+    // оносон баавгай: цагаан анивчиж (hit-stop) цочино; дараалан цохиулсан бол толгой нь унжиж манарна
+    /** PixelLab дайсны tag-ийг `t0`-оос тоглуулж, дуусмагц амьсгал руу буцна */
+    const playBoss = (g: Golem, tag: keyof Golem['tags'], t0: number) => {
+      const end = gFrames(g, tag).reduce((t, f) => {
+        later(t, () => setBossAct(f));
+        return t + g.frames[f].duration;
+      }, Math.max(0, t0));
+      later(end, () => setBossAct(null));
+    };
+    /** баавгай онох агшинд boss: PixelLab дайсан цагаан анивчиж цочино, бусад нь pose-оор */
+    const bossHit = () => (golem ? playBoss(golem, 'hurt', hitAt) : hit(setBossPose));
+    const hurt = () => {
+      const end = play('hurt', hitAt);
+      if (dead) {
+        // ганхаж, өвдөг сулраад ар тийшээ унаж хэвтэнэ → сүнс гарна
+        const fallen = play('fall', end);
+        return later(fallen, () => {
+          setDown(true);
+          setAct(null);
+        });
+      }
+      if (!daze) return rest(end);
+      const dazedAt = play('dazeIn', end);
+      later(dazedAt, () => {
+        setDazed(true);
+        setAct(null);
+      });
+    };
     if (claw) {
       play('ready', 0);
       loop('run', READY_MS, arrive - span('brake'), false);
@@ -255,10 +353,14 @@ export function BossArena({
       loop('run', turn + span('turn'), home - span('brake'), true);
       play('brake', home - span('brake'), true);
       rest(play('turn', home));
-      hit(setBossPose);
+      bossHit();
     } else if (strike.correct) {
       rest(play('throw', 0));
-      hit(setBossPose);
+      bossHit();
+    } else if (golem) {
+      // PixelLab дайсан: довтлох хөдөлгөөний онох frame (impact) нь ойроос бол баавгайд хүрэх, холоос бол сум гарах агшинд
+      playBoss(golem, 'attack', (bossDash ? hitAt : RELEASE_AT) - gUntil(golem, 'attack', 'impact'));
+      hurt();
     } else if (bossDash) {
       // boss хадуураа өргөөд гулсана → баавгайн урд дүүжилж цохино → хадуураа нууж буцна
       setBossPose('dash');
@@ -282,7 +384,9 @@ export function BossArena({
     const honey = strike.correct && !melee;
     const fx = honey
       ? { id: SHATTER, frames: bear.honey.frames, cols: bear.honey.columns, pivot: bear.honey.pivot, ms: SHATTER_MS }
-      : { id: melee ? ('fx_slash_144x48' as const) : strike.correct ? ('fx_spark_90x30' as const) : ('fx_spark_magic_90x30' as const), frames: 3, cols: 3, pivot: [0.5, 0.5], ms: 70 };
+      : !strike.correct && boss.impact
+        ? { ...boss.impact, pivot: [0.5, 0.5], ms: 70 }
+        : { id: melee ? ('fx_slash_144x48' as const) : strike.correct ? ('fx_spark_90x30' as const) : ('fx_spark_magic_90x30' as const), frames: 3, cols: 3, pivot: [0.5, 0.5], ms: 70 };
     const { width: fw, height: fh } = frameSize(fx.id, fx.frames, fx.cols);
     const pivot = { x: fw * fx.pivot[0], y: fh * fx.pivot[1] };
     for (let frame = 0; frame < fx.frames; frame++)
@@ -290,7 +394,7 @@ export function BossArena({
     later(hitAt + fx.frames * fx.ms, () => setSpark(null));
     if (strike.correct) later(hitAt, () => setDamage((n) => n + 1));
     return () => timers.forEach(clearTimeout);
-  }, [strike, reduce, boss, width, fly, route, bossX, bearX, bossWhite, shakeX, shakeY]);
+  }, [strike, lost, reduce, boss, golem, width, fly, route, bossX, bearX, bossWhite, shakeX, shakeY]);
 
   const shotStyle = useAnimatedStyle(() => {
     const p = fly.value;
@@ -306,17 +410,15 @@ export function BossArena({
   });
   const worldStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shakeX.value }, { translateY: shakeY.value }] }));
 
-  // Ялагдсан тал бүдгэрнэ (онсны дараа)
+  // Ялагдсан boss бүдгэрнэ (онсны дараа); ялагдсан баавгай бүдгэрэхгүй — унаж хэвтээд сүнс нь гарна
   const bossFade = useSharedValue(1);
-  const bearFade = useSharedValue(1);
   useEffect(() => {
     bossFade.value = withDelay(reduce ? 0 : HIT_AT + HITSTOP_MS, withTiming(won ? 0.2 : 1, { duration: 500 }));
-    bearFade.value = withDelay(reduce ? 0 : HIT_AT + HITSTOP_MS, withTiming(lost ? 0.45 : 1, { duration: 500 }));
-  }, [won, lost, reduce, bossFade, bearFade]);
+  }, [won, reduce, bossFade]);
   const bossStyle = useAnimatedStyle(() => ({ opacity: bossFade.value, transform: [{ translateX: bossX.value }] }));
   const shadowStyle = useAnimatedStyle(() => ({ transform: [{ translateX: bossX.value }] }));
   const bossWhiteStyle = useAnimatedStyle(() => ({ opacity: bossWhite.value }));
-  const bearStyle = useAnimatedStyle(() => ({ opacity: bearFade.value, transform: [{ translateX: bearX.value }] }));
+  const bearStyle = useAnimatedStyle(() => ({ transform: [{ translateX: bearX.value }] }));
 
   const bossLeft = Math.max(0, needed - hits);
   const heartsLeft = Math.max(0, hearts - misses);
@@ -335,11 +437,17 @@ export function BossArena({
           ) : null}
           {/* Довтолж буй тал баавгай/boss-ын урд зурагдана (давхиж очихдоо ард нь нуугдахгүй) */}
           <Animated.View
-            style={[styles.abs, { left: BOSS_LEFT, top: bossTop, zIndex: bossPose === 'dash' || bossPose === 'strike' ? 3 : 1 }, bossStyle]}
+            style={[
+              styles.abs,
+              { left: BOSS_LEFT, top: bossTop, zIndex: bossPose === 'dash' || bossPose === 'strike' || bossAct !== null ? 3 : 1 },
+              bossStyle,
+            ]}
           >
             {/* өргөсөн хадуур толгойн ард, дүүжлэхэд урд */}
             {weapon === 0 && boss.weapon ? <Weapon {...boss.weapon} frame={0} /> : null}
-            {boss.frames > 1 ? (
+            {golem ? (
+              <SheetFrame id={boss.battle} frames={boss.frames} cols={boss.cols} frame={bossAct ?? bossIdle} label={boss.name} />
+            ) : boss.frames > 1 ? (
               <SheetFrame id={boss.battle} frames={boss.frames} frame={bossFrame} label={boss.name} />
             ) : (
               <Motion preset="breathe" originBottom>
@@ -357,12 +465,28 @@ export function BossArena({
           <Animated.View style={[styles.abs, { right: BEAR_RIGHT, top: GROUND - BEAR_FEET, zIndex: 2 }, bearStyle]}>
             {/* буцахдаа толин тусгал: бие frame-ийн голд тул байрнаасаа хөдлөхгүй */}
             <View style={act?.mirror ? styles.mirror : null}>
-              <SheetFrame id={BEAR_SHEET} frames={bear.frames.length} cols={bear.columns} frame={act?.frame ?? idle} label={S.boss.bear} />
+              <SheetFrame
+                id={BEAR_SHEET}
+                frames={bear.frames.length}
+                cols={bear.columns}
+                frame={act?.frame ?? (down ? FALLEN : reduce && dazed ? frames('daze')[0] : idle)}
+                label={dazed ? S.boss.bearDazed : S.boss.bear}
+              />
             </View>
+            {down && !act ? <Soul reduce={reduce} /> : null}
+            {dazed && !act && !down ? (
+              <View style={[styles.abs, { left: HEAD.x - 17, top: HEAD.y - 24 }]}>
+                <SheetLoop id={DIZZY} frames={DIZZY_LOOP.length} loop={DIZZY_LOOP} ms={110} />
+              </View>
+            ) : null}
           </Animated.View>
 
           <Animated.View style={[styles.abs, styles.origin, styles.shot, shotStyle]}>
-            <Sprite id={shot} />
+            {shot.frames > 1 ? (
+              <SheetLoop id={shot.id} frames={shot.frames} cols={shot.cols} loop={Array.from({ length: shot.frames }, (_, i) => i)} ms={80} />
+            ) : (
+              <Sprite id={shot.id} />
+            )}
           </Animated.View>
           {spark ? (
             <View style={[styles.abs, { zIndex: 4, left: spark.at.x - spark.pivot.x, top: spark.at.y - spark.pivot.y }]}>
@@ -375,7 +499,7 @@ export function BossArena({
 
       {/* Довтолгоонд л гардаг зургуудыг урьдчилж ачаална: анх гарах агшинд хоосон харагдаж "алга болохгүй" */}
       <View style={styles.preload}>
-        {['fx_slash_144x48', 'fx_spark_90x30', 'fx_spark_magic_90x30', 'fx_magic_22x22', HONEY_JAR, SHATTER, boss.weapon?.sheet, boss.white]
+        {['fx_slash_144x48', 'fx_spark_90x30', 'fx_spark_magic_90x30', 'fx_magic_22x22', HONEY_JAR, SHATTER, boss.weapon?.sheet, boss.white, boss.shot?.id, boss.impact?.id]
           .filter((id): id is SpriteKey => !!id)
           .map((id) => (
             <Sprite key={id} id={id} />
@@ -383,13 +507,11 @@ export function BossArena({
       </View>
 
       <View style={[StyleSheet.absoluteFill, { top: insetTop }]}>
-        <View style={styles.hp} accessible accessibilityLabel={S.boss.hpLabel(boss.name, bossLeft, needed)}>
-          <Text style={styles.hpName} numberOfLines={1}>
-            {boss.name}
-          </Text>
-          <View style={styles.hpTrack}>
-            <AnimatedBar value={bossLeft / needed} color={colors.pink} height={12} />
-          </View>
+        {/* Тулааны тоглоомын маягийн амийн зурвас: boss зүүн, баавгай баруун; амь нь голоос гадагш биш, гаднаас голруу хасагдана */}
+        <View style={styles.bars}>
+          <HpBar side="left" name={boss.name} value={bossLeft / needed} segments={needed} label={S.boss.hpLabel(boss.name, bossLeft, needed)} />
+          <Sprite id="hud_skull_34x30" style={styles.skull} />
+          <HpBar side="right" name={S.boss.bearName} value={heartsLeft / hearts} segments={hearts} label={S.boss.heartsLabel(heartsLeft, hearts)} />
         </View>
 
         <Pop trigger={message} from={0.85} style={styles.bubbleWrap}>
@@ -398,13 +520,63 @@ export function BossArena({
           </View>
         </Pop>
 
-        <View style={[styles.hearts, { top: GROUND - 160 }]} accessible accessibilityLabel={S.boss.heartsLabel(heartsLeft, hearts)}>
-          {Array.from({ length: hearts }, (_, i) => (
-            <Sprite key={i} id="icon_heart_24x24" style={i < heartsLeft ? null : styles.heartLost} />
-          ))}
-        </View>
       </View>
     </View>
+  );
+}
+
+/**
+ * Амийн зурвас: ясан дэгээтэй бараан хүрээ, хэсэгт хуваагдсан улаан амь. Хасагдсан хэсэг эхлээд шар-улбараар үлдэж,
+ * хэсэг хугацааны дараа хорогдоно (цохилтын хэмжээ харагдана).
+ */
+function HpBar({ side, name, value, segments, label }: { side: 'left' | 'right'; name: string; value: number; segments: number; label: string }) {
+  const [chip, setChip] = useState(value);
+  useEffect(() => {
+    const t = setTimeout(() => setChip(value), value < chip ? 650 : 0);
+    return () => clearTimeout(t);
+  }, [value, chip]);
+  const left = side === 'left';
+  const anchor = left ? { right: 0 } : { left: 0 };
+  return (
+    <View style={styles.barCol} accessible accessibilityLabel={label}>
+      <View style={styles.barBody}>
+        <View style={styles.barTrack}>
+          <AnimatedBar value={chip} color="#FFB347" height={16} style={[styles.barFill, anchor]} />
+          <AnimatedBar value={value} color="#D8323F" height={16} style={[styles.barFill, styles.barRed, anchor]} />
+          {Array.from({ length: segments - 1 }, (_, k) => (
+            <View key={k} style={[styles.barDivider, { left: `${((k + 1) / segments) * 100}%` }]} />
+          ))}
+        </View>
+        <Sprite id="hud_cap_20x28" style={[styles.cap, left ? { left: -12 } : { right: -12, transform: [{ scaleX: -1 }] }]} />
+      </View>
+      <Text style={[styles.barName, { textAlign: left ? 'left' : 'right' }]} numberOfLines={1}>
+        {name}
+      </Text>
+    </View>
+  );
+}
+
+/** Хэвтсэн биеэс гарах сүнс: тодорч, ганхаж дээшилснээ агаарт зөөлөн хөвнө. */
+function Soul({ reduce }: { reduce: boolean }) {
+  const rise = useSharedValue(reduce ? 1 : 0);
+  const bob = useSharedValue(0);
+  useEffect(() => {
+    if (reduce) return;
+    rise.value = withTiming(1, { duration: 2200, easing: Easing.out(Easing.cubic) });
+    bob.value = withDelay(2200, withRepeat(withTiming(1, { duration: 1400, easing: Easing.inOut(Easing.sin) }), -1, true));
+  }, [reduce, rise, bob]);
+  const { width: w, height: h } = frameSize(SOUL, SOUL_LOOP.length);
+  const style = useAnimatedStyle(() => ({
+    opacity: Math.min(1, rise.value * 3) * 0.85,
+    transform: [
+      { translateY: -rise.value * SOUL_RISE - bob.value * 5 },
+      { translateX: Math.sin(rise.value * Math.PI * 3) * 4 * (1 - rise.value) },
+    ],
+  }));
+  return (
+    <Animated.View style={[styles.abs, { left: DOWN.x - w / 2, top: DOWN.y - h + 72 }, style]}>
+      <SheetLoop id={SOUL} frames={SOUL_LOOP.length} loop={SOUL_LOOP} ms={180} label={S.boss.bearSoul} />
+    </Animated.View>
   );
 }
 
@@ -450,10 +622,27 @@ const styles = StyleSheet.create({
   },
   // boss-ын гэр: доод талдаа наалдаж, хэвтээгээр төвлөрнө (430 dp өргөн тул нарийн дэлгэцэнд хоёр захаас тайрагдана)
   lair: { position: 'absolute', bottom: 0, left: '50%', marginLeft: -215 },
-  hp: { position: 'absolute', left: 24, top: 56, width: 150, gap: 6 },
-  hpName: { fontFamily: fonts.extrabold, fontSize: 13, letterSpacing: 0.4, color: colors.white },
-  hpTrack: { height: 12, borderRadius: 6, backgroundColor: 'rgba(255,255,255,0.18)', overflow: 'hidden' },
-  bubbleWrap: { position: 'absolute', right: 20, top: 52, maxWidth: 170 },
+  bars: { position: 'absolute', left: 22, right: 22, top: 56, flexDirection: 'row', alignItems: 'flex-start' },
+  barCol: { flex: 1, gap: 4 },
+  // pixel хүрээ: 2dp бараан тойм → 2dp ягаан ирмэг → амийн зам (радиусгүй)
+  barBody: { height: 24, borderWidth: 2, borderColor: '#150F24', backgroundColor: '#3B2D5C', padding: 2 },
+  barTrack: { flex: 1, backgroundColor: '#241A36', overflow: 'hidden' },
+  barFill: { position: 'absolute', top: 0, borderRadius: 0 },
+  // дээд талдаа гэрэл, доод талдаа сүүдрийн зурвас (pixel banding)
+  barRed: { borderTopWidth: 4, borderTopColor: '#FF7A7A', borderBottomWidth: 3, borderBottomColor: '#9C1F33' },
+  barDivider: { position: 'absolute', top: 0, bottom: 0, width: 2, marginLeft: -1, backgroundColor: '#150F24' },
+  cap: { position: 'absolute', top: -4 },
+  skull: { marginHorizontal: -3, marginTop: -3, zIndex: 1 },
+  barName: {
+    fontFamily: fonts.extrabold,
+    fontSize: 12,
+    letterSpacing: 0.4,
+    color: colors.white,
+    textShadowColor: '#150F24',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 0,
+  },
+  bubbleWrap: { position: 'absolute', right: 20, top: 104, maxWidth: 170 },
   bubble: {
     paddingVertical: 10,
     paddingHorizontal: 13,
@@ -464,7 +653,5 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 18,
   },
   bubbleText: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, color: colors.ink },
-  hearts: { position: 'absolute', right: 30, flexDirection: 'row', gap: 4 },
-  heartLost: { opacity: 0.25 },
   shadow: { position: 'absolute', height: 12, borderRadius: radius.pill, backgroundColor: colors.ink, opacity: 0.2 },
 });
