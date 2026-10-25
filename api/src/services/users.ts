@@ -24,10 +24,11 @@ export interface UserRow {
   equipped: string;
   bear_look: string | null;
   created_at: number;
+  is_admin: number;
 }
 
 const USER_COLUMNS =
-  'id, username, grade, tier, xp, points, streak, last_streak_day, shield_held, shield_bought_day, shield_used_day, equipped, bear_look, created_at';
+  'id, username, grade, tier, xp, points, streak, last_streak_day, shield_held, shield_bought_day, shield_used_day, equipped, bear_look, created_at, is_admin';
 
 export async function getUserRow(db: D1Database, id: number): Promise<UserRow> {
   const row = await db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE id = ?`).bind(id).first<UserRow>();
@@ -140,6 +141,7 @@ export function buildMe(
     paths,
     look: parseBearLook(user.bear_look),
     today,
+    admin: user.is_admin === 1,
   };
 }
 

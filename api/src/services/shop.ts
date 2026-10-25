@@ -20,9 +20,9 @@ export async function shopView(db: D1Database, userId: number): Promise<ShopResp
     price: it.price,
     minLevel: it.minLevel,
     style: it.style,
-    owned: it.price === 0 || owned.has(it.id),
+    owned: me.admin || it.price === 0 || owned.has(it.id),
     equipped: me.equipped[it.slot] === it.id,
-    locked: me.level < it.minLevel,
+    locked: !me.admin && me.level < it.minLevel,
   }));
   return { items, me };
 }
@@ -56,7 +56,7 @@ export async function buyItem(db: D1Database, userId: number, itemId: string, no
 
 /** Өмсөх; itemId = null бол (зөвхөн нэмэлт эд зүйлийг) тайлна. */
 export async function equipItem(db: D1Database, userId: number, slot: Slot, itemId: string | null): Promise<Me> {
-  await getUserRow(db, userId);
+  const user = await getUserRow(db, userId);
   if (itemId === null) {
     if (slot !== 'accessory') throw new ApiError(400, 'BAD_REQUEST', 'Зөвхөн нэмэлт эд зүйлийг тайлж болно');
     await db
@@ -66,7 +66,7 @@ export async function equipItem(db: D1Database, userId: number, slot: Slot, item
   } else {
     const item = (await getCatalog(db)).get(itemId);
     if (!item || item.slot !== slot) throw new ApiError(400, 'BAD_REQUEST', 'Эд зүйл буруу');
-    if (item.price > 0 && !(await ownedIds(db, userId)).has(item.id)) throw new ApiError(403, 'NOT_OWNED', 'Эхлээд авна уу');
+    if (item.price > 0 && user.is_admin !== 1 && !(await ownedIds(db, userId)).has(item.id)) throw new ApiError(403, 'NOT_OWNED', 'Эхлээд авна уу');
     await db.prepare(`UPDATE users SET ${SET_SLOT} WHERE id = ?`).bind(slot, item.id, userId).run();
   }
   return loadMe(db, userId);
@@ -83,7 +83,7 @@ async function ownedCosmeticIds(db: D1Database, userId: number): Promise<Set<str
 export async function cosmeticsView(db: D1Database, userId: number): Promise<CosmeticsResponse> {
   const [me, owned] = await Promise.all([loadMe(db, userId), ownedCosmeticIds(db, userId)]);
   return {
-    items: COSMETICS.map((c) => ({ id: c.id, kind: c.kind, key: c.key, price: c.price, owned: c.price === 0 || owned.has(c.id) })),
+    items: COSMETICS.map((c) => ({ id: c.id, kind: c.kind, key: c.key, price: c.price, owned: me.admin || c.price === 0 || owned.has(c.id) })),
     me,
   };
 }

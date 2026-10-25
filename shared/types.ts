@@ -103,6 +103,8 @@ export interface Me {
   /** Нүүрэн дээр сонгосон дэвсгэр, хувцас (серверт хадгалагдсан хувилбар): профайл дээр бусдад ингэж харагдана. */
   look: BearLook;
   today: string;
+  /** Хөгжүүлэгч: бүх зангилаа, boss руу орно, давтлагагүй, бүх хувцас эзэмшинэ. */
+  admin: boolean;
 }
 
 /** Баавгайн дэвсгэр, хувцас: mobile catalog-ийн key ('nimbeg', 'gradcap'…). */
@@ -119,7 +121,10 @@ export interface SubjectPath {
   /** Дараагийн зангилаа хүртэлх явц: nodeXp / nodeXpNeeded. */
   nodeXp: number;
   nodeXpNeeded: number;
-  /** Дарааллаар ялсан boss-ын тоо: дараагийнхаа boss-ыг ялах хүртэл баавгай түүний дэргэд зогсоно. */
+  /**
+   * Дарааллаар давсан тулааны хаалганы (boss, 2-р бүлгийн зүүн/баруун гар) тоо: дараагийнхаа хаалгыг давах хүртэл
+   * баавгай түүний дэргэд зогсоно.
+   */
   bossesBeaten: number;
 }
 
@@ -155,6 +160,7 @@ export interface SubjectSkill {
   subject: Subject;
   /** Сурах замын шат (SubjectPath.level) */
   level: number;
+  /** Ялсан жинхэнэ boss-ын тоо (зүүн/баруун гарыг тооцохгүй) */
   bossesBeaten: number;
   /** Даалгаварт зөв хариулсан асуулт */
   correct: number;
