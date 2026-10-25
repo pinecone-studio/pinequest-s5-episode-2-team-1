@@ -45,6 +45,28 @@ export async function insertDrafts(
   return { inserted, duplicates: drafts.length - inserted };
 }
 
+/**
+ * Загвараар үүсгэсэн бодлогуудыг хадгалж (`source` = 'template:<id>', `book_ref` = загварын хичээл) id-уудыг дарааллаар
+ * нь буцаана. Ижил текст өмнө нь байсан бол түүнийг; "асуулт буруу" гэж тэмдэглэгдсэнийг алгасна.
+ */
+export async function storeGenerated(
+  db: D1Database,
+  tier: number,
+  subject: string,
+  grade: number,
+  items: { template: { id: string; ref: string }; draft: QuestionDraft }[],
+  now = Date.now(),
+): Promise<number[]> {
+  if (items.length === 0) return [];
+  for (const it of items) await insertDrafts(db, tier, subject, [it.draft], `template:${it.template.id}`, now, { ref: it.template.ref, grade });
+  const keys = items.map((it) => promptKey(it.draft.prompt));
+  const { results } = await db
+    .prepare(`SELECT id, prompt_key FROM questions WHERE tier = ? AND subject = ? AND flagged = 0 AND prompt_key IN (${keys.map(() => '?').join(', ')})`)
+    .bind(tier, subject, ...keys)
+    .all<{ id: number; prompt_key: string }>();
+  return keys.flatMap((k) => results.filter((r) => r.prompt_key === k).map((r) => r.id).slice(0, 1));
+}
+
 export interface GenerateReport {
   source: string | null;
   requested: number;
