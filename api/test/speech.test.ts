@@ -1,7 +1,7 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GAME } from '../src/config/game';
 import { SpeechQueue, speechChunkEnd } from '../src/llm/speech';
-import { cleanForSpeech, noteQuota, speechMode, splitSse, ttsAvailable } from '../src/llm/tts';
+import { cleanForSpeech, noteQuota, speechMode, splitSse, ttsAvailable, ttsStream } from '../src/llm/tts';
 
 const tick = (ms = 0) => new Promise((r) => setTimeout(r, ms));
 
@@ -137,6 +137,43 @@ describe('TTS өдрийн квот', () => {
     noteQuota('{"quotaId": "GenerateRequestsPerDayPerProjectPerModel", "retryDelay": "120s"}', now);
     expect(ttsAvailable(now + 60_000)).toBe(false);
     expect(ttsAvailable(now + 121_000)).toBe(true);
+  });
+});
+
+describe('ttsStream', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  it('анхны дуу TTS_START_MS-д ирэхгүй бол таслана (баавгай Live-ийн дуу руу шилжинэ)', async () => {
+    vi.useFakeTimers();
+    let aborted = false;
+    vi.stubGlobal('fetch', (_url: string, init: RequestInit) => {
+      return new Promise<Response>((_, reject) =>
+        init.signal?.addEventListener('abort', () => {
+          aborted = true;
+          reject(new DOMException('aborted', 'AbortError'));
+        }),
+      );
+    });
+    const first = ttsStream('key', 'model', 'Сайн уу').next();
+    first.catch(() => {});
+    await vi.advanceTimersByTimeAsync(GAME.TUTOR.TTS_START_MS - 1);
+    expect(aborted).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    await expect(first).rejects.toThrow();
+    expect(aborted).toBe(true);
+  });
+
+  it('429-д хүлээж дахин оролдохгүй, шууд алдаа шиднэ', async () => {
+    let calls = 0;
+    vi.stubGlobal('fetch', async () => {
+      calls++;
+      return new Response('{"quotaId": "GenerateRequestsPerMinutePerProjectPerModel"}', { status: 429 });
+    });
+    await expect(ttsStream('key', 'model', 'Сайн уу').next()).rejects.toThrow();
+    expect(calls).toBe(1);
   });
 });
 

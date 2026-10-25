@@ -38,9 +38,6 @@ export function splitSse(buffer: string): { events: string[]; rest: string } {
   return { events, rest };
 }
 
-/** Минутын хязгаарт (429) хүрвэл нэг удаа ийм хугацааны дараа дахин оролдоно. */
-const RETRY_429_MS = 1_500;
-
 /** Өдрийн квот дууссан бол (PerDay 429) хэзээ хүртэл TTS-ийг оролдохгүй (isolate-д). */
 let blockedUntil = 0;
 
@@ -55,12 +52,20 @@ export function noteQuota(body: string, now = Date.now()) {
   blockedUntil = now + (delay ? Number(delay[1]) * 1000 : 60 * 60_000);
 }
 
-/** Текстийг 24 kHz PCM16LE хэсгүүдээр дамжуулна. */
+/**
+ * Текстийг 24 kHz PCM16LE хэсгүүдээр дамжуулна. Алдаа (429 ч) гарвал дахин оролдож хүлээлгэхгүй, шууд шиднэ:
+ * routes/tutor.ts нь тэр ярилцлагын үлдсэн хэсэгт үнэгүй Live-ийн дуу руу шилжинэ. Анхны дуу
+ * GAME.TUTOR.TTS_START_MS-д ирэхгүй бол мөн таслана (баавгай удаан чимээгүй байхгүй).
+ */
 export async function* ttsStream(key: string, model: string, text: string, signal?: AbortSignal): AsyncGenerator<Uint8Array> {
-  const request = () =>
-    fetch(`${BASE}/${encodeURIComponent(model)}:streamGenerateContent?alt=sse`, {
+  const ctrl = new AbortController();
+  const stop = () => ctrl.abort();
+  signal?.addEventListener('abort', stop);
+  const timer = setTimeout(stop, GAME.TUTOR.TTS_START_MS);
+  try {
+    let res = await fetch(`${BASE}/${encodeURIComponent(model)}:streamGenerateContent?alt=sse`, {
       method: 'POST',
-      signal,
+      signal: ctrl.signal,
       headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
       body: JSON.stringify({
         contents: [{ role: 'user', parts: [{ text: ttsPrompt(text) }] }],
@@ -70,31 +75,31 @@ export async function* ttsStream(key: string, model: string, text: string, signa
         },
       }),
     });
-  let res = await request();
-  // Өдрийн квот дууссан бол (PerDay) хүлээх утгагүй.
-  if (res.status === 429) {
-    const body = await res.text();
-    noteQuota(body);
-    if (!/PerDay|per_day/i.test(body)) {
-      await new Promise((r) => setTimeout(r, RETRY_429_MS));
-      res = await request();
-    } else {
+    if (res.status === 429) {
+      // Өдрийн квот дууссан бол (PerDay) дараагийн ярилцлагууд ч шууд Live-ийн дуугаар эхэлнэ (ttsAvailable).
+      const body = await res.text();
+      noteQuota(body);
       res = new Response(body, { status: 429 });
     }
-  }
-  if (!res.ok || !res.body) throw new LlmError('gemini', res.status, `${model}: ${(await res.text()).slice(0, 200)}`);
+    if (!res.ok || !res.body) throw new LlmError('gemini', res.status, `${model}: ${(await res.text()).slice(0, 200)}`);
 
-  const decoder = new TextDecoder();
-  let buffer = '';
-  for await (const part of res.body) {
-    buffer += decoder.decode(part, { stream: true });
-    const { events, rest } = splitSse(buffer);
-    buffer = rest;
-    for (const data of events) {
-      const msg = JSON.parse(data) as { candidates?: Array<{ content?: { parts?: Array<{ inlineData?: { data?: string } }> } }> };
-      for (const p of msg.candidates?.[0]?.content?.parts ?? []) {
-        if (p.inlineData?.data) yield fromB64(p.inlineData.data);
+    const decoder = new TextDecoder();
+    let buffer = '';
+    for await (const part of res.body) {
+      buffer += decoder.decode(part, { stream: true });
+      const { events, rest } = splitSse(buffer);
+      buffer = rest;
+      for (const data of events) {
+        const msg = JSON.parse(data) as { candidates?: Array<{ content?: { parts?: Array<{ inlineData?: { data?: string } }> } }> };
+        for (const p of msg.candidates?.[0]?.content?.parts ?? []) {
+          if (!p.inlineData?.data) continue;
+          clearTimeout(timer);
+          yield fromB64(p.inlineData.data);
+        }
       }
     }
+  } finally {
+    clearTimeout(timer);
+    signal?.removeEventListener('abort', stop);
   }
 }
