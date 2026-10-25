@@ -46,7 +46,8 @@ export type ErrorCode =
   | 'BOSS_LOCKED'
   | 'TUTOR_UNAVAILABLE'
   | 'TUTOR_LIMIT'
-  | 'PROFILE_NOT_FOUND';
+  | 'PROFILE_NOT_FOUND'
+  | 'FRIEND_LIMIT';
 
 export interface ApiErrorBody {
   error: { code: ErrorCode; message: string };
@@ -102,6 +103,8 @@ export interface Me {
   paths: Record<Subject, SubjectPath>;
   /** Нүүрэн дээр сонгосон дэвсгэр, хувцас (серверт хадгалагдсан хувилбар): профайл дээр бусдад ингэж харагдана. */
   look: BearLook;
+  /** Хариулаагүй найзын хүсэлт (аватар дээр цэг) */
+  friendRequests: number;
   today: string;
   /** Хөгжүүлэгч: бүх зангилаа, boss руу орно, давтлагагүй, бүх хувцас эзэмшинэ. */
   admin: boolean;
@@ -203,6 +206,43 @@ export interface ProfileResponse {
   profile: PublicProfile;
   /** Өөрийнхөө кодыг оруулсан */
   isMe: boolean;
+  /** Энэ хүүхэдтэй найз эсэх (өөрийнх бол 'none') */
+  friend: FriendStatus;
+}
+
+// ---------- Найзууд ----------
+// Найзыг профайлын кодоор нь (QR эсвэл бичиж) нэмнэ: нөгөө нь зөвшөөрсөн үед л найз болно. Id ашиглахгүй.
+
+/** none = холбоогүй, outgoing = би хүсэлт илгээсэн, incoming = тэр надад илгээсэн, friends = найзууд */
+export type FriendStatus = 'none' | 'outgoing' | 'incoming' | 'friends';
+
+export interface FriendDto {
+  /** Профайлын код: /u/<код>, мөн хүсэлт зөвшөөрөх, хасахад */
+  code: string;
+  username: string;
+  grade: number;
+  level: number;
+  streak: number;
+  look: BearLook;
+}
+
+/** GET /friends */
+export interface FriendsResponse {
+  friends: FriendDto[];
+  /** Надад ирсэн, хариулаагүй хүсэлт (шинэ нь эхэндээ) */
+  incoming: FriendDto[];
+  /** Миний илгээсэн, хүлээгдэж буй хүсэлт */
+  outgoing: FriendDto[];
+}
+
+/** POST /friends — хүсэлт илгээнэ; тэр надад аль хэдийн илгээсэн бол зөвшөөрнө. */
+export interface FriendBody {
+  code: string;
+}
+
+/** POST /friends, DELETE /friends/:code */
+export interface FriendActionResponse {
+  friend: FriendStatus;
 }
 
 /** PUT /me/look */

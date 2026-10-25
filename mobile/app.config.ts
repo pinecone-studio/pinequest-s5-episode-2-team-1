@@ -37,6 +37,7 @@ const config: ExpoConfig = {
     ],
     'expo-secure-store',
     ['expo-audio', { microphonePermission: 'Баавгайтай ярилцахад микрофон хэрэгтэй.' }],
+    ['expo-camera', { cameraPermission: 'Найзынхаа QR кодыг уншихад камер хэрэгтэй.', microphonePermission: false, recordAudioAndroid: false }],
   ],
   experiments: {
     typedRoutes: false,
