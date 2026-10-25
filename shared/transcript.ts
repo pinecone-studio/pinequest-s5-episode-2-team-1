@@ -12,5 +12,7 @@ const FIXES: [RegExp, string][] = [
 ];
 
 export function fixTranscript(text: string): string {
-  return FIXES.reduce((t, [re, to]) => t.replace(re, to), text);
+  // Монгол бичигт байхгүй украин "є"-г ("дєрєв", "бєгєєд") transcript "ө"-ийн оронд бичдэг.
+  const letters = text.replace(/є/g, 'ө').replace(/Є/g, 'Ө');
+  return FIXES.reduce((t, [re, to]) => t.replace(re, to), letters);
 }

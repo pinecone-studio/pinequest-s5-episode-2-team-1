@@ -13,7 +13,9 @@ import {
   liveEvents,
   liveSetup,
   liveText,
+  liveToolResponse,
   speechBudget,
+  TUTOR_SAY_GOODBYE,
   TUTOR_WRAP_UP,
   tutorKickoff,
   tutorSystemPrompt,
@@ -135,6 +137,11 @@ async function relay(
   /** Баавгайн ярьсан хугацаа (зардал) ба клиент дээр дуу нь тоглож дуусах агшин (ойролцоогоор). */
   let bearMs = 0;
   let playedUntil = 0;
+  /** Энэ Live ээлжид баавгай ярьсан (дуу эсвэл текст) / finish_lesson дуудсан эсэх. */
+  let liveSpoke = false;
+  let liveTool = false;
+  /** Баавгай тайлбараа дуусгасан (finish_lesson): баяртай гэсэн ээлжийн дараа хаана. */
+  let finishing = false;
   /** Дуусгах заавар (TUTOR_WRAP_UP) өгсөн; turnStartMs = энэ ээлж эхлэхэд bearMs. */
   let wrapping = false;
   let turnStartMs = 0;
@@ -153,14 +160,16 @@ async function relay(
   /** Баавгайн ээлж клиентэд дууссан: хугацаа нь дуусах гэж байвал дуусгах ээлж, дууссан бол баяртай гэснийх нь дараа хаана. */
   const bearTurnEnd = () => {
     send({ type: 'turn_end' });
-    const next = speechBudget(bearMs, wrapping, bearMs > turnStartMs);
+    const spoke = bearMs > turnStartMs;
+    const next = finishing ? (spoke ? 'end' : 'continue') : speechBudget(bearMs, wrapping, spoke);
     turnStartMs = bearMs;
     if (next === 'wrap') {
       wrapping = true;
       sendUp(liveText(TUTOR_WRAP_UP, false));
     } else if (next === 'end' && endTimer === undefined) {
       // Клиент баавгайн сүүлийн үгийг тоглож дуусахыг хүлээнэ.
-      endTimer = setTimeout(() => shutdown({ type: 'end', reason: 'time' }), Math.max(0, playedUntil - Date.now()) + 500);
+      const end: TutorServerMsg = { type: 'end', reason: finishing ? 'done' : 'time' };
+      endTimer = setTimeout(() => shutdown(end), Math.max(0, playedUntil - Date.now()) + 500);
     }
   };
 
@@ -268,6 +277,7 @@ async function relay(
             break;
           }
           case 'audio': {
+            liveSpoke = true;
             const pcm = fromB64(ev.data);
             if (!liveTurnOpen) {
               liveTurnOpen = true;
@@ -278,6 +288,7 @@ async function relay(
             break;
           }
           case 'bear_text':
+            liveSpoke = true;
             send({ type: 'bear_text', text: ev.text.replace(/[*#_`]/g, '') });
             if (speech && !useLiveVoice) {
               flushed = false;
@@ -294,6 +305,8 @@ async function relay(
             send({ type: 'kid_text', text: ev.text });
             break;
           case 'interrupted':
+            liveSpoke = false;
+            liveTool = false;
             speech?.clear();
             turnText = '';
             spoken = 0;
@@ -303,10 +316,21 @@ async function relay(
           case 'gen_done':
             flushTurn();
             break;
-          case 'turn_end':
+          case 'turn_end': {
             liveTurnOpen = false;
+            // finish_lesson дуудаад дуугүй ээлж дуусгасан: баяртай гэж хэлүүлээд, тэр ээлжийн дараа хаана.
+            const silentFinish = liveTool && !liveSpoke;
+            liveTool = false;
+            liveSpoke = false;
+            if (silentFinish) sendUp(liveText(TUTOR_SAY_GOODBYE));
             if (speech && !useLiveVoice) flushTurn();
             else bearTurnEnd();
+            break;
+          }
+          case 'finish':
+            liveTool = true;
+            finishing = true;
+            sendUp(liveToolResponse(ev.id));
             break;
           case 'go_away':
             shutdown({ type: 'end', reason: 'time' });

@@ -221,7 +221,7 @@ export function useBearTalk(questionId: number | undefined) {
           void micOn();
           break;
         case 'end':
-          end(m.reason === 'time' ? S.tutor.timeUp : (m.message ?? S.tutor.lost));
+          end(m.reason === 'time' ? S.tutor.timeUp : m.reason === 'done' ? S.tutor.done : (m.message ?? S.tutor.lost));
           break;
       }
     };
