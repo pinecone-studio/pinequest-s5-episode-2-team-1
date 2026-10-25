@@ -17,7 +17,7 @@ import { S } from '@/i18n/strings';
 import { confirm } from '@/lib/confirm';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 import { goBack } from '@/lib/nav';
-import { bgById, outfitById } from '@/lib/pixelBear/catalog';
+import { bgById } from '@/lib/pixelBear/catalog';
 import { formatProfileCode, profileLink, profileQrText } from '@/lib/profile';
 
 /** QR-аа үзүүлж байхад найзын хүсэлт шууд гарч ирэхийн тулд жагсаалтыг ингэж байнга шинэчилнэ. */
@@ -29,7 +29,7 @@ const POLL_MS = 3_000;
  */
 export default function ProfileScreen() {
   const { refreshMe } = useAuth();
-  const { bgId, outfitId } = usePixelBear();
+  const { bgId } = usePixelBear();
   const [data, setData] = useState<MyProfileResponse | null>(null);
   const [friends, setFriends] = useState<FriendsResponse | null>(null);
   const [error, setError] = useState('');
@@ -168,7 +168,6 @@ export default function ProfileScreen() {
               <QrIsland
                 value={profileQrText(data.code)}
                 bg={bgById(bgId)}
-                outfit={outfitById(outfitId)}
                 islandHint={S.profile.islandHint}
                 qrHint={S.profile.qrHint}
                 islandLabel={S.profile.islandLabel}
