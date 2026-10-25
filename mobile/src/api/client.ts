@@ -2,7 +2,7 @@ import type { ApiErrorBody, ErrorCode } from '@shared/types';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { errorMessages } from '@/i18n/strings';
-import { setOnline } from '@/lib/online';
+import { isOfflineMode, setOnline } from '@/lib/online';
 
 const API_PORT = 8787;
 const TIMEOUT_MS = 15_000;
@@ -25,7 +25,7 @@ function resolveApiUrl(): string {
 
 export const API_URL = resolveApiUrl();
 
-export type ClientErrorCode = ErrorCode | 'NETWORK' | 'TIMEOUT';
+export type ClientErrorCode = ErrorCode | 'NETWORK' | 'TIMEOUT' | 'OFFLINE';
 
 export class ApiError extends Error {
   constructor(
@@ -55,9 +55,9 @@ export function openTutorSocket(questionId?: number): WebSocket {
   return new WebSocket(`${API_URL.replace(/^http/, 'ws')}/tutor/ws${query}`, ['bearer', session.token ?? '']);
 }
 
-/** Сервер хүрэхгүй байна (офлайн горимд шилжих шалтгаан), серверийн алдаа биш. */
+/** Сервер хүрэхгүй эсвэл офлайн горимыг өөрөө асаасан (офлайн горимд ажиллах шалтгаан), серверийн алдаа биш. */
 export function isOfflineError(e: unknown): boolean {
-  return e instanceof ApiError && (e.code === 'NETWORK' || e.code === 'TIMEOUT');
+  return e instanceof ApiError && (e.code === 'NETWORK' || e.code === 'TIMEOUT' || e.code === 'OFFLINE');
 }
 
 export function errorText(e: unknown): string {
@@ -66,6 +66,8 @@ export function errorText(e: unknown): string {
 }
 
 export async function api<T>(path: string, opts: { method?: string; body?: unknown } = {}): Promise<T> {
+  // Офлайн горимыг өөрөө асаасан бол сервер рүү огт хандахгүй (холболтын төлөвийг ч өөрчлөхгүй).
+  if (isOfflineMode()) throw new ApiError(0, 'OFFLINE', errorMessages.OFFLINE);
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
   const tokenUsed = session.token;

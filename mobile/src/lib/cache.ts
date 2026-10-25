@@ -2,13 +2,15 @@ import { File, Paths } from 'expo-file-system';
 import { Platform } from 'react-native';
 
 /**
- * Офлайн горимд харуулах серверийн сүүлийн хариу (профайл, дэлгүүр). SecureStore-ийн утга ~2 KB-аас хэтэрч болохгүй
- * тул native дээр файлд, web (зөвхөн хөгжүүлэлтэд) дээр localStorage-д бичнэ. Token энд биш, SecureStore-д.
+ * Офлайн горимд харуулах серверийн сүүлийн хариу (профайл, дэлгүүр) ба офлайн горимын сонголт. SecureStore-ийн утга
+ * ~2 KB-аас хэтэрч болохгүй тул native дээр файлд, web (зөвхөн хөгжүүлэлтэд) дээр localStorage-д бичнэ. Token энд биш,
+ * SecureStore-д.
  */
 export const cacheKeys = {
   me: 'me',
   shop: (userId: number) => `shop.${userId}`,
   cosmetics: (userId: number) => `cosmetics.${userId}`,
+  offlineMode: 'offline-mode',
 };
 
 const file = (key: string) => new File(Paths.document, `pq-cache-${key}.json`);

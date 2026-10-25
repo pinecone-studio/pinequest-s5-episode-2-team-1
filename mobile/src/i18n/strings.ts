@@ -42,8 +42,8 @@ export const S = {
   },
   offline: {
     badge: 'Офлайн горим · XP, оноо тоологдохгүй',
-    locked: 'Сурах зам, Баг интернэттэй үед нээгдэнэ',
-    lockedTab: (name: string) => `${name}: интернэттэй үед нээгдэнэ`,
+    locked: 'Сурах зам, Баг онлайн үед нээгдэнэ',
+    lockedTab: (name: string) => `${name}: онлайн үед нээгдэнэ`,
     tasksTitle: 'Офлайн горим',
     tasksHint: 'Интернэтгүй ч даалгавраа хийж болно. Гэхдээ XP, оноо, дараалал тоологдохгүй.',
     streakTodo: 'Интернэттэй үед нэг даалгавар хийвэл дараалал чинь нэмэгдэнэ',
@@ -57,6 +57,10 @@ export const S = {
     toPractice: 'Офлайн дасгал хийх',
     shopNote: 'Офлайн үед хувцсаа үзэж, авсан зүйлсээ сонгож болно. Худалдаж авахад интернэт хэрэгтэй.',
     needsInternet: 'Интернэт хэрэгтэй',
+    modeTitle: 'Офлайн горим',
+    modeOn: 'Сервертэй холбогдохгүй, интернэтгүй үеийнх шиг ажиллана. XP, оноо тоологдохгүй.',
+    modeOff: 'Интернэттэй ч офлайн горимд шилжиж болно. XP, оноо тоологдохгүй.',
+    modeNoNet: 'Интернэт алга тул апп одоо офлайн ажиллаж байна.',
   },
   tabs: {
     home: 'Нүүр',
@@ -417,7 +421,7 @@ export const S = {
   goHome: 'Нүүр рүү буцах',
 };
 
-export const errorMessages: Record<ErrorCode | 'NETWORK' | 'TIMEOUT', string> = {
+export const errorMessages: Record<ErrorCode | 'NETWORK' | 'TIMEOUT' | 'OFFLINE', string> = {
   BAD_REQUEST: 'Мэдээлэл буруу байна',
   UNAUTHORIZED: 'Дахин нэвтэрнэ үү',
   FORBIDDEN: 'Эрх хүрэхгүй байна',
@@ -452,4 +456,5 @@ export const errorMessages: Record<ErrorCode | 'NETWORK' | 'TIMEOUT', string> = 
   PROFILE_NOT_FOUND: 'Ийм кодтой профайл олдсонгүй',
   NETWORK: 'Сервертэй холбогдож чадсангүй. Wi-Fi-гаа шалгана уу.',
   TIMEOUT: 'Сервер хариу өгөхгүй байна. Дахин оролдоно уу.',
+  OFFLINE: 'Офлайн горим асаалттай байна. «Хуанли ба профайл» хэсгээс унтрааж болно.',
 };
