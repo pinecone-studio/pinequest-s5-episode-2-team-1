@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
@@ -13,6 +13,7 @@ import { confirm } from '@/lib/confirm';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 import { buildMonth, FACE } from '@/lib/pixelBear/calendar';
 import { goBack } from '@/lib/nav';
+import { setOfflineMode, useOfflineMode, useOnline } from '@/lib/online';
 
 const LEGEND = [
   { face: 'happy', label: S.calendar.legend.happy },
@@ -30,10 +31,12 @@ function Chevron({ dir }: { dir: 'left' | 'right' }) {
   );
 }
 
-/** 08 · Хичээлийн хуанли (аватар дээр дарж нээнэ) + гарах. */
+/** 08 · Хичээлийн хуанли (Нүүрийн хуанли товч) + офлайн горим, гарах. */
 export default function CalendarScreen() {
-  const { me, signOut } = useAuth();
+  const { me, signOut, refreshMe } = useAuth();
   const { bear } = usePixelBear();
+  const online = useOnline();
+  const offlineMode = useOfflineMode();
   const [ty, tm] = (me?.today ?? '2026-01-01').split('-').map(Number);
   const [ym, setYm] = useState({ y: ty, m: tm });
   const month = useMemo(() => (me ? buildMonth(me, ym.y, ym.m) : null), [me, ym]);
@@ -50,6 +53,13 @@ export default function CalendarScreen() {
   async function onLogout() {
     if (await confirm(S.auth.logoutConfirm, S.auth.logout)) await signOut();
   }
+
+  function toggleOffline(on: boolean) {
+    setOfflineMode(on);
+    // Унтраамагц профайлаа шинэчилнэ: сервер хүрэхгүй бол жинхэнэ офлайн хэвээр үлдэнэ.
+    if (!on) void refreshMe();
+  }
+  const offlineHint = offlineMode ? S.offline.modeOn : online ? S.offline.modeOff : S.offline.modeNoNet;
 
   return (
     <Screen contentStyle={{ paddingTop: 6 }}>
@@ -130,6 +140,26 @@ export default function CalendarScreen() {
         ))}
       </Enter>
 
+      <Enter index={4} style={[styles.offline, offlineMode && { backgroundColor: colors.lemon }]}>
+        <View style={{ flex: 1, gap: 2 }}>
+          <Text style={styles.offlineTitle}>{S.offline.modeTitle}</Text>
+          <Text style={styles.offlineHint} accessibilityLiveRegion="polite">
+            {offlineHint}
+          </Text>
+        </View>
+        <Switch
+          value={offlineMode}
+          onValueChange={toggleOffline}
+          trackColor={{ false: colors.stone, true: colors.violet }}
+          thumbColor={colors.white}
+          // react-native-web асаалттай үеийн бөмбөлгийг thumbColor биш activeThumbColor-оор будна
+          {...(Platform.OS === 'web' ? { activeThumbColor: colors.white } : null)}
+          ios_backgroundColor={colors.stone}
+          accessibilityLabel={S.offline.modeTitle}
+          accessibilityHint={offlineHint}
+        />
+      </Enter>
+
       <View style={styles.profile}>
         <Text style={styles.profileText}>{S.calendar.profile(me.username, me.grade)}</Text>
         <Button title={S.calendar.toProfile} variant="lemon" small onPress={() => router.push('/profile')} />
@@ -184,6 +214,17 @@ const styles = StyleSheet.create({
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   legendDot: { width: 10, height: 10, borderRadius: 3 },
   legendText: { fontFamily: fonts.semibold, fontSize: 12, color: colors.muted },
+  offline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: radius.lg,
+    backgroundColor: colors.stoneAlt,
+  },
+  offlineTitle: { fontFamily: fonts.semibold, fontSize: 15, color: colors.ink },
+  offlineHint: { fontFamily: fonts.medium, fontSize: 13, lineHeight: 18, color: colors.muted },
   profile: {
     marginTop: 8,
     flexDirection: 'row',

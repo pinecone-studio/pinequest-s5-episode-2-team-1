@@ -3,7 +3,7 @@ import { createContext, type ReactNode, useCallback, useContext, useEffect, useM
 import { AppState } from 'react-native';
 import { ApiError, api, isOfflineError, setAuthToken, setUnauthorizedHandler } from '@/api/client';
 import { cacheGet, cacheKeys, cacheRemove, cacheSet } from '@/lib/cache';
-import { useOnline } from '@/lib/online';
+import { isOfflineMode, loadOfflineMode, setOfflineMode, useOfflineMode, useOnline } from '@/lib/online';
 import { clearToken, loadToken, saveToken } from './storage';
 
 /** Офлайн үед серверийг дахин шалгах хугацаа (хүсэлтийн 15 сек timeout-оос урт). */
@@ -32,12 +32,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [bootAttempt, setBootAttempt] = useState(0);
 
   const online = useOnline();
+  const offlineMode = useOfflineMode();
 
   const reset = useCallback(async () => {
     setAuthToken(null);
     setMeState(null);
     setStatus('signedOut');
     cacheRemove(cacheKeys.me);
+    // Нэвтрэх дэлгэцэд офлайн горим үлдвэл сервер рүү хандаж чадахгүй
+    setOfflineMode(false);
     await clearToken();
   }, []);
 
@@ -61,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
       setAuthToken(token);
+      await loadOfflineMode();
       try {
         const res = await api<MeResponse>('/me');
         if (cancelled) return;
@@ -78,6 +82,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (cached) {
           setMeState(cached);
           setStatus('signedIn');
+        } else if (isOfflineMode()) {
+          // Офлайн горим асаалттай ч хадгалсан профайл алга: горимыг унтрааж сервертэй дахин оролдоно.
+          setOfflineMode(false);
+          setBootAttempt((n) => n + 1);
         } else setStatus('offline');
       }
     })();
@@ -126,9 +134,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  // Офлайн үед серверийг үе үе (мөн апп нээгдэх бүрт) шалгана: хүрмэгц профайл шинэчлэгдэж онлайн болно.
+  // Офлайн үед серверийг үе үе (мөн апп нээгдэх бүрт) шалгана: хүрмэгц профайл шинэчлэгдэж онлайн болно. Офлайн
+  // горимыг өөрөө асаасан бол шалгахгүй.
   useEffect(() => {
-    if (status !== 'signedIn' || online) return;
+    if (status !== 'signedIn' || online || offlineMode) return;
     let busy = false;
     const recheck = async () => {
       if (busy) return;
@@ -142,7 +151,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       clearInterval(timer);
       sub.remove();
     };
-  }, [status, online, refreshMe]);
+  }, [status, online, offlineMode, refreshMe]);
 
   const value = useMemo<AuthValue>(
     () => ({
