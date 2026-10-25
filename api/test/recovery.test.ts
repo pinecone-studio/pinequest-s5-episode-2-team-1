@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { groupByLesson, practiceIds, recoveryCertain } from '../src/services/recovery';
+import { groupByLesson, mainGroup, practiceIds, recoveryCertain } from '../src/services/recovery';
 
 describe('салаа замын асуулт сонголт', () => {
   it('алдсан асуултыг сэдвээр бүлэглэж, сэдэвгүйг тус тусад нь үлдээнэ', () => {
@@ -22,15 +22,16 @@ describe('салаа замын асуулт сонголт', () => {
     expect(groups.map((g) => g.map((q) => q.id))).toEqual([[1, 3], [2], [4]]);
   });
 
-  it('сэдэв бүрт 3 хүртэл өөр асуулт, дутууг алдсан асуултаар нөхнө', () => {
-    expect(
-      practiceIds([
-        { missed: [1, 3], picked: [10, 11, 12, 13] },
-        { missed: [2], picked: [20] },
-        { missed: [4, 5], picked: [] },
-        { missed: [6, 7, 8, 9], picked: [] },
-      ]),
-    ).toEqual([10, 11, 12, 20, 2, 4, 5, 6, 7, 8]);
+  it('алдааны тооноос үл хамааран нийт 3 асуулт: өөр асуулт, дутууг алдсан асуултаар', () => {
+    expect(practiceIds([10, 11, 12, 13], [1, 2, 3, 4, 5])).toEqual([10, 11, 12]);
+    expect(practiceIds([10], [1, 2, 3])).toEqual([10, 1, 2]);
+    expect(practiceIds([], [1, 2])).toEqual([1, 2]);
+  });
+
+  it('номгүй үед хамгийн олон алдсан нэг сэдвийг давтана (тэнцвэл эхэлж алдсан нь)', () => {
+    const q = (id: number, topic: string) => ({ id, topic, book_ref: null });
+    expect(mainGroup([q(1, 'cases'), q(2, 'plural'), q(3, 'plural')]).map((x) => x.id)).toEqual([2, 3]);
+    expect(mainGroup([q(1, 'cases'), q(2, 'plural')]).map((x) => x.id)).toEqual([1]);
   });
 
   it('2 буюу түүнээс олон алдаа гарвал салаа зам заавал нээгдэнэ (зөв хариуг тэр үед л нууна)', () => {

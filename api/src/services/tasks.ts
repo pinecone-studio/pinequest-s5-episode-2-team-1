@@ -12,7 +12,7 @@ import { isConstraintError, newTx } from '../lib/db';
 import { ApiError } from '../lib/errors';
 import type { PageRange } from './grounding';
 import { bookLessons, lessonPages } from './lessons';
-import { LESSON_COUNT_SQL, maybeRefill, pickArgs, pickSql, rangeArgs, refillLesson, refillPool } from './pool';
+import { LESSON_COUNT_SQL, lessonRef, maybeRefill, pickArgs, pickSql, rangeArgs, refillLesson, refillPool } from './pool';
 import { hasPendingRecovery, recoveryCertain, recoveryStatements } from './recovery';
 import { countTasksToday, getUserRow, loadMe, loadSubjectPaths, streakStateOf, syncStreak } from './users';
 
@@ -144,11 +144,11 @@ export async function startTask(
   await db.batch([
     db
       .prepare(
-        `INSERT INTO tasks (user_id, subject, day, status, boss, tx, created_at)
-         SELECT ?, ?, ?, 'in_progress', ?, ?, ?
+        `INSERT INTO tasks (user_id, subject, day, status, boss, lesson_ref, tx, created_at)
+         SELECT ?, ?, ?, 'in_progress', ?, ?, ?, ?
          WHERE NOT EXISTS (SELECT 1 FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress')`,
       )
-      .bind(userId, subject, today, boss ?? null, tx, now, userId, subject, today),
+      .bind(userId, subject, today, boss ?? null, lesson ? lessonRef(lesson) : null, tx, now, userId, subject, today),
     ...picked.map((q, i) => tq.bind(tx, i, q.id, tx)),
     ...picked.map((q) => seen.bind(userId, q.id, now, tx)),
   ]);

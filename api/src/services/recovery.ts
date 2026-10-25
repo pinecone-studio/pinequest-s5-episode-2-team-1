@@ -4,7 +4,7 @@ import type { RecoveryAnswerResponse, RecoveryDto, Subject } from '../../../shar
 import { GAME, type Tier } from '../config/game';
 import { TOPICS } from '../config/topics';
 import { ApiError } from '../lib/errors';
-import { OWN_GRADE } from './pool';
+import { IN_RANGE, OWN_GRADE, parseLessonRef, rangeArgs } from './pool';
 
 interface Missed {
   id: number;
@@ -31,9 +31,14 @@ export function groupByLesson<T extends { id: number; topic: string | null; book
   return [...groups.values()];
 }
 
-/** Бүлэг бүрт сонгосон өөр асуултын араас дутууг алдсан асуултаар нөхнө (бүлэгт хамгийн ихдээ perTopic). */
-export function practiceIds(groups: { missed: number[]; picked: number[] }[], perTopic: number = GAME.RECOVERY_PRACTICE): number[] {
-  return groups.flatMap(({ missed, picked }) => [...picked.slice(0, perTopic), ...missed.slice(0, Math.max(0, perTopic - picked.length))]);
+/** Сонгосон өөр асуултын араас дутууг алдсан асуултаар нөхнө: нийт хамгийн ихдээ `total` (алдааны тооноос үл хамаарна). */
+export function practiceIds(picked: number[], missed: number[], total: number = GAME.RECOVERY_PRACTICE): number[] {
+  return [...picked, ...missed.filter((id) => !picked.includes(id))].slice(0, total);
+}
+
+/** Номгүй үед давтах ганц сэдэв: хамгийн олон алдсан хичээл/сэдэв (тэнцвэл эхэлж алдсан нь). */
+export function mainGroup<T extends { id: number; topic: string | null; book_ref: string | null }>(missed: T[]): T[] {
+  return groupByLesson(missed).reduce((best, g) => (g.length > best.length ? g : best));
 }
 
 /** Ийм олон алдаа гарсан бол салаа зам заавал нээгдэнэ: зөв хариуг тэнд өөрөө дахин бодож олно. */
@@ -46,9 +51,9 @@ export const recoveryCertain = (wrong: number) => wrong >= GAME.RECOVERY_MIN_WRO
 export async function recoveryStatements(db: D1Database, userId: number, taskId: number, now = Date.now()): Promise<D1PreparedStatement[]> {
   // Admin-д нөхөх давтлага үүсэхгүй.
   const task = await db
-    .prepare('SELECT t.subject FROM tasks t JOIN users u ON u.id = t.user_id WHERE t.id = ? AND t.user_id = ? AND u.is_admin = 0')
+    .prepare('SELECT t.subject, t.lesson_ref FROM tasks t JOIN users u ON u.id = t.user_id WHERE t.id = ? AND t.user_id = ? AND u.is_admin = 0')
     .bind(taskId, userId)
-    .first<{ subject: Subject }>();
+    .first<{ subject: Subject; lesson_ref: string | null }>();
   if (!task) return [];
   // Flag (-1) бол жинхэнэ алдаа биш.
   const { results: missed } = await db
@@ -60,21 +65,32 @@ export async function recoveryStatements(db: D1Database, userId: number, taskId:
     .all<Missed>();
   if (!recoveryCertain(missed.length)) return [];
 
-  const pick = db.prepare(
-    `SELECT q.id FROM questions q
-     LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
-     WHERE q.tier = ? AND q.subject = ? AND ${SAME_LESSON} AND q.flagged = 0 AND ${OWN_GRADE}
-       AND q.id NOT IN (SELECT question_id FROM task_questions WHERE task_id = ?)
-     ORDER BY (s.seen_at IS NOT NULL), s.seen_at, RANDOM() LIMIT ?`,
-  );
-  const groups: { missed: number[]; picked: number[] }[] = [];
-  for (const group of groupByLesson(missed)) {
-    const first = group[0];
-    const picked = (
-      await pick.bind(userId, first.tier, task.subject, ...sameLessonArgs(first), userId, taskId, GAME.RECOVERY_PRACTICE).all<{ id: number }>()
-    ).results.map((r) => r.id);
-    groups.push({ missed: group.map((q) => q.id), picked });
-  }
+  // Нэг сэдвийн нийт RECOVERY_PRACTICE асуулт: даалгаврын зангилааны номын хичээлээс, номгүй бол хамгийн олон алдсан
+  // нэг хичээл/сэдвээс. 2 хичээлтэй зангилаанд хамгийн олон алдсан хичээлийнхийг түрүүлнэ.
+  const lesson = parseLessonRef(task.lesson_ref);
+  const group = mainGroup(missed);
+  const same = lesson ? IN_RANGE : SAME_LESSON;
+  const { results } = await db
+    .prepare(
+      `SELECT q.id FROM questions q
+       LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
+       WHERE q.tier = ? AND q.subject = ? AND ${same} AND q.flagged = 0 AND ${OWN_GRADE}
+         AND q.id NOT IN (SELECT question_id FROM task_questions WHERE task_id = ?)
+       ORDER BY ${SAME_LESSON} DESC, (s.seen_at IS NOT NULL), s.seen_at, RANDOM() LIMIT ?`,
+    )
+    .bind(
+      userId,
+      group[0].tier,
+      task.subject,
+      ...(lesson ? rangeArgs(lesson) : sameLessonArgs(group[0])),
+      userId,
+      taskId,
+      ...sameLessonArgs(group[0]),
+      GAME.RECOVERY_PRACTICE,
+    )
+    .all<{ id: number }>();
+  const picked = results.map((r) => r.id);
+  const ids = practiceIds(picked, (lesson ? missed : group).map((q) => q.id));
 
   // Шинэ асуултуудыг "харсан" болгоно: удахгүй ердийн даалгаварт дахин гарахгүй.
   const seen = db.prepare(
@@ -84,8 +100,8 @@ export async function recoveryStatements(db: D1Database, userId: number, taskId:
   return [
     db
       .prepare('INSERT OR IGNORE INTO recoveries (task_id, user_id, subject, questions, created_at) VALUES (?, ?, ?, ?, ?)')
-      .bind(taskId, userId, task.subject, JSON.stringify(practiceIds(groups)), now),
-    ...groups.flatMap((g) => g.picked).map((id) => seen.bind(userId, id, now)),
+      .bind(taskId, userId, task.subject, JSON.stringify(ids), now),
+    ...picked.map((id) => seen.bind(userId, id, now)),
   ];
 }
 
