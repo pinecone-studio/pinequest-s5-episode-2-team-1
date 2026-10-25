@@ -1,4 +1,4 @@
-import { GATES } from '../../../shared/gates';
+import { GATE_COUNT, UNITS } from '../../../shared/path';
 
 // Тоглоомын бүх тогтмол энд төвлөрнө. Логик эдгээрээс л уншина.
 
@@ -51,10 +51,9 @@ export const GAME = {
 
   /** Адал явдлын газрын зураг (mobile/src/lib/pixelBear/world.json-тэй ижил): бүлэг бүрийн сүүлийн зангилаа boss. */
   BOSS: {
-    UNIT_SIZE: 16,
-    COUNT: 3,
-    /** Дарааллаар давах тулааны зангилаа (shared/gates.ts: апп-ын газрын зурагтай нэг эх) */
-    GATES,
+    COUNT: UNITS,
+    /** Дарааллаар давах тулааны хаалганы тоо (shared/path.ts gateNodes) */
+    GATES: GATE_COUNT,
   },
 
   DUEL: {

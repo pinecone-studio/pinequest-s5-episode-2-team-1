@@ -1,6 +1,6 @@
 import type { BookLesson, LessonsResponse, Subject } from '@shared/types';
 import { router, useFocusEffect } from 'expo-router';
-import { type ComponentRef, useCallback, useEffect, useRef, useState } from 'react';
+import { type ComponentRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,7 +15,7 @@ import { colors, fonts, hardShadow, radius } from '@/constants/theme';
 import { S, subjectNames } from '@/i18n/strings';
 import { kvGet, kvSet } from '@/lib/kv';
 import { usePixelBear } from '@/lib/mock/pixelBear';
-import { bossAhead, currentNode, gateOf, lessonsAt, lessonTitle, NODES, type NodeStatus, UNIT_SIZE, unitOf } from '@/lib/pixelBear/path';
+import { bossAhead, currentNode, gateOf, lessonAt, lessonTitle, type NodeStatus, pathLayout, pathLessons, unitOf } from '@/lib/pixelBear/path';
 
 const SUBJECTS: Subject[] = ['math', 'mongolian', 'physics'];
 const CTA_SPACE = 112;
@@ -53,11 +53,15 @@ export default function PathScreen() {
     };
   }, [subject]);
   const lessons = book?.subject === subject ? book.lessons : [];
+  // Замын урт = хичээлийн тоо + boss: хичээл бүр нэг зангилаа
+  const n = pathLessons(lessons.length);
+  const layout = useMemo(() => pathLayout(n), [n]);
 
   // Хичээл бүр өөрийн сурах замтай: хичээл солиход тэр хичээлийн хамгийн сүүлд хүрсэн зангилаа гарна.
   const path = me?.paths[subject];
-  const current = path ? currentNode(path) : 0;
-  const bossFight = !!path && bossAhead(current, path.bossesBeaten);
+  const current = path ? currentNode(n, path) : 0;
+  const bossFight = !!path && bossAhead(n, current, path.bossesBeaten);
+  const unit = layout.units[unitOf(n, current)];
   const userId = me?.id;
 
   // Баавгай сүүлд харсан зангилаанаасаа одоогийнх руу алхана (апп хаагдсан ч төхөөрөмж дээр санана)
@@ -82,10 +86,10 @@ export default function PathScreen() {
   useEffect(() => {
     if (userId === undefined) return; // ScrollView нь me ирсний дараа л mount болно
     const total = MAP_H + CTA_SPACE + barSpace;
-    const y = Math.max(0, Math.min(total - viewH, NODES[current].y - viewH * 0.55));
+    const y = Math.max(0, Math.min(total - viewH, layout.nodes[current].y - viewH * 0.55));
     scroll.current?.scrollTo({ y, animated: scrolledOnce.current });
     scrolledOnce.current = true;
-  }, [userId, current, viewH, barSpace]);
+  }, [userId, current, viewH, barSpace, layout]);
 
   useEffect(() => {
     if (!note) return;
@@ -95,12 +99,12 @@ export default function PathScreen() {
 
   if (!me) return null;
   function start() {
-    router.push(bossFight ? `/task/${subject}?boss=${gateOf(current)}` : `/task/${subject}`);
+    router.push(bossFight ? `/task/${subject}?boss=${gateOf(n, current)}` : `/task/${subject}`);
   }
 
   function onNode(i: number, status: NodeStatus) {
     // Admin: дурын зангилаа (boss бол тэр бүлгийн boss) руу шууд орно
-    if (me?.admin) return router.push(gateOf(i) >= 0 ? `/task/${subject}?boss=${gateOf(i)}` : `/task/${subject}?node=${i}`);
+    if (me?.admin) return router.push(gateOf(n, i) >= 0 ? `/task/${subject}?boss=${gateOf(n, i)}` : `/task/${subject}?node=${i}`);
     if (status === 'lock') setNote(S.path.locked);
     else if (status === 'done') setNote(`${lessonTitle(subject, i, lessons)} · ${S.path.done}`);
     else start();
@@ -113,7 +117,7 @@ export default function PathScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingBottom: CTA_SPACE + barSpace }]}
         showsVerticalScrollIndicator={false}
       >
-        <PathMap current={current} from={from} beaten={path?.bossesBeaten ?? 0} subject={subject} lessons={lessons} onNodePress={onNode} />
+        <PathMap layout={layout} current={current} from={from} beaten={path?.bossesBeaten ?? 0} subject={subject} lessons={lessons} onNodePress={onNode} />
       </ScrollView>
 
       <View style={[styles.header, { top: insets.top + 6 }]} pointerEvents="box-none">
@@ -169,7 +173,8 @@ export default function PathScreen() {
       <View style={[styles.cta, { bottom: barSpace + 12 }]}>
         <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
           <Text style={styles.ctaSmall} numberOfLines={1}>
-            {lessonsAt(lessons, current)[0]?.chapter ?? S.path.chapter(unitOf(current) + 1, subjectNames[subject], current % UNIT_SIZE, UNIT_SIZE)}
+            {lessonAt(lessons, current)?.chapter ??
+              S.path.chapter(unitOf(n, current) + 1, subjectNames[subject], current - unit.start, unit.boss - unit.start + 1)}
           </Text>
           <Text style={styles.ctaTitle} numberOfLines={1}>
             {lessonTitle(subject, current, lessons)}
