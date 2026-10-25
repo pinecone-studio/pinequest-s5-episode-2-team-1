@@ -11,7 +11,7 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { blank, type Img, readPng, writeApng, writePng } from './png.ts';
-import { at, bbox, compose, contact, type Frame, groundShadow, pixellab, SPRITES, scale, source, tagOf, toSheet, trim, white } from './sprite-kit.ts';
+import { at, bbox, compose, contact, crop, type Frame, groundShadow, largest, pixellab, SPRITES, scale, source, tagOf, toSheet, trim, white } from './sprite-kit.ts';
 
 const META = new URL('../src/lib/pixelBear/bear.json', import.meta.url);
 // зөгийн бал boss-д тусаж хагарах эффект (PixelLab VFX: гэрэл → бал цацрах → хэлтэрхий), 3×3 grid
@@ -36,9 +36,23 @@ add('ready', 120, bear.rotation('west'));
 each(bear.frames('run', 'west'), (i) => `run${i}`, () => 96);
 add('brake', 130, bear.rotation('west'));
 
+// манарах (2 удаа дараалан цохиулахад): PixelLab animate_image (west зогсолтоос, pixellab/bear-dazed.png) — толгой унжиж,
+// нүд аних, бие ганхана. PixelLab-ийн бүдэг эргүүлгийг арилгана: BossArena толгой дээр нь өөрийн fx_dizzy-г зурна.
+const dazed = readPng(new URL('bear-dazed.png', PIXELLAB));
+const CELL = dazed.h;
+for (let i = 1; i < dazed.w / CELL; i++) add(`daze${i}`, i <= 3 ? 150 : 220, largest(crop(dazed, i * CELL, 0, CELL, CELL)));
+// амь дуусахад: ганхаж, өвдөг сулраад ар тийшээ унаж хэвтэнэ (PixelLab animate_image, pixellab/bear-fall.png); сүүлийн frame-д хэвтэж үлдэнэ
+const fall = readPng(new URL('bear-fall.png', PIXELLAB));
+for (let i = 1; i < fall.w / CELL; i++) add(`fall${i}`, [0, 140, 140, 120, 110, 90, 90, 130, 400][i], largest(crop(fall, i * CELL, 0, CELL, CELL)));
+
 // газрын сүүдэр (хөлийн доор, биеийн ард): хажуугаас харсан зогсолтоор
 const [sx0, , sx1, sy1] = bbox([bear.rotation('west')]);
-for (const f of all) if (f.name !== 'flash') groundShadow(f.img, (sx0 + sx1) / 2, sy1 + 0.5, (sx1 - sx0) / 2 + 4);
+for (const f of all) {
+  if (f.name === 'flash') continue;
+  // унах frame-ийн сүүдэр нь тухайн frame-ийн биеийн өргөнөөр (хэвтэхэд урт)
+  const [a, , b] = f.name.startsWith('fall') ? bbox([f.img]) : [sx0, 0, sx1];
+  groundShadow(f.img, (a + b) / 2, sy1 + 0.5, (b - a) / 2 + 4);
+}
 const { frames, dx, dy } = trim(all);
 
 /** шидэх агшинд зөгийн балны сав (шар-улбар pixel) хаана байна: сум эндээс ниснэ */
@@ -67,11 +81,24 @@ const tags = {
   ready: tag('ready'),
   run: tag('run0', 'run7'),
   brake: tag('brake'),
+  dazeIn: tag('daze1', 'daze3'),
+  daze: tag('daze4', 'daze8', 'pingpong'),
+  fall: tag('fall1', 'fall8'),
 };
 const sheet = toSheet(frames, COLS);
 const FEET = sy1 - dy;
 const PAD = sx0 - dx;
 const PAW = honeyAt(frames[index('throwSmear')].img);
+/** манарсан баавгайн толгойн орой (frame дотор): эргүүлэг эндээс дээш */
+const HEAD = ((img: Img): [number, number] => {
+  const [x0, y0, x1] = bbox([crop(img, 0, 0, img.w, bbox([img])[1] + 4)]);
+  return [Math.round((x0 + x1) / 2), y0];
+})(frames[index('daze4')].img);
+/** хэвтсэн баавгайн биеийн төв, орой (frame дотор): сүнс эндээс гарч дээшилнэ */
+const DOWN = ((img: Img): [number, number] => {
+  const [x0, y0, x1] = bbox([img]);
+  return [Math.round((x0 + x1) / 2), y0];
+})(frames[index('fall8')].img);
 
 const preview = process.argv.indexOf('--preview');
 if (preview < 0) {
@@ -85,6 +112,8 @@ if (preview < 0) {
     feet: FEET,
     pad: PAD,
     paw: PAW,
+    head: HEAD,
+    down: DOWN,
     frames: frames.map(({ name, duration }) => ({ name, duration })),
     tags,
     /** хагарах эффект: frame бүрийн хугацаа, цохилтын цэг (frame-ийн өргөн/өндрийн хувь: sprite-ийн томруулалтаас үл хамаарна) */
@@ -124,5 +153,7 @@ if (preview < 0) {
   shot([...seq('idle'), ...seq('claw'), ...seq('idle')], 'preview_claw');
   shot([...seq('idle'), ...seq('hurt'), ...seq('idle')], 'preview_hurt');
   shot([...seq('run'), ...seq('run')], 'preview_run');
+  shot([...seq('hurt'), ...seq('dazeIn'), ...seq('daze'), ...seq('daze')], 'preview_daze');
+  shot([...seq('hurt'), ...seq('fall'), 'fall8', 'fall8'], 'preview_fall');
   console.log(`preview: ${dir}`);
 }

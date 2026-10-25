@@ -53,6 +53,9 @@
     "sprites:tutor": "node scripts/tutor-sprites.ts",
     "sprites:classroom": "node scripts/classroom-sprites.ts",
     "sprites:home": "node scripts/home-sprites.ts",
+    "sprites:map": "node scripts/map-sprites.ts",
+    "sprites:hud": "node scripts/hud-sprites.ts",
+    "sprites:golem": "node scripts/golem-sprites.ts",
     "offline:questions": "node scripts/offline-questions.ts"
   },
   "private": true

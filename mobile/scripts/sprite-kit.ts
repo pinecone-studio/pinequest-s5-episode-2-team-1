@@ -45,6 +45,33 @@ export function bbox(imgs: Img[]): [number, number, number, number] {
   return [x0, y0, x1, y1];
 }
 
+/** хамгийн том холбоот хэсэг (дүр) л үлдэнэ: PixelLab-ийн зурсан бүдэг, сул pixel-үүдийг арилгана */
+export function largest(img: Img): Img {
+  const seen = new Int32Array(img.w * img.h).fill(-1);
+  const sizes: number[] = [];
+  for (let s = 0; s < img.w * img.h; s++) {
+    if (seen[s] >= 0 || !has(img, s % img.w, Math.floor(s / img.w))) continue;
+    const id = sizes.length;
+    let n = 0;
+    const stack = [s];
+    seen[s] = id;
+    while (stack.length) {
+      const p = stack.pop() as number;
+      n++;
+      const [x, y] = [p % img.w, Math.floor(p / img.w)];
+      for (const [ax, ay] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1], [x + 1, y + 1], [x - 1, y - 1], [x + 1, y - 1], [x - 1, y + 1]])
+        if (has(img, ax, ay) && seen[ay * img.w + ax] < 0) {
+          seen[ay * img.w + ax] = id;
+          stack.push(ay * img.w + ax);
+        }
+    }
+    sizes.push(n);
+  }
+  const keep = sizes.indexOf(Math.max(...sizes));
+  const out = blank(img.w, img.h);
+  for (let p = 0; p < seen.length; p++) if (seen[p] === keep) out.d.set(img.d.subarray(p * 4, p * 4 + 4), p * 4);
+  return out;
+}
 /** цагаан дүрс (цохиулах агшны анивчилт) */
 export function white(img: Img): Img {
   const o = clone(img);

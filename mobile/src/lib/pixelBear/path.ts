@@ -1,6 +1,7 @@
 import type { BookLesson, Subject, SubjectPath } from '@shared/types';
 import { S } from '@/i18n/strings';
 import type { SpriteKey } from '@/sprites';
+import golems from './golems.json';
 import world from './world.json';
 
 // Адал явдлын газрын зураг: DESIGN.md §8-04-ийн бүлгийг доороос дээш 3 бүлэг (ой → тал → мөсөн уул) болгосон.
@@ -37,10 +38,19 @@ export const MAP_PIECES = ['map_world_2_390x448', 'map_world_1_390x760', 'map_wo
 
 export interface Boss {
   name: string;
-  /** газрын зураг (2×) ба тулааны (4×) дүрс; `frames` > 1 бол BOSS_FRAME-ийн дараалалтай хэвтээ sheet */
+  /** газрын зураг ба тулааны дүрс; `frames` > 1 бол sheet (Хулуун шидтэн: BOSS_FRAME-ийн дараалал, PixelLab дайсан: golems.json) */
   map: SpriteKey;
   battle: SpriteKey;
   frames: number;
+  /** grid sheet-ийн баганын тоо (өгөөгүй бол нэг мөр) */
+  cols?: number;
+  /** PixelLab-аар хөдөлгөсөн дайсан (golems.json-ийн түлхүүр): idle / attack / hurt tag-тай */
+  anim?: keyof typeof golems;
+  /** 2-р бүлгийн boss-ын зүүн / баруун гар (газрын зураг дээр зангилааны хажууд) */
+  role?: 'left' | 'right';
+  /** холоос довтлох сум ба баавгайд онох оч (PixelLab vfx) */
+  shot?: { id: SpriteKey; frames: number; cols: number };
+  impact?: { id: SpriteKey; frames: number; cols: number };
   /** агаарт хөвдөг (сүүдэртэй) эсвэл газар зогсдог */
   floats: boolean;
   /** дан зурагтай (frames = 1) boss-ын онох агшинд дээр нь анивчих цагаан дүрс */
@@ -50,12 +60,29 @@ export interface Boss {
   /** давхиж цохихдоо барих зэвсэг: 3 frame (өргөсөн → дүүжлэх → цохих); left/top = battle frame дотор байрлах цэг (dp) */
   weapon?: { sheet: SpriteKey; left: number; top: number };
 }
+/** PixelLab-аар хөдөлгөсөн 2-р бүлгийн дайсан: sheet газрын зураг дээр 1×, тулаанд 2× (boss 2.5×) */
+const golem = (anim: keyof typeof golems, map: SpriteKey, battle: SpriteKey) => ({
+  anim,
+  map,
+  battle,
+  frames: golems[anim].frames.length,
+  cols: golems[anim].columns,
+  floats: false,
+  lair: 'lair_1_430x464' as const,
+  impact: { id: 'fx_golem_impact_192x128' as const, frames: 4, cols: 3 },
+});
+/** Тулааны хаалганы дараалал (GATES-тэй ижил): 1-р boss, 2-р бүлгийн зүүн гар, баруун гар, boss, 3-р boss */
 export const BOSSES: Boss[] = [
-  { name: 'Хулуун шидтэн', map: 'boss_pumpkin_sheet_496x94', battle: 'boss_pumpkin_sheet_992x188', frames: 8, floats: true, lair: 'lair_0_430x464',
+  { name: 'Хулуун шидтэн', map: 'boss_pumpkin_sheet_376x71', battle: 'boss_pumpkin_sheet_992x188', frames: 8, floats: true, lair: 'lair_0_430x464',
     // хадуурын барьцаа (20,32) нь нөмрөгийн урд талын гарт (24,30) таарна: 4× → (96−80, 120−128)
     weapon: { sheet: 'fx_scythe_576x240', left: 16, top: -8 } },
-  { name: 'Талын мангас', map: 'map_boss_1_60x56', battle: 'map_boss_1_120x112', frames: 1, white: 'map_boss_1_white_120x112', floats: false, lair: 'lair_1_430x464' },
-  { name: 'Мөсөн мангас', map: 'map_boss_2_60x56', battle: 'map_boss_2_120x112', frames: 1, white: 'map_boss_2_white_120x112', floats: false, lair: 'lair_2_430x464' },
+  { name: 'Сарны хамгаалагч', role: 'left', ...golem('left', 'golem_left_sheet_456x234', 'golem_left_sheet_912x468'),
+    shot: { id: 'fx_moon_crescent_144x96', frames: 6, cols: 3 } },
+  { name: 'Болор шидтэн', role: 'right', ...golem('right', 'golem_right_sheet_492x252', 'golem_right_sheet_984x504'),
+    shot: { id: 'fx_crystal_bolt_144x144', frames: 8, cols: 3 } },
+  { name: 'Хадан аварга', ...golem('boss', 'golem_boss_sheet_516x258', 'golem_boss_sheet_1290x645'),
+    shot: { id: 'fx_golem_orb_144x144', frames: 8, cols: 3 } },
+  { name: 'Мөсөн мангас', map: 'map_boss_2_75x70', battle: 'map_boss_2_120x112', frames: 1, white: 'map_boss_2_white_120x112', floats: false, lair: 'lair_2_430x464' },
 ];
 /** Boss sheet-ийн frame-ууд (boss_pumpkin.py): хөвөх 0–2, ид шид, цочих, цагаан, давхих, цохих */
 export const BOSS_FRAME = { cast: 3, hurt: 4, flash: 5, dash: 6, strike: 7 } as const;
@@ -68,22 +95,30 @@ export const NODES: PathNode[] = TRAIL.flatMap((t) =>
 );
 export const NODE_COUNT = NODES.length;
 
-export const isPedestal = (n: PathNode) => n.kind !== 'stone';
 export const unitOf = (i: number) => Math.floor(i / UNIT_SIZE);
+/** Бүлгийн сүүлийн зангилаа: жинхэнэ boss (1.5× арал) */
 export const isBossNode = (i: number) => i % UNIT_SIZE === UNIT_SIZE - 1;
 
 /**
- * Хичээлийн сурах зам дээрх одоогийн зангилаа = тэр хичээлийн шат − 1, гэхдээ ялаагүй boss-ын дэргэд зогсоно
- * (XP-ээр ахисан ч boss-ыг ялж байж цааш явна).
+ * Дарааллаар давах тулааны зангилаа (хаалга), BOSSES-тай ижил дараалал: бүлэг бүрийн boss + 2-р бүлэгт boss-ын
+ * өмнөх 2 алхамд зүүн гар (29), баруун гар (30). Сервер: api/src/config/game.ts GAME.BOSS.GATES.
+ */
+export const GATES = [15, 29, 30, 31, 47];
+/** Зангилааны хаалганы дугаар (BOSSES-ийн индекс), хаалга биш бол −1 */
+export const gateOf = (i: number) => GATES.indexOf(i);
+
+/**
+ * Хичээлийн сурах зам дээрх одоогийн зангилаа = тэр хичээлийн шат − 1, гэхдээ давж амжаагүй хаалганы (boss, түүний
+ * зүүн/баруун гар) дэргэд зогсоно (XP-ээр ахисан ч ялж байж цааш явна). `bossesBeaten` = давсан хаалганы тоо.
  * shortcut: сүүлийн boss дээр зогсоно; 48-р шатнаас цааш бүлэг нэмэхэд газрын зургийг өргөтгөнө.
  */
 export function currentNode(path: Pick<SubjectPath, 'level' | 'bossesBeaten'>): number {
-  const gate = path.bossesBeaten < UNIT_COUNT ? path.bossesBeaten * UNIT_SIZE + UNIT_SIZE - 1 : NODE_COUNT - 1;
+  const gate = path.bossesBeaten < GATES.length ? GATES[path.bossesBeaten] : NODE_COUNT - 1;
   return Math.max(0, Math.min(NODE_COUNT - 1, gate, path.level - 1));
 }
 
-/** Энэ зангилаанд ялаагүй boss хүлээж байна уу (тэгвэл даалгавар нь boss тулаан). */
-export const bossAhead = (i: number, bossesBeaten: number) => isBossNode(i) && unitOf(i) >= bossesBeaten;
+/** Энэ зангилаанд давж амжаагүй хаалга хүлээж байна уу (тэгвэл даалгавар нь тулаан). */
+export const bossAhead = (i: number, bossesBeaten: number) => gateOf(i) >= bossesBeaten;
 
 export const statusOf = (i: number, current: number): NodeStatus => (i < current ? 'done' : i === current ? 'current' : 'lock');
 
@@ -92,12 +127,10 @@ export const trailIndex = (i: number) => TRAIL.findIndex((t) => t.i === i);
 /** `from` зангилаанаас `to` хүртэл алхах цэгүүд (`from` өөрөө ороогүй). */
 export const walkPoints = (from: number, to: number) => TRAIL.slice(trailIndex(from) + 1, trailIndex(to) + 1);
 
+/** Алхмын төлөв: дууссан = ногоон ✓, одоогийн = шар хүрээтэй тод, түгжээтэй = бүдэг саарал + цоож; boss = 1.5× том арал. */
 export function tileFor(node: PathNode, status: NodeStatus): SpriteKey {
-  if (node.kind === 'stone') return status === 'done' ? 'tile_stone_done_48x36' : 'tile_stone_lock_48x36';
-  if (status === 'current') return 'tile_pedestal_cur_72x54';
-  if (node.kind === 'gift') return 'tile_pedestal_gift_72x54';
-  if (status === 'done') return 'tile_pedestal_sapling_72x54';
-  return node.kind === 'boss' ? 'tile_pedestal_end_72x54' : 'tile_pedestal_myst_72x54';
+  if (node.kind === 'boss') return status === 'done' ? 'tile_pedestal_sapling_72x54' : 'tile_pedestal_end_72x54';
+  return status === 'done' ? 'tile_stone_done_48x36' : status === 'current' ? 'tile_step_cur_56x44' : 'tile_step_lock_48x36';
 }
 
 /** Boss-гүй зангилааны тоо: номын бүх хичээл эдгээрт жигд тарна. */
@@ -137,7 +170,8 @@ const TITLES: Record<Subject, string[]> = {
 };
 
 export function lessonTitle(subject: Subject, i: number, lessons: readonly BookLesson[] = []): string {
-  if (isBossNode(i)) return S.path.boss(BOSSES[unitOf(i)].name);
+  const g = gateOf(i);
+  if (g >= 0) return isBossNode(i) ? S.path.boss(BOSSES[g].name) : S.path.guard(BOSSES[g].role === 'left', BOSSES[g].name);
   const book = lessonsAt(lessons, i);
   if (book.length) return book.map((l) => l.title).join(' · ');
   return TITLES[subject][unitOf(i) * 8 + Math.floor((i % UNIT_SIZE) / 2)];

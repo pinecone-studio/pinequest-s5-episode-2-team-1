@@ -44,7 +44,11 @@ export const recoveryCertain = (wrong: number) => wrong >= GAME.RECOVERY_MIN_WRO
  * орно: шагнал олгогдоод салаа зам нээгдэхгүй үлдэх (эсвэл эсрэгээрээ) боломжгүй.
  */
 export async function recoveryStatements(db: D1Database, userId: number, taskId: number, now = Date.now()): Promise<D1PreparedStatement[]> {
-  const task = await db.prepare('SELECT subject FROM tasks WHERE id = ? AND user_id = ?').bind(taskId, userId).first<{ subject: Subject }>();
+  // Admin-д нөхөх давтлага үүсэхгүй.
+  const task = await db
+    .prepare('SELECT t.subject FROM tasks t JOIN users u ON u.id = t.user_id WHERE t.id = ? AND t.user_id = ? AND u.is_admin = 0')
+    .bind(taskId, userId)
+    .first<{ subject: Subject }>();
   if (!task) return [];
   // Flag (-1) бол жинхэнэ алдаа биш.
   const { results: missed } = await db

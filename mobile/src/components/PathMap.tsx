@@ -1,22 +1,17 @@
 import type { BookLesson, Subject } from '@shared/types';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Animated, {
-  Easing,
-  useAnimatedStyle,
-  useReducedMotion,
-  useSharedValue,
-  withRepeat,
-  withSequence,
-  withTiming,
-} from 'react-native-reanimated';
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
 import { frameSize, Motion, SheetFrame, SheetLoop, Sprite } from '@/components/pixel';
 import { colors, fonts, radius } from '@/constants/theme';
 import { S } from '@/i18n/strings';
+import golems from '@/lib/pixelBear/golems.json';
+import { tagFrames } from '@/lib/pixelBear/anim';
 import {
   BOSSES,
+  GATES,
   HOVER,
-  isPedestal,
+  isBossNode,
   lessonTitle,
   MAP_H,
   MAP_PIECES,
@@ -33,16 +28,41 @@ import {
 } from '@/lib/pixelBear/path';
 
 const UNITS = Array.from({ length: UNIT_COUNT }, (_, k) => k);
-/** Boss зангилааны баруун талд зогсоно (mapgen_world.py мод тарихгүй орхидог) */
-const BOSS_DX = 48;
-const STEP_MS = 320;
+const STEP_MS = 260;
+/** Дарах талбай (dp): хөрш зангилаанууд хэвтээгээр 84 dp зайтай тул давхцахгүй (mapgen_world.py DESIGN) */
+const HIT = 56;
+/** Boss-ын арал дээр баавгай boss-ын зүүн талд, арлын гадна зогсоно (давхцахгүй) */
+const CHALLENGER_DX = -62;
+const CHALLENGER_DY = 6;
+/** Замын цэг: алхам, хэмжээ, зангилааны төвөөс хэр холоос эхлэх */
+const DOT_GAP = 10;
+const DOT = 4;
 
 /** 0-р бүлгийн хуучин 390×760 газрын зурагтай харьцуулсан бүлгийн шилжилт: декорын байрлал бүлэг бүрт адил. */
 const unitTop = (k: number) => NODES[k * UNIT_SIZE].y - NODES[0].y;
 
+/** Баавгайн зогсох цэг: энгийн зангилаан дээр, boss-ынх бол арлын хажууд. */
+const standAt = (i: number) => (isBossNode(i) ? { x: NODES[i].x + CHALLENGER_DX, y: NODES[i].y + CHALLENGER_DY } : NODES[i]);
+
+/** Зангилаа хоорондын нарийн цэгэн зам (дууссан хэсэг нь ногоон). Зангилааны чулуу, арлын доор нуугдах цэгийг зурахгүй. */
+const DOTS = TRAIL.slice(1).flatMap((b, k) => {
+  const a = TRAIL[k];
+  const rA = a.i === undefined ? 0 : isBossNode(a.i) ? 40 : 26;
+  const rB = b.i === undefined ? 0 : isBossNode(b.i) ? 40 : 26;
+  const len = Math.hypot(b.x - a.x, b.y - a.y);
+  const out: { x: number; y: number; seg: number }[] = [];
+  for (let d = rA + DOT_GAP / 2; d < len - rB; d += DOT_GAP)
+    out.push({
+      x: a.x + ((b.x - a.x) * d) / len,
+      y: a.y + 4 + ((b.y - a.y) * d) / len,
+      seg: k + 1,
+    });
+  return out;
+});
+
 /**
- * Адал явдлын газрын зураг (DESIGN.md §8-04-ийг дээш 3 бүлэг болгосон). Давхарга: дэвсгэр → үүл → зангилаа ба гүүр
- * (ар талаас урагш) → props, boss → одоогийн зангилааны цагираг/сум → алхаж буй баавгай → эрвээхэй.
+ * Адал явдлын газрын зураг (DESIGN.md §8-04-ийг дээш 3 бүлэг болгосон). Давхарга: дэвсгэр → үүл → цэгэн зам → алхмын
+ * чулуу ба boss-ын арал → тэмдэг, boss → баавгай ("Чи энд") → эрвээхэй.
  * `from` өгвөл баавгай тэр зангилаанаас `current` хүртэл замаар алхана; `null` бол баавгайг хараахан харуулахгүй.
  */
 export function PathMap({
@@ -55,238 +75,265 @@ export function PathMap({
 }: {
   current: number;
   from: number | null;
-  /** ялсан boss-ын тоо: ялсан бүлэгт туг, бусдад boss */
+  /** давсан тулааны хаалганы тоо (boss, 2-р бүлгийн зүүн/баруун гар) */
   beaten: number;
   subject: Subject;
   /** сурах бичгийн хичээлүүд (хоосон бол хуучин сэдвүүд) */
   lessons: readonly BookLesson[];
   onNodePress: (i: number, status: NodeStatus) => void;
 }) {
-  const cur = NODES[current];
   const curTrail = trailIndex(current);
+  // 390 dp-ээс өргөн дэлгэцэд хажуугийн зай: ижил дэвсгэрийг хэвтээгээр сунгаж ард нь тавина (хурц газрын зураг голд)
+  const width = Math.max(MAP_W, useWindowDimensions().width);
 
   return (
-    <View style={styles.map} accessibilityLabel={S.path.mapLabel}>
-      {MAP_PIECES.map((id) => (
-        <Sprite key={id} id={id} />
-      ))}
-
-      {UNITS.map((k) => (
-        <View key={k} style={[styles.abs, { left: 0, top: unitTop(k) }]} pointerEvents="none">
-          <Motion preset="driftA" style={[styles.abs, { left: 0, top: 150, opacity: 0.92 }]}>
-            <Sprite id="map_cloud_a_64x22" />
-          </Motion>
-          <Motion preset="driftB" style={[styles.abs, { left: 0, top: 300, opacity: 0.85 }]}>
-            <Sprite id="map_cloud_b_48x22" />
-          </Motion>
+    <View style={{ width, height: MAP_H }}>
+      {width > MAP_W ? (
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          {MAP_PIECES.map((id) => (
+            <Sprite key={id} id={id} style={{ width }} />
+          ))}
         </View>
-      ))}
+      ) : null}
+      <View style={[styles.map, { marginLeft: (width - MAP_W) / 2 }]} accessibilityLabel={S.path.mapLabel}>
+        {MAP_PIECES.map((id) => (
+          <Sprite key={id} id={id} />
+        ))}
 
-      {/* Зангилаа ба гүүр чулуу: дээд талынх нь ард (эхэлж зурна) */}
-      {TRAIL.map((t, ti) => {
-        if (t.i === undefined) {
+        {UNITS.map((k) => (
+          <View key={k} style={[styles.abs, { left: 0, top: unitTop(k) }]} pointerEvents="none">
+            <Motion preset="driftA" style={[styles.abs, { left: 0, top: 150, opacity: 0.6 }]}>
+              <Sprite id="map_cloud_a_64x22" />
+            </Motion>
+            <Motion preset="driftB" style={[styles.abs, { left: 0, top: 300, opacity: 0.55 }]}>
+              <Sprite id="map_cloud_b_48x22" />
+            </Motion>
+          </View>
+        ))}
+
+        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+          {DOTS.map((d, n) => (
+            <View key={n} style={[styles.dot, { left: d.x - DOT / 2, top: d.y - DOT / 2 }, d.seg <= curTrail ? styles.dotDone : null]} />
+          ))}
+        </View>
+
+        {/* Алхмууд: дээд талынх нь ард (эхэлж зурна) */}
+        {NODES.map((n) => {
+          const status = statusOf(n.i, current);
+          const boss = isBossNode(n.i);
+          const tile = tileFor(n, status);
           return (
-            <View key={`b${ti}`} style={[styles.abs, { left: t.x - 24, top: t.y - 14 }]} pointerEvents="none">
-              <Sprite id={ti < curTrail ? 'tile_stone_done_48x36' : 'tile_stone_lock_48x36'} />
-            </View>
+            <Pressable
+              key={n.i}
+              accessibilityRole="button"
+              accessibilityLabel={`${n.i + 1}. ${lessonTitle(subject, n.i, lessons)}, ${
+                status === 'done' ? S.path.done : status === 'current' ? S.path.youAreHere : S.path.locked
+              }`}
+              accessibilityState={{ disabled: status === 'lock' }}
+              onPress={() => onNodePress(n.i, status)}
+              style={[
+                styles.abs,
+                boss ? styles.islandHit : styles.hit,
+                {
+                  left: n.x - (boss ? 36 : HIT / 2),
+                  top: boss ? n.y - 20 : n.y + 4 - HIT / 2,
+                },
+              ]}
+            >
+              {boss && status === 'current' ? (
+                <Motion preset="ring" style={[styles.abs, { left: -8, top: 8 }]}>
+                  <Sprite id="map_ring_88x44" />
+                </Motion>
+              ) : null}
+              <Sprite id={tile} style={boss ? null : { marginTop: status === 'current' ? 6 : 10 }} />
+            </Pressable>
           );
-        }
-        const n = NODES[t.i];
-        const status = statusOf(n.i, current);
-        const ped = isPedestal(n);
-        return (
-          <Pressable
-            key={n.i}
-            accessibilityRole="button"
-            accessibilityLabel={`${n.i + 1}. ${lessonTitle(subject, n.i, lessons)}, ${
-              status === 'done' ? S.path.done : status === 'current' ? S.path.youAreHere : S.path.locked
-            }`}
-            accessibilityState={{ disabled: status === 'lock' }}
-            onPress={() => onNodePress(n.i, status)}
-            hitSlop={6}
-            style={[styles.abs, ped ? { left: n.x - 36, top: n.y - 20 } : { left: n.x - 24, top: n.y - 14 }]}
-          >
-            <Sprite id={tileFor(n, status)} />
-          </Pressable>
-        );
-      }).reverse()}
+        }).reverse()}
 
-      {UNITS.map((k) => (
-        <UnitProps key={k} k={k} current={current} beaten={k < beaten} />
-      ))}
+        {UNITS.map((k) => (
+          <UnitProps key={k} k={k} current={current} />
+        ))}
+        {GATES.map((_, g) => (
+          <GateFigure key={g} g={g} beaten={g < beaten} />
+        ))}
 
-      {/* Одоогийн зангилаа: цагираг, сум */}
-      <Motion preset="ring" style={[styles.abs, { left: cur.x - 44, top: cur.y - 22 }]}>
-        <Sprite id="map_ring_88x44" />
-      </Motion>
-      <Motion preset="arrow" style={[styles.abs, { left: cur.x - 11, top: cur.y - 150 }]}>
-        <Sprite id="map_arrow_22x20" />
-      </Motion>
-      {from === null ? null : (
-        <WalkingBear
-          key={`${from}-${current}`}
-          from={from}
-          to={current}
-          label={`${S.path.youAreHere}: ${lessonTitle(subject, current, lessons)}`}
-          onPress={() => onNodePress(current, 'current')}
-        />
-      )}
+        {from === null ? null : (
+          <WalkingBear
+            key={`${from}-${current}`}
+            from={from}
+            to={current}
+            label={`${S.path.youAreHere}: ${lessonTitle(subject, current, lessons)}`}
+            onPress={() => onNodePress(current, 'current')}
+          />
+        )}
 
-      {UNITS.map((k) => (
-        <View key={k} style={[styles.abs, { left: 0, top: unitTop(k) }]} pointerEvents="none">
-          <Motion preset="flyA" style={[styles.abs, { left: 34, top: 600 }]}>
-            <Butterfly />
-          </Motion>
-          <Motion preset="flyB" style={[styles.abs, { left: 330, top: 440 }]}>
-            <Butterfly />
-          </Motion>
-        </View>
-      ))}
+        {UNITS.map((k) => (
+          <View key={k} style={[styles.abs, { left: 0, top: unitTop(k) }]} pointerEvents="none">
+            <Motion preset="flyA" style={[styles.abs, { left: 34, top: 600 }]}>
+              <Butterfly />
+            </Motion>
+            <Motion preset="flyB" style={[styles.abs, { left: 330, top: 440 }]}>
+              <Butterfly />
+            </Motion>
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
 
-/** Бүлгийн props: нахиа (3), бэлэг (9), хэцүү сорил (12), boss эсвэл ялалтын туг (15), бүлгийн нэр. */
-function UnitProps({ k, current, beaten }: { k: number; current: number; beaten: boolean }) {
+/** Бүлгийн тэмдэг: нахиа (3), бэлэг (9), хэцүү сорил (12) зангилааны хажууд. */
+function UnitProps({ k, current }: { k: number; current: number }) {
   const base = k * UNIT_SIZE;
   const sapling = NODES[base + 3];
   const gift = NODES[base + 9];
   const myst = NODES[base + 12];
-  const boss = NODES[base + UNIT_SIZE - 1];
   const start = NODES[base];
-  const b = BOSSES[k];
-  const bs = frameSize(b.map, b.frames);
-  const bossTop = boss.y + 12 - bs.height;
 
   return (
     <>
       {k > 0 ? (
-        <View style={[styles.pill, { left: 20, top: start.y - 14 }]}>
+        <View style={[styles.pill, { right: 44, top: start.y - 14 }]} pointerEvents="none">
           <Text style={styles.pillMuted}>{S.path.nextChapter(k + 1)}</Text>
         </View>
       ) : null}
 
-      {/* Хэцүү сорил: асуултын хайрцаг */}
       {current < myst.i ? (
-        <>
-          <Motion preset="blockBob" style={[styles.abs, { left: myst.x - 18, top: myst.y - 38 }]}>
-            <Sprite id="map_qblock_38x38" label="Хэцүү сорил: асуултын тэмдэгтэй алтан хайрцаг" />
-          </Motion>
-          <Motion preset="twinkle" style={[styles.abs, { left: myst.x + 22, top: myst.y - 48 }]}>
-            <Sprite id="icon_star_24x24" />
-          </Motion>
-          <View style={[styles.tooltip, { left: 8, top: myst.y - 42 }]}>
-            <Text style={styles.tipText}>
-              {S.path.hardTitle}
-              {'\n'}
-              <Text style={{ color: colors.lemon }}>{S.path.hardSub}</Text>
-            </Text>
-          </View>
-        </>
+        <Motion preset="blockBob" style={[styles.abs, { left: myst.x + 24, top: myst.y - 22 }]}>
+          <Sprite id="map_qblock_19x19" label={S.path.hardTitle} />
+        </Motion>
       ) : null}
-
-      {/* Бэлэг */}
       {current < gift.i ? (
-        <>
-          <Motion preset="wiggle" originBottom style={[styles.abs, { left: gift.x - 18, top: gift.y - 34 }]}>
-            <Sprite id="map_gift_40x38" label="Бэлгийн хайрцаг" />
-          </Motion>
-          <Motion preset="twinkle" delay={800} style={[styles.abs, { left: gift.x + 16, top: gift.y - 46 }]}>
-            <Sprite id="icon_star_12x12" />
-          </Motion>
-          <View style={[styles.pill, styles.coinPill, { left: gift.x + 30, top: gift.y - 20 }]}>
-            <Sprite id="icon_coin_12x12" />
-            <Text style={styles.coinText}>+50</Text>
-          </View>
-        </>
+        <Motion preset="wiggle" originBottom style={[styles.abs, { left: gift.x + 24, top: gift.y - 22 }]}>
+          <Sprite id="map_gift_20x19" label={S.path.gift} />
+        </Motion>
       ) : null}
-
-      {/* Нахиа: бүлгийн эхний тэмдэглэл давсны дараа ургана */}
       {current > sapling.i ? (
-        <>
-          <Motion preset="saplingSway" originBottom style={[styles.abs, { left: sapling.x - 16, top: sapling.y - 40 }]}>
-            <Sprite id="map_sapling_36x44" label="Ургаж буй нарсны нахиа" />
-          </Motion>
-          <View style={[styles.pill, { left: sapling.x + 26, top: sapling.y - 28, backgroundColor: colors.ink }]}>
-            <Text style={[styles.pillMuted, { color: colors.lime }]}>{S.path.sapling}</Text>
-          </View>
-        </>
+        <Motion preset="saplingSway" originBottom style={[styles.abs, { left: sapling.x + 24, top: sapling.y - 26 }]}>
+          <Sprite id="map_sapling_18x22" label={S.path.sapling} />
+        </Motion>
       ) : null}
 
-      {/* Boss: ялагдах хүртлээ зангилааны хажууд, дараа нь туг */}
-      {!beaten ? (
-        <>
-          <View style={[styles.abs, { left: boss.x + BOSS_DX - bs.width / 2, top: bossTop }]}>
-            {b.frames > 1 ? (
-              <SheetLoop id={b.map} frames={b.frames} loop={HOVER} ms={320} label={b.name} />
-            ) : (
-              <Motion preset="breathe" originBottom>
-                <Sprite id={b.map} label={b.name} />
-              </Motion>
-            )}
-          </View>
-          {/* Баавгай boss дээр ирэхэд тайлбарыг халхална; нэр нь доод картад харагдана */}
-          {current < boss.i ? (
-            <View style={[styles.tooltip, { left: boss.x + BOSS_DX - 46, top: bossTop - 46 }]}>
-              <Text style={styles.tipText}>
-                {S.path.bossTip}
-                {'\n'}
-                <Text style={{ color: colors.lemon }}>{b.name}</Text>
-              </Text>
-            </View>
-          ) : null}
-        </>
-      ) : (
-        <>
-          <Motion preset="saplingSway" originBottom style={[styles.abs, { left: boss.x - 8, top: boss.y - 52 }]}>
-            <Sprite id="map_flag_32x56" label={`${b.name}: ${S.path.bossWon}`} />
-          </Motion>
-          <View style={[styles.pill, { left: boss.x + 26, top: boss.y - 40, backgroundColor: colors.ink }]}>
-            <Text style={[styles.pillMuted, { color: colors.lime }]}>{S.path.bossWon}</Text>
-          </View>
-        </>
-      )}
     </>
   );
 }
 
-/** Баавгай `from`-оос `to` хүртэл зангилаа (ба гүүр) бүрээр үсэрч алхана, дараа нь байрандаа hop хийнэ. */
+/**
+ * Тулааны хаалга: boss арал дээрээ (ялсан бол туг), түүний зүүн/баруун гар зангилааныхаа хажууд (замаас гадна,
+ * давхцахгүй) зогсоно; давсан гар алга болно.
+ */
+function GateFigure({ g, beaten }: { g: number; beaten: boolean }) {
+  const n = NODES[GATES[g]];
+  const b = BOSSES[g];
+  const boss = isBossNode(n.i);
+  const golem = b.anim ? golems[b.anim] : null;
+  const bs = frameSize(b.map, b.frames, b.cols);
+  // тулаанд дайснууд баруун тийш (баавгай руу) хардаг; газрын зураг дээр баруун гар замын баруун талд тул зам руу
+  // (зүүн тийш) харуулахаар толин тусгална
+  const flip = b.role === 'right';
+  // биеийн гол: PixelLab дайсны frame-д довтолгооны эффект нэг тал руу сунадаг
+  const cx = golem ? (flip ? bs.width - golem.cx : golem.cx) : bs.width / 2;
+  // зүүн гар зангилааныхаа зүүн талд, баруун гар баруун талд (хөрш зангилаа, тэдгээрийн 56 dp дарах талбайгаас гадна;
+  // 320 dp дэлгэцэд ч харагдахаар захаас зайтай)
+  const x = boss ? n.x : b.role === 'left' ? n.x - 84 : n.x + 44;
+  const half = (golem ? golem.bw : bs.width) / 2;
+  // шошго: boss-ынх голд, гарынх биеийн гадна зах руу тэгшилнэ (дэлгэцийн захаас гарахгүй)
+  const tagBox =
+    boss || !b.role
+      ? { left: cx - 60, right: bs.width - cx - 60 }
+      : b.role === 'left'
+        ? { left: cx - half, right: bs.width - cx - 120, alignItems: 'flex-start' as const }
+        : { left: cx - 120, right: bs.width - cx - half, alignItems: 'flex-end' as const };
+  const feet = boss ? n.y + 4 : n.y + 10;
+  // хөвдөг boss арлаас бага зэрэг дээгүүр
+  const top = feet - (golem ? golem.feet + 1 : bs.height) - (b.floats ? 6 : 0);
+  if (beaten && !boss) return null;
+  if (beaten)
+    return (
+      <View style={[styles.abs, { left: n.x - 16, top: n.y - 52 }]} pointerEvents="none">
+        <Motion preset="saplingSway" originBottom>
+          <Sprite id="map_flag_32x56" label={`${b.name}: ${S.path.bossWon}`} />
+        </Motion>
+        <View style={[styles.tagWrap, { top: -22 }]}>
+          <View style={[styles.bossTag, { backgroundColor: colors.ink }]}>
+            <Text style={[styles.bossTagText, { color: colors.lime }]}>{S.path.bossWon}</Text>
+          </View>
+        </View>
+      </View>
+    );
+  return (
+    <View style={[styles.abs, { left: x - cx, top }]} pointerEvents="none">
+      {golem ? (
+        <View style={flip ? styles.mirror : null}>
+          <SheetLoop id={b.map} frames={b.frames} cols={b.cols} loop={tagFrames(golem, 'idle')} ms={260} label={b.name} />
+        </View>
+      ) : b.frames > 1 ? (
+        <SheetLoop id={b.map} frames={b.frames} loop={HOVER} ms={420} label={b.name} />
+      ) : (
+        <Motion preset="breathe" originBottom>
+          <Sprite id={b.map} label={b.name} />
+        </Motion>
+      )}
+      <View style={[styles.tagWrap, { top: (golem ? golem.head : 0) - 22 }, tagBox]}>
+        <View style={[styles.bossTag, boss ? null : styles.guardTag]}>
+          <Text style={styles.bossTagText}>{boss ? S.path.bossTag : S.path.guardTag(b.role === 'left')}</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/** Баавгай `from`-оос `to` хүртэл зангилаа бүрээр богино, зөөлөн алхана; зогсохдоо үл ялиг амьсгална. */
 function WalkingBear({ from, to, label, onPress }: { from: number; to: number; label: string; onPress: () => void }) {
   const reduce = useReducedMotion();
-  const x = useSharedValue(NODES[from].x);
-  const y = useSharedValue(NODES[from].y);
+  const start = standAt(from);
+  const x = useSharedValue(start.x);
+  const y = useSharedValue(start.y);
   const lift = useSharedValue(0);
 
   useEffect(() => {
-    const pts = walkPoints(from, to);
-    if (reduce || pts.length === 0) {
-      x.value = NODES[to].x;
-      y.value = NODES[to].y;
+    const end = standAt(to);
+    const pts = [...walkPoints(from, to).slice(0, -1), end];
+    if (reduce || from === to) {
+      x.value = end.x;
+      y.value = end.y;
       return;
     }
-    const step = (v: number) => withTiming(v, { duration: STEP_MS, easing: Easing.linear });
-    x.value = withSequence(step(pts[0].x), ...pts.slice(1).map((p) => step(p.x)));
-    y.value = withSequence(step(pts[0].y), ...pts.slice(1).map((p) => step(p.y)));
+    const step = (v: number) => withTiming(v, { duration: STEP_MS, easing: Easing.inOut(Easing.quad) });
+    x.value = withSequence(...pts.map((p) => step(p.x)));
+    y.value = withSequence(...pts.map((p) => step(p.y)));
     lift.value = withRepeat(
       withSequence(
-        withTiming(-14, { duration: STEP_MS / 2, easing: Easing.out(Easing.quad) }),
-        withTiming(0, { duration: STEP_MS / 2, easing: Easing.in(Easing.quad) }),
+        withTiming(-5, {
+          duration: STEP_MS / 2,
+          easing: Easing.out(Easing.quad),
+        }),
+        withTiming(0, {
+          duration: STEP_MS / 2,
+          easing: Easing.in(Easing.quad),
+        }),
       ),
       pts.length,
     );
   }, [from, to, reduce, x, y, lift]);
 
+  // хөл нь чулууны дээд хавтгайн төвд (y + 2)
   const animated = useAnimatedStyle(() => ({
-    transform: [{ translateX: x.value - 34 }, { translateY: y.value - 118 + lift.value }],
+    transform: [{ translateX: x.value - 13 }, { translateY: y.value - 44 + lift.value }],
   }));
 
   return (
     <Animated.View style={[styles.abs, styles.bear, animated]}>
-      <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={StyleSheet.absoluteFill}>
-        <Motion preset="hop" originBottom>
-          <Sprite id="map_bear_68x122" />
+      <View style={[styles.tagWrap, { top: -24 }]} pointerEvents="none">
+        <View style={styles.hereTag}>
+          <Text style={styles.hereText}>{S.path.here}</Text>
+        </View>
+      </View>
+      <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={styles.bearHit}>
+        <Motion preset="breathe" originBottom>
+          <Sprite id="map_bear_small_26x46" />
           <Motion preset="blink" style={StyleSheet.absoluteFill}>
-            <Sprite id="map_bear_blink_68x122" />
+            <Sprite id="map_bear_small_blink_26x46" />
           </Motion>
         </Motion>
       </Pressable>
@@ -315,7 +362,59 @@ export { MAP_H, MAP_W };
 const styles = StyleSheet.create({
   map: { width: MAP_W, height: MAP_H, overflow: 'hidden' },
   abs: { position: 'absolute' },
-  bear: { left: 0, top: 0, width: 68, height: 122 },
+  hit: { width: HIT, height: HIT, alignItems: 'center' },
+  islandHit: { width: 72, height: 56 },
+  dot: {
+    position: 'absolute',
+    width: DOT,
+    height: DOT,
+    backgroundColor: 'rgba(255,255,255,0.55)',
+  },
+  dotDone: { backgroundColor: '#9CF06A' },
+  // баавгай 26×46; дарах талбай 56×56 (баавгайн төвд)
+  bear: { left: 0, top: 0, width: 26, height: 46 },
+  bearHit: {
+    position: 'absolute',
+    left: -15,
+    top: -6,
+    width: HIT,
+    height: HIT,
+    alignItems: 'center',
+    paddingTop: 6,
+  },
+  tagWrap: {
+    position: 'absolute',
+    left: -40,
+    right: -40,
+    alignItems: 'center',
+  },
+  hereTag: {
+    height: 18,
+    paddingHorizontal: 7,
+    borderRadius: radius.pill,
+    backgroundColor: colors.lemon,
+    borderWidth: 1.5,
+    borderColor: colors.ink,
+    justifyContent: 'center',
+  },
+  hereText: { fontFamily: fonts.extrabold, fontSize: 10, color: colors.ink },
+  bossTag: {
+    height: 18,
+    paddingHorizontal: 7,
+    borderRadius: 4,
+    backgroundColor: '#E5484D',
+    borderWidth: 1.5,
+    borderColor: colors.ink,
+    justifyContent: 'center',
+  },
+  guardTag: { backgroundColor: '#5B4FD6' },
+  mirror: { transform: [{ scaleX: -1 }] },
+  bossTagText: {
+    fontFamily: fonts.pixel,
+    fontSize: 10,
+    letterSpacing: 1,
+    color: colors.white,
+  },
   pill: {
     position: 'absolute',
     height: 28,
@@ -325,8 +424,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   pillMuted: { fontFamily: fonts.bold, fontSize: 12, color: colors.muted },
-  coinPill: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingLeft: 6, paddingRight: 9 },
-  coinText: { fontFamily: fonts.pixel, fontSize: 13, color: colors.ink },
-  tooltip: { position: 'absolute', width: 92, paddingVertical: 7, paddingHorizontal: 9, borderRadius: 12, backgroundColor: colors.ink },
-  tipText: { fontFamily: fonts.bold, fontSize: 12, lineHeight: 15, color: colors.white },
 });

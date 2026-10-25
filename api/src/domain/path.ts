@@ -1,16 +1,16 @@
 import { GAME } from '../config/game';
-import { bossNode } from './boss';
+import { gateNode } from './boss';
 
 // Апп-ын газрын зурагтай (mobile/src/lib/pixelBear/path.ts: currentNode, lessonsAt) ижил байх ёстой: даалгаврын
 // асуулт нь апп-ын харуулж буй зангилааны хичээлээс гарна.
-const { UNIT_SIZE, COUNT } = GAME.BOSS;
+const { UNIT_SIZE, COUNT, GATES } = GAME.BOSS;
 const NODE_COUNT = UNIT_SIZE * COUNT;
 /** Boss-гүй зангилааны тоо: номын бүх хичээл эдгээрт жигд тарна. */
 const LESSON_NODES = NODE_COUNT - COUNT;
 
-/** Сурах зам дээрх одоогийн зангилаа = шат − 1, гэхдээ ялаагүй boss-ын дэргэд зогсоно. */
-export function currentNode(level: number, bossesBeaten: number): number {
-  const gate = bossesBeaten < COUNT ? bossNode(bossesBeaten) : NODE_COUNT - 1;
+/** Сурах зам дээрх одоогийн зангилаа = шат − 1, гэхдээ давж амжаагүй хаалганы (boss, түүний гар) дэргэд зогсоно. */
+export function currentNode(level: number, gatesBeaten: number): number {
+  const gate = gatesBeaten < GATES.length ? gateNode(gatesBeaten) : NODE_COUNT - 1;
   return Math.max(0, Math.min(NODE_COUNT - 1, gate, level - 1));
 }
 

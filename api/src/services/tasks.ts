@@ -70,17 +70,20 @@ export async function startTask(
   userId: number,
   subject: Subject,
   boss?: number,
+  /** Admin-д л: газрын зургийн сонгосон зангилаа (бусдад одоогийн зангилаа). */
+  pick?: number,
   now = Date.now(),
 ): Promise<TaskDto> {
   const db = env.DB;
   const user = await getUserRow(db, userId);
   const tier = user.tier as Tier;
   const today = ubDay(now);
-  if (await hasPendingRecovery(db, userId, subject)) {
+  const admin = user.is_admin === 1;
+  if (!admin && (await hasPendingRecovery(db, userId, subject))) {
     throw new ApiError(409, 'RECOVERY_REQUIRED', 'Эхлээд давтлагаа дуусгаарай');
   }
   const path = (await loadSubjectPaths(db, userId))[subject];
-  if (boss !== undefined) {
+  if (boss !== undefined && !admin) {
     // Boss хаалт хичээл бүрийн сурах замаар: математикийн boss-ыг ялсан нь физикийн бүлгийг нээхгүй.
     const block = bossBlock(path.level, path.bossesBeaten, boss);
     if (block) throw new ApiError(409, block, 'Энэ boss-той тулалдах боломжгүй');
@@ -99,7 +102,7 @@ export async function startTask(
   // Асуулт зөвхөн хэрэглэгчийн ангийн номынх (эсвэл номгүй), өөр ангийн номоос хэзээ ч биш. Апп-ын харуулж буй
   // зангилааны хичээлийн хуудсаас (харсан ч) түрүүлж; хараагүй нь дутвал тэр хуудсаар үүсгэнэ. Хичээлд асуулт огт
   // хүрэлцэхгүй үед л хүлээж (удвал хүлээхгүй), дутууг ангийн бусад асуултаар. Ном, хичээл байхгүй (boss) бол ангийн бүх асуултаас.
-  const node = currentNode(path.level, path.bossesBeaten);
+  const node = admin && pick !== undefined ? pick : currentNode(path.level, path.bossesBeaten);
   const book = await bookLessons(env, subject, user.grade).catch(() => null);
   const lesson = book && lessonPages(book, node);
   const lessonRefill = (range: PageRange) =>
