@@ -108,8 +108,10 @@ PITCH = 302  # бүлгийн өндөр (px): дотоод 255 + boss → гү�
 W, H = 195, 380 + PITCH * (UNITS - 1)
 
 # DESIGN.md §8-04 (dp). Бүлэг бүр ижил; 0-р бүлэг нь хуучин 390×760 газрын зурагтай яг давхцана.
-DESIGN = [(140, 684), (180, 656), (220, 628), (272, 590), (220, 552), (180, 524), (128, 486), (180, 448),
-          (220, 420), (272, 382), (220, 344), (180, 316), (128, 278), (180, 240), (220, 212), (272, 174)]
+# x: 112 → 196 → 280 → 196 зигзаг — хөрш зангилаанууд хэвтээгээр 84 dp зайтай тул 56×56 dp дарах талбай давхцахгүй
+DESIGN = [(112, 684), (196, 656), (280, 628), (196, 590), (112, 552), (196, 524), (280, 486), (196, 448),
+          (112, 420), (196, 382), (280, 344), (196, 316), (112, 278), (196, 240), (280, 212), (196, 136)]
+# boss-ын арал (1.5×) 13-р алхмаас 104 dp дээр: тэнд зогсох баавгайн «Чи энд» шошго арал руу давхцахгүй
 
 trail = []  # px; i = түвшний дугаар, гүүр чулуунд байхгүй
 for k in range(UNITS):
@@ -117,13 +119,12 @@ for k in range(UNITS):
     for j, (x, y) in enumerate(DESIGN):
         trail.append({'x': x // 2, 'y': y // 2 + oy, 'i': k * UNIT + j})
     if k < UNITS - 1:
+        # boss-ын арлаас дараагийн бүлгийн эхний зангилаа хүртэл 2 алхах цэг (зурагдахгүй, баавгай дагуулж алхана)
         bx, by = trail[-1]['x'], trail[-1]['y']
-        trail += [{'x': bx - 26, 'y': by - 19}, {'x': bx - 46, 'y': by - 33}]
+        nx, ny = DESIGN[0][0] // 2, DESIGN[0][1] // 2 + oy - PITCH
+        trail += [{'x': bx + (nx - bx) * j // 3, 'y': by + (ny - by) * j // 3} for j in (1, 2)]
 nodes = [t for t in trail if 'i' in t]
 assert [(n['x'] * 2, n['y'] * 2 - (H - 380) * 2) for n in nodes[:UNIT]] == DESIGN, '0-р бүлэг DESIGN хүснэгтээс зөрлөө'
-for k in range(UNITS - 1):  # гүүрийн сүүлийн чулуунаас дараагийн бүлгийн эхний чулуу хүртэл ердийн алхам
-    a, b = trail[(k + 1) * (UNIT + 2) - 1], nodes[(k + 1) * UNIT]
-    assert (a['x'] - b['x'], a['y'] - b['y']) == (20, 14), (a, b)
 bosses = [nodes[k * UNIT + UNIT - 1] for k in range(UNITS)]
 
 
@@ -195,8 +196,8 @@ for y in range(50, 64):
 for x in range(-4, W, 9):
     m.blit(pine(9, 15, REGIONS[-1]['tree'], fade=True), x + random.randint(-2, 2), 46 + random.randint(-2, 3))
 
-# boss ба туг: зангилааны баруун талд (PathMap.tsx-ийн BOSS_DX)
-avoid = [(t['x'], t['y']) for t in trail] + [(b['x'] + 24, b['y']) for b in bosses]
+# boss нь өөрийн зангилааны арал дээр зогсоно
+avoid = [(t['x'], t['y']) for t in trail]
 
 
 def near_path(tx, ty): return any(abs(tx - x) < 34 and -40 < ty - y < 24 for x, y in avoid)
@@ -211,7 +212,7 @@ for _ in range(UNITS * 8):
     tx, ty = random.randint(20, 170), random.randint(70, H - 30)
     if not near_path(tx, ty): trees.append((tx, ty, random.choice([(16, 26), (14, 22), (18, 30)])))
 trees = [t for t in trees if not near_path(t[0], t[1])]
-for _ in range(170 * H // 380):
+for _ in range(70 * H // 380):  # өвс, цэцэг: цөөхөн (зам, дүрээс анхаарал сарниулахгүй)
     tx, ty = random.randint(0, W - 1), random.randint(66, H - 1)
     if near_path(tx, ty): continue
     r = REGIONS[region_at(ty)]
