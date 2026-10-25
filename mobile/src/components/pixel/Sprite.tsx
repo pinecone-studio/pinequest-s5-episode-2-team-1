@@ -35,7 +35,22 @@ export function SheetFrame({ id, frames, frame, label, cols = frames }: { id: Sp
 }
 
 /** Sheet-ийн `loop` frame-уудыг `ms` тутамд ээлжлэн тоглуулна ("motion бууруулах" үед эхний frame дээр зогсоно). */
-export function SheetLoop({ id, frames, loop, ms, label }: { id: SpriteKey; frames: number; loop: number[]; ms: number; label?: string }) {
+export function SheetLoop({
+  id,
+  frames,
+  loop,
+  ms,
+  label,
+  cols = frames,
+}: {
+  id: SpriteKey;
+  frames: number;
+  loop: number[];
+  ms: number;
+  label?: string;
+  /** grid sheet-ийн баганын тоо (өгөөгүй бол нэг мөр) */
+  cols?: number;
+}) {
   const reduce = useReducedMotion();
   const [i, setI] = useState(0);
   useEffect(() => {
@@ -43,7 +58,7 @@ export function SheetLoop({ id, frames, loop, ms, label }: { id: SpriteKey; fram
     const t = setInterval(() => setI((n) => (n + 1) % loop.length), ms);
     return () => clearInterval(t);
   }, [reduce, loop.length, ms]);
-  return <SheetFrame id={id} frames={frames} frame={loop[reduce ? 0 : i]} label={label} />;
+  return <SheetFrame id={id} frames={frames} cols={cols} frame={loop[reduce ? 0 : i]} label={label} />;
 }
 
 /** Sheet-ийн нэг frame-ийн хэмжээ (frames = 1 бол бүтэн зураг; `cols` баганатай grid). */
