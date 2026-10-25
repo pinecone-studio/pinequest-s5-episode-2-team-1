@@ -38,14 +38,27 @@ M.head_tired = [[40, 34]];
 M.head_neglected = [[40, 34]];
 M.head_sleep = [[54, 34]];
 // зам
-for (const n of ['map_bear', 'map_bear_blink', 'map_cloud_a', 'map_cloud_b', 'map_gift', 'map_qblock', 'map_ring', 'map_sapling', 'map_arrow', 'map_butterfly_sheet']) M[n] = [2];
-for (const n of ['tile_stone_done', 'tile_stone_lock', 'tile_pedestal_cur', 'tile_pedestal_end', 'tile_pedestal_gift', 'tile_pedestal_myst', 'tile_pedestal_sapling']) M[n] = [2];
+for (const n of ['map_cloud_a', 'map_cloud_b', 'map_ring', 'map_butterfly_sheet']) M[n] = [2];
+// замын зангилааны хажуугийн жижиг тэмдэг (PathMap)
+for (const n of ['map_gift', 'map_qblock', 'map_sapling']) M[n] = [1];
+for (const n of ['tile_stone_done', 'tile_pedestal_end', 'tile_pedestal_sapling']) M[n] = [2];
+// замын алхмууд ба жижиг баавгай (scripts/map-sprites.ts): баавгай 3/4 хэмжээтэй эх зургаас 1× → 46 dp өндөр
+for (const n of ['tile_step_lock', 'tile_step_cur']) M[n] = [2];
+for (const n of ['map_bear_small', 'map_bear_small_blink']) M[n] = [1];
 // адал явдлын газрын зураг (docs/design/pixel-bear/tools/mapgen_world.py), тулааны баавгай (scripts/bear-sprites.ts)
 for (const n of ['map_world_0', 'map_world_1', 'map_world_2', 'map_flag', 'fx_magic', 'lair_0', 'lair_1', 'lair_2', 'bear_battle', 'fx_honey_shatter', 'fx_spark', 'fx_spark_magic', 'fx_slash']) M[n] = [2];
-// boss: газрын зураг дээр 2×, тулаанд 4× (boss_pumpkin.py, mapgen_world.py)
-for (const n of ['boss_pumpkin_sheet', 'map_boss_1', 'map_boss_2']) M[n] = [2, 4];
-for (const n of ['map_boss_1', 'map_boss_2']) M[`${n}_white`] = [4];
+// boss: тулаанд 4× (boss_pumpkin.py, mapgen_world.py); газрын зураг дээр ~70 dp өндөр (хулуу 1.5×, бусад 2.5×)
+M.boss_pumpkin_sheet = [[376, 71], 4];
+M.map_boss_2 = [[75, 70], 4];
+M.map_boss_2_white = [4];
 M.fx_scythe = [4];
+// тулааны амийн зурвас ба манарах эргүүлэг (scripts/hud-sprites.ts)
+for (const n of ['hud_cap', 'hud_skull', 'fx_dizzy_sheet', 'fx_soul_sheet']) M[n] = [2];
+// 2-р бүлгийн дайснууд (scripts/golem-sprites.ts, PixelLab): газрын зураг дээр 1×, тулаанд гарууд 2×, boss 2.5× (frame тэгш
+// хэмжээтэй тул бүхэл dp); довтолгооны эффект 1×
+for (const n of ['golem_left_sheet', 'golem_right_sheet']) M[n] = [1, 2];
+M.golem_boss_sheet = [1, [1290, 645]];
+for (const n of ['fx_crystal_bolt', 'fx_golem_orb', 'fx_moon_crescent', 'fx_golem_impact']) M[n] = [1];
 // хичээлийн дэлгэц (scripts/lesson-sprites.ts): дэвсгэр ба баавгай 3×
 for (const n of ['bear_lesson', 'lesson_bg', 'lesson_shadow']) M[n] = [3];
 // баавгайтай ярилцах дэлгэц (scripts/tutor-sprites.ts, classroom-sprites.ts): анги, баавгай, амны хэлбэр, хөшигний мөчир 3×
