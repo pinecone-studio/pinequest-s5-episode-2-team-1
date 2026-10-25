@@ -50,6 +50,11 @@ export const GAME = {
   BOSS: {
     UNIT_SIZE: 16,
     COUNT: 3,
+    /**
+     * Дарааллаар давах тулааны зангилаа (хаалга): бүлэг бүрийн сүүлийн зангилаа boss; 2-р бүлэгт boss-ын өмнөх 2 алхамд
+     * зүүн гар (29), баруун гар (30). subject_progress.bosses_beaten = давсан хаалганы тоо. Апп: mobile/src/lib/pixelBear/path.ts GATES.
+     */
+    GATES: [15, 29, 30, 31, 47],
   },
 
   DUEL: {

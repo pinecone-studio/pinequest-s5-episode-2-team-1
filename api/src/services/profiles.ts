@@ -1,6 +1,7 @@
 import type { BearLook, Me, MyProfileResponse, ProfileResponse, PublicProfile, SubjectSkill } from '../../../shared/types';
 import { COSMETICS, type Cosmetic, OUTFIT_ITEMS } from '../config/cosmetics';
 import { GAME, SUBJECTS, type Subject } from '../config/game';
+import { bossesIn } from '../domain/boss';
 import { levelProgress } from '../domain/level';
 import { newProfileCode, normalizeProfileCode, parseBearLook } from '../domain/profile';
 import { normalizeStreak } from '../domain/streak';
@@ -44,7 +45,7 @@ async function loadSkills(db: D1Database, userId: number): Promise<SubjectSkill[
   return SUBJECTS.map((subject) => {
     const row = answers.results.find((r) => r.subject === subject);
     const path = paths[subject];
-    return { subject, level: path.level, bossesBeaten: path.bossesBeaten, correct: row?.correct ?? 0, answered: row?.answered ?? 0 };
+    return { subject, level: path.level, bossesBeaten: bossesIn(path.bossesBeaten), correct: row?.correct ?? 0, answered: row?.answered ?? 0 };
   });
 }
 

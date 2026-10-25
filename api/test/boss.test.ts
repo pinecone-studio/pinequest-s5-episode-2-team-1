@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { bossBlock, bossNode, bossWon } from '../src/domain/boss';
+import { bossBlock, bossesIn, bossWon, gateNode } from '../src/domain/boss';
+import { currentNode } from '../src/domain/path';
 
 describe('boss gate', () => {
-  it('boss бүлгийн сүүлийн зангилаанд', () => {
-    expect([0, 1, 2].map(bossNode)).toEqual([15, 31, 47]);
+  it('хаалга: 1-р boss, 2-р бүлгийн зүүн гар, баруун гар, boss, 3-р boss', () => {
+    expect([0, 1, 2, 3, 4].map(gateNode)).toEqual([15, 29, 30, 31, 47]);
   });
 
   it.each([
@@ -12,10 +13,22 @@ describe('boss gate', () => {
     [40, 0, 0, null], // XP-ээр цааш ахисан ч ялаагүй boss хэвээр
     [40, 0, 1, 'BOSS_LOCKED'], // эхнийхийг алгасахгүй
     [40, 1, 0, 'BOSS_LOCKED'], // ялсан boss-той дахин биш
-    [32, 1, 1, null],
-    [99, 3, 3, 'BOSS_LOCKED'], // boss дууссан
-  ])('level %i, ялсан %i, boss %i → %s', (level, beaten, unit, out) => {
-    expect(bossBlock(level, beaten, unit)).toBe(out);
+    [30, 1, 1, null], // 30-р шат = 29-р зангилаа = зүүн гар
+    [30, 1, 2, 'BOSS_LOCKED'], // зүүн гарыг давж байж баруун гар
+    [31, 2, 2, null],
+    [31, 3, 3, 'BOSS_LOCKED'], // баруун гарыг давсан ч boss-ын зангилаанд хүрээгүй
+    [32, 3, 3, null],
+    [99, 5, 5, 'BOSS_LOCKED'], // бүх хаалга давсан
+  ])('level %i, давсан %i, хаалга %i → %s', (level, beaten, gate, out) => {
+    expect(bossBlock(level, beaten, gate)).toBe(out);
+  });
+
+  it('баавгай давж амжаагүй хаалганы дэргэд зогсоно', () => {
+    expect([currentNode(40, 1), currentNode(40, 2), currentNode(40, 3), currentNode(40, 4)]).toEqual([29, 30, 31, 39]);
+  });
+
+  it('профайлд зөвхөн жинхэнэ boss тоологдоно', () => {
+    expect([0, 1, 2, 3, 4, 5].map(bossesIn)).toEqual([0, 1, 1, 1, 2, 3]);
   });
 
   it('олонх зөв бол ялна', () => {

@@ -66,8 +66,10 @@ describe('currentNode', () => {
     expect(currentNode(1, 0)).toBe(0);
     expect(currentNode(5, 0)).toBe(4);
     expect(currentNode(40, 0)).toBe(15);
-    expect(currentNode(40, 1)).toBe(31);
-    expect(currentNode(100, 3)).toBe(47);
+    expect(currentNode(40, 1)).toBe(29); // 2-р бүлгийн зүүн гар
+    expect(currentNode(40, 4)).toBe(39);
+    expect(currentNode(100, 4)).toBe(47);
+    expect(currentNode(100, 5)).toBe(47);
   });
 });
 

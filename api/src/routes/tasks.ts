@@ -11,11 +11,15 @@ export const taskRoutes = new Hono<AppEnv>();
 taskRoutes.use('*', requireAuth);
 
 taskRoutes.post('/', async (c) => {
-  const { subject, boss } = await readBody(
+  const { subject, boss, node } = await readBody(
     c,
-    z.object({ subject: z.enum(SUBJECTS), boss: z.number().int().min(0).max(GAME.BOSS.COUNT - 1).optional() }),
+    z.object({
+      subject: z.enum(SUBJECTS),
+      boss: z.number().int().min(0).max(GAME.BOSS.GATES.length - 1).optional(),
+      node: z.number().int().min(0).max(GAME.BOSS.COUNT * GAME.BOSS.UNIT_SIZE - 1).optional(),
+    }),
   );
-  return c.json<TaskDto>(await startTask(c.env, c.executionCtx, c.get('userId'), subject, boss));
+  return c.json<TaskDto>(await startTask(c.env, c.executionCtx, c.get('userId'), subject, boss, node));
 });
 
 taskRoutes.post('/:id/answer', async (c) => {
