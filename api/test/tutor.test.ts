@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import { isForeignTranscript, isQuotaClose, liveEvents, liveSetup, type MissedQuestion, tutorKickoff, tutorSystemPrompt } from '../src/llm/live';
+import { GAME } from '../src/config/game';
+import {
+  isForeignTranscript,
+  isQuotaClose,
+  liveEvents,
+  liveSetup,
+  type MissedQuestion,
+  speechBudget,
+  tutorKickoff,
+  tutorSystemPrompt,
+} from '../src/llm/live';
 
 const q: MissedQuestion = {
   subject: 'math',
@@ -105,5 +115,18 @@ describe('isQuotaClose', () => {
     expect(isQuotaClose(1011, 'You exceeded your current quota, please check your plan and billing details.')).toBe(true);
     expect(isQuotaClose(1011, 'Internal error encountered.')).toBe(false);
     expect(isQuotaClose(1000, '')).toBe(false);
+  });
+});
+
+describe('speechBudget', () => {
+  const cap = GAME.TUTOR.BEAR_SPEECH_MS;
+  it('баавгай 2:30 хүртэл ярьсан бол үргэлжилнэ, түүнээс хойш дуусгах заавар, дараа нь ярьсан ээлжийн төгсгөлд хаана', () => {
+    expect(speechBudget(cap - GAME.TUTOR.WRAP_UP_MS - 1, false, true)).toBe('continue');
+    expect(speechBudget(cap - GAME.TUTOR.WRAP_UP_MS, false, true)).toBe('wrap');
+    expect(speechBudget(cap - GAME.TUTOR.WRAP_UP_MS + 5_000, true, true)).toBe('end');
+  });
+
+  it('дуусгах зааврын дараах хоосон ээлжид (хүүхдийн чимээ) хаахгүй', () => {
+    expect(speechBudget(cap - GAME.TUTOR.WRAP_UP_MS + 5_000, true, false)).toBe('continue');
   });
 });

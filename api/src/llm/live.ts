@@ -110,6 +110,22 @@ export function tutorKickoff(ctx: TutorContext): string {
     : '(Хүүхэд баавгайтай ярих товч дарлаа. Мэндлээд, алдсан бодлогуудын сэдвийг товч дурдаж, алинаас нь эхлэхийг асуу.)';
 }
 
+/**
+ * Баавгайн ярих хугацаа дуусах гэж байна: дараагийн хариугаа эелдгээр дуусгуулна. Тусдаа ээлж үүсгэвэл хүүхдийн
+ * яриатай давхцаж хоосон ээлж болдог тул хариу эхлүүлэхгүйгээр (liveText complete = false) өгнө.
+ */
+export const TUTOR_WRAP_UP =
+  '(Энэ бодлогын ярилцлагын хугацаа дуусч байна. Дараагийн хариундаа хүүхдийн хэлсэнд товч хариулаад, өнөөдөр юу сурснийг нэг өгүүлбэрээр сануулж, урамшуулаад баяртай гэ. Шинэ асуулт бүү асуу.)';
+
+/**
+ * Баавгайн ээлж дуусах бүрт: нийт ярьсан хугацаа (ms) дээд хязгаарт ойртсон бол дуусгах заавар өгнө ('wrap'),
+ * зааврын дараа баавгай ярьсан ээлж дууссан бол ярилцлагыг хаана ('end'). Хоосон ээлжийн дараа хаахгүй.
+ */
+export function speechBudget(bearMs: number, wrapping: boolean, spokeThisTurn: boolean): 'continue' | 'wrap' | 'end' {
+  if (wrapping) return spokeThisTurn ? 'end' : 'continue';
+  return bearMs >= GAME.TUTOR.BEAR_SPEECH_MS - GAME.TUTOR.WRAP_UP_MS ? 'wrap' : 'continue';
+}
+
 export function liveSetup(model: string, systemPrompt: string) {
   return {
     setup: {
@@ -128,8 +144,9 @@ export function liveSetup(model: string, systemPrompt: string) {
   };
 }
 
-export function liveText(text: string) {
-  return { clientContent: { turns: [{ role: 'user', parts: [{ text }] }], turnComplete: true } };
+/** complete = false бол хариу эхлүүлэхгүй: заавар нь хүүхдийн дараагийн ярианы хамт уншигдана. */
+export function liveText(text: string, complete = true) {
+  return { clientContent: { turns: [{ role: 'user', parts: [{ text }] }], turnComplete: complete } };
 }
 
 export function liveAudio(base64Pcm: string) {
