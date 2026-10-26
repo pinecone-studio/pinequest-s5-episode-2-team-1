@@ -2,7 +2,8 @@ import type { AnswerResponse, FlagResponse, Me, TaskDto, TaskResult } from '../.
 import { GAME, type Subject, type Tier } from '../config/game';
 import { bossBlock, bossWon } from '../domain/boss';
 import { levelFromXp } from '../domain/level';
-import { currentNode, gateNodes, nodesAfter, pathLessons } from '../domain/path';
+import { currentNode, gateNodes, gateOf, nodesAfter, pathLessons } from '../domain/path';
+import { ADVANCE_STAGE, STAGES, stageDone } from '../../../shared/path';
 import { taskReward } from '../domain/rewards';
 import { shieldBlock } from '../domain/shield';
 import { normalizeStreak, registerTaskDay } from '../domain/streak';
@@ -12,7 +13,7 @@ import { isConstraintError, newTx } from '../lib/db';
 import { ApiError } from '../lib/errors';
 import type { PageRange } from './grounding';
 import { bookLessons, lessonPages } from './lessons';
-import { generate, templatesFor } from '../templates';
+import { generate, levelOf, templatesFor } from '../templates';
 import { LESSON_COUNT_SQL, lessonRef, maybeRefill, pickArgs, pickSql, rangeArgs, refillLesson, refillPool, storeGenerated } from './pool';
 import { hasPendingRecovery, recoveryCertain, recoveryStatements } from './recovery';
 import { countTasksToday, getUserRow, loadMe, loadSubjectPaths, streakStateOf, syncStreak } from './users';
@@ -62,8 +63,9 @@ export async function loadTask(db: D1Database, userId: number, taskId: number): 
 }
 
 /**
- * Шинэ даалгавар (эсвэл өнөөдрийн дуусаагүй ижил хичээлийнхийг) буцаана. `boss` = газрын зургийн тэр бүлгийн
- * boss-той тулаан: ялбал (олонх зөв) дараагийн бүлэг нээгдэнэ.
+ * Шинэ даалгавар (эсвэл өнөөдрийн дуусаагүй ижил зангилаа, шатныхыг) буцаана. `boss` = газрын зургийн тэр хаалгатай
+ * тулаан: ялбал (олонх зөв) дараагийн хаалга нээгдэнэ. Хичээлийн зангилаа бол `stage` шатны (1 Суурь, 2 Дунд,
+ * 3 Ахисан) бодлого; өгөөгүй бол дараагийн давах шат.
  */
 export async function startTask(
   env: Bindings,
@@ -72,8 +74,9 @@ export async function startTask(
   subject: Subject,
   /** тулааны хаалга (GAME.BOSS.GATES-ийн индекс) */
   boss?: number,
-  /** Admin-д л: газрын зургийн сонгосон зангилаа (бусдад одоогийн зангилаа). */
+  /** газрын зургийн сонгосон зангилаа: энгийн хэрэглэгчид одоогийн эсвэл давсан хичээлийн зангилаа (admin бүгд) */
   pick?: number,
+  stage?: number,
   now = Date.now(),
 ): Promise<TaskDto> {
   const db = env.DB;
@@ -94,31 +97,41 @@ export async function startTask(
     if (block) throw new ApiError(409, block, 'Энэ boss-той тулалдах боломжгүй');
   }
 
+  // хаалганы тулаан тэр зангилааны хичээлээр (энгийн хэрэглэгчид bossBlock-ийн дараа одоогийн зангилаа = хаалга)
+  const current = currentNode(pathLen, path.level, path.bossesBeaten);
+  if (pick !== undefined && !admin && (pick > current || gateOf(pathLen, pick) >= 0)) {
+    throw new ApiError(409, 'NODE_LOCKED', 'Энэ зангилаа хаалттай байна');
+  }
+  const node = boss !== undefined ? gateNodes(pathLen)[boss] : (pick ?? current);
+  // Хаалганы тулаан, хаалган дээрх ердийн даалгавар шатгүй. Шат дарааллаар нээгдэнэ (admin бүгд).
+  const done = stageDone(path.stages, node, current);
+  const stageNo = boss !== undefined || gateOf(pathLen, node) >= 0 ? null : (stage ?? Math.min(STAGES, done + 1));
+  if (stageNo !== null && stageNo > done + 1 && !admin) throw new ApiError(409, 'STAGE_LOCKED', 'Өмнөх шатаа давж байж энэ шат нээгдэнэ');
+
   const existing = await db
-    .prepare(`SELECT id, boss FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress' ORDER BY id DESC LIMIT 1`)
+    .prepare(`SELECT id, boss, node, stage FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress' ORDER BY id DESC LIMIT 1`)
     .bind(userId, subject, today)
-    .first<{ id: number; boss: number | null }>();
-  if (existing && admin && (pick !== undefined || (boss !== undefined && boss !== existing.boss))) {
-    // Admin өөр зангилаа/хаалга сонговол өнөөдрийн дуусаагүй даалгаврыг орхино (оноо, XP зөвхөн дуусгахад олгогддог)
-    await db.prepare(`DELETE FROM tasks WHERE id = ? AND status = 'in_progress'`).bind(existing.id).run();
-  } else if (existing) {
-    // Дуусаагүй даалгаврыг хаанаас нээсэн нь (газрын зургийн boss эсвэл ердийн) түүний төрлийг шийднэ.
-    await db.prepare('UPDATE tasks SET boss = ? WHERE id = ?').bind(boss ?? null, existing.id).run();
+    .first<{ id: number; boss: number | null; node: number | null; stage: number | null }>();
+  if (existing && existing.boss === (boss ?? null) && existing.node === node && existing.stage === stageNo) {
     return loadTask(db, userId, existing.id);
+  }
+  if (existing) {
+    // Өөр зангилаа, шат, хаалга сонговол өнөөдрийн дуусаагүй даалгаврыг орхино (оноо, XP зөвхөн дуусгахад олгогддог)
+    await db.prepare(`DELETE FROM tasks WHERE id = ? AND status = 'in_progress'`).bind(existing.id).run();
   }
 
   // Асуулт зөвхөн хэрэглэгчийн ангийн номынх (эсвэл номгүй), өөр ангийн номоос хэзээ ч биш. Апп-ын харуулж буй
   // зангилааны хичээлийн хуудсаас (харсан ч) түрүүлж; хараагүй нь дутвал тэр хуудсаар үүсгэнэ. Хичээлд асуулт огт
   // хүрэлцэхгүй үед л хүлээж (удвал хүлээхгүй), дутууг ангийн бусад асуултаар. Ном, хичээл байхгүй (boss) бол ангийн бүх асуултаас.
-  // хаалганы тулаан тэр зангилааны хичээлээр (энгийн хэрэглэгчид bossBlock-ийн дараа одоогийн зангилаа = хаалга)
-  const node =
-    boss !== undefined ? gateNodes(pathLen)[boss] : admin && pick !== undefined ? pick : currentNode(pathLen, path.level, path.bossesBeaten);
   const lesson = book && lessonPages(book, node);
   const lessonRefill = (range: PageRange) =>
     refillLesson(env, tier, subject, { grade: user.grade, range }, userId).catch((e) => console.error('[pool] lesson refill failed', e));
-  // Хичээлд бодлогын загвар байвал нэг төрлийн бодлогыг тоо, нөхцөлийг нь сольж үүсгэнэ (Gemini хэрэггүй).
+  // Хичээлд бодлогын загвар байвал нэг төрлийн бодлогыг тоо, нөхцөлийг нь сольж шатны хүндээр үүсгэнэ (Gemini
+  // хэрэггүй); тулаан Дунд түвшинд.
   const templates = lesson ? templatesFor(lesson) : [];
-  const made = templates.length ? await storeGenerated(db, tier, subject, user.grade, generate(templates, GAME.QUESTIONS_PER_TASK), now) : [];
+  const made = templates.length
+    ? await storeGenerated(db, tier, subject, user.grade, generate(templates, GAME.QUESTIONS_PER_TASK, levelOf(stageNo)), now)
+    : [];
   if (lesson && made.length < GAME.QUESTIONS_PER_TASK) {
     const refill = lessonRefill(lesson);
     ctx.waitUntil(refill);
@@ -156,11 +169,11 @@ export async function startTask(
   await db.batch([
     db
       .prepare(
-        `INSERT INTO tasks (user_id, subject, day, status, boss, lesson_ref, path_lessons, tx, created_at)
-         SELECT ?, ?, ?, 'in_progress', ?, ?, ?, ?, ?
+        `INSERT INTO tasks (user_id, subject, day, status, boss, lesson_ref, path_lessons, node, stage, tx, created_at)
+         SELECT ?, ?, ?, 'in_progress', ?, ?, ?, ?, ?, ?, ?
          WHERE NOT EXISTS (SELECT 1 FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress')`,
       )
-      .bind(userId, subject, today, boss ?? null, lesson ? lessonRef(lesson) : null, pathLen, tx, now, userId, subject, today),
+      .bind(userId, subject, today, boss ?? null, lesson ? lessonRef(lesson) : null, pathLen, node, stageNo, tx, now, userId, subject, today),
     ...picked.map((q, i) => tq.bind(tx, i, q.id, tx)),
     ...picked.map((q) => seen.bind(userId, q.id, now, tx)),
   ]);
@@ -289,10 +302,12 @@ export async function completeTask(
   const after = registerTaskDay(normalized.state, today);
   const cc = await db
     .prepare(
-      'SELECT t.subject, t.boss, t.path_lessons, (SELECT COUNT(*) FROM task_questions WHERE task_id = t.id AND correct = 1) AS n FROM tasks t WHERE t.id = ?',
+      `SELECT t.subject, t.boss, t.path_lessons, t.node, t.stage,
+         (SELECT COUNT(*) FROM task_questions WHERE task_id = t.id AND correct = 1) AS n
+       FROM tasks t WHERE t.id = ?`,
     )
     .bind(taskId)
-    .first<{ subject: Subject; boss: number | null; path_lessons: number | null; n: number }>();
+    .first<{ subject: Subject; boss: number | null; path_lessons: number | null; node: number | null; stage: number | null; n: number }>();
   if (!cc) throw new ApiError(404, 'NOT_FOUND', 'Даалгавар олдсонгүй');
   const correctCount = cc.n;
   const reward = taskReward(correctCount, after.streak);
@@ -302,7 +317,11 @@ export async function completeTask(
   const beatBoss = cc.boss != null && cc.boss === path.bossesBeaten && bossWon(correctCount);
   const nodes = path.level - 1;
   // Даалгавар эхлэх үеийн замын урт (дунд нь ном солигдсон ч тэр зангилааг дуусгана)
-  const nodesNext = nodesAfter(pathLessons(cc.path_lessons ?? 0), nodes, path.bossesBeaten, correctCount, beatBoss);
+  const n = pathLessons(cc.path_lessons ?? 0);
+  // Шатны даалгавар: давбал тэр шат тэмдэглэгдэнэ; зам зөвхөн одоогийн зангилааны ADVANCE_STAGE-аас дээш шатаар ахина.
+  const stagePassed = cc.stage !== null && correctCount >= GAME.PATH_PASS_CORRECT;
+  const advances = cc.stage === null || (cc.stage >= ADVANCE_STAGE && cc.node === currentNode(n, path.level, path.bossesBeaten));
+  const nodesNext = advances ? nodesAfter(n, nodes, path.bossesBeaten, correctCount, beatBoss) : nodes;
 
   const tx = newTx();
   const guard = 'EXISTS (SELECT 1 FROM tasks WHERE id = ? AND tx = ?)';
@@ -356,6 +375,16 @@ export async function completeTask(
             .bind(nodesNext, path.bossesBeaten + (beatBoss ? 1 : 0), userId, cc.subject, nodes, path.bossesBeaten, taskId, tx),
         ]
       : []),
+    ...(stagePassed
+      ? [
+          db
+            .prepare(
+              `INSERT INTO node_stages (user_id, subject, node, stage) SELECT ?, ?, ?, ? WHERE ${guard}
+               ON CONFLICT (user_id, subject, node) DO UPDATE SET stage = MAX(stage, excluded.stage)`,
+            )
+            .bind(userId, cc.subject, cc.node, cc.stage, taskId, tx),
+        ]
+      : []),
     ...extra,
   ]);
   if (!results[0].meta.changes) throw new ApiError(409, 'TASK_CLOSED', 'Даалгавар аль хэдийн дууссан');
@@ -372,6 +401,8 @@ export async function completeTask(
     levelBefore: levelFromXp(user.xp),
     levelAfter: me.level,
     nodeUp: me.paths[cc.subject].level > path.level,
+    stage: cc.stage,
+    stagePassed,
     me,
   };
 }

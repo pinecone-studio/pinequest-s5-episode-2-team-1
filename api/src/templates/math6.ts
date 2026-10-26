@@ -1,7 +1,9 @@
 // Математик 6-ын тооцооллын хичээлүүдийн загвар (ref = api/seed/lesson-questions.json-ийн bookRef).
 // Буруу сонголтууд нь хүүхдийн түгээмэл алдаа (тэмдэг андуурах, ХИЕХ/ХБЕХ солих г.м.). Тооны араас нөхцөл залгахаас
 // зайлсхийнэ: "5-аас", "6-гаас" гэх мэт нь тооны дуудлагаас хамаардаг.
-import type { Rng, Template } from './index';
+// Түвшин (зангилааны шат): 1 Суурь = жижиг тоо, нэг алхам; 2 Дунд = сурах бичгийн дасгал; 3 Ахисан = том тоо эсвэл
+// гурван гишүүн.
+import type { Level, Rng, Template } from './index';
 
 const int = (rng: Rng, lo: number, hi: number) => lo + Math.floor(rng() * (hi - lo + 1));
 const pick = <T>(rng: Rng, xs: readonly T[]): T => xs[Math.floor(rng() * xs.length)];
@@ -31,18 +33,41 @@ const nonzero = (rng: Rng, lo: number, hi: number) => {
   while (n === 0) n = int(rng, lo, hi);
   return n;
 };
+/** Модуль нь [lo, hi]-д байх санамсаргүй тэмдэгтэй тоо. */
+const signed = (rng: Rng, lo: number, hi: number) => (rng() < 0.5 ? -1 : 1) * int(rng, lo, hi);
+/** Түвшнээр сонгох: [Суурь, Дунд, Ахисан]. */
+const atLevel = <T>(level: Level, xs: readonly [T, T, T]): T => xs[level - 1];
+
+const range = (lo: number, hi: number) => Array.from({ length: hi - lo + 1 }, (_, i) => lo + i);
+/** Анхны тоо сонгох бодлогын түвшин бүрийн анхны ба нийлмэл тоо. */
+const PRIMES = [range(11, 29), range(23, 97), range(101, 199)].map((xs) => xs.filter(isPrime));
+const COMPOSITES = [
+  [9, 15, 21, 25, 27, 33, 35],
+  [21, 27, 33, 39, 49, 51, 57, 63, 69, 77, 81, 87, 91, 93],
+  [111, 117, 119, 121, 123, 129, 133, 141, 143, 153, 159, 161, 169, 171, 177, 183, 187, 189],
+];
 
 export const MATH6: readonly Template[] = [
   {
     ref: 'math-6:5-6',
     id: 'compare-integers',
     topic: 'negative_numbers',
-    make(rng) {
+    make(rng, level) {
       const nums = new Set<number>();
-      // хамгийн их абсолют утгатай сөрөг тоо: "их" гэж андуурдаг
-      nums.add(-int(rng, 20, 40));
-      nums.add(-int(rng, 1, 19));
-      while (nums.size < 4) nums.add(int(rng, -15, 30));
+      if (level === 1) {
+        // нэг сөрөг тоо, бусад нь эерэг
+        nums.add(-int(rng, 1, 9));
+        while (nums.size < 4) nums.add(int(rng, 0, 15));
+      } else if (level === 2) {
+        // хамгийн их абсолют утгатай сөрөг тоо: "их" гэж андуурдаг
+        nums.add(-int(rng, 20, 40));
+        nums.add(-int(rng, 1, 19));
+        while (nums.size < 4) nums.add(int(rng, -15, 30));
+      } else {
+        // бүгд ойролцоо сөрөг тоо
+        const base = -int(rng, 20, 60);
+        while (nums.size < 4) nums.add(base + int(rng, -9, 9));
+      }
       const list = [...nums].sort(() => rng() - 0.5);
       const max = Math.max(...list);
       const min = Math.min(...list);
@@ -61,9 +86,23 @@ export const MATH6: readonly Template[] = [
     ref: 'math-6:7-9',
     id: 'add-sub-integers',
     topic: 'negative_numbers',
-    make(rng) {
-      const a = nonzero(rng, -30, 30);
-      const b = a > 0 ? -int(rng, 1, 30) : nonzero(rng, -30, 30);
+    make(rng, level) {
+      if (level === 3) {
+        // гурван гишүүн: зүүнээс баруун тийш
+        const [a, b, c] = [nonzero(rng, -50, 50), nonzero(rng, -50, 50), nonzero(rng, -50, 50)];
+        const [p1, p2] = [rng() < 0.5, rng() < 0.5];
+        const ab = p1 ? a + b : a - b;
+        const r = p2 ? ab + c : ab - c;
+        const op = (plus: boolean) => (plus ? '+' : '−');
+        return {
+          prompt: `${par(a)} ${op(p1)} ${par(b)} ${op(p2)} ${par(c)} хэдтэй тэнцүү вэ?`,
+          options: four(r, [p2 ? ab - c : ab + c, -r, (p1 ? a - b : a + b) + (p2 ? c : -c)], () => r + nonzero(rng, -10, 10)),
+          explanation: `Зүүнээс баруун тийш: ${par(a)} ${op(p1)} ${par(b)} = ${fmt(ab)}, ${par(ab)} ${op(p2)} ${par(c)} = ${fmt(r)}.`,
+        };
+      }
+      const max = atLevel(level, [10, 30, 30]);
+      const a = nonzero(rng, -max, max);
+      const b = a > 0 ? -int(rng, 1, max) : nonzero(rng, -max, max);
       const plus = rng() < 0.5;
       const r = plus ? a + b : a - b;
       return {
@@ -79,9 +118,20 @@ export const MATH6: readonly Template[] = [
     ref: 'math-6:10-11',
     id: 'mul-div-integers',
     topic: 'negative_numbers',
-    make(rng) {
-      const x = nonzero(rng, -12, 12);
-      const y = x > 0 ? -int(rng, 2, 12) : nonzero(rng, -12, 12);
+    make(rng, level) {
+      if (level === 3) {
+        // гурван үржигдэхүүн: сөрөг тооны тоо тэмдгийг шийднэ
+        const [x, y, z] = [signed(rng, 2, 9), signed(rng, 2, 9), signed(rng, 2, 9)];
+        const r = x * y * z;
+        return {
+          prompt: `${par(x)} · ${par(y)} · ${par(z)} хэдтэй тэнцүү вэ?`,
+          options: four(r, [-r, x + y + z, x * y + z], () => r + nonzero(rng, -12, 12)),
+          explanation: `Сөрөг үржигдэхүүн тэгш тоотой бол үржвэр эерэг, сондгой бол сөрөг: ${par(x)} · ${par(y)} = ${fmt(x * y)}, ${par(x * y)} · ${par(z)} = ${fmt(r)}.`,
+        };
+      }
+      const max = atLevel(level, [5, 12, 12]);
+      const x = nonzero(rng, -max, max);
+      const y = x > 0 ? -int(rng, 2, max) : nonzero(rng, -max, max);
       const mul = rng() < 0.5;
       const r = mul ? x * y : x;
       return {
@@ -95,16 +145,18 @@ export const MATH6: readonly Template[] = [
     ref: 'math-6:12-13',
     id: 'divisible-by',
     topic: 'divisibility',
-    make(rng) {
+    make(rng, level) {
       const d = pick(rng, [4, 6, 8] as const);
+      // хоёр, гурав, дөрвөн оронтой тоо
+      const [lo, hi] = atLevel(level, [[12, 99], [100, 999], [1000, 9999]]);
       // дөрөвт, зургаад, наймд
       const by = `${d}-${d === 4 ? 'т' : 'д'}`;
-      const answer = d * int(rng, Math.ceil(100 / d), Math.floor(999 / d));
+      const answer = d * int(rng, Math.ceil(lo / d), Math.floor(hi / d));
       // Хуурамч сонголт: 4, 8-д тэгш боловч хуваагдахгүй; 6-д 2-т эсвэл 3-т л хуваагдах.
       const trap = (n: number) => n % d !== 0 && (d === 6 ? n % 2 === 0 || n % 3 === 0 : n % 2 === 0);
       const wrong: number[] = [];
       for (let i = 0; wrong.length < 3 && i < 500; i++) {
-        const n = int(rng, 100, 999);
+        const n = int(rng, lo, hi);
         if (trap(n) && !wrong.includes(n)) wrong.push(n);
       }
       const digits = String(answer)
@@ -129,15 +181,16 @@ export const MATH6: readonly Template[] = [
     ref: 'math-6:14',
     id: 'gcd',
     topic: 'divisibility',
-    make(rng) {
+    make(rng, level) {
+      const [gLo, gHi, mHi, top] = atLevel(level, [[2, 6, 5, 30], [2, 15, 11, 150], [6, 30, 13, 400]]);
       let g = 0;
       let m = 0;
       let n = 0;
       do {
-        g = int(rng, 2, 15);
-        m = int(rng, 2, 11);
-        n = int(rng, 2, 11);
-      } while (m === n || gcd(m, n) !== 1 || g * Math.max(m, n) > 150);
+        g = int(rng, gLo, gHi);
+        m = int(rng, 2, mHi);
+        n = int(rng, 2, mHi);
+      } while (m === n || gcd(m, n) !== 1 || g * Math.max(m, n) > top);
       const [a, b] = [g * m, g * n];
       const part = g / smallestFactor(g);
       return {
@@ -151,13 +204,14 @@ export const MATH6: readonly Template[] = [
     ref: 'math-6:15-16',
     id: 'lcm',
     topic: 'divisibility',
-    make(rng) {
+    make(rng, level) {
+      const [lo, hi, top] = atLevel(level, [[2, 10, 60], [2, 20, 200], [6, 40, 600]]);
       let a = 0;
       let b = 0;
       do {
-        a = int(rng, 2, 20);
-        b = int(rng, 2, 20);
-      } while (a === b || a % b === 0 || b % a === 0 || lcm(a, b) > 200);
+        a = int(rng, lo, hi);
+        b = int(rng, lo, hi);
+      } while (a === b || a % b === 0 || b % a === 0 || lcm(a, b) > top);
       const g = gcd(a, b);
       const l = lcm(a, b);
       return {
@@ -171,10 +225,10 @@ export const MATH6: readonly Template[] = [
     ref: 'math-6:17',
     id: 'prime',
     topic: 'divisibility',
-    make(rng) {
-      const p = pick(rng, [23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97].filter(isPrime));
+    make(rng, level) {
+      const p = pick(rng, PRIMES[level - 1]);
       // анхны тоо шиг харагддаг сондгой нийлмэл тоо
-      const pool = [21, 27, 33, 39, 49, 51, 57, 63, 69, 77, 81, 87, 91, 93].sort(() => rng() - 0.5).slice(0, 3);
+      const pool = [...COMPOSITES[level - 1]].sort(() => rng() - 0.5).slice(0, 3);
       const shown = [p, ...pool].sort(() => rng() - 0.5);
       return {
         prompt: `${shown.join(', ')} тоонуудын аль нь анхны тоо вэ?`,
@@ -186,8 +240,9 @@ export const MATH6: readonly Template[] = [
   {
     ref: 'math-6:18-19',
     id: 'square-root',
-    make(rng) {
-      const n = int(rng, 2, 20);
+    make(rng, level) {
+      const [lo, hi] = atLevel(level, [[2, 10], [11, 20], [21, 30]]);
+      const n = int(rng, lo, hi);
       if (rng() < 0.5) {
         return {
           prompt: `${n}² хэдтэй тэнцүү вэ?`,

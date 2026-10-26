@@ -14,6 +14,14 @@ import { useOnline } from '@/lib/online';
 const TILE = '#33208F';
 /** api/src/config/game.ts-ийн GAME.PATH_PASS_CORRECT */
 const PATH_PASS_CORRECT = 4;
+
+/** Сурах замын тэмдэглэл: зангилаа нээгдсэн, дараагийн шат нээгдсэн эсвэл хэдэн зөв хэрэгтэй. */
+function pathNote(r: TaskResult): string {
+  if (r.nodeUp) return S.reward.nodeUp;
+  if (r.stage === null) return S.reward.nodeStay(PATH_PASS_CORRECT);
+  if (!r.stagePassed) return S.reward.stageStay(PATH_PASS_CORRECT);
+  return r.stage < S.path.stages.length ? S.reward.stageUp(S.path.stages[r.stage]) : S.reward.stageTop;
+}
 const SOFT = '#CFC6FF';
 
 /** 06 · Хичээл дууслаа / шагнал. Бүх тоо серверийн TaskResult-аас. `onRecovery` = нөхөх салаа зам нээгдсэн (дараагийн алхам). */
@@ -44,7 +52,7 @@ export function RewardView({ result, onAgain, onRecovery }: { result: TaskResult
           <RewardTile icon="icon_flame_24x24" value={result.streak} label={S.reward.daysStreak} index={2} />
         </View>
 
-        <Text style={styles.recoveryNote}>{result.nodeUp ? S.reward.nodeUp : S.reward.nodeStay(PATH_PASS_CORRECT)}</Text>
+        <Text style={styles.recoveryNote}>{pathNote(result)}</Text>
 
         {leveledUp || result.shieldUsed ? (
           <Enter index={3} style={styles.lemon}>

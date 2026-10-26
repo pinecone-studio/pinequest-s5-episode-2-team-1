@@ -96,14 +96,22 @@ export async function countFriendRequests(db: D1Database, userId: number): Promi
 
 /** Хичээл бүрийн сурах замын ахиц (subject_progress); тухайн хичээлд даалгавар хийгээгүй бол 0. */
 export async function loadSubjectPaths(db: D1Database, userId: number): Promise<Record<Subject, SubjectPath>> {
-  const { results } = await db
-    .prepare('SELECT subject, xp, nodes, bosses_beaten FROM subject_progress WHERE user_id = ?')
-    .bind(userId)
-    .all<{ subject: Subject; xp: number; nodes: number; bosses_beaten: number }>();
+  const [{ results }, { results: stages }] = await Promise.all([
+    db
+      .prepare('SELECT subject, xp, nodes, bosses_beaten FROM subject_progress WHERE user_id = ?')
+      .bind(userId)
+      .all<{ subject: Subject; xp: number; nodes: number; bosses_beaten: number }>(),
+    db.prepare('SELECT subject, node, stage FROM node_stages WHERE user_id = ?').bind(userId).all<{ subject: Subject; node: number; stage: number }>(),
+  ]);
   const paths = {} as Record<Subject, SubjectPath>;
   for (const subject of SUBJECTS) {
     const row = results.find((r) => r.subject === subject);
-    paths[subject] = { xp: row?.xp ?? 0, level: (row?.nodes ?? 0) + 1, bossesBeaten: row?.bosses_beaten ?? 0 };
+    paths[subject] = {
+      xp: row?.xp ?? 0,
+      level: (row?.nodes ?? 0) + 1,
+      bossesBeaten: row?.bosses_beaten ?? 0,
+      stages: Object.fromEntries(stages.filter((s) => s.subject === subject).map((s) => [s.node, s.stage])),
+    };
   }
   return paths;
 }

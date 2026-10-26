@@ -100,14 +100,24 @@ async function pathsScenario() {
   const u = await register('e2e_path', 7);
   check((['math', 'mongolian', 'physics'] as const).every((s) => u.me.paths[s].level === 1 && u.me.paths[s].bossesBeaten === 0), 'Шинэ хэрэглэгчийн 3 зам бүгд эхлэлд');
   await doTask(u.token, 'math', true);
+  check((await me(u.token)).paths.math.level === 1, '① Суурь шатыг давахад зангилаа хэвээр, ② Дунд нээгдэнэ');
+  await expectError(call('POST', '/tasks', { token: u.token, body: { subject: 'math', stage: 3 } }), 'STAGE_LOCKED', '②-ыг давахаас өмнө ③ хаалттай');
   await doTask(u.token, 'math', true);
   const m = await me(u.token);
-  check(m.paths.math.xp === 100 && m.paths.math.level === 3, 'Математикийн 2 даалгавар (10 зөв) → математикийн замд 2 зангилаа ахина', m.paths.math);
+  check(
+    m.paths.math.xp === 100 && m.paths.math.level === 2 && m.paths.math.stages[0] === 2,
+    'Математикийн ①, ② шат (10 зөв) → математикийн замд нэг зангилаа ахина',
+    m.paths.math,
+  );
+  await doTask(u.token, 'math', true, { node: 0, stage: 3 });
+  const m3 = (await me(u.token)).paths.math;
+  check(m3.stages[0] === 3 && m3.level === 2, 'Давсан зангилааны ③ Ахисан сорил: шат тэмдэглэгдэж, зам хөдлөхгүй', m3);
+  await expectError(call('POST', '/tasks', { token: u.token, body: { subject: 'math', node: 5 } }), 'NODE_LOCKED', 'Нээгдээгүй зангилаа хаалттай');
   check(m.paths.physics.xp === 0 && m.paths.mongolian.level === 1, 'Бусад хичээлийн зам хөдлөхгүй', m.paths);
   check(m.xp === 100 && m.level === 2, 'Нийт XP, шат хэвээр нэмэгдэнэ');
   await expectError(call('POST', '/tasks', { token: u.token, body: { subject: 'math', boss: 0 } }), 'BOSS_LOCKED', 'Тэр хичээлийн boss-ын зангилаанд хүрээгүй бол boss хаалттай');
 
-  // Зангилаа XP-ээр биш даалгавраар: 3/5 (30 XP) хоёр удаа хийсэн ч ахихгүй, 4/5 бол ахина.
+  // Шат XP-ээр биш даалгавраар: 3/5 (30 XP) хоёр удаа хийсэн ч ахихгүй, 4/5 бол дараагийн шат, ② дээр 4/5 бол зангилаа.
   const partial = async (correct: number) => {
     const t = await call<TaskDto>('POST', '/tasks', { token: u.token, body: { subject: 'physics' } });
     let last: AnswerResponse | null = null;
@@ -123,7 +133,9 @@ async function pathsScenario() {
   const p3 = (await me(u.token)).paths.physics;
   check(p3.level === 1 && p3.xp === 60 && r3?.nodeUp === false, '3/5 зөвтэй 2 даалгавар (60 XP) ч зангилаа ахихгүй', p3);
   const r4 = await partial(4);
-  check((await me(u.token)).paths.physics.level === 2 && r4?.nodeUp === true, '4/5 зөв бол дараагийн зангилаа нээгдэнэ');
+  check(r4?.stagePassed === true && r4.stage === 1 && r4.nodeUp === false, '① дээр 4/5 зөв бол ② нээгдэнэ', r4);
+  const r5 = await partial(4);
+  check((await me(u.token)).paths.physics.level === 2 && r5?.nodeUp === true, '② дээр 4/5 зөв бол дараагийн зангилаа нээгдэнэ');
 }
 
 /** Хаалганы тулааныг бүгдийг зөв хариулж ялна. */

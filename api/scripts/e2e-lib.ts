@@ -35,8 +35,8 @@ export async function correctIndex(questionId: number): Promise<number> {
 }
 
 /** Даалгавар эхлүүлж бүх асуултад хариулна (allCorrect: бүгд зөв / бүгд буруу). */
-export async function doTask(token: string, subject: string, allCorrect: boolean) {
-  const task = await call<TaskDto>('POST', '/tasks', { token, body: { subject } });
+export async function doTask(token: string, subject: string, allCorrect: boolean, at: { node?: number; stage?: number } = {}) {
+  const task = await call<TaskDto>('POST', '/tasks', { token, body: { subject, ...at } });
   let last: AnswerResponse | null = null;
   const answers: AnswerResponse[] = [];
   for (const q of task.questions.filter((x) => !x.answered)) {
