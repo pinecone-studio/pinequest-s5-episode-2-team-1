@@ -109,55 +109,66 @@ export interface PathLayout {
   units: PathUnit[];
   /** тулааны хаалганы зангилаа (BOSSES ижил дараалалтай) */
   gates: number[];
+  /** газрын зургийн босоо сунгалт (≥ 1) ба өндөр (dp) */
+  scale: number;
+  height: number;
 }
 
 /** world.json-ийн бүлэг бүрийн 16 цэгтэй зам (mapgen_world.py мод тарихгүй орхидог), гүүр чулуутай. */
 const BASE: TrailPoint[] = world.trail;
 const BASE_UNIT = world.unitSize;
 
-/** Шугаман замын `t` (0–1) хэсэгт байх цэг. */
-function along(pts: readonly TrailPoint[], t: number): { x: number; y: number } {
-  const seg = pts.slice(1).map((p, k) => Math.hypot(p.x - pts[k].x, p.y - pts[k].y));
-  let left = t * seg.reduce((a, b) => a + b, 0);
-  for (let k = 0; k < seg.length; k++) {
-    if (left <= seg[k] || k === seg.length - 1) {
-      const f = seg[k] ? Math.min(1, left / seg[k]) : 0;
-      return { x: Math.round(pts[k].x + (pts[k + 1].x - pts[k].x) * f), y: Math.round(pts[k].y + (pts[k + 1].y - pts[k].y) * f) };
-    }
-    left -= seg[k];
-  }
-  return pts[0];
-}
+/** world.json-ийн зиг-заг (mapgen_world.py): хөрш зангилаа хэвтээгээр 84 dp зайтай тул давхцахгүй. */
+const ZIGZAG = [112, 196, 280, 196];
+/**
+ * Хоёр зангилааны хоорондох хамгийн бага босоо зай (dp). Зиг-загийн оройн хоёр талын зангилаа ижил x-тэй, хоёр алхмын
+ * зайтай: 2 · 28 = 56 ≥ дарах талбай (56), чулуу + од (−14…+32 = 46). Хичээл олон бол газрын зураг уртасна.
+ */
+const MIN_STEP = 28;
+/** Boss-ын арал (72×54) том тул түүний доорх ижил баганын зангилаанаас нэмэлт зай (dp). */
+const BOSS_GAP = 8;
 
 /**
- * `n` хичээлтэй замын газрын зураг: бүлэг бүрийн хичээлүүдийг world.json-ийн тэр бүлгийн зам дагуу жигд зайтай
- * байрлуулна (хичээл олон бол ойр, цөөн бол алс), boss нь бүлгийн замын төгсгөлд. Нахиа, бэлэг, хэцүү сорил нь
- * бүлгийн ижил хэсэгт (16 зангилаатай анхны зургийн 3, 9, 12).
+ * `n` хичээлтэй замын газрын зураг: бүлэг бүрийн хичээлүүдийг world.json-ийн зиг-загаар тэнцүү босоо алхмаар
+ * байрлуулна, boss нь бүлгийн замын оройд. Алхам MIN_STEP-ээс бага болох бол газрын зургийг (дэвсгэрийг оролцуулаад)
+ * босоо чиглэлд сунгана: зангилаа, од, дарах талбай хэзээ ч давхцахгүй. Нахиа, бэлэг, хэцүү сорил нь бүлгийн ижил
+ * хэсэгт (16 зангилаатай анхны зургийн 3, 9, 12).
  */
 export function pathLayout(n: number): PathLayout {
   const gates = gateNodes(n);
+  const bosses = [0, 3, 4].map((g) => gates[g]);
+  const steps = bosses.map((boss, u) => boss - (u === 0 ? 0 : bosses[u - 1] + 1));
+  const bases = Array.from({ length: UNIT_COUNT }, (_, u) => BASE.filter((t) => t.i !== undefined && Math.floor(t.i / BASE_UNIT) === u));
+  const span = (u: number) => bases[u][0].y - bases[u][BASE_UNIT - 1].y;
+  const scale = Math.max(1, ...steps.map((m, u) => (m * MIN_STEP + BOSS_GAP) / span(u)));
+  const sy = (y: number) => Math.round(y * scale);
   const nodes: PathNode[] = [];
   const trail: TrailPoint[] = [];
   const units: PathUnit[] = [];
   for (let u = 0; u < UNIT_COUNT; u++) {
-    const base = BASE.filter((t) => t.i !== undefined && Math.floor(t.i / BASE_UNIT) === u);
-    const boss = gates[[0, 3, 4][u]];
-    const start = u === 0 ? 0 : units[u - 1].boss + 1;
-    const m = boss - start;
+    const boss = bosses[u];
+    const start = u === 0 ? 0 : bosses[u - 1] + 1;
+    const m = steps[u];
     const at = (f: number) => start + Math.min(m - 1, Math.round(f * m));
-    const unit = { start, sapling: at(3 / 15), gift: at(9 / 15), myst: at(12 / 15), boss, top: base[0].y - BASE[0].y };
+    const unit = { start, sapling: at(3 / 15), gift: at(9 / 15), myst: at(12 / 15), boss, top: sy(bases[u][0].y - BASE[0].y) };
     units.push(unit);
     const kind = (i: number): NodeKind =>
       i === boss ? 'boss' : i === unit.myst ? 'myst' : i === unit.gift ? 'gift' : i === unit.sapling ? 'sapling' : 'stone';
     // бүлэг хоорондын гүүр чулуу
-    if (u > 0) trail.push(...BASE.slice(BASE.findIndex((t) => t.i === u * BASE_UNIT - 1) + 1, BASE.findIndex((t) => t.i === u * BASE_UNIT)));
+    if (u > 0) {
+      const bridge = BASE.slice(BASE.findIndex((t) => t.i === u * BASE_UNIT - 1) + 1, BASE.findIndex((t) => t.i === u * BASE_UNIT));
+      trail.push(...bridge.map((t) => ({ x: t.x, y: sy(t.y) })));
+    }
+    // boss нь зиг-загийн дунд баганад (196), бүлгийн эхэнд хүрэх хүртэл доош тоолно
+    const y0 = sy(bases[u][0].y);
+    const step = (y0 - sy(bases[u][BASE_UNIT - 1].y) - BOSS_GAP) / Math.max(1, m);
     for (let k = 0; k <= m; k++) {
-      const p = along(base, m ? k / m : 1);
-      nodes.push({ i: start + k, x: p.x, y: p.y, kind: kind(start + k) });
+      const p = { x: ZIGZAG[(((k - m + 1) % 4) + 4) % 4], y: Math.round(y0 - k * step - (k === m ? BOSS_GAP : 0)) };
+      nodes.push({ i: start + k, ...p, kind: kind(start + k) });
       trail.push({ ...p, i: start + k });
     }
   }
-  return { n, nodes, trail, units, gates };
+  return { n, nodes, trail, units, gates, scale, height: sy(MAP_H) };
 }
 
 /**
