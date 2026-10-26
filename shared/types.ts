@@ -1,3 +1,4 @@
+import type { BEAR_FACES, BEAR_FURS } from './bear';
 // API ба WebSocket-ийн гэрээ. api/ болон mobile/ хоёулаа зөвхөн `import type`-аар ашиглана
 // (runtime код энд байхгүй тул Metro энэ файлыг bundle хийх шаардлагагүй).
 
@@ -124,8 +125,8 @@ export interface Me {
   nextLifeAt: number | null;
 }
 
-export type BearFur = 'brown' | 'black' | 'white';
-export type BearFace = 'calm' | 'happy' | 'sleepy' | 'smile' | 'wink' | 'surprised' | 'laugh' | 'smug';
+export type BearFur = (typeof BEAR_FURS)[number];
+export type BearFace = (typeof BEAR_FACES)[number];
 
 /** Баавгайн дэвсгэр, хувцас (mobile catalog-ийн key: 'nimbeg', 'gradcap'…), үс, царай, цээжний цагаан толбо. */
 export interface BearLook {

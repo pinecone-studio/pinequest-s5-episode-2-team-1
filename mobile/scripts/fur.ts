@@ -6,8 +6,9 @@
 import type { Img } from './png.ts';
 import { at, type RGB, ramp } from './sprite-kit.ts';
 
-export const FURS = ['brown', 'black', 'white'] as const;
-export type Fur = (typeof FURS)[number];
+export { BEAR_FURS as FURS } from '../../shared/bear.ts';
+import type { BEAR_FURS } from '../../shared/bear.ts';
+export type Fur = (typeof BEAR_FURS)[number];
 
 // үсний ramp: эх борын гэрэлтэлтийн цэгүүд (L) дээр өнгө тус бүрийн тохирох өнгө, хооронд нь шугаман
 export const L = [0.13, 0.27, 0.36, 0.49, 0.56, 0.69];
@@ -70,7 +71,8 @@ export function recolorFur(src: Img, fur: Exclude<Fur, 'brown'>): Img {
       const c = [img.d[i], img.d[i + 1], img.d[i + 2]] as const;
       const [h, s, l] = hsl(c);
       let out: RGB | null = null;
-      if (l < 0.13) out = FUR[fur][0];
+      // хүүхэн хараа (нүдний гэрлийн дэргэд) бараан хэвээр; бусад зураас үсний хамгийн бараан өнгө
+      if (l < 0.13) out = nearWhite(src, x, y, 3) ? null : FUR[fur][0];
       else if (h > 42 || s < 0.2) out = null; // цагаан гэрэл, нил ягаан, ногоон ороолт
       else if (h < 15 && s > 0.85 && l > 0.6) out = null; // хацрын ягаан
       else if (s > 0.85 && l <= 0.7) out = null; // зөгийн бал, тод улбар шар

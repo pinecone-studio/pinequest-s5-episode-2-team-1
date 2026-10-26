@@ -1,4 +1,5 @@
-import type { AvatarBody, BearFace, BearFur, MeResponse } from '@shared/types';
+import { BEAR_FACES } from '@shared/bear';
+import type { AvatarBody, BearFur, MeResponse } from '@shared/types';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -19,7 +20,6 @@ const FURS: { id: BearFur; hex: string }[] = [
   { id: 'black', hex: '#3f3946' },
   { id: 'white', hex: '#f5f2f7' },
 ];
-const FACES: BearFace[] = ['calm', 'happy', 'sleepy', 'smile', 'wink', 'surprised', 'laugh', 'smug'];
 
 /**
  * Профайл үүсгэх (бүртгүүлсний дараах 2-р алхам) ба профайлаас «Зураг солих»: профайлын нэр, баавгайн үсний өнгө, царай,
@@ -110,7 +110,7 @@ export default function AvatarScreen() {
           <View style={styles.group}>
             <Text style={styles.label}>{S.avatar.face}</Text>
             <View accessibilityRole="radiogroup" style={styles.faces}>
-              {FACES.map((face) => {
+              {BEAR_FACES.map((face) => {
                 const on = look.face === face;
                 return (
                   <PressScale
