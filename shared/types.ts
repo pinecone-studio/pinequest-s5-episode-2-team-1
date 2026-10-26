@@ -47,6 +47,7 @@ export type ErrorCode =
   | 'NODE_LOCKED'
   | 'NO_LIVES'
   | 'NO_REVIEW'
+  | 'REVIEW_DONE'
   | 'STAGE_LOCKED'
   | 'TUTOR_UNAVAILABLE'
   | 'TUTOR_LIMIT'
