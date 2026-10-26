@@ -19,5 +19,177 @@
       -7
     ],
     "loose": true
+  },
+  "warrior_helmet": {
+    "at": [
+      -6,
+      -14
+    ],
+    "loose": false
+  },
+  "staff00": {
+    "at": [
+      -16,
+      -54
+    ],
+    "loose": false,
+    "anchor": "hand",
+    "held": {
+      "at": [
+        -32,
+        -60
+      ],
+      "sheets": {
+        "thriving": "held_staff00_thriving_640x224",
+        "sleep": "held_staff00_sleep_640x224",
+        "happy": "held_staff00_happy_896x224",
+        "tired": "held_staff00_tired_896x224",
+        "welcome": "held_staff00_welcome_768x1008",
+        "ouch": "held_staff00_ouch_896x224",
+        "neglected": "held_staff00_neglected_896x224"
+      }
+    }
+  },
+  "staff03": {
+    "at": [
+      -16,
+      -54
+    ],
+    "loose": false,
+    "anchor": "hand",
+    "held": {
+      "at": [
+        -32,
+        -60
+      ],
+      "sheets": {
+        "thriving": "held_staff03_thriving_640x224",
+        "sleep": "held_staff03_sleep_640x224",
+        "happy": "held_staff03_happy_896x224",
+        "tired": "held_staff03_tired_896x224",
+        "welcome": "held_staff03_welcome_768x1008",
+        "ouch": "held_staff03_ouch_896x224",
+        "neglected": "held_staff03_neglected_896x224"
+      }
+    }
+  },
+  "staff04": {
+    "at": [
+      -16,
+      -54
+    ],
+    "loose": false,
+    "anchor": "hand",
+    "held": {
+      "at": [
+        -32,
+        -60
+      ],
+      "sheets": {
+        "thriving": "held_staff04_thriving_640x224",
+        "sleep": "held_staff04_sleep_640x224",
+        "happy": "held_staff04_happy_896x224",
+        "tired": "held_staff04_tired_896x224",
+        "welcome": "held_staff04_welcome_768x1008",
+        "ouch": "held_staff04_ouch_896x224",
+        "neglected": "held_staff04_neglected_896x224"
+      }
+    }
+  },
+  "staff05": {
+    "at": [
+      -16,
+      -54
+    ],
+    "loose": false,
+    "anchor": "hand",
+    "held": {
+      "at": [
+        -32,
+        -60
+      ],
+      "sheets": {
+        "thriving": "held_staff05_thriving_640x224",
+        "sleep": "held_staff05_sleep_640x224",
+        "happy": "held_staff05_happy_896x224",
+        "tired": "held_staff05_tired_896x224",
+        "welcome": "held_staff05_welcome_768x1008",
+        "ouch": "held_staff05_ouch_896x224",
+        "neglected": "held_staff05_neglected_896x224"
+      }
+    }
+  },
+  "holly_staff": {
+    "at": [
+      -16,
+      -54
+    ],
+    "loose": false,
+    "anchor": "hand",
+    "held": {
+      "at": [
+        -32,
+        -60
+      ],
+      "sheets": {
+        "thriving": "held_holly_staff_thriving_640x224",
+        "sleep": "held_holly_staff_sleep_640x224",
+        "happy": "held_holly_staff_happy_896x224",
+        "tired": "held_holly_staff_tired_896x224",
+        "welcome": "held_holly_staff_welcome_768x1008",
+        "ouch": "held_holly_staff_ouch_896x224",
+        "neglected": "held_holly_staff_neglected_896x224"
+      }
+    }
+  },
+  "pestilence_staff": {
+    "at": [
+      -16,
+      -54
+    ],
+    "loose": false,
+    "anchor": "hand",
+    "held": {
+      "at": [
+        -32,
+        -60
+      ],
+      "sheets": {
+        "thriving": "held_pestilence_staff_thriving_640x224",
+        "sleep": "held_pestilence_staff_sleep_640x224",
+        "happy": "held_pestilence_staff_happy_896x224",
+        "tired": "held_pestilence_staff_tired_896x224",
+        "welcome": "held_pestilence_staff_welcome_768x1008",
+        "ouch": "held_pestilence_staff_ouch_896x224",
+        "neglected": "held_pestilence_staff_neglected_896x224"
+      }
+    },
+    "magicTip": [
+      -3,
+      -42
+    ]
+  },
+  "w_staff_256": {
+    "at": [
+      -16,
+      -54
+    ],
+    "loose": false,
+    "anchor": "hand",
+    "held": {
+      "at": [
+        -32,
+        -60
+      ],
+      "sheets": {
+        "thriving": "held_w_staff_256_thriving_640x224",
+        "sleep": "held_w_staff_256_sleep_640x224",
+        "happy": "held_w_staff_256_happy_896x224",
+        "tired": "held_w_staff_256_tired_896x224",
+        "welcome": "held_w_staff_256_welcome_768x1008",
+        "ouch": "held_w_staff_256_ouch_896x224",
+        "neglected": "held_w_staff_256_neglected_896x224"
+      }
+    }
   }
 }

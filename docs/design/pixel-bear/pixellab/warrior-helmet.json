@@ -1,0 +1,21 @@
+{
+  "provider": "PixelLab",
+  "tool": "create_image_pixflux",
+  "job_id": "ea7daff7-1b9e-491c-a938-3db8a1c2f3f9",
+  "asset_id": "eacaf46f-89b4-5c21-940e-b097c367a7e5",
+  "cost_generations": 2,
+  "size": [
+    82,
+    80
+  ],
+  "layer": "../sprites/item_warrior_helmet.png",
+  "attachment": "head",
+  "offset_from_head": [
+    -6,
+    -14
+  ],
+  "description": "Original PixelLab warrior helmet with narrow side guards, restored at user request.",
+  "active_version": "original-narrow",
+  "previous_revision_job_id": "bc574686-4919-4642-90f4-00dd09554717",
+  "previous_pixel_edit_id": "7603374f-1fcc-4e9b-ab83-18a4576778f5"
+}
