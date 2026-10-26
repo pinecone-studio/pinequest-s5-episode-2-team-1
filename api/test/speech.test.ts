@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GAME } from '../src/config/game';
 import { SpeechQueue, speechChunkEnd } from '../src/llm/speech';
-import { cleanForSpeech, noteQuota, speechMode, splitSse, ttsAvailable, ttsStream } from '../src/llm/tts';
+import { cleanForSpeech, noteQuota, speakMath, speechMode, splitSse, ttsAvailable, ttsStream } from '../src/llm/tts';
 
 const tick = (ms = 0) => new Promise((r) => setTimeout(r, ms));
 
@@ -102,24 +102,33 @@ describe('speechChunkEnd', () => {
     expect(speechChunkEnd(text, false)).toBe('Сайн уу дүү минь!'.length);
   });
 
-  it('эхний хэсгийг хангалттай урт бол таслалаар тасална', () => {
-    const text = 'За, өнөөдөр бид тэгшитгэлийн тухай, хамтдаа алхам алхмаар ярилцаж, жишээ бодно уу';
+  it('өгүүлбэрийн дундуур (таслал, үг) хэзээ ч таслахгүй', () => {
+    const text = 'За, өнөөдөр бид тэгшитгэлийн тухай, хамтдаа алхам алхмаар ярилцаж, жишээ бодно уу гэж бодож байна';
+    expect(speechChunkEnd(text, true)).toBe(-1);
     expect(speechChunkEnd(text, false)).toBe(-1);
-    // эхний хоёр таслал хэт эрт тул алгасаад дараагийн таслал
-    expect(speechChunkEnd(text, true)).toBe(text.indexOf('ярилцаж,') + 'ярилцаж,'.length);
-  });
-
-  it('эхний хэсгийг цэг таслал ирээгүй ч 12 бүтэн үг болмогц тасална', () => {
-    const words = 'нэг хоёр гурав дөрөв тав зургаа долоо найм ес арав арван нэг';
-    expect(speechChunkEnd(words, true)).toBe(-1); // сүүлийн "нэг" бүтэн эсэх нь тодорхойгүй
-    expect(speechChunkEnd(`${words} хоёр`, true)).toBe(words.length);
-    expect(speechChunkEnd(`${words} хоёр`, false)).toBe(-1);
+    expect(speechChunkEnd(`${text}. Тэгэхээр`, true)).toBe(text.length + 1);
   });
 });
 
 describe('tts туслахууд', () => {
   it('cleanForSpeech markdown-ийг хасна', () => {
     expect(cleanForSpeech('  **Тэгшитгэл**  гэдэг\n# нь ')).toBe('Тэгшитгэл гэдэг нь');
+  });
+
+  it('speakMath "2x"-ийг "2 икс", ганц x/х-ийг "икс" болгоно, үг доторх х-д хүрэхгүй', () => {
+    expect(speakMath('2x нь 28 болсон')).toBe('2 икс нь 28 болсон');
+    expect(speakMath('Одоо x-ийг олъё, 5 x хасах 8')).toBe('Одоо иксийг олъё, 5 икс хасах 8');
+    expect(speakMath('3х + 5 = 20')).toBe('3 икс + 5 = 20');
+    expect(speakMath('хоёр хүүхэд, max 2xl')).toBe('хоёр хүүхэд, max 2xl');
+  });
+
+  it('cleanForSpeech transcript-ийн "Төсөөлөө дөө", "үз дөө" алдааг засна, бусад үгэнд хүрэхгүй', () => {
+    expect(cleanForSpeech('Төсөөлөө дөө, гадаа хүйтэн.')).toBe('Төсөөлөөд үз дээ, гадаа хүйтэн.');
+    expect(cleanForSpeech('Тэгвэл төсөөлөө дөө.')).toBe('Тэгвэл төсөөлөөд үз дээ.');
+    expect(cleanForSpeech('Төсөөлөөд үз дөө, гадаа')).toBe('Төсөөлөөд үз дээ, гадаа');
+    expect(cleanForSpeech('Төсөөлөөд үз дээ, бүүз дөө')).toBe('Төсөөлөөд үз дээ, бүүз дөө');
+    expect(cleanForSpeech('төсөөл дөө')).toBe('төсөөл дөө');
+    expect(cleanForSpeech('хасах дєрєв нь баруун талд байх бєгєєд')).toBe('хасах дөрөв нь баруун талд байх бөгөөд');
   });
 
   it('splitSse дутуу мөрийг дараагийн хэсэгт үлдээнэ', () => {

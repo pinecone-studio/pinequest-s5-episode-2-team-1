@@ -496,7 +496,8 @@ export type TutorServerMsg =
   | { type: 'turn_end' }
   /** Хүүхэд яриаг тасалсан тул баавгай зогсов: тоглуулж буй дуугаа хаяна. */
   | { type: 'interrupted' }
-  | { type: 'end'; reason: 'time' | 'error'; message?: string };
+  /** done = баавгай бодлогыг тайлбарлаж дуусгаад баяртай гэсэн. */
+  | { type: 'end'; reason: 'time' | 'done' | 'error'; message?: string };
 
 // ---------- Сурах бичгийн сан (admin, scripts/books.ts) ----------
 

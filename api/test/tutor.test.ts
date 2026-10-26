@@ -6,6 +6,7 @@ import {
   liveEvents,
   liveSetup,
   type MissedQuestion,
+  FINISH_LESSON_TOOL,
   speechBudget,
   tutorKickoff,
   tutorSystemPrompt,
@@ -53,6 +54,28 @@ describe('tutorSystemPrompt', () => {
   });
 });
 
+describe('tutorSystemPrompt хичээлийн урсгал', () => {
+  it('шинэ бодлого өгөхгүй, 6–8 ээлжинд тайлбарлаад finish_lesson дуудна; "дуусгая" гэхэд ч', () => {
+    const text = tutorSystemPrompt({ grade: 6, questions: [], focused: false });
+    expect(text).toContain('Шинэ бодлого, дасгал бүү өг.');
+    expect(text).toContain('6–8 ээлжинд');
+    expect(text.match(/finish_lesson/g)).toHaveLength(2);
+    expect(text).not.toContain('шинэ, тоо нь өөр бодлого өг');
+  });
+
+  it('тооцоог шалгаж, Тайлбар дахь бодолтыг дагана (баавгай тооцоогоо андуурдаг байсан)', () => {
+    const text = tutorSystemPrompt({ grade: 9, questions: [], focused: false });
+    expect(text).toContain('дотроо алхам алхмаар бодож шалгаад хэл');
+    expect(text).toContain('Таны тооцоо Тайлбараас');
+  });
+
+  it('хүүхдийг "дүү минь" гэж дуудахгүй, ах гэж өөрийгөө нэрлэхгүй', () => {
+    const text = tutorSystemPrompt({ grade: 6, questions: [], focused: false });
+    expect(text).toContain('"дүү минь"');
+    expect(text).not.toMatch(/дотно ах|Ах нь дүүдээ/);
+  });
+});
+
 describe('liveSetup', () => {
   it('зөвхөн дуу, хоёр талын transcript, system prompt', () => {
     const { setup } = liveSetup('gemini-3.8-live', 'SYS');
@@ -60,7 +83,8 @@ describe('liveSetup', () => {
     expect(setup.generationConfig.responseModalities).toEqual(['AUDIO']);
     expect(setup.systemInstruction.parts[0].text).toBe('SYS');
     expect(setup.inputAudioTranscription).toEqual({ languageCodes: ['mn-MN'] });
-    expect(setup.generationConfig.speechConfig.languageCode).toBe('mn-MN');
+    expect(setup.generationConfig.speechConfig).toEqual({ voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Achird' } } });
+    expect(setup.tools).toEqual([FINISH_LESSON_TOOL]);
     expect(setup.outputAudioTranscription).toEqual({});
   });
 });
@@ -68,6 +92,11 @@ describe('liveSetup', () => {
 describe('liveEvents', () => {
   it('setupComplete → ready', () => {
     expect(liveEvents({ setupComplete: {} })).toEqual([{ kind: 'ready' }]);
+  });
+
+  it('finish_lesson функцийн дуудлагыг ярилцлага дуусгах үйл явдал болгоно, бусдыг алгасна', () => {
+    const toolCall = { functionCalls: [{ id: 'a1', name: 'finish_lesson' }, { id: 'a2', name: 'other' }] };
+    expect(liveEvents({ toolCall })).toEqual([{ kind: 'finish', id: 'a1' }]);
   });
 
   it('нэг мессеж дэх дуу, transcript, ээлжийн төгсгөлийг дарааллаар нь', () => {

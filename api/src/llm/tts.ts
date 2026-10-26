@@ -1,5 +1,6 @@
 // Gemini TTS (streamGenerateContent, SSE): баавгайн хэлэх текстийг илүү байгалийн монгол аялгаар дуу болгоно.
 // Live загварууд зөвхөн дуу гаргадаг тул routes/tutor.ts нь Live-ийн transcript-ийг энд дамжуулна.
+import { fixTranscript } from '../../../shared/transcript';
 import { fromB64 } from '../lib/auth';
 import { GAME } from '../config/game';
 import { LlmError } from './types';
@@ -24,9 +25,22 @@ export function speechMode(value: string | undefined): 'tts' | 'live' {
   return value === 'tts' || value === 'live' ? value : GAME.TUTOR.SPEECH;
 }
 
-/** Markdown тэмдэгт, илүү зай зэргийг хасна (TTS тэдгээрийг чангаар уншиж болзошгүй). */
+const LETTER = 'А-Яа-яЁёӨөҮүA-Za-z';
+
+/**
+ * Хувьсагчийг үгээр бичнэ: transcript-д "2x" гэж бичигдсэнийг TTS "хорин икс" мэтээр уншдаг байсан. Тоо ба x-ийг
+ * салгаж ("2 икс"), ганц x/х-ийг "икс" болгоно ("x-ийг" → "иксийг"). Самбар дээр "2x" хэвээр харагдана.
+ */
+export function speakMath(text: string): string {
+  return text
+    .replace(new RegExp(`(\\d)\\s*[xх](?=$|[^${LETTER}])`, 'g'), '$1 икс')
+    .replace(new RegExp(`(^|[^${LETTER}])[xх](?=$|[^${LETTER}])`, 'g'), '$1икс')
+    .replace(/икс-(?=[А-Яа-яЁёӨөҮү])/g, 'икс');
+}
+
+/** Markdown тэмдэгт, илүү зай зэргийг хасаж, transcript-ийн алдаа, хувьсагчийг засна (TTS чангаар уншина). */
 export function cleanForSpeech(text: string): string {
-  return text.replace(/[*#_`]/g, '').replace(/\s+/g, ' ').trim();
+  return speakMath(fixTranscript(text.replace(/[*#_`]/g, '').replace(/\s+/g, ' ').trim()));
 }
 
 /** SSE-ийн нэг хэсгээс бүрэн `data:` мөрүүдийг салгана; үлдсэнийг дараагийн хэсэгт залгана. */

@@ -31,6 +31,16 @@ describe('validateDrafts', () => {
     }
   });
 
+  it('вектор сум зэрэг combining тэмдгийг хасна (фонтод байхгүй), "й"-д хүрэхгүй', () => {
+    const [d] = validateDrafts(
+      { questions: [good({ prompt: 'u\u20D7 = (4; 3) ба v\u20D7 векторуудын нийлбэр хэд вэ? Нийлбэр', options: ['5', '6', '4', 'u\u20D7'] })] },
+      [],
+    ).drafts;
+    expect(d.prompt).toBe('u = (4; 3) ба v векторуудын нийлбэр хэд вэ? Нийлбэр');
+    expect(d.options).toContain('u');
+    expect([d.prompt, ...d.options].join('')).not.toMatch(/\p{Mn}/u);
+  });
+
   it('буруу бүтэцтэйг хаяна', () => {
     const { drafts, rejected } = validateDrafts({
       questions: [

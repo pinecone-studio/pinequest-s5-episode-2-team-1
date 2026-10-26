@@ -48,7 +48,11 @@ export function promptKey(prompt: string): string {
     .trim();
 }
 
-const clean = (s: string) => s.normalize('NFC').replace(/\s+/g, ' ').trim();
+/**
+ * NFC-ийн дараа үлдсэн combining тэмдгийг (жишээ нь вектор сум "u⃗"-ийн U+20D7) хасна: апп-ын фонтод байхгүй тул
+ * дөрвөлжин болж харагддаг байсан. Кирилл "й", "ё" NFC-ээр нэг тэмдэгт болох тул хөндөгдөхгүй.
+ */
+const clean = (s: string) => s.normalize('NFC').replace(/\p{Mn}/gu, '').replace(/\s+/g, ' ').trim();
 
 /** Fisher–Yates; LLM-ийн хариу нэг байрлалд төвлөрөхөөс (index bias) сэргийлнэ. */
 export function shuffleOptions(d: QuestionDraft, rng: () => number = Math.random): QuestionDraft {
