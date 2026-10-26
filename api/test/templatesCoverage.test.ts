@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { topicIds } from '../src/config/topics';
 import { validateDrafts } from '../src/llm/validate';
-import { generate, type Level, templatesFor } from '../src/templates';
+import { generate, shouldGenerateTemplates, type Level, templatesFor } from '../src/templates';
 import { MATH6 } from '../src/templates/math6';
 import { MATH7 } from '../src/templates/math7';
-import { MATH6_MORE, MATH7_MORE } from '../src/templates/mathCurriculum';
+import { MATH6_MORE, MATH6_SPECS, MATH7_MORE, MATH7_SPECS } from '../src/templates/mathCurriculum';
 
 function seeded(seed: number) {
   let a = seed;
@@ -43,6 +43,25 @@ describe('Математик 6, 7-ын бүх хичээлийн template covera
     expect(new Set(all.map((template) => template.id)).size).toBe(all.length);
     expect([...MATH6, ...MATH6_MORE].every((template) => template.ref.startsWith('math-6:'))).toBe(true);
     expect([...MATH7, ...MATH7_MORE].every((template) => template.ref.startsWith('math-7:'))).toBe(true);
+  });
+
+  it('ерөнхий загвар хадгалсан 25 асуултыг орлохгүй, асуулт хүрэхгүй үед нөхнө', () => {
+    expect(MATH6_MORE.every((template) => template.preferStored)).toBe(true);
+    expect(MATH7_MORE.every((template) => template.preferStored)).toBe(true);
+    expect(shouldGenerateTemplates([MATH7_MORE[0]], 25, 5)).toBe(false);
+    expect(shouldGenerateTemplates([MATH7_MORE[0]], 4, 5)).toBe(true);
+    expect(shouldGenerateTemplates([MATH7[0]], 25, 5)).toBe(true);
+  });
+
+  it('өмнө зөрсөн хичээлүүд өөрийн сэдвийн үүсгэгчтэй', () => {
+    const kind6 = (page: number) => MATH6_SPECS.find((spec) => spec.page === page)?.kind;
+    const kind7 = (page: number) => MATH7_SPECS.find((spec) => spec.page === page)?.kind;
+    expect(kind6(97)).toBe('parallel-perp');
+    expect(kind6(109)).toBe('diagonals');
+    expect(kind6(109)).not.toBe(kind6(106));
+    expect(kind6(131)).toBe('analog-digital');
+    expect(kind7(92)).toBe('alternate');
+    expect(kind7(108)).toBe('construct');
   });
 
   for (const template of [...MATH6_MORE, ...MATH7_MORE]) {

@@ -18,9 +18,15 @@ export interface Template {
   ref: string;
   id: string;
   topic?: string;
+  /** Санд тухайн хичээлийн асуулт хүрэлцэхгүй үед л ашиглах ерөнхий загвар. */
+  preferStored?: boolean;
   /** `level` түвшний нэг хувилбар: options[0] нь зөв хариу (дараа нь холино). */
   make(rng: Rng, level: Level): Omit<QuestionDraft, 'correctIndex' | 'topic'>;
 }
+
+/** Ерөнхий загвар нь хадгалсан асуултыг орлохгүй; тусгай загвар бол үргэлж шинэ хувилбар үүсгэнэ. */
+export const shouldGenerateTemplates = (templates: readonly Template[], storedCount: number, needed: number) =>
+  templates.length > 0 && (!templates.every((template) => template.preferStored) || storedCount < needed);
 
 const ALL: readonly Template[] = [...MATH6, ...MATH7, ...MATH6_MORE, ...MATH7_MORE];
 

@@ -13,7 +13,7 @@ import { isConstraintError, newTx } from '../lib/db';
 import { ApiError } from '../lib/errors';
 import type { PageRange } from './grounding';
 import { bookLessons, lessonPages } from './lessons';
-import { generate, levelOf, templatesFor } from '../templates';
+import { generate, levelOf, shouldGenerateTemplates, templatesFor } from '../templates';
 import { LESSON_COUNT_SQL, lessonRef, maybeRefill, pickArgs, pickSql, rangeArgs, refillLesson, refillPool, storeGenerated } from './pool';
 import { hasPendingRecovery, recoveryCertain, recoveryStatements } from './recovery';
 import { spendLife } from '../domain/lives';
@@ -129,21 +129,33 @@ export async function startTask(
   const lesson = book && lessonPages(book, node);
   const lessonRefill = (range: PageRange) =>
     refillLesson(env, tier, subject, { grade: user.grade, range }, userId).catch((e) => console.error('[pool] lesson refill failed', e));
-  // Хичээлд бодлогын загвар байвал нэг төрлийн бодлогыг тоо, нөхцөлийг нь сольж шатны хүндээр үүсгэнэ (Gemini
-  // хэрэггүй); тулаан Дунд түвшинд.
+  // Тусгай загвар байвал шатны хүндээр шинэ хувилбар үүсгэнэ. Ерөнхий загвар хадгалсан асуулт хүрэлцэхгүй үед
+  // л нөөц болно; тулаан Дунд түвшинд.
   const templates = lesson ? templatesFor(lesson) : [];
-  const made = templates.length
+  const preferStored = templates.length > 0 && templates.every((template) => template.preferStored);
+  const storedBefore =
+    lesson && preferStored
+      ? ((
+          await db
+            .prepare(LESSON_COUNT_SQL)
+            .bind(tier, subject, ...rangeArgs(lesson))
+            .first<{ n: number }>()
+        )?.n ?? 0)
+      : 0;
+  const made = shouldGenerateTemplates(templates, storedBefore, GAME.QUESTIONS_PER_TASK)
     ? await storeGenerated(db, tier, subject, user.grade, generate(templates, GAME.QUESTIONS_PER_TASK, levelOf(stageNo)), now)
     : [];
-  if (lesson && made.length < GAME.QUESTIONS_PER_TASK) {
+  if (lesson && (preferStored ? storedBefore < GAME.QUESTIONS_PER_TASK : made.length < GAME.QUESTIONS_PER_TASK)) {
     const refill = lessonRefill(lesson);
     ctx.waitUntil(refill);
     // Хичээлд нэг даалгаварт хүрэлцэх асуулт байвал (хүүхэд харсан ч) хүлээхгүй: тэднийг давтана, шинэ нь background-д.
-    const have = await db
-      .prepare(LESSON_COUNT_SQL)
-      .bind(tier, subject, ...rangeArgs(lesson))
-      .first<{ n: number }>();
-    if ((have?.n ?? 0) < GAME.QUESTIONS_PER_TASK) await Promise.race([refill, new Promise((r) => setTimeout(r, GAME.POOL.LESSON_WAIT_MS))]);
+    if (made.length < GAME.QUESTIONS_PER_TASK) {
+      const have = await db
+        .prepare(LESSON_COUNT_SQL)
+        .bind(tier, subject, ...rangeArgs(lesson))
+        .first<{ n: number }>();
+      if ((have?.n ?? 0) < GAME.QUESTIONS_PER_TASK) await Promise.race([refill, new Promise((r) => setTimeout(r, GAME.POOL.LESSON_WAIT_MS))]);
+    }
   }
 
   const picked =
@@ -202,7 +214,7 @@ export async function startTask(
 
   // Дараагийн зангилааны хичээлийн асуултыг даалгавар хийх хооронд бэлдэнэ.
   const next = book && lessonPages(book, node + 1);
-  if (next && templatesFor(next).length === 0) ctx.waitUntil(lessonRefill(next));
+  if (next && !templatesFor(next).some((template) => !template.preferStored)) ctx.waitUntil(lessonRefill(next));
   await maybeRefill(env, ctx, tier, subject, userId, user.grade);
   return loadTask(db, userId, created.id);
 }
