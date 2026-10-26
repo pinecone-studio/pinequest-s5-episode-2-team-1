@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
+import type { AdminStatsResponse } from '../../../shared/types';
 import { GAME, SUBJECTS, type Subject, type Tier } from '../config/game';
 import { topicIds } from '../config/topics';
 import type { AppEnv } from '../env';
@@ -9,6 +10,7 @@ import { pickProvider } from '../llm';
 import { validateDrafts } from '../llm/validate';
 import { pickExcerpts } from '../services/grounding';
 import { generateAndStore, insertDrafts } from '../services/pool';
+import { loadStats } from '../services/stats';
 import { bookRoutes } from './books';
 
 // Зөвхөн хөгжүүлэлт, seed скрипт, duel-bot-д. `X-Admin-Token` = ADMIN_TOKEN (.dev.vars).
@@ -97,6 +99,14 @@ adminRoutes.post('/import', async (c) => {
     duplicates += r.duplicates;
   }
   return c.json({ inserted, duplicates, rejected });
+});
+
+/** Admin dashboard (/dashboard)-ын тоо: ?days=7..90 (анхдагч 30), өдрүүд UB цагаар. */
+adminRoutes.get('/stats', async (c) => {
+  const days = z.coerce.number().int().min(7).max(90).safeParse(c.req.query('days') ?? 30);
+  if (!days.success) throw new ApiError(400, 'BAD_REQUEST', 'days=7..90');
+  c.header('Cache-Control', 'no-store');
+  return c.json<AdminStatsResponse>(await loadStats(c.env.DB, days.data));
 });
 
 adminRoutes.get('/pool', async (c) => {

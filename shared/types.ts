@@ -601,6 +601,35 @@ export interface PageTextResponse {
   at: number | null;
 }
 
+/** GET /admin/stats?days=30 — admin dashboard (/dashboard). Өдрүүд UB цагаар. */
+export interface AdminStatsResponse {
+  /** UB өдөр, 'YYYY-MM-DD' */
+  today: string;
+  generatedAt: number;
+  totals: {
+    users: number;
+    /** Сүүлийн 7 / 30 өдөрт (өнөөдрийг оруулаад) дор хаяж нэг удаа орсон хүн */
+    active7d: number;
+    active30d: number;
+  };
+  /** Хуучнаас шинэ рүү, `days` урттай; сүүлийнх нь өнөөдөр. */
+  daily: Array<{
+    day: string;
+    signups: number;
+    /** Тэр өдөр апп ашигласан хүн */
+    active: number;
+    /** active-ийн дотроос өмнөх өдрүүдэд бүртгүүлсэн нь */
+    returning: number;
+    /** Тэр өдөр эхэлж дуусгасан даалгавар */
+    tasks: number;
+    /** Дууссан тулаан */
+    duels: number;
+    /** Баавгайтай ярилцсан удаа */
+    tutor: number;
+  }>;
+  grades: Array<{ grade: number; users: number; activeToday: number }>;
+}
+
 export interface BookOcrResponse {
   model: string;
   pages: Array<{ seq: number; sha256: string; text: string }>;

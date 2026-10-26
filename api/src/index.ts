@@ -6,6 +6,7 @@ import type { AppEnv } from './env';
 import { errorHandler } from './lib/errors';
 import { adminRoutes } from './routes/admin';
 import { authRoutes, meRoutes } from './routes/auth';
+import { dashboardRoutes } from './routes/dashboard';
 import { duelRoutes } from './routes/duels';
 import { friendRoutes } from './routes/friends';
 import { profileRoutes } from './routes/profiles';
@@ -44,6 +45,7 @@ app.route('/shop', shopRoutes);
 app.route('/avatar', avatarRoutes);
 app.route('/cosmetics', cosmeticRoutes);
 app.route('/admin', adminRoutes);
+app.route('/dashboard', dashboardRoutes);
 app.route('/tutor', tutorRoutes);
 
 export default app;
