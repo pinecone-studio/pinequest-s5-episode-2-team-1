@@ -1,10 +1,32 @@
-// Admin dashboard: GET /dashboard. Хуудас өөрөө өгөгдөлгүй; браузерт оруулсан ADMIN_TOKEN-оор /admin/stats-ийг татна
-// (token нь тухайн төхөөрөмжийн localStorage-д л хадгалагдана). Гадны script, font ачаалахгүй.
+// Dashboard: GET /dashboard (хуудас) ба GET /dashboard/stats (тоо). Линктэй хүн бүр нэвтрэлтгүй харна: зөвхөн
+// нэгтгэсэн тоо (нэр, id байхгүй). Гадны script, font ачаалахгүй.
 // Доорх HTML нь TS template literal тул client JS-д backtick, "${", backslash бичихгүй.
 import { Hono } from 'hono';
+import { z } from 'zod';
+import type { DashboardStatsResponse } from '../../../shared/types';
 import type { AppEnv } from '../env';
+import { ApiError } from '../lib/errors';
+import { loadStats } from '../services/stats';
 
 export const dashboardRoutes = new Hono<AppEnv>();
+
+/** Нийтэд нээлттэй тул ижил хүсэлтийг isolate бүрт 60 сек хадгална: олон хүн зэрэг нээсэн ч D1 уншилт өсөхгүй. */
+const STATS_TTL_MS = 60_000;
+const statsCache = new Map<number, { at: number; body: DashboardStatsResponse }>();
+
+/** ?days=7..90 (анхдагч 30), өдрүүд UB цагаар. */
+dashboardRoutes.get('/stats', async (c) => {
+  const days = z.coerce.number().int().min(7).max(90).safeParse(c.req.query('days') ?? 30);
+  if (!days.success) throw new ApiError(400, 'BAD_REQUEST', 'days=7..90');
+  const now = Date.now();
+  let hit = statsCache.get(days.data);
+  if (!hit || now - hit.at > STATS_TTL_MS) {
+    hit = { at: now, body: await loadStats(c.env.DB, days.data, now) };
+    statsCache.set(days.data, hit);
+  }
+  c.header('Cache-Control', 'public, max-age=60');
+  return c.json<DashboardStatsResponse>(hit.body);
+});
 
 dashboardRoutes.get('/', (c) => {
   c.header(
@@ -13,7 +35,6 @@ dashboardRoutes.get('/', (c) => {
   );
   c.header('X-Robots-Tag', 'noindex');
   c.header('Referrer-Policy', 'no-referrer');
-  c.header('Cache-Control', 'no-store');
   return c.html(DASHBOARD_HTML);
 });
 
@@ -41,7 +62,7 @@ const DASHBOARD_HTML = /* html */ `<!doctype html>
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
-main, .login { max-width: 1120px; margin: 0 auto; padding: 24px 16px 48px; }
+main { max-width: 1120px; margin: 0 auto; padding: 24px 16px 48px; }
 h1 { font-size: 22px; margin: 0 0 4px; font-weight: 650; }
 h2 { font-size: 15px; margin: 0; font-weight: 600; }
 .sub { color: var(--ink-2); font-size: 13px; margin: 2px 0 0; }
@@ -54,7 +75,6 @@ header { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: flex-end; 
 .seg button[aria-pressed="true"] { background: var(--hover); color: var(--ink); font-weight: 600; }
 .btn { border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--ink); padding: 7px 12px; font: inherit; font-size: 13px; cursor: pointer; }
 .btn:hover, .seg button:hover { background: var(--hover); }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .error { color: var(--down); font-size: 13px; min-height: 1em; margin: 0 0 12px; }
 /* Гол тоо (2 нүд) + 6 карт = 8 нүд: 4 эсвэл 2 баганад хоосон нүдгүй дүүрнэ. */
 .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
@@ -98,24 +118,12 @@ td { font-variant-numeric: tabular-nums; }
 .tip .r b { min-width: 2.5em; text-align: right; font-variant-numeric: tabular-nums; }
 .tip .r i { width: 12px; height: 2px; border-radius: 1px; display: inline-block; }
 .loading { opacity: 0.55; transition: opacity 0.15s; }
-.login .card { max-width: 420px; margin: 48px auto 0; }
-.login input { width: 100%; margin: 12px 0; padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--page); color: var(--ink); font: inherit; }
 .foot { color: var(--muted); font-size: 12px; margin-top: 16px; }
 @media (max-width: 520px) { .tile.hero .value { font-size: 44px; } .tile .value { font-size: 24px; } }
 </style>
 </head>
 <body>
-<div class="login" id="login" hidden>
-  <form class="card" id="login-form">
-    <h1>Админ нэвтрэх</h1>
-    <p class="sub">ADMIN_TOKEN-оо оруулна уу. Зөвхөн энэ төхөөрөмж дээр хадгалагдана.</p>
-    <input id="token" type="password" autocomplete="current-password" aria-label="Admin token" required>
-    <p class="error" id="login-error"></p>
-    <button class="btn primary" type="submit">Нэвтрэх</button>
-  </form>
-</div>
-
-<main id="app" hidden>
+<main id="app">
   <header>
     <div>
       <h1>Сурах Аян · Самбар</h1>
@@ -128,7 +136,6 @@ td { font-variant-numeric: tabular-nums; }
         <button type="button" data-days="90">90 хоног</button>
       </div>
       <button class="btn" type="button" id="refresh">Шинэчлэх</button>
-      <button class="btn" type="button" id="logout">Гарах</button>
     </div>
   </header>
   <p class="error" id="error" role="alert"></p>
@@ -181,15 +188,12 @@ td { font-variant-numeric: tabular-nums; }
 <script>
 (function () {
   'use strict';
-  var KEY = 'surgalt-admin-token';
   var WEEKDAYS = ['Ням', 'Даваа', 'Мягмар', 'Лхагва', 'Пүрэв', 'Баасан', 'Бямба'];
   var NS = 'http://www.w3.org/2000/svg';
   var REFRESH_MS = 5 * 60 * 1000;
-  var state = { days: 30, data: null, token: loadToken(), fetchedAt: 0 };
+  var state = { days: 30, data: null, fetchedAt: 0 };
 
   function $(id) { return document.getElementById(id); }
-  function loadToken() { try { return localStorage.getItem(KEY) || ''; } catch (e) { return ''; } }
-  function saveToken(v) { try { if (v) localStorage.setItem(KEY, v); else localStorage.removeItem(KEY); } catch (e) { /* хувийн цонх */ } }
   function fmt(n) { return Number(n).toLocaleString('en-US'); }
   function compact(n) { return n >= 1000 ? (n / 1000).toFixed(n % 1000 === 0 ? 0 : 1) + 'K' : String(n); }
   function weekday(day) { return WEEKDAYS[new Date(day + 'T00:00:00Z').getUTCDay()]; }
@@ -380,21 +384,10 @@ td { font-variant-numeric: tabular-nums; }
     });
   }
 
-  function showLogin(msg) {
-    $('app').hidden = true;
-    $('login').hidden = false;
-    $('login-error').textContent = msg || '';
-    $('token').focus();
-  }
-
   async function refresh() {
-    if (!state.token) return showLogin();
-    $('login').hidden = true;
-    $('app').hidden = false;
     $('app').classList.add('loading');
     try {
-      var res = await fetch('/admin/stats?days=' + state.days, { headers: { 'X-Admin-Token': state.token }, cache: 'no-store' });
-      if (res.status === 403) { state.token = ''; saveToken(''); return showLogin('Token буруу байна.'); }
+      var res = await fetch('/dashboard/stats?days=' + state.days);
       if (!res.ok) throw new Error('HTTP ' + res.status);
       state.data = await res.json();
       state.fetchedAt = Date.now();
@@ -407,23 +400,15 @@ td { font-variant-numeric: tabular-nums; }
     }
   }
 
-  $('login-form').addEventListener('submit', function (e) {
-    e.preventDefault();
-    state.token = $('token').value.trim();
-    saveToken(state.token);
-    $('token').value = '';
-    refresh();
-  });
-  $('logout').addEventListener('click', function () { state.token = ''; state.data = null; saveToken(''); showLogin(); });
   $('refresh').addEventListener('click', refresh);
   document.querySelectorAll('.seg button').forEach(function (b) {
     b.addEventListener('click', function () { state.days = Number(b.getAttribute('data-days')); refresh(); });
   });
   var resizeTimer = 0;
   window.addEventListener('resize', function () { clearTimeout(resizeTimer); resizeTimer = setTimeout(render, 150); });
-  setInterval(function () { if (!document.hidden && state.token) refresh(); }, REFRESH_MS);
+  setInterval(function () { if (!document.hidden) refresh(); }, REFRESH_MS);
   document.addEventListener('visibilitychange', function () {
-    if (!document.hidden && state.token && Date.now() - state.fetchedAt > REFRESH_MS) refresh();
+    if (!document.hidden && Date.now() - state.fetchedAt > REFRESH_MS) refresh();
   });
   refresh();
 })();
