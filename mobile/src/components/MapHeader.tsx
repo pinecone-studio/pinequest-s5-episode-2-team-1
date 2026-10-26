@@ -1,20 +1,21 @@
 import type { Subject } from '@shared/types';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { type LayoutChangeEvent, Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { useAuth } from '@/auth/AuthContext';
 import { Sprite } from '@/components/pixel';
-import { formatNumber } from '@/components/StatPill';
+import { formatNumber, useLifeClock } from '@/components/StatPill';
 import { AvatarLink } from '@/components/TopBar';
 import { type ChapterTheme, useThemeFade } from '@/constants/chapterTheme';
 import { colors, fonts } from '@/constants/theme';
 import { S, subjectNames } from '@/i18n/strings';
 import { usePixelBear } from '@/lib/mock/pixelBear';
+import { PATH_SUBJECTS } from '@/lib/pixelBear/path';
 import type { SpriteKey } from '@/sprites';
 
-const SUBJECTS: Subject[] = ['math', 'mongolian', 'physics'];
+const SUBJECTS = PATH_SUBJECTS;
 
 /**
  * Сурах замын дээд хэсэг (Duolingo шиг, хүрээгүй): самбар дээр аватар · XP · гал · coin жигд зайтай; түүнээс тусдаа,
@@ -39,8 +40,13 @@ export function MapHeader({
   /** stat-уудын самбарын өндөр (газрын зураг үүний доороос эхэлнэ) ба баннер хүртэлх нийт өндөр (харагдах хэсгийн дээд зах) */
   onHeight: (panel: number, total: number) => void;
 }) {
-  const { me } = useAuth();
+  const { me, refreshMe } = useAuth();
   const { coins } = usePixelBear();
+  const refill = useCallback(() => void refreshMe(), [refreshMe]);
+  // хуучин хадгалсан Me-д амь байхгүй байж болно (офлайн кэш)
+  const lives = me?.lives ?? 5;
+  const maxLives = me?.maxLives ?? 5;
+  const clock = useLifeClock(me?.nextLifeAt ?? null, refill);
   const insets = useSafeAreaInsets();
   const fade = useThemeFade(theme);
   const [menu, setMenu] = useState(false);
@@ -60,21 +66,15 @@ export function MapHeader({
           <Animated.View style={[styles.panel, { paddingTop: insets.top + 6 }, fade.panel]}>
             <View style={styles.stats}>
               <AvatarLink size={36} border={2} dotBorder={theme.panel} />
-              <View style={styles.stat} accessible accessibilityLabel={`XP ${me.levelXp}/${me.levelXpNeeded}`}>
-                <Sprite id="icon_star_24x24" />
-                <View style={{ gap: 4 }}>
-                  <Animated.Text style={[styles.num, fade.text]}>{`${formatNumber(me.levelXp)}/${formatNumber(me.levelXpNeeded)}`}</Animated.Text>
-                  <View style={[styles.track, { backgroundColor: theme.border }]}>
-                    <View
-                      style={[
-                        styles.fill,
-                        {
-                          backgroundColor: theme.active,
-                          width: `${me.levelXpNeeded > 0 ? Math.max(0, Math.min(1, me.levelXp / me.levelXpNeeded)) * 100 : 0}%`,
-                        },
-                      ]}
-                    />
+              {/* XP-ийн оронд амь: зангилаа руу орох бүрт нэг хасагдана, 2 цаг тутамд нэг нөхөгдөнө */}
+              <View style={styles.stat} accessible accessibilityLabel={S.lives.label(lives, maxLives, clock)}>
+                <View style={{ gap: 4, alignItems: 'center' }}>
+                  <View style={styles.hearts}>
+                    {Array.from({ length: maxLives }, (_, k) => (
+                      <Sprite key={k} id="icon_heart_12x12" style={k < lives ? null : styles.heartOff} />
+                    ))}
                   </View>
+                  <Animated.Text style={[styles.timer, fade.text]}>{clock ?? S.lives.full}</Animated.Text>
                 </View>
               </View>
               <Stat icon="icon_flame_24x24" value={me.streak} label={S.path.streak} text={fade.text} />
@@ -150,8 +150,9 @@ const styles = StyleSheet.create({
   stats: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', columnGap: 12, rowGap: 6 },
   stat: { flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 36 },
   num: { fontFamily: fonts.pixel, fontSize: 16, lineHeight: 18 },
-  track: { height: 4, borderRadius: 2, minWidth: 56, overflow: 'hidden' },
-  fill: { height: 4, borderRadius: 2 },
+  hearts: { flexDirection: 'row', gap: 2 },
+  heartOff: { opacity: 0.3 },
+  timer: { fontFamily: fonts.pixel, fontSize: 12, lineHeight: 13 },
   // газрын зураг дээр тод харагдахаар зөөлөн сүүдэр
   banner: {
     flexDirection: 'row',

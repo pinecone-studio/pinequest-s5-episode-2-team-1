@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Sprite } from '@/components/pixel';
 import { colors, fonts, radius } from '@/constants/theme';
@@ -19,6 +20,34 @@ export function XpPill({ text, value, max }: { text: string; value: number; max:
       </View>
     </View>
   );
+}
+
+/** 1:59:07 — дараагийн амь хүртэлх хугацаа */
+const clock = (ms: number) => {
+  const s = Math.ceil(ms / 1000);
+  const mm = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+  const ss = String(s % 60).padStart(2, '0');
+  return `${Math.floor(s / 3600)}:${mm}:${ss}`;
+};
+
+/**
+ * Дараагийн амь хүртэлх хугацаа ("1:59:07"), секунд тутам шинэчлэгдэнэ; амь дүүрэн бол null. Хугацаа дуусахад
+ * `onRefill` (серверээс шинэ амийг уншина).
+ */
+export function useLifeClock(nextAt: number | null, onRefill: () => void): string | null {
+  const [now, setNow] = useState(Date.now);
+  useEffect(() => {
+    if (nextAt === null) return;
+    setNow(Date.now());
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [nextAt]);
+  const left = nextAt === null ? null : Math.max(0, nextAt - now);
+  const due = left === 0;
+  useEffect(() => {
+    if (due) onRefill();
+  }, [due, onRefill]);
+  return left === null ? null : clock(left);
 }
 
 /** Streak / Coin гэх мэт: pixel icon + pixel тоо. */

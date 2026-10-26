@@ -1,0 +1,651 @@
+{
+ "frames": [
+  {
+   "filename": "kuma 0.png",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 22
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.45454545454545453
+   },
+   "duration": 83
+  },
+  {
+   "filename": "kuma 1.png",
+   "frame": {
+    "x": 22,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 22
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.45454545454545453
+   },
+   "duration": 83
+  },
+  {
+   "filename": "kuma 2.png",
+   "frame": {
+    "x": 44,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 22
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.45454545454545453
+   },
+   "duration": 83
+  },
+  {
+   "filename": "kuma 3.png",
+   "frame": {
+    "x": 66,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 22
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.45454545454545453
+   },
+   "duration": 83
+  },
+  {
+   "filename": "kuma 4.png",
+   "frame": {
+    "x": 88,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 22
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.45454545454545453
+   },
+   "duration": 83
+  },
+  {
+   "filename": "kuma 5.png",
+   "frame": {
+    "x": 0,
+    "y": 22,
+    "w": 22,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 22
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.45454545454545453
+   },
+   "duration": 83
+  },
+  {
+   "filename": "kuma 6.png",
+   "frame": {
+    "x": 22,
+    "y": 22,
+    "w": 22,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 22
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.45454545454545453
+   },
+   "duration": 83
+  },
+  {
+   "filename": "kuma 7.png",
+   "frame": {
+    "x": 44,
+    "y": 22,
+    "w": 22,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 22
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.45454545454545453
+   },
+   "duration": 83
+  },
+  {
+   "filename": "kuma 8.png",
+   "frame": {
+    "x": 66,
+    "y": 22,
+    "w": 22,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 22
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.45454545454545453
+   },
+   "duration": 83
+  },
+  {
+   "filename": "kuma 9.png",
+   "frame": {
+    "x": 88,
+    "y": 22,
+    "w": 22,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 22
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.45454545454545453
+   },
+   "duration": 83
+  },
+  {
+   "filename": "kuma 10.png",
+   "frame": {
+    "x": 0,
+    "y": 44,
+    "w": 22,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 22
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.45454545454545453
+   },
+   "duration": 83
+  },
+  {
+   "filename": "kuma 11.png",
+   "frame": {
+    "x": 22,
+    "y": 44,
+    "w": 22,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 22
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.45454545454545453
+   },
+   "duration": 83
+  },
+  {
+   "filename": "kuma 12.png",
+   "frame": {
+    "x": 44,
+    "y": 44,
+    "w": 22,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 22
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.45454545454545453
+   },
+   "duration": 83
+  },
+  {
+   "filename": "kuma 13.png",
+   "frame": {
+    "x": 66,
+    "y": 44,
+    "w": 22,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 22
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.45454545454545453
+   },
+   "duration": 83
+  },
+  {
+   "filename": "kuma 14.png",
+   "frame": {
+    "x": 88,
+    "y": 44,
+    "w": 22,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 22
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.45454545454545453
+   },
+   "duration": 83
+  },
+  {
+   "filename": "kuma 15.png",
+   "frame": {
+    "x": 0,
+    "y": 66,
+    "w": 22,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 22
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.45454545454545453
+   },
+   "duration": 83
+  },
+  {
+   "filename": "kuma 16.png",
+   "frame": {
+    "x": 22,
+    "y": 66,
+    "w": 22,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 22
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.45454545454545453
+   },
+   "duration": 83
+  },
+  {
+   "filename": "kuma 17.png",
+   "frame": {
+    "x": 44,
+    "y": 66,
+    "w": 22,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 22
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.45454545454545453
+   },
+   "duration": 83
+  },
+  {
+   "filename": "kuma 18.png",
+   "frame": {
+    "x": 66,
+    "y": 66,
+    "w": 22,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 22
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.45454545454545453
+   },
+   "duration": 83
+  },
+  {
+   "filename": "kuma 19.png",
+   "frame": {
+    "x": 88,
+    "y": 66,
+    "w": 22,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 22
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.45454545454545453
+   },
+   "duration": 83
+  },
+  {
+   "filename": "kuma 20.png",
+   "frame": {
+    "x": 0,
+    "y": 88,
+    "w": 22,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 22
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.45454545454545453
+   },
+   "duration": 83
+  },
+  {
+   "filename": "kuma 21.png",
+   "frame": {
+    "x": 22,
+    "y": 88,
+    "w": 22,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 22
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.45454545454545453
+   },
+   "duration": 83
+  },
+  {
+   "filename": "kuma 22.png",
+   "frame": {
+    "x": 44,
+    "y": 88,
+    "w": 22,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 22
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.45454545454545453
+   },
+   "duration": 83
+  },
+  {
+   "filename": "kuma 23.png",
+   "frame": {
+    "x": 66,
+    "y": 88,
+    "w": 22,
+    "h": 22
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 22,
+    "h": 22
+   },
+   "sourceSize": {
+    "w": 22,
+    "h": 22
+   },
+   "pivot": {
+    "x": 0.5,
+    "y": 0.45454545454545453
+   },
+   "duration": 83
+  }
+ ],
+ "meta": {
+  "app": "PixelLab VFX Creator",
+  "image": "kuma.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 110,
+   "h": 110
+  },
+  "scale": "1",
+  "anchor": {
+   "kind": "origin",
+   "x": 11,
+   "y": 10
+  },
+  "frameTags": [
+   {
+    "name": "kuma",
+    "from": 0,
+    "to": 23,
+    "direction": "forward"
+   }
+  ]
+ }
+}

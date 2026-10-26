@@ -1,5 +1,5 @@
 import { GAME } from '../config/game';
-import { currentNode, GATE_COUNT, gateNodes, lessonIndex, nodeCount, UNITS } from '../../../shared/path';
+import { currentNode, GATE_COUNT, gateNodes, lessonIndex, nodeCount, pathLessons, UNITS } from '../../../shared/path';
 
 // Сурах замын тооцоо shared/path.ts-д (апп-ын газрын зурагтай нэг эх): даалгаврын асуулт нь апп-ын харуулж буй
 // зангилааны хичээлээс гарна.
@@ -17,6 +17,12 @@ export function nodesAfter(n: number, nodes: number, gatesBeaten: number, correc
   const cur = currentNode(n, nodes + 1, gatesBeaten);
   return correctCount >= GAME.PATH_PASS_CORRECT && cur < gate ? cur + 1 : cur;
 }
+
+/**
+ * Даалгаврын замын урт: эхлэх үед хадгалсан (tasks.path_lessons). Migration 0020-оос өмнө эхэлсэн даалгаварт (NULL)
+ * одоогийн номынх: номгүй замаар (24) тооцвол номтой хүүхэд даалгавраа дуусгахад замаараа ухардаг байсан (30 → 15).
+ */
+export const taskPathLessons = (stored: number | null, bookLessons: number) => stored ?? pathLessons(bookLessons);
 
 /** Зангилааны номын хичээл (boss эсвэл номгүй бол null). */
 export function lessonAt<T>(lessons: readonly T[], i: number): T | null {

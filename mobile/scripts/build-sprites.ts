@@ -27,8 +27,19 @@ for (const n of ['bear_idle_scarf', 'bear_tired_scarf', 'bear_neglected_scarf', 
 // нүүрний баавгайн амьд хөдөлгөөн (scripts/home-sprites.ts, PixelLab)
 for (const n of ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch']) M[`bear_home_${n}`] = [2];
 M.bear_home_welcome = [3];
+for (const n of ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch']) M[`bear_helmet_base_${n}`] = [2];
+M.bear_helmet_base_welcome = [3];
+M.magic_pestilence_staff = [2];
 // өмсөх item-ийн давхарга (home-sprites.ts): амьд баавгайн frame бүрийн толгойд тааруулж зурна
 for (const n of ['glasses', 'gradcap', 'headphones']) M[`item_${n}`] = [2];
+M.item_warrior_helmet = [2];
+M.outfit_warrior_helmet = [1];
+for (const id of ['staff00', 'staff03', 'staff04', 'staff05', 'holly_staff', 'pestilence_staff', 'w_staff_256']) {
+  M[`item_${id}`] = [2];
+  M[`outfit_${id}`] = [1];
+  for (const state of ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch', 'welcome'])
+    M[`held_${id}_${state}`] = [state === 'welcome' ? 3 : 2];
+}
 M.bear_cheer_scarf = [2];
 // хувцасны карт (1×); дэлгүүрийн баавгай нь амьд баавгай + item давхарга (components/LiveBear)
 for (const n of ['outfit_scarf', 'outfit_glasses', 'outfit_gradcap', 'outfit_headphones']) M[n] = [1];

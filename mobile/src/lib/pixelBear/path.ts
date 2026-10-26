@@ -121,6 +121,12 @@ export const HOVER = [0, 1, 2, 1];
 
 export { gateOf, isBossNode, pathLessons, unitOf };
 
+// shortcut: Монгол хэлний замыг түр нуусан; буцаахад 'mongolian'-ийг энд нэмнэ.
+/** Сурах зам, хичээл сонголт, өнөөдрийн хичээлд харагдах хичээлүүд. */
+export const PATH_SUBJECTS: Subject[] = ['math', 'physics'];
+/** Нуусан хичээл хадгалагдсан бол математик. */
+export const pathSubject = (s: Subject | null | undefined): Subject => (s && PATH_SUBJECTS.includes(s) ? s : 'math');
+
 export interface PathUnit {
   /** бүлгийн эхний зангилаа, нахиа, бэлэг, хэцүү сорил, boss */
   start: number;

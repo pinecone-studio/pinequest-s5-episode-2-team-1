@@ -15,7 +15,7 @@ export function PreviewStage({ bg, outfit, name, alt, action }: { bg: BgDef; out
       <ColorFade color={bg.hex} style={StyleSheet.absoluteFill} />
       <ColorFade color={bg.dark ? halo.night : halo.light} style={styles.halo} />
       <View style={styles.shadow} />
-      <View style={styles.bear}>
+      <View style={[styles.bear, outfit.item === 'warrior_helmet' && { top: 6 }]}>
         {/* дэлгүүрт орж ирсэн хүнтэй мэндэлж даллана; item солиход баавгай тасралтгүй хөдөлсөөр, зөвхөн item солигдоно */}
         <LiveBear anim="happy" w={STAGE_W} items={outfit.item ? [outfit.item] : []} label={alt} />
       </View>

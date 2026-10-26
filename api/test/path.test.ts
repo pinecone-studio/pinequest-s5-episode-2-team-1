@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ADVANCE_STAGE, stageDone } from '../../shared/path';
-import { nodesAfter } from '../src/domain/path';
+import { nodesAfter, taskPathLessons } from '../src/domain/path';
 
 describe('сурах замын зангилаа даалгавраар ахина', () => {
   it('4/5 ба түүнээс олон зөв бол дараагийн зангилаа, цөөн бол хэвээр (XP-ийн үлдэгдэл тооцохгүй)', () => {
@@ -34,5 +34,23 @@ describe('зангилааны шат', () => {
     expect(stageDone({ 0: 3 }, 0, 3)).toBe(3);
     expect(stageDone({}, 3, 3)).toBe(0);
     expect(stageDone({ 3: 1 }, 3, 3)).toBe(1);
+  });
+});
+
+describe('migration 0020-оос өмнө эхэлсэн даалгавар (path_lessons = NULL)', () => {
+  it('одоогийн номын замаар тооцно, номгүй бол 24 хичээлийн замаар', () => {
+    expect(taskPathLessons(null, 63)).toBe(63);
+    expect(taskPathLessons(null, 0)).toBe(24);
+    expect(taskPathLessons(40, 63)).toBe(40); // хадгалсан урт түрүүлнэ
+  });
+
+  it('Математик 6-ын хүүхэд хуучин даалгавраа дуусгахад ухрахгүй (өмнө нь 30 → 15, 40 → 17, 12 → 8)', () => {
+    for (const [nodes, gates, next] of [
+      [30, 1, 31],
+      [40, 3, 43], // 3 хаалга давсан: давсан хаалганы дараах зангилаа (43) хүртэл ахина
+      [12, 0, 13],
+    ]) {
+      expect(nodesAfter(taskPathLessons(null, 63), nodes, gates, 5, false)).toBe(next);
+    }
   });
 });

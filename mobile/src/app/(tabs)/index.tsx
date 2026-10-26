@@ -12,6 +12,7 @@ import { Screen } from '@/components/ui';
 import { colors, fonts } from '@/constants/theme';
 import { S } from '@/i18n/strings';
 import { usePixelBear } from '@/lib/mock/pixelBear';
+import { pathSubject } from '@/lib/pixelBear/path';
 
 /** 03 · Нүүр (Charlie маягийн цэвэрхэн): шат/XP, баавгай, төлөвийн мөр, доод хоёр pixel товч. */
 export default function HomeScreen() {
@@ -28,7 +29,8 @@ export default function HomeScreen() {
   if (!me || !bear) return null;
   function feed() {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    router.push(`/task/${subject ?? 'math'}`);
+    // Өнөөдрийн хичээл: өмнө хийсэн хичээлүүдээс санамсаргүй нэгийг 3 бодлогоор давтана
+    router.push(`/task/${pathSubject(subject)}?review=1`);
   }
 
   return (

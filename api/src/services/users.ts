@@ -1,6 +1,7 @@
 import type { Me, SubjectPath } from '../../../shared/types';
 import { GAME, SUBJECTS, type Subject } from '../config/game';
 import { levelProgress } from '../domain/level';
+import { type Lives, livesNow, nextLifeAt } from '../domain/lives';
 import { parseBearLook } from '../domain/profile';
 import { shieldBlock, shieldNextBuyDay } from '../domain/shield';
 import { maxStake } from '../domain/stake';
@@ -26,10 +27,12 @@ export interface UserRow {
   bear_look: string | null;
   created_at: number;
   is_admin: number;
+  lives: number;
+  lives_at: number | null;
 }
 
 const USER_COLUMNS =
-  'id, username, display_name, grade, tier, xp, points, streak, last_streak_day, shield_held, shield_bought_day, shield_used_day, equipped, bear_look, created_at, is_admin';
+  'id, username, display_name, grade, tier, xp, points, streak, last_streak_day, shield_held, shield_bought_day, shield_used_day, equipped, bear_look, created_at, is_admin, lives, lives_at';
 
 export async function getUserRow(db: D1Database, id: number): Promise<UserRow> {
   const row = await db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE id = ?`).bind(id).first<UserRow>();
@@ -124,7 +127,9 @@ export function buildMe(
   catalog: Map<string, CatalogItem>,
   paths: Record<Subject, SubjectPath>,
   friendRequests: number,
+  now = Date.now(),
 ): Me {
+  const lives = livesNow(livesOf(user), now);
   const s = streakStateOf(user);
   const progress = levelProgress(user.xp);
   const block = shieldBlock(s, user.points, today);
@@ -164,7 +169,23 @@ export function buildMe(
     friendRequests,
     today,
     admin: user.is_admin === 1,
+    lives: lives.lives,
+    maxLives: GAME.LIVES.MAX,
+    nextLifeAt: nextLifeAt(lives),
   };
+}
+
+export const livesOf = (u: Pick<UserRow, 'lives' | 'lives_at'>): Lives => ({ lives: u.lives, at: u.lives_at });
+/** users.lives, lives_at-д бичих утга */
+export const livesArgs = (l: Lives) => [l.lives, l.at] as const;
+
+/**
+ * Амьгүй бол (admin биш) NO_LIVES: нөхөгдтөл бодлого, давтлага, баавгайтай ярилцах хаалттай. Одоогийн амийг буцаана.
+ */
+export function requireLife(user: UserRow, now = Date.now()): Lives {
+  const lives = livesNow(livesOf(user), now);
+  if (lives.lives <= 0 && user.is_admin !== 1) throw new ApiError(409, 'NO_LIVES', 'Амь дууссан. Шинэ амь нөхөгдөхийг хүлээнэ үү');
+  return lives;
 }
 
 export async function loadMe(db: D1Database, userId: number, now = Date.now()): Promise<Me> {
@@ -176,5 +197,5 @@ export async function loadMe(db: D1Database, userId: number, now = Date.now()): 
     loadSubjectPaths(db, userId),
     countFriendRequests(db, userId),
   ]);
-  return buildMe(user, today, todayTasks, catalog, paths, friendRequests);
+  return buildMe(user, today, todayTasks, catalog, paths, friendRequests, now);
 }

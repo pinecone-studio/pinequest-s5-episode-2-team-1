@@ -22,6 +22,14 @@ export const COSMETICS: readonly Cosmetic[] = [
   { id: 'bg_shunu', kind: 'bg', key: 'shunu', price: 1000 },
   { id: 'outfit_scarf', kind: 'outfit', key: 'scarf', price: 0 },
   { id: 'outfit_gradcap', kind: 'outfit', key: 'gradcap', price: 300 },
+  { id: 'outfit_warrior_helmet', kind: 'outfit', key: 'warrior_helmet', price: 600 },
+  { id: 'outfit_staff00', kind: 'outfit', key: 'staff00', price: 400 },
+  { id: 'outfit_staff03', kind: 'outfit', key: 'staff03', price: 500 },
+  { id: 'outfit_staff04', kind: 'outfit', key: 'staff04', price: 600 },
+  { id: 'outfit_staff05', kind: 'outfit', key: 'staff05', price: 700 },
+  { id: 'outfit_holly_staff', kind: 'outfit', key: 'holly_staff', price: 800 },
+  { id: 'outfit_pestilence_staff', kind: 'outfit', key: 'pestilence_staff', price: 900 },
+  { id: 'outfit_w_staff_256', kind: 'outfit', key: 'w_staff_256', price: 1000 },
 ];
 
 export const cosmeticById = (id: string): Cosmetic | undefined => COSMETICS.find((c) => c.id === id);

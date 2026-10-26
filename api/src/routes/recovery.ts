@@ -6,9 +6,15 @@ import type { AppEnv } from '../env';
 import { ApiError, readBody } from '../lib/errors';
 import { requireAuth } from '../lib/session';
 import { answerRecovery, loadRecovery } from '../services/recovery';
+import { getUserRow, requireLife } from '../services/users';
 
 export const recoveryRoutes = new Hono<AppEnv>();
 recoveryRoutes.use('*', requireAuth);
+// Амьгүй бол нөхөгдтөл давтлага хаалттай.
+recoveryRoutes.use('*', async (c, next) => {
+  requireLife(await getUserRow(c.env.DB, c.get('userId')));
+  await next();
+});
 
 function subjectParam(value: string | undefined) {
   const parsed = z.enum(SUBJECTS).safeParse(value);
