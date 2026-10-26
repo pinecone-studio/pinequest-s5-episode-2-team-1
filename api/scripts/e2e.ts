@@ -116,6 +116,9 @@ async function reviewScenario() {
     '2 алдсан ч давтлага үүсэхгүй, сурах зам хөдлөхгүй',
     { before, after, recovery: last?.recovery },
   );
+  const points = (await me(u.token)).points;
+  await expectError(call('POST', '/tasks/review', { token: u.token, body: { subject: 'math' } }), 'REVIEW_DONE', 'Өнөөдрийн хичээл хичээл бүрт өдөрт нэг удаа');
+  check((await me(u.token)).points === points, 'Дахин оролдоход оноо нэмэгдэхгүй');
 }
 
 async function livesScenario() {
