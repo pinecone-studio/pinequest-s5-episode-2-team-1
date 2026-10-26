@@ -17,6 +17,7 @@ const PATH_PASS_CORRECT = 4;
 
 /** Сурах замын тэмдэглэл: зангилаа нээгдсэн, дараагийн шат нээгдсэн эсвэл хэдэн зөв хэрэгтэй. */
 function pathNote(r: TaskResult): string {
+  if (r.review) return S.reward.reviewDone;
   if (r.nodeUp) return S.reward.nodeUp;
   if (r.stage === null) return S.reward.nodeStay(PATH_PASS_CORRECT);
   if (!r.stagePassed) return S.reward.stageStay(PATH_PASS_CORRECT);

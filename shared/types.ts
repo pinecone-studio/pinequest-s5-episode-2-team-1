@@ -46,6 +46,7 @@ export type ErrorCode =
   | 'BOSS_LOCKED'
   | 'NODE_LOCKED'
   | 'NO_LIVES'
+  | 'NO_REVIEW'
   | 'STAGE_LOCKED'
   | 'TUTOR_UNAVAILABLE'
   | 'TUTOR_LIMIT'
@@ -271,6 +272,8 @@ export interface TaskDto {
   questions: TaskQuestion[];
   answeredCount: number;
   correctCount: number;
+  /** Өнөөдрийн хичээл бол давтаж буй хичээлийн нэр (номгүй бол null). */
+  title?: string | null;
 }
 
 export interface TaskResult {
@@ -288,6 +291,8 @@ export interface TaskResult {
   /** Зангилааны шатны даалгавар бол тэр шат (тулаан бол null), давсан эсэх. */
   stage: number | null;
   stagePassed: boolean;
+  /** Өнөөдрийн хичээл (өмнөх хичээлээс давтах дасгал): замд нөлөөлөхгүй. */
+  review: boolean;
   me: Me;
 }
 
