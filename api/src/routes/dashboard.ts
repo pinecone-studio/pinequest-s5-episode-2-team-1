@@ -44,7 +44,7 @@ const DASHBOARD_HTML = /* html */ `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
-<title>Сурах Аян · Самбар</title>
+<title>KUMA · Самбар</title>
 <style>
 :root {
   color-scheme: light;
@@ -126,7 +126,7 @@ td { font-variant-numeric: tabular-nums; }
 <main id="app">
   <header>
     <div>
-      <h1>Сурах Аян · Самбар</h1>
+      <h1>KUMA · Самбар</h1>
       <p class="sub"><span id="today"></span> · Улаанбаатарын цагаар · <span id="updated"></span></p>
     </div>
     <div class="controls">

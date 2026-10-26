@@ -1,4 +1,4 @@
--- Сурах Аян: үндсэн schema
+-- KUMA: үндсэн schema
 -- Огноо (day) бүгд Asia/Ulaanbaatar цагийн 'YYYY-MM-DD', хугацаа (*_at) бүгд epoch ms.
 -- `tx` багана: төлөв шилжүүлэх statement санамсаргүй nonce бичиж, нэг batch доторх
 -- бусад statement-ууд `EXISTS(... tx = nonce)` нөхцөлөөр зөвхөн шилжилт амжилттай үед ажиллана.
