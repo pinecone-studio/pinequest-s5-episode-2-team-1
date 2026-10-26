@@ -7,7 +7,7 @@ import { ubDay } from '../domain/time';
 import type { Bindings } from '../env';
 import { newTx } from '../lib/db';
 import { ApiError } from '../lib/errors';
-import { generate, templatesFor } from '../templates';
+import { generate, shouldGenerateTemplates, templatesFor } from '../templates';
 import { bookLessons } from './lessons';
 import { IN_RANGE, OWN_GRADE, parseLessonRef, rangeArgs, storeGenerated } from './pool';
 import { loadTask } from './tasks';
@@ -49,29 +49,30 @@ export async function startReview(env: Bindings, userId: number, subject: Subjec
   const range = parseLessonRef(pick?.lesson_ref ?? null);
   if (!pick || !range) throw new ApiError(409, 'NO_REVIEW', 'Эхлээд сурах замаар хичээл хийгээрэй');
 
-  // Загвартай хичээлд шинэ тоотой бодлого; үгүй бол тэр хичээлийн хуудасны асуулт эсвэл хүүхдийн тэр хичээл дээр
-  // өмнө бодсон асуултуудаас санамсаргүй.
+  // Тусгай загвартай хичээлд шинэ тоотой бодлого. Ерөнхий загвар бол хадгалсан асуулт хүрэлцэхгүй үед л нөөцөд
+  // ашиглана; бусад үед тэр хичээлийн хуудасны асуулт эсвэл хүүхдийн өмнө бодсон асуултаас санамсаргүй сонгоно.
   const templates = templatesFor(range);
-  const made = templates.length
+  // Хоёр салангид хэсгийг UNION-оор: нэг OR-оор бичвэл индекс ашиглагдахгүй, questions хүснэгтийг бүтнээр уншдаг байв.
+  const pickStored = async () =>
+    (
+      await db
+        .prepare(
+          `SELECT id FROM (
+             SELECT q.id FROM questions q
+             WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0 AND ${OWN_GRADE} AND ${IN_RANGE}
+             UNION
+             SELECT q.id FROM tasks t JOIN task_questions tq ON tq.task_id = t.id JOIN questions q ON q.id = tq.question_id
+             WHERE t.user_id = ? AND t.subject = ? AND t.kind = 'path' AND t.lesson_ref = ? AND q.flagged = 0)
+           ORDER BY RANDOM() LIMIT ?`,
+        )
+        .bind(user.tier, subject, userId, ...rangeArgs(range), userId, subject, pick.lesson_ref, GAME.REVIEW_QUESTIONS)
+        .all<{ id: number }>()
+    ).results.map((row) => row.id);
+  const stored = templates.length > 0 && templates.every((template) => template.preferStored) ? await pickStored() : [];
+  const made = shouldGenerateTemplates(templates, stored.length, GAME.REVIEW_QUESTIONS)
     ? await storeGenerated(db, user.tier, subject, user.grade, generate(templates, GAME.REVIEW_QUESTIONS), now)
     : [];
-  // Хоёр салангид хэсгийг UNION-оор: нэг OR-оор бичвэл индекс ашиглагдахгүй, questions хүснэгтийг бүтнээр уншдаг байв.
-  const ids = made.length
-    ? made
-    : (
-        await db
-          .prepare(
-            `SELECT id FROM (
-               SELECT q.id FROM questions q
-               WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0 AND ${OWN_GRADE} AND ${IN_RANGE}
-               UNION
-               SELECT q.id FROM tasks t JOIN task_questions tq ON tq.task_id = t.id JOIN questions q ON q.id = tq.question_id
-               WHERE t.user_id = ? AND t.subject = ? AND t.kind = 'path' AND t.lesson_ref = ? AND q.flagged = 0)
-             ORDER BY RANDOM() LIMIT ?`,
-          )
-          .bind(user.tier, subject, userId, ...rangeArgs(range), userId, subject, pick.lesson_ref, GAME.REVIEW_QUESTIONS)
-          .all<{ id: number }>()
-      ).results.map((r) => r.id);
+  const ids = stored.length >= GAME.REVIEW_QUESTIONS ? stored : made.length ? made : await pickStored();
   if (ids.length < GAME.REVIEW_QUESTIONS) throw new ApiError(503, 'NO_QUESTIONS', 'Асуулт хүрэлцэхгүй байна');
 
   const tx = newTx();
