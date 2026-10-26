@@ -25,6 +25,7 @@ import {
   type NodeStatus,
   pathLayout,
   pathLessons,
+  pathSubject,
   statusOf,
   unitOf,
 } from '@/lib/pixelBear/path';
@@ -40,7 +41,7 @@ const nodeHead = (boss: boolean) => (boss ? 120 : 44);
 export default function PathScreen() {
   const { me, refreshMe } = useAuth();
   const { subject: savedSubject, setSubject } = usePixelBear();
-  const subject: Subject = savedSubject ?? 'math';
+  const subject = pathSubject(savedSubject);
   const insets = useSafeAreaInsets();
   const barSpace = useTabBarSpace();
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
