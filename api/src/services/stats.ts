@@ -1,5 +1,6 @@
-// Admin dashboard (/dashboard)-ын тоо: өдөр бүр бүртгүүлсэн, орсон, даалгавар, тулаан, баавгай.
-import type { AdminStatsResponse } from '../../../shared/types';
+// Dashboard (/dashboard)-ын тоо: өдөр бүр бүртгүүлсэн, орсон, даалгавар, тулаан, баавгай.
+// Нийтэд нээлттэй тул зөвхөн нэгтгэсэн тоо буцаана (нэр, id гаргахгүй).
+import type { DashboardStatsResponse } from '../../../shared/types';
 import { GAME } from '../config/game';
 import { countsByDay, lastDays, ubDayStart } from '../domain/stats';
 import { addDays, ubDay } from '../domain/time';
@@ -9,7 +10,7 @@ type DayCount = { day: string; n: number };
 /** epoch ms багана → UB өдөр ('YYYY-MM-DD'). Offset нь тогтмол тоо тул SQL-д шууд орно. */
 const ubDate = (col: string) => `date(${col} / 1000 + ${GAME.TZ_OFFSET_MINUTES * 60}, 'unixepoch')`;
 
-export async function loadStats(db: D1Database, days: number, now = Date.now()): Promise<AdminStatsResponse> {
+export async function loadStats(db: D1Database, days: number, now = Date.now()): Promise<DashboardStatsResponse> {
   const today = ubDay(now);
   const range = lastDays(today, days);
   const from = range[0];

@@ -601,8 +601,8 @@ export interface PageTextResponse {
   at: number | null;
 }
 
-/** GET /admin/stats?days=30 — admin dashboard (/dashboard). Өдрүүд UB цагаар. */
-export interface AdminStatsResponse {
+/** GET /dashboard/stats?days=30 — нийтэд нээлттэй dashboard (/dashboard). Зөвхөн нэгтгэсэн тоо; өдрүүд UB цагаар. */
+export interface DashboardStatsResponse {
   /** UB өдөр, 'YYYY-MM-DD' */
   today: string;
   generatedAt: number;
