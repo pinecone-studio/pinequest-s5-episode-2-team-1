@@ -31,7 +31,7 @@ const LESSON_WALL = '#3b2a8f';
  * Сервер хүрэхгүй бол офлайн дасгал: апп доторх асуултаар, хариуг утсан дээр шалгана, XP/оноо цуглуулахгүй.
  */
 export default function TaskScreen() {
-  const { subject, boss, node } = useLocalSearchParams<{ subject: Subject; boss?: string; node?: string }>();
+  const { subject, boss, node, stage } = useLocalSearchParams<{ subject: Subject; boss?: string; node?: string; stage?: string }>();
   const foe = boss === undefined ? undefined : BOSSES[Number(boss)];
   const { me, setMe } = useAuth();
   const online = useOnline();
@@ -87,7 +87,8 @@ export default function TaskScreen() {
     };
     if (!isOnline()) return offline();
     try {
-      begin(await api<TaskDto>('/tasks', { body: foe ? { subject, gate: Number(boss) } : node ? { subject, node: Number(node) } : { subject } }));
+      const at = { ...(node ? { node: Number(node) } : {}), ...(stage ? { stage: Number(stage) } : {}) };
+      begin(await api<TaskDto>('/tasks', { body: foe ? { subject, gate: Number(boss) } : { subject, ...at } }));
     } catch (e) {
       // Олон алдсан өмнөх даалгаврын салаа зам дуусаагүй бол түүн рүү.
       if (e instanceof ApiError && e.code === 'RECOVERY_REQUIRED') {
@@ -98,7 +99,7 @@ export default function TaskScreen() {
       const fatal = e instanceof ApiError && (e.code === 'NO_QUESTIONS' || e.code === 'BOSS_LOCKED');
       setError({ message: errorText(e), fatal });
     }
-  }, [subject, foe, boss, node, tier, grade, size]);
+  }, [subject, foe, boss, node, stage, tier, grade, size]);
 
   useEffect(() => {
     void load();

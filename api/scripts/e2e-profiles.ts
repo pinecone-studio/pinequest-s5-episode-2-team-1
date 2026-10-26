@@ -32,7 +32,7 @@ export async function runProfilesScenario() {
   const math = grown.skills.find((s) => s.subject === 'math');
   const physics = grown.skills.find((s) => s.subject === 'physics');
   check(grown.studyDays === 1 && grown.streak === 1, 'Нэг өдөр сурсан, дараалал 1', grown);
-  check(math?.correct === 5 && math.answered === 5 && math.level === 2, 'Математик: 5/5 зөв, сурах замын 2-р шат', math);
+  check(math?.correct === 5 && math.answered === 5 && math.level === 1, 'Математик: 5/5 зөв (① Суурь), сурах зам эхний зангилаанд', math);
   check(physics?.correct === 0 && physics.answered === 5, 'Физик: 0/5', physics);
   check(grown.duels.played === 0 && grown.duels.won === 0, 'Тулаан хийгээгүй');
 

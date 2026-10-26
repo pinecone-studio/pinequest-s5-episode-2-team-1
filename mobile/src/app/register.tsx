@@ -11,7 +11,6 @@ import { type } from '@/constants/type';
 import { S } from '@/i18n/strings';
 
 const GRADES = [6, 7, 8, 9, 10];
-const tierOf = (grade: number) => (grade <= 7 ? 1 : grade <= 9 ? 2 : 3);
 
 export default function RegisterScreen() {
   const { signUp } = useAuth();
@@ -67,7 +66,6 @@ export default function RegisterScreen() {
                 <Chip key={g} label={S.auth.gradeChip(g)} selected={grade === g} onPress={() => setGrade(g)} />
               ))}
             </View>
-            {grade ? <Text style={styles.tier}>{S.auth.tierHint(tierOf(grade))}</Text> : null}
           </View>
           <ErrorText>{error}</ErrorText>
           <Button title={S.auth.register} onPress={submit} loading={busy} />
@@ -101,7 +99,6 @@ const styles = StyleSheet.create({
   bubbleText: { ...type.h3 },
   label: { fontFamily: fonts.bold, fontSize: 13, color: colors.ink },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  tier: { fontFamily: fonts.bold, fontSize: 14, color: colors.violet },
   linkWrap: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   link: { fontFamily: fonts.semibold, fontSize: 16, color: colors.indigo },
 });
