@@ -18,7 +18,7 @@ export function AvatarLink({ size = 48, border, dotBorder = colors.paper }: { si
       onPress={() => router.push('/profile')}
       style={[styles.avatarTap, { minWidth: Math.max(size, 44), minHeight: Math.max(size, 44) }]}
     >
-      <Avatar size={size} border={border} />
+      <Avatar size={size} border={border} look={me.look} />
       {me.friendRequests > 0 ? <View style={[styles.dot, { borderColor: dotBorder }]} /> : null}
     </Pressable>
   );

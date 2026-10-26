@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import type { AuthResponse, LessonsResponse, MeResponse, MyProfileResponse } from '../../../shared/types';
+import { BEAR_FACES, BEAR_FURS } from '../config/cosmetics';
 import { DEFAULT_EQUIPPED, GAME, SUBJECTS } from '../config/game';
 import { tierForGrade } from '../domain/level';
 import { ubDay } from '../domain/time';
@@ -9,7 +10,7 @@ import { hashPassword, newSessionToken, normalizeUsername, sha256Hex, usernameEr
 import { ApiError, readBody } from '../lib/errors';
 import { bearerToken, createSession, requireAuth, trackActive } from '../lib/session';
 import { loadLessons } from '../services/lessons';
-import { myProfile, rotateProfileCode, setBearLook } from '../services/profiles';
+import { myProfile, rotateProfileCode, setAvatar, setBearLook } from '../services/profiles';
 import { loadMe } from '../services/users';
 
 const registerSchema = z.object({
@@ -117,4 +118,24 @@ meRoutes.post('/profile/code', requireAuth, async (c) => c.json<MyProfileRespons
 meRoutes.put('/look', requireAuth, async (c) => {
   const body = await readBody(c, z.object({ bg: z.string().min(1).max(40), outfit: z.string().min(1).max(40) }));
   return c.json<MeResponse>({ me: await setBearLook(c.env.DB, c.get('userId'), body) });
+});
+
+/** Профайлын нэр (хоч) ба баавгайн үс, царай, цээжний толбо. */
+meRoutes.put('/avatar', requireAuth, async (c) => {
+  const body = await readBody(
+    c,
+    z.object({
+      // хоч: зай, кирилл зөвшөөрнө; удирдах тэмдэгт (шинэ мөр г.м.) үгүй
+      name: z
+        .string()
+        .trim()
+        .min(1)
+        .max(GAME.AUTH.USERNAME_MAX)
+        .regex(/^[^\p{C}]+$/u),
+      fur: z.enum(BEAR_FURS),
+      face: z.enum(BEAR_FACES),
+      chest: z.boolean(),
+    }),
+  );
+  return c.json<MeResponse>({ me: await setAvatar(c.env.DB, c.get('userId'), body) });
 });

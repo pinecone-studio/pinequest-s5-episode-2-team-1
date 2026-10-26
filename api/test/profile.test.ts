@@ -26,18 +26,25 @@ describe('профайлын код', () => {
 });
 
 describe('баавгайн харагдац', () => {
+  const bear = { fur: 'brown', face: 'calm', chest: true };
+
   it('хадгалсан дэвсгэр, хувцсыг уншина', () => {
-    expect(parseBearLook('{"bg":"shunu","outfit":"gradcap"}')).toEqual({ bg: 'shunu', outfit: 'gradcap' });
+    expect(parseBearLook('{"bg":"shunu","outfit":"gradcap"}')).toEqual({ bg: 'shunu', outfit: 'gradcap', ...bear });
   });
 
   it('хоосон эсвэл эвдэрсэн бол анхдагч', () => {
-    expect(parseBearLook(null)).toEqual({ bg: 'nimbeg', outfit: 'scarf' });
-    expect(parseBearLook('{')).toEqual({ bg: 'nimbeg', outfit: 'scarf' });
-    expect(parseBearLook('"tal"')).toEqual({ bg: 'nimbeg', outfit: 'scarf' });
+    expect(parseBearLook(null)).toEqual({ bg: 'nimbeg', outfit: 'scarf', ...bear });
+    expect(parseBearLook('{')).toEqual({ bg: 'nimbeg', outfit: 'scarf', ...bear });
+    expect(parseBearLook('"tal"')).toEqual({ bg: 'nimbeg', outfit: 'scarf', ...bear });
   });
 
   it('дутуу талбарыг анхдагчаар нөхнө', () => {
-    expect(parseBearLook('{"bg":"tal"}')).toEqual({ bg: 'tal', outfit: 'scarf' });
-    expect(parseBearLook('{"bg":3,"outfit":"glasses"}')).toEqual({ bg: 'nimbeg', outfit: 'glasses' });
+    expect(parseBearLook('{"bg":"tal"}')).toEqual({ bg: 'tal', outfit: 'scarf', ...bear });
+    expect(parseBearLook('{"bg":3,"outfit":"glasses"}')).toEqual({ bg: 'nimbeg', outfit: 'glasses', ...bear });
+  });
+
+  it('үс, царай, цээжний толбыг уншина; мэдэгдэхгүй утга бол анхдагч', () => {
+    expect(parseBearLook('{"fur":"black","face":"sleepy","chest":false}')).toEqual({ bg: 'nimbeg', outfit: 'scarf', fur: 'black', face: 'sleepy', chest: false });
+    expect(parseBearLook('{"fur":"pink","face":"angry","chest":"no"}')).toEqual({ bg: 'nimbeg', outfit: 'scarf', ...bear });
   });
 });

@@ -37,7 +37,7 @@ taskRoutes.post('/review', async (c) => {
 
 taskRoutes.post('/:id/answer', async (c) => {
   const body = await readBody(c, z.object({ questionId: z.number().int().positive(), choice: z.number().int().min(0).max(3) }));
-  return c.json<AnswerResponse>(await answerTask(c.env.DB, c.get('userId'), parseId(c.req.param('id')), body.questionId, body.choice));
+  return c.json<AnswerResponse>(await answerTask(c.env.DB, c.env, c.get('userId'), parseId(c.req.param('id')), body.questionId, body.choice));
 });
 
 export const questionRoutes = new Hono<AppEnv>();
@@ -45,7 +45,7 @@ questionRoutes.use('*', requireAuth);
 
 questionRoutes.post('/:id/flag', async (c) => {
   const body = await readBody(c, z.object({ taskId: z.number().int().positive().optional() }));
-  return c.json<FlagResponse>(await flagQuestion(c.env.DB, c.get('userId'), parseId(c.req.param('id')), body.taskId));
+  return c.json<FlagResponse>(await flagQuestion(c.env.DB, c.env, c.get('userId'), parseId(c.req.param('id')), body.taskId));
 });
 
 export const shieldRoutes = new Hono<AppEnv>();

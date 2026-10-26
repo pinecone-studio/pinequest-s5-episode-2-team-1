@@ -31,16 +31,18 @@ interface DuelRow {
 
 interface SummaryRow extends DuelRow {
   c_username: string;
+  c_name: string;
   c_xp: number;
   c_equipped: string;
   o_username: string | null;
+  o_name: string | null;
   o_xp: number | null;
   o_equipped: string | null;
 }
 
 const SUMMARY_SELECT = `
-  SELECT d.*, c.username AS c_username, c.xp AS c_xp, c.equipped AS c_equipped,
-         o.username AS o_username, o.xp AS o_xp, o.equipped AS o_equipped
+  SELECT d.*, c.username AS c_username, COALESCE(c.display_name, c.username) AS c_name, c.xp AS c_xp, c.equipped AS c_equipped,
+         o.username AS o_username, COALESCE(o.display_name, o.username) AS o_name, o.xp AS o_xp, o.equipped AS o_equipped
   FROM duels d
   JOIN users c ON c.id = d.creator_id
   LEFT JOIN users o ON o.id = d.opponent_id`;
@@ -53,8 +55,8 @@ export function duelRoomName(duelId: number): string {
   return `duel-${duelId}`;
 }
 
-function player(id: number, username: string, xp: number, equipped: string, catalog: Map<string, CatalogItem>): DuelPlayerDto {
-  return { id, username, level: levelFromXp(xp), avatar: avatarLook(parseEquipped(equipped), catalog) };
+function player(id: number, username: string, name: string, xp: number, equipped: string, catalog: Map<string, CatalogItem>): DuelPlayerDto {
+  return { id, username, name, level: levelFromXp(xp), avatar: avatarLook(parseEquipped(equipped), catalog) };
 }
 
 /** `viewerId` = хэн харж байгаа: урилгын кодыг зөвхөн үүсгэгчид харуулна. */
@@ -67,9 +69,9 @@ function toSummary(r: SummaryRow, catalog: Map<string, CatalogItem>, viewerId: n
     visibility: r.visibility,
     code: viewerId === r.creator_id && r.status === 'open' ? r.code : null,
     createdAt: r.created_at,
-    creator: player(r.creator_id, r.c_username, r.c_xp, r.c_equipped, catalog),
+    creator: player(r.creator_id, r.c_username, r.c_name, r.c_xp, r.c_equipped, catalog),
     opponent:
-      r.opponent_id && r.o_username !== null ? player(r.opponent_id, r.o_username, r.o_xp ?? 0, r.o_equipped ?? '{}', catalog) : null,
+      r.opponent_id && r.o_username !== null ? player(r.opponent_id, r.o_username, r.o_name ?? r.o_username, r.o_xp ?? 0, r.o_equipped ?? '{}', catalog) : null,
     winnerId: r.winner_id,
     endReason: r.end_reason,
     creatorScore: r.creator_score,
@@ -324,7 +326,7 @@ async function startDuel(env: Bindings, userId: number, duel: DuelRow, now: numb
   }
 
   const catalog = await getCatalog(db);
-  const info = (u: UserRow) => ({ id: u.id, username: u.username, avatar: avatarLook(parseEquipped(u.equipped), catalog) });
+  const info = (u: UserRow) => ({ id: u.id, username: u.username, name: u.display_name ?? u.username, avatar: avatarLook(parseEquipped(u.equipped), catalog) });
   const questions: DuelQuestion[] = picked.map((q) => ({
     id: q.id,
     prompt: q.prompt,

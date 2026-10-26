@@ -12,6 +12,8 @@
  * Гаралт:      mobile/assets/sprites/<name>_<w>x<h>[@2x|@3x].png  +  mobile/src/sprites/index.ts
  */
 import { existsSync, readdirSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
+import { BEAR_FACES, BEAR_FURS } from '../../shared/bear.ts';
+import { recolorFur } from './fur.ts';
 import { blank, type Img, readPng, samePixels, writePng } from './png.ts';
 
 const SRC = new URL('../../docs/design/pixel-bear/sprites/', import.meta.url);
@@ -48,6 +50,9 @@ M.head_happy = [[164, 108], [52, 34]];
 M.head_tired = [[40, 34]];
 M.head_neglected = [[40, 34]];
 M.head_sleep = [[54, 34]];
+// профайлын баавгай (scripts/avatar-sprites.ts): аватар 48, сонгох дэлгэцийн том хөрөг 160
+for (const fur of BEAR_FURS)
+  for (const face of BEAR_FACES) for (const chest of ['patch', 'plain']) M[`avatar_${fur}_${face}_${chest}`] = [[48, 48], [160, 160]];
 // зам
 for (const n of ['map_cloud_a', 'map_cloud_b', 'map_ring', 'map_butterfly_sheet']) M[n] = [2];
 // замын зангилааны хажуугийн жижиг тэмдэг (PathMap)
@@ -81,7 +86,13 @@ for (const n of ['home', 'tasks', 'path', 'shop', 'crew', 'bag']) {
   M[`nav2_${n}_off`] = [[30, 30]];
 }
 M.btn_calendar = [[30, 30]];
+// баавгай бэлдэж байхад эргэх номын хуудас (scripts/book-sprites.ts), 8 frame 28×18 → 2×
+M.fx_book_flip_sheet = [2];
 M.btn_honey = [[30, 30]];
+
+// баавгайтай sprite-ууд: сонгосон үсний өнгөөр (хар, цагаан) хувилбар `<нэр>_<өнгө>_<w>x<h>` үүснэ, components/pixel/Sprite
+// нь FurContext-оор сонгоно. Хөрөг (avatar_*) нь өнгө бүрээрээ тусдаа, item_* давхарга өнгөгүй.
+const FUR_SPRITES = new Set(Object.keys(M).filter((n) => /^(bear_|head_|outfit_|map_bear_small)/.test(n)));
 
 /** Nearest-neighbor: Pillow-ийн `resize(NEAREST)`-тэй яг ижил (pixel төв, давхардсан алхмаар нэмэгдэх координат). */
 function resize(img: Img, w: number, h: number): Img {
@@ -98,21 +109,26 @@ function resize(img: Img, w: number, h: number): Img {
 const keep = new Set<string>();
 const entries: [string, number, number][] = [];
 for (const [name, variants] of Object.entries(M)) {
-  const img = readPng(new URL(`${name}.png`, SRC));
-  for (const v of variants) {
-    const [w, h] = typeof v === 'number' ? [img.w * v, img.h * v] : v;
-    // бутархай томруулалт (2.5×) нь бүхэл хэмжээ өгөх ёстой: үгүй бол frame-ийн шилжилт хагас pixel-ээр гулсана
-    if (!Number.isInteger(w) || !Number.isInteger(h)) throw new Error(`${name}: ${img.w}×${img.h} ×${v} бүхэл биш`);
-    const key = `${name}_${w}x${h}`;
-    for (const [d, suffix] of [[1, ''], [2, '@2x'], [3, '@3x']] as const) {
-      const file = new URL(`${key}${suffix}.png`, OUT);
-      const out = resize(img, w * d, h * d);
-      if (!existsSync(file) || !samePixels(readPng(file), out)) writePng(file, out);
-      keep.add(`${key}${suffix}.png`);
+  const base = readPng(new URL(`${name}.png`, SRC));
+  const furs = FUR_SPRITES.has(name) ? (['black', 'white'] as const) : [];
+  const images: [string, Img][] = [[name, base], ...furs.map((f): [string, Img] => [`${name}_${f}`, recolorFur(base, f)])];
+  for (const [id, img] of images) {
+    for (const v of variants) {
+      const [w, h] = typeof v === 'number' ? [img.w * v, img.h * v] : v;
+      // бутархай томруулалт (2.5×) нь бүхэл хэмжээ өгөх ёстой: үгүй бол frame-ийн шилжилт хагас pixel-ээр гулсана
+      if (!Number.isInteger(w) || !Number.isInteger(h)) throw new Error(`${id}: ${img.w}×${img.h} ×${v} бүхэл биш`);
+      const key = `${id}_${w}x${h}`;
+      for (const [d, suffix] of [[1, ''], [2, '@2x'], [3, '@3x']] as const) {
+        const file = new URL(`${key}${suffix}.png`, OUT);
+        const out = resize(img, w * d, h * d);
+        if (!existsSync(file) || !samePixels(readPng(file), out)) writePng(file, out);
+        keep.add(`${key}${suffix}.png`);
+      }
+      entries.push([key, w, h]);
     }
-    entries.push([key, w, h]);
   }
 }
+
 for (const f of readdirSync(OUT)) if (f.endsWith('.png') && !keep.has(f)) unlinkSync(new URL(f, OUT));
 
 const lines = [

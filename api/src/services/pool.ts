@@ -30,14 +30,14 @@ export async function insertDrafts(
 ): Promise<{ inserted: number; duplicates: number }> {
   if (drafts.length === 0) return { inserted: 0, duplicates: 0 };
   const stmt = db.prepare(
-    `INSERT OR IGNORE INTO questions (tier, subject, prompt, options, correct_index, explanation, prompt_key, source, book_ref, grade, topic, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT OR IGNORE INTO questions (tier, subject, prompt, options, correct_index, explanation, prompt_key, source, book_ref, book_page, grade, topic, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
   // Өмнө сэдэвгүй хадгалагдсан ижил асуултад (жишээ нь seed-ийг дахин import хийхэд) сэдвийг нөхнө.
   const fill = db.prepare('UPDATE questions SET topic = ? WHERE tier = ? AND subject = ? AND prompt_key = ? AND topic IS NULL');
   const results = await db.batch([
     ...drafts.map((d) =>
-      stmt.bind(tier, subject, d.prompt, JSON.stringify(d.options), d.correctIndex, d.explanation, promptKey(d.prompt), source, book?.ref ?? null, book?.grade ?? null, d.topic ?? null, now),
+      stmt.bind(tier, subject, d.prompt, JSON.stringify(d.options), d.correctIndex, d.explanation, promptKey(d.prompt), source, book?.ref ?? null, bookPage(book?.ref ?? null), book?.grade ?? null, d.topic ?? null, now),
     ),
     ...drafts.flatMap((d) => (d.topic ? [fill.bind(d.topic, tier, subject, promptKey(d.prompt))] : [])),
   ]);
@@ -79,11 +79,17 @@ export interface GenerateReport {
   grounded: string[];
 }
 
+/** 'math-7:45-46' → 45 (questions.book_page: хичээлийн асуултыг бүх сан уншилгүй индексээр олно). */
+export const bookPage = (ref: string | null) => (ref ? Number(/:(\d+)/.exec(ref)?.[1] ?? NaN) || null : null);
+/** 'math-7' → 7 */
+const slugGrade = (slug: string) => Number(/-(\d+)$/.exec(slug)?.[1] ?? 0);
+
 /**
- * SQL: `q.book_ref` нь `range`-ийн хуудаснаас эхэлсэн эсэх (1/0); 'math-7:5-6' → math-7, 5. Утгууд: rangeArgs(range).
+ * SQL (WHERE): `q.book_ref` нь `range`-ийн хуудаснаас эхэлсэн эсэх; 'math-7:5-6' → math-7, 5. idx_questions_page-ээр
+ * (tier, subject, grade, flagged, book_page) зөвхөн тэр хуудсуудын мөрийг уншина. Утгууд: rangeArgs(range).
  */
-export const IN_RANGE = 'COALESCE(substr(q.book_ref, 1, ?) = ? AND CAST(substr(q.book_ref, ?) AS INTEGER) BETWEEN ? AND ?, 0)';
-export const rangeArgs = (r: PageRange) => [r.slug.length + 1, `${r.slug}:`, r.slug.length + 2, r.from, r.to];
+export const IN_RANGE = '(q.grade = ? AND q.book_page BETWEEN ? AND ? AND substr(q.book_ref, 1, ?) = ?)';
+export const rangeArgs = (r: PageRange) => [slugGrade(r.slug), r.from, r.to, r.slug.length + 1, `${r.slug}:`];
 
 /** tasks.lesson_ref: { slug: 'math-6', from: 10, to: 13 } ↔ 'math-6:10-13' */
 export const lessonRef = (r: PageRange) => `${r.slug}:${r.from}-${r.to}`;
@@ -94,27 +100,50 @@ export function parseLessonRef(ref: string | null): PageRange | null {
 
 /**
  * SQL: хэрэглэгчид гарч болох асуулт — номгүй (түвшний нийтлэг) эсвэл өөрийнх нь ангийн номынх. Өөр ангийн
- * (анги нь тодорхойгүй) номын асуулт хэзээ ч гарахгүй. Утга: userId.
+ * (анги нь тодорхойгүй) номын асуулт хэзээ ч гарахгүй. Хоёр нөхцөл хоёулаа grade баганаар тул индексээр уншина. Утга: userId.
  */
-export const OWN_GRADE = '(q.book_ref IS NULL OR q.grade = (SELECT grade FROM users WHERE id = ?))';
+export const OWN_GRADE = '((q.grade IS NULL AND q.book_ref IS NULL) OR q.grade = (SELECT grade FROM users WHERE id = ?))';
 
 /**
- * Даалгаврын асуулт: хараагүйг санамсаргүйгээр, дутвал хамгийн эрт харсныг нь. Шатны хичээлийнх (харсан ч) үргэлж
- * түрүүлнэ: шатанд өөр сэдвийн асуулт зөвхөн хичээлд нэг даалгаварт хүрэлцэх асуулт байхгүй үед л орно.
+ * SQL: OWN_GRADE-ийн асуултын id (индексээр): ангийн асуулт ба номгүй нийтлэг асуулт. OR-оор бичвэл SQLite түвшний
+ * бүх асуултыг (бусад ангийнхыг ч) уншдаг. Утгууд: tier, subject, userId, tier, subject.
  */
-export const pickSql = (lesson: boolean) => `SELECT q.id FROM questions q
-       LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
-       WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0 AND ${OWN_GRADE}
-       ORDER BY ${lesson ? `${IN_RANGE} DESC,` : ''} (s.seen_at IS NOT NULL), s.seen_at, RANDOM()
-       LIMIT ?`;
+const OWN_POOL = `(SELECT id FROM questions WHERE tier = ? AND subject = ? AND flagged = 0 AND grade = (SELECT grade FROM users WHERE id = ?)
+         UNION ALL SELECT id FROM questions WHERE tier = ? AND subject = ? AND flagged = 0 AND grade IS NULL AND book_ref IS NULL)`;
+const BY_SEEN = 'ORDER BY (s.seen_at IS NOT NULL), s.seen_at, RANDOM() LIMIT ?';
+
+/**
+ * Даалгаврын асуулт: хараагүйг санамсаргүйгээр, дутвал хамгийн эрт харсныг нь. `lesson` бол зөвхөн тэр хичээлийн
+ * хуудсуудаас, үгүй бол ангийн бүх асуултаас; `exclude` бол JSON массив дахь id орохгүй (зөвхөн хэрэгтэй үед:
+ * json_each мөр бүрт шалгагдаж уншилтыг нэмдэг).
+ */
+export const pickSql = (lesson: boolean, exclude = false) =>
+  lesson
+    ? `SELECT q.id FROM questions q LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
+       WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0 AND ${IN_RANGE} ${BY_SEEN}`
+    : `SELECT q.id FROM ${OWN_POOL} q LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
+       ${exclude ? 'WHERE q.id NOT IN (SELECT value FROM json_each(?))' : ''} ${BY_SEEN}`;
 
 /** SQL: `range` хуудсанд үндэслэсэн (хэрэглэгчид гарч болох) асуултын тоо. Утгууд: tier, subject, ...rangeArgs. */
 export const LESSON_COUNT_SQL = `SELECT COUNT(*) AS n FROM questions q
        WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0 AND ${IN_RANGE}`;
-/** pickSql-ийн утгууд. */
-export const pickArgs = (userId: number, tier: Tier, subject: Subject, lesson: PageRange | null, limit: number) => [
-  userId, tier, subject, userId, ...(lesson ? rangeArgs(lesson) : []), limit,
-];
+/** pickSql(lesson !== null, exclude.length > 0)-ийн утгууд. */
+export const pickArgs = (userId: number, tier: Tier, subject: Subject, lesson: PageRange | null, limit: number, exclude: number[] = []) =>
+  lesson
+    ? [userId, tier, subject, ...rangeArgs(lesson), limit]
+    : [tier, subject, userId, tier, subject, userId, ...(exclude.length ? [JSON.stringify(exclude)] : []), limit];
+
+/**
+ * Шатны хичээлийнх (харсан ч) үргэлж түрүүлнэ: өөр сэдвийн асуулт зөвхөн хичээлд нэг даалгаварт хүрэлцэх асуулт
+ * байхгүй үед л орно. Хоёр алхмаар: хичээлийнх индексээр цөөн мөр уншина, ангийн бүх сан зөвхөн дутвал.
+ */
+export async function pickQuestions(db: D1Database, userId: number, tier: Tier, subject: Subject, lesson: PageRange | null, limit: number) {
+  const run = async (range: PageRange | null, n: number, exclude: number[]) =>
+    (await db.prepare(pickSql(range !== null, exclude.length > 0)).bind(...pickArgs(userId, tier, subject, range, n, exclude)).all<{ id: number }>()).results;
+  const own = lesson ? await run(lesson, limit, []) : [];
+  if (own.length >= limit) return own;
+  return [...own, ...(await run(null, limit - own.length, own.map((r) => r.id)))];
+}
 
 /**
  * `count` асуултыг `chunk`-аар хувааж LLM-ийг зэрэг дуудаад, шалгаж хадгална. Сурах бичгийн санд
@@ -230,12 +259,14 @@ export async function maybeRefill(
   userId: number,
   grade: number,
 ): Promise<void> {
+  // Зөвхөн босготой харьцуулах тул босгодоо хүрмэгц тоолохоо зогсооно (ангийн бүх санг даалгавар бүрт уншихгүй).
+  const own = `FROM questions q WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0 AND ${OWN_GRADE}`;
   const row = await env.DB.prepare(
-    `SELECT COUNT(*) AS total, SUM(CASE WHEN s.question_id IS NULL THEN 1 ELSE 0 END) AS unseen
-     FROM questions q LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
-     WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0 AND ${OWN_GRADE}`,
+    `SELECT (SELECT COUNT(*) FROM (SELECT 1 ${own} LIMIT ?)) AS total,
+            (SELECT COUNT(*) FROM (SELECT 1 ${own}
+               AND NOT EXISTS (SELECT 1 FROM seen_questions s WHERE s.question_id = q.id AND s.user_id = ?) LIMIT ?)) AS unseen`,
   )
-    .bind(userId, tier, subject, userId)
+    .bind(tier, subject, userId, GAME.POOL.MIN_TOTAL, tier, subject, userId, userId, GAME.POOL.MIN_UNSEEN)
     .first<{ total: number; unseen: number | null }>();
   const total = row?.total ?? 0;
   const unseen = row?.unseen ?? 0;

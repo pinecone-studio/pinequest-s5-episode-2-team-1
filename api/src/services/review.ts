@@ -13,6 +13,9 @@ import { IN_RANGE, OWN_GRADE, parseLessonRef, rangeArgs, storeGenerated } from '
 import { loadTask } from './tasks';
 import { getUserRow, requireLife } from './users';
 
+/** SQL: өнөөдөр дуусгасан өнөөдрийн хичээлийн тоо. Утгууд: userId, subject, today. */
+const DONE_TODAY = `SELECT COUNT(*) AS n FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'completed' AND kind = 'review'`;
+
 /** Хичээлийн нэр (номын гарчгаас): хуудасны эхлэлээр. */
 async function lessonTitle(env: Bindings, subject: Subject, grade: number, ref: string): Promise<string | null> {
   const range = parseLessonRef(ref);
@@ -31,6 +34,9 @@ export async function startReview(env: Bindings, userId: number, subject: Subjec
     .bind(userId, subject, today)
     .first<{ id: number; lesson_ref: string }>();
   if (existing) return { ...(await loadTask(db, userId, existing.id)), title: await lessonTitle(env, subject, user.grade, existing.lesson_ref) };
+  // Амь зарцуулдаггүй тул хязгааргүй давтвал оноо, XP цуглуулах арга болно: хичээл бүрт өдөрт REVIEW_PER_DAY.
+  const done = await db.prepare(DONE_TODAY).bind(userId, subject, today).first<{ n: number }>();
+  if ((done?.n ?? 0) >= GAME.REVIEW_PER_DAY) throw new ApiError(409, 'REVIEW_DONE', 'Өнөөдрийн хичээлээ хийчихлээ. Маргааш дахин ирээрэй');
 
   // Өмнө дуусгасан сурах замын хичээлүүдээс санамсаргүй нэг
   const pick = await db
@@ -46,18 +52,20 @@ export async function startReview(env: Bindings, userId: number, subject: Subjec
   // Тусгай загвартай хичээлд шинэ тоотой бодлого. Ерөнхий загвар бол хадгалсан асуулт хүрэлцэхгүй үед л нөөцөд
   // ашиглана; бусад үед тэр хичээлийн хуудасны асуулт эсвэл хүүхдийн өмнө бодсон асуултаас санамсаргүй сонгоно.
   const templates = templatesFor(range);
+  // Хоёр салангид хэсгийг UNION-оор: нэг OR-оор бичвэл индекс ашиглагдахгүй, questions хүснэгтийг бүтнээр уншдаг байв.
   const pickStored = async () =>
     (
       await db
         .prepare(
-          `SELECT q.id FROM questions q
-           WHERE q.flagged = 0 AND (
-             (q.subject = ? AND ${OWN_GRADE} AND ${IN_RANGE})
-             OR q.id IN (SELECT tq.question_id FROM task_questions tq JOIN tasks t ON t.id = tq.task_id
-                         WHERE t.user_id = ? AND t.kind = 'path' AND t.lesson_ref = ?))
+          `SELECT id FROM (
+             SELECT q.id FROM questions q
+             WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0 AND ${OWN_GRADE} AND ${IN_RANGE}
+             UNION
+             SELECT q.id FROM tasks t JOIN task_questions tq ON tq.task_id = t.id JOIN questions q ON q.id = tq.question_id
+             WHERE t.user_id = ? AND t.subject = ? AND t.kind = 'path' AND t.lesson_ref = ? AND q.flagged = 0)
            ORDER BY RANDOM() LIMIT ?`,
         )
-        .bind(subject, userId, ...rangeArgs(range), userId, pick.lesson_ref, GAME.REVIEW_QUESTIONS)
+        .bind(user.tier, subject, userId, ...rangeArgs(range), userId, subject, pick.lesson_ref, GAME.REVIEW_QUESTIONS)
         .all<{ id: number }>()
     ).results.map((row) => row.id);
   const stored = templates.length > 0 && templates.every((template) => template.preferStored) ? await pickStored() : [];
@@ -74,9 +82,10 @@ export async function startReview(env: Bindings, userId: number, subject: Subjec
       .prepare(
         `INSERT INTO tasks (user_id, subject, day, status, kind, lesson_ref, tx, created_at)
          SELECT ?, ?, ?, 'in_progress', 'review', ?, ?, ?
-         WHERE NOT EXISTS (SELECT 1 FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress' AND kind = 'review')`,
+         WHERE NOT EXISTS (SELECT 1 FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress' AND kind = 'review')
+           AND (${DONE_TODAY}) < ?`,
       )
-      .bind(userId, subject, today, pick.lesson_ref, tx, now, userId, subject, today),
+      .bind(userId, subject, today, pick.lesson_ref, tx, now, userId, subject, today, userId, subject, today, GAME.REVIEW_PER_DAY),
     ...ids.map((id, i) =>
       db.prepare(`INSERT INTO task_questions (task_id, position, question_id) SELECT ${taskId}, ?, ? WHERE ${taskId} IS NOT NULL`).bind(tx, i, id, tx),
     ),

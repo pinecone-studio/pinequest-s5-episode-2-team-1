@@ -107,7 +107,7 @@ export default function TaskScreen() {
         return;
       }
       if (isOfflineError(e)) return offline();
-      const fatal = e instanceof ApiError && (e.code === 'NO_QUESTIONS' || e.code === 'BOSS_LOCKED' || e.code === 'NO_LIVES' || e.code === 'NO_REVIEW');
+      const fatal = e instanceof ApiError && (e.code === 'NO_QUESTIONS' || e.code === 'BOSS_LOCKED' || e.code === 'NO_LIVES' || e.code === 'NO_REVIEW' || e.code === 'REVIEW_DONE');
       setError({ message: errorText(e), fatal });
     }
   }, [subject, foe, boss, node, stage, review, tier, grade, size]);

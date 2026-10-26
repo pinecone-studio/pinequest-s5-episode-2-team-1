@@ -326,8 +326,8 @@ function ChallengeCard({
     <Enter index={index} style={[styles.challenge, highlight && styles.challengeMatch]}>
       <Avatar size={52} />
       <View style={{ flex: 1, gap: 4 }}>
-        <Text style={styles.name}>{duel.creator.username}</Text>
-        <Muted>{S.duel.level(duel.creator.level)}</Muted>
+        <Text style={styles.name}>{duel.creator.name ?? duel.creator.username}</Text>
+        <Muted>@{duel.creator.username} · {S.duel.level(duel.creator.level)}</Muted>
         <View style={[styles.subjectTag, { backgroundColor: subjectTheme[duel.subject].bg }]}>
           <Text style={[styles.subjectTagText, { color: subjectTheme[duel.subject].fg }]}>{subjectNames[duel.subject]}</Text>
         </View>

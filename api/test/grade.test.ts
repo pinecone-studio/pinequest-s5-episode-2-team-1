@@ -25,10 +25,14 @@ function setup() {
   return db;
 }
 
-const pick = (db: DatabaseSync, userId: number, lesson: Parameters<typeof pickArgs>[3]) =>
-  (db.prepare(pickSql(lesson !== null)).all(...(pickArgs(userId, 1, 'math', lesson, 100) as (string | number)[])) as { id: number }[]).map(
-    ({ id }) => (db.prepare('SELECT book_ref FROM questions WHERE id = ?').get(id) as { book_ref: string | null }).book_ref,
-  );
+// pickQuestions-тэй ижил хоёр алхам: хичээлийнх эхэлж, дутууг ангийн сангаас.
+function pick(db: DatabaseSync, userId: number, lesson: Parameters<typeof pickArgs>[3], limit = 5) {
+  const run = (range: typeof lesson, n: number, exclude: number[]) =>
+    db.prepare(pickSql(range !== null, exclude.length > 0)).all(...(pickArgs(userId, 1, 'math', range, n, exclude) as (string | number)[])) as { id: number }[];
+  const own = lesson ? run(lesson, limit, []) : [];
+  const ids = own.length >= limit ? own : [...own, ...run(null, limit - own.length, own.map((r) => r.id))];
+  return ids.map(({ id }) => (db.prepare('SELECT book_ref FROM questions WHERE id = ?').get(id) as { book_ref: string | null }).book_ref);
+}
 
 describe('асуулт зөвхөн өөрийн ангийн номоос', () => {
   const db = setup();
@@ -45,10 +49,28 @@ describe('асуулт зөвхөн өөрийн ангийн номоос', () 
     ]);
   });
 
+  it('migration 0025 book_ref-ийн эхний хуудсыг book_page-д нөхнө', () => {
+    expect(db.prepare('SELECT book_ref, book_page FROM questions WHERE book_ref IS NOT NULL ORDER BY id').all()).toEqual([
+      { book_ref: 'math-6:5-6', book_page: 5 },
+      { book_ref: 'math-6:7-8', book_page: 7 },
+      { book_ref: 'math-7:5-6', book_page: 5 },
+      { book_ref: 'math-7:7', book_page: 7 },
+      { book_ref: 'math-7:30-31', book_page: 30 },
+    ]);
+  });
+
+  it('хичээлийн асуулт индексээр (бүх санг уншихгүй)', () => {
+    const plan = db.prepare(`EXPLAIN QUERY PLAN ${pickSql(true)}`).all(...(pickArgs(2, 1, 'math', { slug: 'math-7', from: 5, to: 6 }, 5) as (string | number)[]));
+    expect(JSON.stringify(plan)).toContain('idx_questions_page');
+    // ангийн бүх асуулт (boss): бусад ангийнхыг уншихгүй
+    const own = db.prepare(`EXPLAIN QUERY PLAN ${pickSql(false)}`).all(...(pickArgs(2, 1, 'math', null, 5) as (string | number)[]));
+    expect(JSON.stringify(own)).not.toContain('idx_questions_pool');
+  });
+
   it('6-р анги Математик 7-ийн асуулт хэзээ ч авахгүй; номгүй асуулт нийтлэг', () => {
-    const six = pick(db, 1, null);
+    const six = pick(db, 1, null, 100);
     expect(six.sort()).toEqual(['math-6:5-6', 'math-6:7-8', null, null].sort());
-    expect(pick(db, 2, null).every((r) => r === null || r.startsWith('math-7:'))).toBe(true);
+    expect(pick(db, 2, null, 100).every((r) => r === null || r.startsWith('math-7:'))).toBe(true);
   });
 
   it('хичээлийн хуудсынх түрүүлнэ, дутууг өөрийн ангийн асуултаар нөхнө', () => {
@@ -68,7 +90,7 @@ describe('асуулт зөвхөн өөрийн ангийн номоос', () 
 
   it('анги нь тодорхойгүй номын асуулт хэнд ч гарахгүй', () => {
     db.prepare("UPDATE questions SET grade = NULL WHERE book_ref = 'math-6:7-8'").run();
-    expect(pick(db, 1, null)).not.toContain('math-6:7-8');
-    expect(pick(db, 2, null)).not.toContain('math-6:7-8');
+    expect(pick(db, 1, null, 100)).not.toContain('math-6:7-8');
+    expect(pick(db, 2, null, 100)).not.toContain('math-6:7-8');
   });
 });
