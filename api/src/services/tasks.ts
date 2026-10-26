@@ -14,7 +14,7 @@ import { ApiError } from '../lib/errors';
 import type { PageRange } from './grounding';
 import { bookLessons, lessonPages } from './lessons';
 import { generate, levelOf, templatesFor } from '../templates';
-import { LESSON_COUNT_SQL, lessonRef, maybeRefill, pickArgs, pickSql, rangeArgs, refillLesson, refillPool, storeGenerated } from './pool';
+import { LESSON_COUNT_SQL, lessonRef, maybeRefill, pickQuestions, rangeArgs, refillLesson, refillPool, storeGenerated } from './pool';
 import { hasPendingRecovery, recoveryCertain, recoveryStatements } from './recovery';
 import { spendLife } from '../domain/lives';
 import { countTasksToday, getUserRow, livesArgs, loadMe, loadSubjectPaths, requireLife, streakStateOf, syncStreak } from './users';
@@ -149,12 +149,7 @@ export async function startTask(
   const picked =
     made.length >= GAME.QUESTIONS_PER_TASK
       ? made.map((id) => ({ id }))
-      : (
-          await db
-            .prepare(pickSql(lesson !== null))
-            .bind(...pickArgs(userId, tier, subject, lesson, GAME.QUESTIONS_PER_TASK))
-            .all<{ id: number }>()
-        ).results;
+      : await pickQuestions(db, userId, tier, subject, lesson, GAME.QUESTIONS_PER_TASK);
   if (picked.length < GAME.QUESTIONS_PER_TASK) {
     ctx.waitUntil(refillPool(env, tier, subject, { grade: user.grade }));
     throw new ApiError(503, 'NO_QUESTIONS', 'Асуулт хүрэлцэхгүй байна');
