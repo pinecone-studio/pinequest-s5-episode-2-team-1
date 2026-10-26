@@ -96,7 +96,7 @@ export default function TaskScreen() {
         return;
       }
       if (isOfflineError(e)) return offline();
-      const fatal = e instanceof ApiError && (e.code === 'NO_QUESTIONS' || e.code === 'BOSS_LOCKED');
+      const fatal = e instanceof ApiError && (e.code === 'NO_QUESTIONS' || e.code === 'BOSS_LOCKED' || e.code === 'NO_LIVES');
       setError({ message: errorText(e), fatal });
     }
   }, [subject, foe, boss, node, stage, tier, grade, size]);

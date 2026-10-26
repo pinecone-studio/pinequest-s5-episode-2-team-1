@@ -45,6 +45,7 @@ export type ErrorCode =
   | 'LLM_FAILED'
   | 'BOSS_LOCKED'
   | 'NODE_LOCKED'
+  | 'NO_LIVES'
   | 'STAGE_LOCKED'
   | 'TUTOR_UNAVAILABLE'
   | 'TUTOR_LIMIT'
@@ -110,6 +111,11 @@ export interface Me {
   today: string;
   /** Хөгжүүлэгч: бүх зангилаа, boss руу орно, давтлагагүй, бүх хувцас эзэмшинэ. */
   admin: boolean;
+  /** Амь: зангилаа руу орох бүрт нэг хасагдана; 0 бол бодлого, давтлага, баавгай хаалттай. */
+  lives: number;
+  maxLives: number;
+  /** Дараагийн амь нөхөгдөх мөч (ms); дүүрэн бол null. */
+  nextLifeAt: number | null;
 }
 
 /** Баавгайн дэвсгэр, хувцас: mobile catalog-ийн key ('nimbeg', 'gradcap'…). */
