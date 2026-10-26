@@ -79,6 +79,10 @@ export interface ShieldStatus {
 export interface Me {
   id: number;
   username: string;
+  /** Профайлын нэр (хоч); тохируулаагүй бол username */
+  name: string;
+  /** Профайлаа (нэр, баавгай) тохируулсан эсэх: бүртгүүлсний дараах алхмыг нэг л удаа харуулна */
+  profileSet: boolean;
   grade: number;
   /** Ангийн түвшин 1–3 */
   tier: number;
@@ -112,10 +116,16 @@ export interface Me {
   admin: boolean;
 }
 
-/** Баавгайн дэвсгэр, хувцас: mobile catalog-ийн key ('nimbeg', 'gradcap'…). */
+export type BearFur = 'brown' | 'black' | 'white';
+export type BearFace = 'calm' | 'happy' | 'sleepy' | 'smile' | 'wink' | 'surprised' | 'laugh' | 'smug';
+
+/** Баавгайн дэвсгэр, хувцас (mobile catalog-ийн key: 'nimbeg', 'gradcap'…), үс, царай, цээжний цагаан толбо. */
 export interface BearLook {
   bg: string;
   outfit: string;
+  fur: BearFur;
+  face: BearFace;
+  chest: boolean;
 }
 
 export interface SubjectPath {
@@ -178,6 +188,7 @@ export interface SubjectSkill {
  */
 export interface PublicProfile {
   username: string;
+  name: string;
   grade: number;
   level: number;
   levelXp: number;
@@ -221,6 +232,7 @@ export interface FriendDto {
   /** Профайлын код: /u/<код>, мөн хүсэлт зөвшөөрөх, хасахад */
   code: string;
   username: string;
+  name: string;
   grade: number;
   level: number;
   streak: number;
@@ -247,7 +259,10 @@ export interface FriendActionResponse {
 }
 
 /** PUT /me/look */
-export type LookBody = BearLook;
+export type LookBody = Pick<BearLook, 'bg' | 'outfit'>;
+
+/** PUT /me/avatar: профайлын нэр ба баавгайн төрх */
+export type AvatarBody = { name: string } & Pick<BearLook, 'fur' | 'face' | 'chest'>;
 
 // ---------- Даалгавар ----------
 
@@ -333,6 +348,8 @@ export type DuelVisibility = 'public' | 'private';
 export interface DuelPlayerDto {
   id: number;
   username: string;
+  /** Профайлын нэр (хоч) */
+  name: string;
   level: number;
   avatar: AvatarLook;
 }
@@ -422,6 +439,7 @@ export type DuelPhase = 'waiting' | 'countdown' | 'question' | 'reveal' | 'finis
 export interface WsPlayer {
   id: number;
   username: string;
+  name: string;
   avatar: AvatarLook;
   connected: boolean;
   score: number;

@@ -14,6 +14,7 @@ export interface DuelQuestion {
 export interface DuelPlayerInfo {
   id: number;
   username: string;
+  name: string;
   avatar: AvatarLook;
 }
 
@@ -137,6 +138,8 @@ export function snapshot(s: DuelState, forUser: number, now: number): ServerMsg 
     players: s.players.map((p) => ({
       id: p.id,
       username: p.username,
+      // deploy-оос өмнө эхэлсэн тулааны хадгалсан тоглогчид name байхгүй
+      name: p.name ?? p.username,
       avatar: p.avatar,
       connected: !!s.conn[key(p.id)],
       score: s.scores[key(p.id)] ?? 0,

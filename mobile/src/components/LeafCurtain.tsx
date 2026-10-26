@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
-import { SheetFrame } from '@/components/pixel';
+import { SheetFrame, SheetLoop } from '@/components/pixel';
 import { colors, fonts, radius } from '@/constants/theme';
 import room from '@/lib/pixelBear/classroom.json';
 import type { SpriteKey } from '@/sprites';
@@ -22,6 +22,8 @@ const SHORT = room.branch.frameSize.h * PX;
 const SWAY = [...Array.from({ length: room.branch.frames }, (_, i) => i), ...Array.from({ length: room.branch.frames - 2 }, (_, i) => room.branch.frames - 2 - i)];
 /** хөшиг бүрэн хаагдсаны дараа ядаж ийм удаан (ms) хаалттай байна: хурдан холбогдсон ч навч орж ирээд буцна */
 const MIN_SHUT = 2200;
+/** номын хуудас эргэх: 0-р frame дээр түр зогсоод (440ms) хуудсаа эргүүлнэ */
+const BOOK_LOOP = [0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7];
 /** нээгдэж эхэлснээс мөчрүүд бүрэн гарч дуусах хүртэл (ms) */
 const OPEN_MS = 1300;
 
@@ -49,13 +51,17 @@ const PIECES: [Side, Kind, number, number, number][] = [
   ['right', 'leaf', 0.86, 0.72, 470],
   ['left', 'pine', 0.96, 0.68, 500],
 ];
+/** хамгийн сүүлийн мөчир орж ирж дуусах агшин (ms): хоцрогдол + орох хугацаа (Branch-ийн 720ms) */
+const ALL_IN = Math.max(...PIECES.map((p) => p[4])) + 720;
 
 /**
  * Баавгай бэлдэж байх үед (`covered`) утасны дөрвөн захаас янз бүрийн мөчир (навч, сакура, нарс; PixelLab) салхинд
  * найгасаар ээлжлэн орж ирж дэлгэцийг бүрхэнэ; бэлэн болмогц мөчрүүд хойшоо татагдаж захаараа алга болно.
  * «Motion бууруулах» үед гулсалтгүй, найгалтгүй шууд гарч/алга болно.
+ * `failed` = холбогдож чадсангүй: MIN_SHUT хүлээлгүй, бүх мөчир орж ирж дуусмагц (ALL_IN) нээнэ; «бэлдэж байна» бичиг шууд
+ * алга болно.
  */
-export function LeafCurtain({ covered, label }: { covered: boolean; label: string }) {
+export function LeafCurtain({ covered, failed, label }: { covered: boolean; failed?: boolean; label: string }) {
   const reduce = useReducedMotion();
   const { width, height } = useWindowDimensions();
   const [closed, setClosed] = useState(false);
@@ -70,9 +76,9 @@ export function LeafCurtain({ covered, label }: { covered: boolean; label: strin
       setClosed(true);
       return;
     }
-    const t = setTimeout(() => setClosed(false), Math.max(0, shutAt.current + MIN_SHUT - Date.now()));
+    const t = setTimeout(() => setClosed(false), Math.max(0, shutAt.current + (failed ? ALL_IN : MIN_SHUT) - Date.now()));
     return () => clearTimeout(t);
-  }, [covered]);
+  }, [covered, failed]);
 
   useEffect(() => {
     shade.value = reduce ? (closed ? 1 : 0) : withDelay(closed ? 200 : 150, withTiming(closed ? 1 : 0, { duration: 450 }));
@@ -94,7 +100,8 @@ export function LeafCurtain({ covered, label }: { covered: boolean; label: strin
   if (!visible && !closed) return null;
 
   return (
-    <View style={StyleSheet.absoluteFill} pointerEvents="none">
+    // самбар (zIndex 1)-ын дээр, хаах товчтой дээд мөр (zIndex 3)-ийн доор
+    <View style={[StyleSheet.absoluteFill, { zIndex: 2 }]} pointerEvents="none">
       <Animated.View style={[StyleSheet.absoluteFill, styles.shade, shadeStyle]} />
       {PIECES.map(([side, kind, along, depth, delay], i) => (
         <Branch
@@ -110,12 +117,35 @@ export function LeafCurtain({ covered, label }: { covered: boolean; label: strin
           frame={SWAY[(tick + i * 3) % SWAY.length]}
         />
       ))}
-      <Animated.View style={[styles.chip, shadeStyle]} accessibilityLiveRegion="polite">
-        <ActivityIndicator color={colors.white} />
-        <Text style={styles.chipText}>{label}</Text>
-      </Animated.View>
+      {failed ? null : (
+        <Animated.View style={[styles.chipWrap, shadeStyle]} accessible accessibilityLabel={label} accessibilityLiveRegion="polite">
+          <View style={styles.chipShadow} />
+          <View style={styles.chip}>
+            <SheetLoop id="fx_book_flip_sheet_448x36" frames={8} loop={BOOK_LOOP} ms={110} />
+            <Text style={styles.chipText}>
+              {label}
+              <Dots reduce={reduce} />
+            </Text>
+          </View>
+        </Animated.View>
+      )}
     </View>
   );
+}
+
+/** «…» ээлжлэн асна (өргөн нь тогтмол: бичиг үсрэхгүй); motion бууруулахад гурвуулаа асаалттай */
+function Dots({ reduce }: { reduce: boolean }) {
+  const [n, setN] = useState(3);
+  useEffect(() => {
+    if (reduce) return;
+    const t = setInterval(() => setN((v) => (v % 3) + 1), 420);
+    return () => clearInterval(t);
+  }, [reduce]);
+  return [0, 1, 2].map((i) => (
+    <Text key={i} style={{ opacity: i < n ? 1 : 0.2 }}>
+      .
+    </Text>
+  ));
 }
 
 function Branch({
@@ -187,17 +217,20 @@ function Branch({
 const styles = StyleSheet.create({
   shade: { backgroundColor: '#173A22' },
   piece: { position: 'absolute' },
+  // pixel товч шиг: шар карт, бараан хүрээ, хатуу сүүдэр, номын хуудас эргэнэ
+  chipWrap: { position: 'absolute', alignSelf: 'center', top: '44%' },
+  chipShadow: { position: 'absolute', left: 5, top: 6, right: -5, bottom: -6, borderRadius: radius.md, backgroundColor: colors.ink },
   chip: {
-    position: 'absolute',
-    alignSelf: 'center',
-    top: '46%',
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: radius.pill,
-    backgroundColor: 'rgba(25, 21, 46, 0.86)',
+    paddingVertical: 8,
+    paddingLeft: 10,
+    paddingRight: 18,
+    borderRadius: radius.md,
+    borderWidth: 3,
+    borderColor: colors.ink,
+    backgroundColor: colors.lemon,
   },
-  chipText: { fontFamily: fonts.bold, fontSize: 16, color: colors.white },
+  chipText: { fontFamily: fonts.pixel, fontSize: 19, color: colors.ink },
 });

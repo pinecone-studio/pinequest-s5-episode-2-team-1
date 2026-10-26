@@ -51,6 +51,8 @@
     "typecheck": "tsc --noEmit && tsc --noEmit -p scripts",
     "sprites": "node scripts/build-sprites.ts",
     "sprites:bear": "node scripts/bear-sprites.ts",
+    "sprites:avatar": "node scripts/avatar-sprites.ts",
+    "sprites:book": "node scripts/book-sprites.ts",
     "sprites:lesson": "node scripts/lesson-sprites.ts",
     "sprites:tutor": "node scripts/tutor-sprites.ts",
     "sprites:classroom": "node scripts/classroom-sprites.ts",

@@ -27,7 +27,7 @@ export default function OnboardingScreen() {
       <View style={styles.progress} accessible accessibilityLabel={S.onboarding.step}>
         <View style={[styles.seg, { backgroundColor: colors.violet }]} />
         <View style={[styles.seg, { backgroundColor: colors.violet }]} />
-        <View style={[styles.seg, { backgroundColor: colors.dashed }]} />
+        <View style={[styles.seg, { backgroundColor: colors.violet }]} />
       </View>
 
       <View style={styles.bubbleRow}>

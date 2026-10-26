@@ -12,6 +12,7 @@ import { avatarLook, type CatalogItem, getCatalog, parseEquipped } from './items
 export interface UserRow {
   id: number;
   username: string;
+  display_name: string | null;
   grade: number;
   tier: number;
   xp: number;
@@ -28,7 +29,7 @@ export interface UserRow {
 }
 
 const USER_COLUMNS =
-  'id, username, grade, tier, xp, points, streak, last_streak_day, shield_held, shield_bought_day, shield_used_day, equipped, bear_look, created_at, is_admin';
+  'id, username, display_name, grade, tier, xp, points, streak, last_streak_day, shield_held, shield_bought_day, shield_used_day, equipped, bear_look, created_at, is_admin';
 
 export async function getUserRow(db: D1Database, id: number): Promise<UserRow> {
   const row = await db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE id = ?`).bind(id).first<UserRow>();
@@ -131,6 +132,8 @@ export function buildMe(
   return {
     id: user.id,
     username: user.username,
+    name: user.display_name ?? user.username,
+    profileSet: user.display_name !== null,
     grade: user.grade,
     tier: user.tier,
     xp: user.xp,

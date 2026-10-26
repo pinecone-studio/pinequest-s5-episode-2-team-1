@@ -69,14 +69,14 @@ export async function removeFriend(db: D1Database, me: number, code: string): Pr
   return 'none';
 }
 
-type FriendRow = Pick<UserRow, 'username' | 'grade' | 'xp' | 'streak' | 'last_streak_day' | 'shield_held' | 'shield_bought_day' | 'shield_used_day' | 'bear_look'> &
+type FriendRow = Pick<UserRow, 'username' | 'display_name' | 'grade' | 'xp' | 'streak' | 'last_streak_day' | 'shield_held' | 'shield_bought_day' | 'shield_used_day' | 'bear_look'> &
   LinkRow & { profile_code: string | null };
 
 /** Найзууд ба хүсэлтүүд, шинэ нь эхэндээ. Найзын streak-ийг DB-д бичилгүй тооцно. */
 export async function listFriends(db: D1Database, me: number, now = Date.now()): Promise<FriendsResponse> {
   const { results } = await db
     .prepare(
-      `SELECT f.from_id, f.to_id, f.status, u.username, u.grade, u.xp, u.streak, u.last_streak_day, u.shield_held,
+      `SELECT f.from_id, f.to_id, f.status, u.username, u.display_name, u.grade, u.xp, u.streak, u.last_streak_day, u.shield_held,
               u.shield_bought_day, u.shield_used_day, u.bear_look, u.profile_code
        FROM friendships f JOIN users u ON u.id = CASE WHEN f.from_id = ? THEN f.to_id ELSE f.from_id END
        WHERE f.from_id = ? OR f.to_id = ?
@@ -91,6 +91,7 @@ export async function listFriends(db: D1Database, me: number, now = Date.now()):
     const dto: FriendDto = {
       code: r.profile_code,
       username: r.username,
+      name: r.display_name ?? r.username,
       grade: r.grade,
       level: levelFromXp(r.xp),
       streak: normalizeStreak(streakStateOf(r), today).state.streak,
