@@ -45,6 +45,28 @@ export async function insertDrafts(
   return { inserted, duplicates: drafts.length - inserted };
 }
 
+/**
+ * Загвараар үүсгэсэн бодлогуудыг хадгалж (`source` = 'template:<id>', `book_ref` = загварын хичээл) id-уудыг дарааллаар
+ * нь буцаана. Ижил текст өмнө нь байсан бол түүнийг; "асуулт буруу" гэж тэмдэглэгдсэнийг алгасна.
+ */
+export async function storeGenerated(
+  db: D1Database,
+  tier: number,
+  subject: string,
+  grade: number,
+  items: { template: { id: string; ref: string }; draft: QuestionDraft }[],
+  now = Date.now(),
+): Promise<number[]> {
+  if (items.length === 0) return [];
+  for (const it of items) await insertDrafts(db, tier, subject, [it.draft], `template:${it.template.id}`, now, { ref: it.template.ref, grade });
+  const keys = items.map((it) => promptKey(it.draft.prompt));
+  const { results } = await db
+    .prepare(`SELECT id, prompt_key FROM questions WHERE tier = ? AND subject = ? AND flagged = 0 AND prompt_key IN (${keys.map(() => '?').join(', ')})`)
+    .bind(tier, subject, ...keys)
+    .all<{ id: number; prompt_key: string }>();
+  return keys.flatMap((k) => results.filter((r) => r.prompt_key === k).map((r) => r.id).slice(0, 1));
+}
+
 export interface GenerateReport {
   source: string | null;
   requested: number;
@@ -62,6 +84,13 @@ export interface GenerateReport {
  */
 export const IN_RANGE = 'COALESCE(substr(q.book_ref, 1, ?) = ? AND CAST(substr(q.book_ref, ?) AS INTEGER) BETWEEN ? AND ?, 0)';
 export const rangeArgs = (r: PageRange) => [r.slug.length + 1, `${r.slug}:`, r.slug.length + 2, r.from, r.to];
+
+/** tasks.lesson_ref: { slug: 'math-6', from: 10, to: 13 } ↔ 'math-6:10-13' */
+export const lessonRef = (r: PageRange) => `${r.slug}:${r.from}-${r.to}`;
+export function parseLessonRef(ref: string | null): PageRange | null {
+  const m = ref ? /^([a-z0-9-]+):(\d+)-(\d+)$/.exec(ref) : null;
+  return m ? { slug: m[1], from: Number(m[2]), to: Number(m[3]) } : null;
+}
 
 /**
  * SQL: хэрэглэгчид гарч болох асуулт — номгүй (түвшний нийтлэг) эсвэл өөрийнх нь ангийн номынх. Өөр ангийн

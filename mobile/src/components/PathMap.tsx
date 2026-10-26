@@ -10,27 +10,22 @@ import golems from '@/lib/pixelBear/golems.json';
 import { tagFrames } from '@/lib/pixelBear/anim';
 import {
   BOSSES,
-  GATES,
   HOVER,
-  isBossNode,
   lessonTitle,
   MAP_H,
   MAP_PIECES,
   MAP_W,
-  NODES,
   type NodeStatus,
+  type PathLayout,
+  type PathUnit,
   statusOf,
-  TRAIL,
   tileFor,
   trailIndex,
-  UNIT_COUNT,
-  UNIT_SIZE,
   walkPoints,
 } from '@/lib/pixelBear/path';
 
-const UNITS = Array.from({ length: UNIT_COUNT }, (_, k) => k);
 const STEP_MS = 260;
-/** Дарах талбай (dp): хөрш зангилаанууд хэвтээгээр 84 dp зайтай тул давхцахгүй (mapgen_world.py DESIGN) */
+/** Дарах талбай (dp): 16 зангилаатай бүлэгт хөршүүд хэвтээгээр 84 dp зайтай (mapgen_world.py DESIGN); хичээл олон бол ойртоно */
 const HIT = 56;
 /** Boss-ын арал дээр баавгай boss-ын зүүн талд, арлын гадна зогсоно (давхцахгүй) */
 const CHALLENGER_DX = -62;
@@ -39,22 +34,27 @@ const CHALLENGER_DY = 6;
 const DOT_GAP = 10;
 const DOT = 4;
 
-/** 0-р бүлгийн хуучин 390×760 газрын зурагтай харьцуулсан бүлгийн шилжилт: декорын байрлал бүлэг бүрт адил. */
-const unitTop = (k: number) => NODES[k * UNIT_SIZE].y - NODES[0].y;
+const isBoss = (layout: PathLayout, i: number) => layout.nodes[i].kind === 'boss';
 
 /** Баавгайн зогсох цэг: энгийн зангилаан дээр, boss-ынх бол арлын хажууд. */
-const standAt = (i: number) => (isBossNode(i) ? { x: NODES[i].x + CHALLENGER_DX, y: NODES[i].y + CHALLENGER_DY } : NODES[i]);
+const standAt = (layout: PathLayout, i: number) => {
+  const n = layout.nodes[i];
+  return isBoss(layout, i) ? { x: n.x + CHALLENGER_DX, y: n.y + CHALLENGER_DY } : n;
+};
 
 /** Зангилаа хоорондын нарийн цэгэн зам (дууссан хэсэг нь ногоон): хэсэг бүр SVG шугам, зангилааны чулуу, арлын доор нуугдах хэсгийг тайрна. */
-const SEGMENTS = TRAIL.slice(1).flatMap((b, k) => {
-  const a = TRAIL[k];
-  const rA = a.i === undefined ? 0 : isBossNode(a.i) ? 40 : 26;
-  const rB = b.i === undefined ? 0 : isBossNode(b.i) ? 40 : 26;
-  const len = Math.hypot(b.x - a.x, b.y - a.y);
-  if (len <= rA + rB) return [];
-  const at = (d: number) => `${(a.x + ((b.x - a.x) * d) / len).toFixed(1)},${(a.y + 4 + ((b.y - a.y) * d) / len).toFixed(1)}`;
-  return [{ seg: k + 1, d: `M${at(rA + DOT_GAP / 2 - DOT / 2)}L${at(len - rB)}` }];
-});
+function segments(layout: PathLayout) {
+  const { trail } = layout;
+  return trail.slice(1).flatMap((b, k) => {
+    const a = trail[k];
+    const rA = a.i === undefined ? 0 : isBoss(layout, a.i) ? 40 : 26;
+    const rB = b.i === undefined ? 0 : isBoss(layout, b.i) ? 40 : 26;
+    const len = Math.hypot(b.x - a.x, b.y - a.y);
+    if (len <= rA + rB) return [];
+    const at = (d: number) => `${(a.x + ((b.x - a.x) * d) / len).toFixed(1)},${(a.y + 4 + ((b.y - a.y) * d) / len).toFixed(1)}`;
+    return [{ seg: k + 1, d: `M${at(rA + DOT_GAP / 2 - DOT / 2)}L${at(len - rB)}` }];
+  });
+}
 
 /**
  * Адал явдлын газрын зураг (DESIGN.md §8-04-ийг дээш 3 бүлэг болгосон). Давхарга: дэвсгэр → үүл → цэгэн зам → алхмын
@@ -62,6 +62,7 @@ const SEGMENTS = TRAIL.slice(1).flatMap((b, k) => {
  * `from` өгвөл баавгай тэр зангилаанаас `current` хүртэл замаар алхана; `null` бол баавгайг хараахан харуулахгүй.
  */
 export function PathMap({
+  layout,
   current,
   from,
   beaten,
@@ -69,6 +70,8 @@ export function PathMap({
   lessons,
   onNodePress,
 }: {
+  /** хичээлийн тооноос хамаарсан зам (pathLayout) */
+  layout: PathLayout;
   current: number;
   from: number | null;
   /** давсан тулааны хаалганы тоо (boss, 2-р бүлгийн зүүн/баруун гар) */
@@ -78,13 +81,14 @@ export function PathMap({
   lessons: readonly BookLesson[];
   onNodePress: (i: number, status: NodeStatus) => void;
 }) {
-  const curTrail = trailIndex(current);
+  const curTrail = trailIndex(layout, current);
+  const segs = useMemo(() => segments(layout), [layout]);
   const trail = useMemo(
     () => ({
-      done: SEGMENTS.filter((s) => s.seg <= curTrail).map((s) => s.d).join('') || 'M0,0',
-      todo: SEGMENTS.filter((s) => s.seg > curTrail).map((s) => s.d).join('') || 'M0,0',
+      done: segs.filter((s) => s.seg <= curTrail).map((s) => s.d).join('') || 'M0,0',
+      todo: segs.filter((s) => s.seg > curTrail).map((s) => s.d).join('') || 'M0,0',
     }),
-    [curTrail],
+    [segs, curTrail],
   );
   // 390 dp-ээс өргөн дэлгэцэд хажуугийн зай: ижил дэвсгэрийг хэвтээгээр сунгаж ард нь тавина (хурц газрын зураг голд)
   const width = Math.max(MAP_W, useWindowDimensions().width);
@@ -103,8 +107,8 @@ export function PathMap({
           <Sprite key={id} id={id} />
         ))}
 
-        {UNITS.map((k) => (
-          <View key={k} style={[styles.abs, { left: 0, top: unitTop(k) }]} pointerEvents="none">
+        {layout.units.map((u, k) => (
+          <View key={k} style={[styles.abs, { left: 0, top: u.top }]} pointerEvents="none">
             <Motion preset="driftA" style={[styles.abs, { left: 0, top: 150, opacity: 0.6 }]}>
               <Sprite id="map_cloud_a_64x22" />
             </Motion>
@@ -120,9 +124,9 @@ export function PathMap({
         </Svg>
 
         {/* Алхмууд: дээд талынх нь ард (эхэлж зурна) */}
-        {NODES.map((n) => {
+        {layout.nodes.map((n) => {
           const status = statusOf(n.i, current);
-          const boss = isBossNode(n.i);
+          const boss = n.kind === 'boss';
           const tile = tileFor(n, status);
           return (
             <Pressable
@@ -152,16 +156,17 @@ export function PathMap({
           );
         }).reverse()}
 
-        {UNITS.map((k) => (
-          <UnitProps key={k} k={k} current={current} />
+        {layout.units.map((u, k) => (
+          <UnitProps key={k} k={k} unit={u} layout={layout} current={current} />
         ))}
-        {GATES.map((_, g) => (
-          <GateFigure key={g} g={g} beaten={g < beaten} />
+        {layout.gates.map((_, g) => (
+          <GateFigure key={g} g={g} layout={layout} beaten={g < beaten} />
         ))}
 
         {from === null ? null : (
           <WalkingBear
             key={`${from}-${current}`}
+            layout={layout}
             from={from}
             to={current}
             label={`${S.path.youAreHere}: ${lessonTitle(subject, current, lessons)}`}
@@ -169,8 +174,8 @@ export function PathMap({
           />
         )}
 
-        {UNITS.map((k) => (
-          <View key={k} style={[styles.abs, { left: 0, top: unitTop(k) }]} pointerEvents="none">
+        {layout.units.map((u, k) => (
+          <View key={k} style={[styles.abs, { left: 0, top: u.top }]} pointerEvents="none">
             <Motion preset="flyA" style={[styles.abs, { left: 34, top: 600 }]}>
               <Butterfly />
             </Motion>
@@ -184,13 +189,13 @@ export function PathMap({
   );
 }
 
-/** Бүлгийн тэмдэг: нахиа (3), бэлэг (9), хэцүү сорил (12) зангилааны хажууд. */
-function UnitProps({ k, current }: { k: number; current: number }) {
-  const base = k * UNIT_SIZE;
-  const sapling = NODES[base + 3];
-  const gift = NODES[base + 9];
-  const myst = NODES[base + 12];
-  const start = NODES[base];
+/** Бүлгийн тэмдэг: нахиа, бэлэг, хэцүү сорил зангилааны хажууд. */
+function UnitProps({ k, unit, layout, current }: { k: number; unit: PathUnit; layout: PathLayout; current: number }) {
+  const { nodes } = layout;
+  const sapling = nodes[unit.sapling];
+  const gift = nodes[unit.gift];
+  const myst = nodes[unit.myst];
+  const start = nodes[unit.start];
 
   return (
     <>
@@ -224,10 +229,10 @@ function UnitProps({ k, current }: { k: number; current: number }) {
  * Тулааны хаалга: boss арал дээрээ (ялсан бол туг), түүний зүүн/баруун гар зангилааныхаа хажууд (замаас гадна,
  * давхцахгүй) зогсоно; давсан гар алга болно.
  */
-function GateFigure({ g, beaten }: { g: number; beaten: boolean }) {
-  const n = NODES[GATES[g]];
+function GateFigure({ g, layout, beaten }: { g: number; layout: PathLayout; beaten: boolean }) {
+  const n = layout.nodes[layout.gates[g]];
   const b = BOSSES[g];
-  const boss = isBossNode(n.i);
+  const boss = n.kind === 'boss';
   const golem = b.anim ? golems[b.anim] : null;
   const bs = frameSize(b.map, b.frames, b.cols);
   // тулаанд дайснууд баруун тийш (баавгай руу) хардаг; газрын зураг дээр баруун гар замын баруун талд тул зам руу
@@ -286,16 +291,28 @@ function GateFigure({ g, beaten }: { g: number; beaten: boolean }) {
 }
 
 /** Баавгай `from`-оос `to` хүртэл зангилаа бүрээр богино, зөөлөн алхана; зогсохдоо үл ялиг амьсгална. */
-function WalkingBear({ from, to, label, onPress }: { from: number; to: number; label: string; onPress: () => void }) {
+function WalkingBear({
+  layout,
+  from,
+  to,
+  label,
+  onPress,
+}: {
+  layout: PathLayout;
+  from: number;
+  to: number;
+  label: string;
+  onPress: () => void;
+}) {
   const reduce = useReducedMotion();
-  const start = standAt(from);
+  const start = standAt(layout, from);
   const x = useSharedValue(start.x);
   const y = useSharedValue(start.y);
   const lift = useSharedValue(0);
 
   useEffect(() => {
-    const end = standAt(to);
-    const pts = [...walkPoints(from, to).slice(0, -1), end];
+    const end = standAt(layout, to);
+    const pts = [...walkPoints(layout, from, to).slice(0, -1), end];
     if (reduce || from === to) {
       x.value = end.x;
       y.value = end.y;
@@ -317,7 +334,7 @@ function WalkingBear({ from, to, label, onPress }: { from: number; to: number; l
       ),
       pts.length,
     );
-  }, [from, to, reduce, x, y, lift]);
+  }, [layout, from, to, reduce, x, y, lift]);
 
   // хөл нь чулууны дээд хавтгайн төвд (y + 2)
   const animated = useAnimatedStyle(() => ({

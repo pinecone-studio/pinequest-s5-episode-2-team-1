@@ -2,7 +2,7 @@
 // хамгийн сүүлийн хуудаснаас хойших хичээл замд орохгүй: ном дутуу орсон бол зам тэнд дуусна.
 import type { BookLesson, LessonsResponse } from '../../../shared/types';
 import type { Subject } from '../config/game';
-import { lessonsAt } from '../domain/path';
+import { lessonAt } from '../domain/path';
 import type { Bindings } from '../env';
 import type { PageRange } from './grounding';
 
@@ -96,14 +96,14 @@ export async function loadLessons(env: Pick<Bindings, 'BOOKS'>, subject: Subject
 }
 
 /**
- * `node` зангилааны хичээлүүдийн сан дахь хуудсууд: эхний хичээлийн хуудаснаас дараагийн хичээлийн өмнөх
- * хуудас хүртэл (сүүлийн хичээл бол номын төгсгөл хүртэл). Boss эсвэл хуудасгүй хичээл бол null.
+ * `node` зангилааны хичээлийн сан дахь хуудсууд: хичээлийн хуудаснаас дараагийн хичээлийн өмнөх хуудас хүртэл
+ * (сүүлийн хичээл бол номын төгсгөл хүртэл). Boss эсвэл хуудасгүй хичээл бол null.
  */
 export function lessonPages(book: BookLessons, node: number): PageRange | null {
-  const at = lessonsAt(book.lessons, node);
-  const from = at[0]?.page;
-  if (from == null) return null;
-  const after = book.lessons.slice(book.lessons.indexOf(at[at.length - 1]) + 1);
+  const at = lessonAt(book.lessons, node);
+  const from = at?.page;
+  if (at == null || from == null) return null;
+  const after = book.lessons.slice(book.lessons.indexOf(at) + 1);
   const next = after.find((l) => l.page !== null)?.page ?? book.lastPage + 1;
   return { slug: book.slug, from: from + book.offset, to: Math.max(from, next - 1) + book.offset };
 }
