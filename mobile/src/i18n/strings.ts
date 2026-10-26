@@ -240,7 +240,7 @@ export const S = {
     level: (n: number) => `${n}-р шат`,
     xpLabel: (cur: number, need: number) => `XP ${cur}/${need}`,
     calendar: 'Хуанли ба профайл',
-    feed: 'Баавгайгаа хооллох: хичээл эхлэх',
+    feed: 'Өнөөдрийн хичээл: өмнө хийсэн хичээлээ 3 бодлогоор давтах',
   },
   welcome: {
     tagline: 'Өдөр бүр шинийг сурч,\nбаавгайтайгаа хамт өсөөрэй.',
@@ -253,6 +253,9 @@ export const S = {
     suggest: 'САНАЛ БОЛГОХ',
     hint: 'Өдөр бүр 5 асуулт',
     continue: 'Үргэлжлүүлэх',
+  },
+  review: {
+    pill: 'Өнөөдрийн хичээл',
   },
   lives: {
     label: (n: number, max: number, time: string | null) => `Амь ${n}/${max}${time ? `, дараагийн амь ${time}` : ''}`,
@@ -346,6 +349,7 @@ export const S = {
     nodeStay: (n: number) => `${n}-ээс доошгүй зөв хариулбал сурах замын дараагийн шат нээгдэнэ.`,
     stageUp: (next: string) => `${next} шат нээгдлээ! Түүнийг давбал дараагийн зангилаа.`,
     stageTop: 'Ахисан шатыг давлаа! ★★★',
+    reviewDone: 'Өнөөдрийн хичээлээ давтлаа!',
     stageStay: (n: number) => `${n}-ээс доошгүй зөв хариулбал дараагийн шат нээгдэнэ.`,
   },
   tutor: {
@@ -504,6 +508,7 @@ export const errorMessages: Record<ErrorCode | 'NETWORK' | 'TIMEOUT' | 'OFFLINE'
   BOSS_LOCKED: 'Энэ boss-той одоохондоо тулалдах боломжгүй',
   NODE_LOCKED: 'Энэ зангилаа хараахан нээгдээгүй',
   NO_LIVES: 'Амь дууссан. Шинэ амь нөхөгдөхийг хүлээнэ үү (2 цаг тутамд нэг).',
+  NO_REVIEW: 'Өнөөдрийн хичээл гарахын тулд эхлээд сурах замаар хичээл хийгээрэй.',
   STAGE_LOCKED: 'Өмнөх шатаа давж байж энэ шат нээгдэнэ',
   LLM_UNAVAILABLE: 'Асуулт үүсгэх үйлчилгээ тохируулаагүй байна',
   LLM_FAILED: 'Асуулт үүсгэж чадсангүй',

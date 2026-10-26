@@ -110,7 +110,7 @@ export async function startTask(
   if (stageNo !== null && stageNo > done + 1 && !admin) throw new ApiError(409, 'STAGE_LOCKED', 'Өмнөх шатаа давж байж энэ шат нээгдэнэ');
 
   const existing = await db
-    .prepare(`SELECT id, boss, node, stage FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress' ORDER BY id DESC LIMIT 1`)
+    .prepare(`SELECT id, boss, node, stage FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress' AND kind = 'path' ORDER BY id DESC LIMIT 1`)
     .bind(userId, subject, today)
     .first<{ id: number; boss: number | null; node: number | null; stage: number | null }>();
   if (existing && existing.boss === (boss ?? null) && existing.node === node && existing.stage === stageNo) {
@@ -174,7 +174,7 @@ export async function startTask(
       .prepare(
         `INSERT INTO tasks (user_id, subject, day, status, boss, lesson_ref, path_lessons, node, stage, tx, created_at)
          SELECT ?, ?, ?, 'in_progress', ?, ?, ?, ?, ?, ?, ?
-         WHERE NOT EXISTS (SELECT 1 FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress')`,
+         WHERE NOT EXISTS (SELECT 1 FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress' AND kind = 'path')`,
       )
       .bind(userId, subject, today, boss ?? null, lesson ? lessonRef(lesson) : null, pathLen, node, stageNo, tx, now, userId, subject, today),
     ...picked.map((q, i) => tq.bind(tx, i, q.id, tx)),
@@ -193,7 +193,7 @@ export async function startTask(
   if (!created) {
     // Зэрэг ирсэн хүсэлт энэ хичээлийн даалгаврыг түрүүлж үүсгэсэн бол түүнийг буцаана.
     const other = await db
-      .prepare(`SELECT id FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress'`)
+      .prepare(`SELECT id FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress' AND kind = 'path'`)
       .bind(userId, subject, today)
       .first<{ id: number }>();
     if (other) return loadTask(db, userId, other.id);
@@ -314,12 +314,12 @@ export async function completeTask(
   const after = registerTaskDay(normalized.state, today);
   const cc = await db
     .prepare(
-      `SELECT t.subject, t.boss, t.path_lessons, t.node, t.stage,
+      `SELECT t.subject, t.kind, t.boss, t.path_lessons, t.node, t.stage,
          (SELECT COUNT(*) FROM task_questions WHERE task_id = t.id AND correct = 1) AS n
        FROM tasks t WHERE t.id = ?`,
     )
     .bind(taskId)
-    .first<{ subject: Subject; boss: number | null; path_lessons: number | null; node: number | null; stage: number | null; n: number }>();
+    .first<{ subject: Subject; kind: string; boss: number | null; path_lessons: number | null; node: number | null; stage: number | null; n: number }>();
   if (!cc) throw new ApiError(404, 'NOT_FOUND', 'Даалгавар олдсонгүй');
   const correctCount = cc.n;
   const reward = taskReward(correctCount, after.streak);
@@ -332,7 +332,9 @@ export async function completeTask(
   const n = pathLessons(cc.path_lessons ?? 0);
   // Шатны даалгавар: давбал тэр шат тэмдэглэгдэнэ; зам зөвхөн одоогийн зангилааны ADVANCE_STAGE-аас дээш шатаар ахина.
   const stagePassed = cc.stage !== null && correctCount >= GAME.PATH_PASS_CORRECT;
-  const advances = cc.stage === null || (cc.stage >= ADVANCE_STAGE && cc.node === currentNode(n, path.level, path.bossesBeaten));
+  // Өнөөдрийн хичээл (давтах дасгал) замд нөлөөлөхгүй: зөвхөн оноо, XP, дараалал.
+  const review = cc.kind === 'review';
+  const advances = !review && (cc.stage === null || (cc.stage >= ADVANCE_STAGE && cc.node === currentNode(n, path.level, path.bossesBeaten)));
   const nodesNext = advances ? nodesAfter(n, nodes, path.bossesBeaten, correctCount, beatBoss) : nodes;
 
   const tx = newTx();
@@ -415,6 +417,7 @@ export async function completeTask(
     nodeUp: me.paths[cc.subject].level > path.level,
     stage: cc.stage,
     stagePassed,
+    review,
     me,
   };
 }

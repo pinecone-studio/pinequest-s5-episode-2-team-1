@@ -31,7 +31,14 @@ const LESSON_WALL = '#3b2a8f';
  * Сервер хүрэхгүй бол офлайн дасгал: апп доторх асуултаар, хариуг утсан дээр шалгана, XP/оноо цуглуулахгүй.
  */
 export default function TaskScreen() {
-  const { subject, boss, node, stage } = useLocalSearchParams<{ subject: Subject; boss?: string; node?: string; stage?: string }>();
+  const { subject, boss, node, stage, review } = useLocalSearchParams<{
+    subject: Subject;
+    boss?: string;
+    node?: string;
+    stage?: string;
+    /** өнөөдрийн хичээл: өмнө хийсэн хичээлээс 3 бодлого */
+    review?: string;
+  }>();
   const foe = boss === undefined ? undefined : BOSSES[Number(boss)];
   const { me, setMe } = useAuth();
   const online = useOnline();
@@ -88,7 +95,11 @@ export default function TaskScreen() {
     if (!isOnline()) return offline();
     try {
       const at = { ...(node ? { node: Number(node) } : {}), ...(stage ? { stage: Number(stage) } : {}) };
-      begin(await api<TaskDto>('/tasks', { body: foe ? { subject, gate: Number(boss) } : { subject, ...at } }));
+      begin(
+        review
+          ? await api<TaskDto>('/tasks/review', { body: { subject } })
+          : await api<TaskDto>('/tasks', { body: foe ? { subject, gate: Number(boss) } : { subject, ...at } }),
+      );
     } catch (e) {
       // Олон алдсан өмнөх даалгаврын салаа зам дуусаагүй бол түүн рүү.
       if (e instanceof ApiError && e.code === 'RECOVERY_REQUIRED') {
@@ -96,10 +107,10 @@ export default function TaskScreen() {
         return;
       }
       if (isOfflineError(e)) return offline();
-      const fatal = e instanceof ApiError && (e.code === 'NO_QUESTIONS' || e.code === 'BOSS_LOCKED' || e.code === 'NO_LIVES');
+      const fatal = e instanceof ApiError && (e.code === 'NO_QUESTIONS' || e.code === 'BOSS_LOCKED' || e.code === 'NO_LIVES' || e.code === 'NO_REVIEW');
       setError({ message: errorText(e), fatal });
     }
-  }, [subject, foe, boss, node, stage, tier, grade, size]);
+  }, [subject, foe, boss, node, stage, review, tier, grade, size]);
 
   useEffect(() => {
     void load();
@@ -251,7 +262,7 @@ export default function TaskScreen() {
               </Svg>
             </Pressable>
             <View style={styles.subjectPill}>
-              <Text style={styles.subjectText}>{practice ? S.offline.pill(subjectName) : subjectName}</Text>
+              <Text style={styles.subjectText}>{practice ? S.offline.pill(subjectName) : review ? S.review.pill : subjectName}</Text>
             </View>
           </View>
 
@@ -291,7 +302,7 @@ export default function TaskScreen() {
             <Animated.View key={q.id} entering={FadeInDown.duration(320)} style={{ gap: 18 }}>
               <View style={{ gap: 6 }}>
                 <Text style={styles.label}>
-                  {subjectName} · {S.lesson.questionN(shown, total)}
+                  {task?.title ?? subjectName} · {S.lesson.questionN(shown, total)}
                 </Text>
                 <Text accessibilityRole="header" style={[styles.prompt, { fontSize: promptSize, lineHeight: promptSize * 1.2 }]}>
                   {q.prompt}
