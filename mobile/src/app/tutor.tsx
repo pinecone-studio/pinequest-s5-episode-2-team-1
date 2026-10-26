@@ -141,7 +141,7 @@ export default function TutorScreen() {
       </View>
 
       {/* Gemini бэлэн болмогц нээгдэнэ: баавгай нээгдэж дууссаны дараа ярьж эхэлнэ (useBearTalk) */}
-      <LeafCurtain covered={talk.phase === 'connecting' && !talk.ready} label={S.tutor.connecting} />
+      <LeafCurtain covered={talk.phase === 'connecting' && !talk.ready} failed={talk.phase === 'ended'} label={S.tutor.connecting} />
     </View>
   );
 }
@@ -149,7 +149,8 @@ export default function TutorScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: WALL },
   // баавгайн тайзаас (дараа нь зурагдсан, flex: 1) дээр: эс бөгөөс самбарыг гүйлгэх хүрэлтийг тайз авна
-  board: { position: 'absolute', paddingHorizontal: 12, paddingBottom: 10, zIndex: 2 },
+  // хөшиг (LeafCurtain, zIndex 2)-ний ард: бэлдэж байхад самбарын бичиг мөчрийн дээгүүр гарахгүй
+  board: { position: 'absolute', paddingHorizontal: 12, paddingBottom: 10, zIndex: 1 },
   // web (утасны browser): самбарын төгсгөлд хүрэхэд гүйлгэлт хуудас руу шилжихгүй
   scroll: { overscrollBehavior: 'contain' } as object,
   topic: { fontFamily: fonts.semibold, fontSize: 13, lineHeight: 18, color: colors.lemon, marginBottom: 6 },

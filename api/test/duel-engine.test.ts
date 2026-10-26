@@ -13,8 +13,8 @@ const init: DuelInit = {
   subject: 'math',
   stake: 10,
   players: [
-    { id: A, username: 'aa', avatar: {} },
-    { id: B, username: 'bb', avatar: {} },
+    { id: A, username: 'aa', name: 'aa', avatar: {} },
+    { id: B, username: 'bb', name: 'bb', avatar: {} },
   ],
   // асуулт i-ийн зөв хариулт = i
   questions: [0, 1, 2].map((i) => ({ id: 100 + i, prompt: `Q${i}`, options: ['а', 'б', 'в', 'г'], correctIndex: i, explanation: `E${i}` })),

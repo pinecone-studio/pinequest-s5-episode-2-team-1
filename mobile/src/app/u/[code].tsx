@@ -86,7 +86,7 @@ export default function FriendProfileScreen() {
   const request = () => act(() => api<FriendActionResponse>('/friends', { body: { code } satisfies FriendBody }));
   const remove = () => act(() => api<FriendActionResponse>(`/friends/${code}`, { method: 'DELETE' }));
   const unfriend = async () => {
-    if (data && (await confirm(S.friends.removeConfirm(data.profile.username), S.friends.removeYes))) await remove();
+    if (data && (await confirm(S.friends.removeConfirm(data.profile.name), S.friends.removeYes))) await remove();
   };
 
   return (

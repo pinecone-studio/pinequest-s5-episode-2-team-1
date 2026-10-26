@@ -1,7 +1,8 @@
 import type { PublicProfile, SubjectSkill } from '@shared/types';
 import { StyleSheet, Text, View } from 'react-native';
+import { Avatar } from '@/components/Avatar';
 import { BracketBar } from '@/components/BracketBar';
-import { Enter, Sprite } from '@/components/pixel';
+import { Enter, FurContext, Sprite } from '@/components/pixel';
 import { PreviewStage } from '@/components/PreviewStage';
 import { Card, ProgressBar, SectionTitle } from '@/components/ui';
 import { colors, fonts, radius, subjectTheme } from '@/constants/theme';
@@ -23,12 +24,18 @@ export function ProfileView({ profile, index = 0 }: { profile: PublicProfile; in
   return (
     <>
       <Enter index={index}>
-        <PreviewStage bg={bg} outfit={outfit} name={S.profile.levelChip(profile.level)} alt={S.shop.previewAlt(outfit.name, bg.name)} />
+        {/* найзын профайл дээр баавгай нь тэр хүний сонгосон өнгөөр */}
+        <FurContext.Provider value={profile.look.fur ?? 'brown'}>
+          <PreviewStage bg={bg} outfit={outfit} name={S.profile.levelChip(profile.level)} alt={S.shop.previewAlt(outfit.name, bg.name)} />
+        </FurContext.Provider>
       </Enter>
 
       <Enter index={index + 1} style={styles.identity}>
+        <View style={styles.photo}>
+          <Avatar size={72} border={4} look={profile.look} label={S.avatar.preview(profile.name)} />
+        </View>
         <Text accessibilityRole="header" style={type.h2} numberOfLines={1}>
-          {profile.username}
+          {profile.name}
         </Text>
         <Text style={type.small}>{S.profile.meta(profile.grade, profile.joinedAt)}</Text>
         <View style={styles.bar}>
@@ -129,6 +136,8 @@ function SkillRow({ skill }: { skill: SubjectSkill }) {
 
 const styles = StyleSheet.create({
   identity: { alignItems: 'center', gap: 2 },
+  // профайлын зураг тайзны доод ирмэгт давхарлана
+  photo: { marginTop: -48, marginBottom: 6 },
   bar: { alignSelf: 'stretch', paddingHorizontal: 18, marginTop: 8 },
   tiles: { flexDirection: 'row', gap: 10 },
   tile: { flex: 1, height: 104, padding: 12, borderRadius: 22, backgroundColor: colors.white, justifyContent: 'space-between' },

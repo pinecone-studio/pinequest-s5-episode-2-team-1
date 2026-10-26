@@ -85,7 +85,7 @@ export default function DuelRoomScreen() {
         <View style={styles.versus}>
           <PlayerBadge player={mine} label={S.duel.you} highlight={view.reveal?.winnerId === mine.id} />
           <Text style={styles.vs}>VS</Text>
-          <PlayerBadge player={theirs} label={theirs.username} highlight={view.reveal?.winnerId === theirs.id} />
+          <PlayerBadge player={theirs} label={theirs.name} highlight={view.reveal?.winnerId === theirs.id} />
         </View>
       ) : null}
 
@@ -116,7 +116,7 @@ export default function DuelRoomScreen() {
         <QuestionView
           view={view}
           myId={myId}
-          opponentName={theirs?.username ?? ''}
+          opponentName={theirs?.name ?? ''}
           color={color}
           remainingMs={remainingMs}
           onAnswer={(choice) => {
