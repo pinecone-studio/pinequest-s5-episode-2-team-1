@@ -207,7 +207,7 @@ export const MATH7: readonly Template[] = [
       const list = [...values].sort(() => rng() - 0.5);
       const askMax = rng() < 0.5;
       const answer = askMax ? Math.max(...list) : Math.min(...list);
-      const decimal = (n: number) => (n / scale).toFixed(places);
+      const decimal = (n: number) => (n / scale).toFixed(places).replace('.', ',');
       return {
         prompt: `${list.map(decimal).join('; ')} тоонуудаас хамгийн ${askMax ? 'их' : 'бага'} аравтын бутархайг сонгоорой.`,
         options: [answer, ...list.filter((n) => n !== answer)].map(decimal),

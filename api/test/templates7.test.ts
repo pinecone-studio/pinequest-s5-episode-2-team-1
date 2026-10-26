@@ -14,7 +14,7 @@ function seeded(seed: number) {
   };
 }
 
-const num = (s: string) => Number(s.replace('−', '-'));
+const num = (s: string) => Number(s.replace('−', '-').replace(',', '.'));
 const gcd = (a: number, b: number): number => (b === 0 ? Math.abs(a) : gcd(b, a % b));
 
 function expressionValue(prompt: string): number {
@@ -52,7 +52,7 @@ function expectCorrect(id: string, prompt: string, option: string) {
     const [a, b] = [Number(match![1]), Number(match![2])];
     expect(answer).toBe(match![3] === 'ХИЕХ' ? gcd(a, b) : (a * b) / gcd(a, b));
   } else if (id === 'math7-compare-decimals') {
-    const values = prompt.split(' тоонуудаас')[0].split('; ').map(Number);
+    const values = prompt.split(' тоонуудаас')[0].split('; ').map(num);
     expect(answer).toBe(prompt.includes('хамгийн их') ? Math.max(...values) : Math.min(...values));
   }
 }
@@ -70,6 +70,9 @@ describe('Математик 7-ын бодлогын загвар', () => {
       expect(drafts.length).toBeGreaterThan(8);
       expect(validateDrafts(drafts, topicIds(1, 'math')).rejected).toEqual([]);
       for (const draft of drafts) expectCorrect(template.id, draft.prompt, draft.options[0]);
+      if (template.id === 'math7-compare-decimals') {
+        expect(drafts.flatMap((draft) => [draft.prompt, ...draft.options, draft.explanation]).join(' ')).not.toMatch(/\d\.\d/);
+      }
 
       const generated = generate([template], 5, level, seeded(level * 101));
       expect(generated).toHaveLength(5);
