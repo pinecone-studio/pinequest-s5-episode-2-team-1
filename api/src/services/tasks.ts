@@ -16,7 +16,8 @@ import { bookLessons, lessonPages } from './lessons';
 import { generate, levelOf, templatesFor } from '../templates';
 import { LESSON_COUNT_SQL, lessonRef, maybeRefill, pickArgs, pickSql, rangeArgs, refillLesson, refillPool, storeGenerated } from './pool';
 import { hasPendingRecovery, recoveryCertain, recoveryStatements } from './recovery';
-import { countTasksToday, getUserRow, loadMe, loadSubjectPaths, streakStateOf, syncStreak } from './users';
+import { spendLife } from '../domain/lives';
+import { countTasksToday, getUserRow, livesArgs, loadMe, loadSubjectPaths, requireLife, streakStateOf, syncStreak } from './users';
 
 type Ctx = { waitUntil(p: Promise<unknown>): void };
 
@@ -115,6 +116,8 @@ export async function startTask(
   if (existing && existing.boss === (boss ?? null) && existing.node === node && existing.stage === stageNo) {
     return loadTask(db, userId, existing.id);
   }
+  // Шинэ зангилаа руу орох бүрт нэг амь (дуусаагүй ижил даалгаврыг үргэлжлүүлэх үнэгүй); амьгүй бол хаалттай.
+  const lives = requireLife(user, now);
   if (existing) {
     // Өөр зангилаа, шат, хаалга сонговол өнөөдрийн дуусаагүй даалгаврыг орхино (оноо, XP зөвхөн дуусгахад олгогддог)
     await db.prepare(`DELETE FROM tasks WHERE id = ? AND status = 'in_progress'`).bind(existing.id).run();
@@ -176,6 +179,15 @@ export async function startTask(
       .bind(userId, subject, today, boss ?? null, lesson ? lessonRef(lesson) : null, pathLen, node, stageNo, tx, now, userId, subject, today),
     ...picked.map((q, i) => tq.bind(tx, i, q.id, tx)),
     ...picked.map((q) => seen.bind(userId, q.id, now, tx)),
+    // shortcut: зэрэг эхлүүлсэн хоёр хичээлийн даалгавар нэг амь зарцуулж болно (утга нь шууд бичигдэнэ); амийг
+    // харьцангуйгаар (lives - 1) бичих хэрэгтэй болбол тоолуурыг SQL-д шилжүүлнэ.
+    ...(admin
+      ? []
+      : [
+          db
+            .prepare(`UPDATE users SET lives = ?, lives_at = ? WHERE id = ? AND ${taskId} IS NOT NULL`)
+            .bind(...livesArgs(spendLife(lives, now)), userId, tx),
+        ]),
   ]);
   const created = await db.prepare('SELECT id FROM tasks WHERE tx = ?').bind(tx).first<{ id: number }>();
   if (!created) {

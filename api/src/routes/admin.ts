@@ -184,6 +184,18 @@ adminRoutes.post('/debug/users/:id/path', async (c) => {
   return c.json({ ok: true });
 });
 
+/** e2e-д амийг шууд тавина: `lives` ба нөхөгдөлтийн тоолуурын эхлэл (`livesAt`, ms; дүүрэн бол null). */
+adminRoutes.post('/debug/users/:id/lives', async (c) => {
+  const body = await readBody(
+    c,
+    z.object({ lives: z.number().int().min(0).max(GAME.LIVES.MAX), livesAt: z.number().int().nullable().optional() }),
+  );
+  await c.env.DB.prepare('UPDATE users SET lives = ?, lives_at = ? WHERE id = ?')
+    .bind(body.lives, body.lives >= GAME.LIVES.MAX ? null : (body.livesAt ?? Date.now()), parseId(c.req.param('id')))
+    .run();
+  return c.json({ ok: true });
+});
+
 /** Оноо ба point_ledger-ийн нийлбэр зөрсөн хэрэглэгчид (e2e шалгалтад). */
 adminRoutes.get('/audit', async (c) => {
   const { results } = await c.env.DB.prepare(

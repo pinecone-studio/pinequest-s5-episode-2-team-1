@@ -254,6 +254,10 @@ export const S = {
     hint: 'Өдөр бүр 5 асуулт',
     continue: 'Үргэлжлүүлэх',
   },
+  lives: {
+    label: (n: number, max: number, time: string | null) => `Амь ${n}/${max}${time ? `, дараагийн амь ${time}` : ''}`,
+    full: 'Дүүрэн',
+  },
   path: {
     subjectMenu: 'Хичээл солих',
     streak: 'Дараалал',
@@ -499,6 +503,7 @@ export const errorMessages: Record<ErrorCode | 'NETWORK' | 'TIMEOUT' | 'OFFLINE'
   CODE_NOT_FOUND: 'Ийм кодтой тулаан олдсонгүй. Кодоо шалгаад дахин оролдоорой.',
   BOSS_LOCKED: 'Энэ boss-той одоохондоо тулалдах боломжгүй',
   NODE_LOCKED: 'Энэ зангилаа хараахан нээгдээгүй',
+  NO_LIVES: 'Амь дууссан. Шинэ амь нөхөгдөхийг хүлээнэ үү (2 цаг тутамд нэг).',
   STAGE_LOCKED: 'Өмнөх шатаа давж байж энэ шат нээгдэнэ',
   LLM_UNAVAILABLE: 'Асуулт үүсгэх үйлчилгээ тохируулаагүй байна',
   LLM_FAILED: 'Асуулт үүсгэж чадсангүй',
