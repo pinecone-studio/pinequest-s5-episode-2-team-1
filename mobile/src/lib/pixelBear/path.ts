@@ -120,6 +120,19 @@ const BASE_UNIT = world.unitSize;
 
 /** world.json-ийн зиг-заг (mapgen_world.py): хөрш зангилаа хэвтээгээр 84 dp зайтай тул давхцахгүй. */
 const ZIGZAG = [112, 196, 280, 196];
+
+/**
+ * Бүлгийн `k`-р алхмын x (0 = бүлгийн эхлэл, `m` = boss). Анхны зураг шиг: бүлэг 112-оос эхэлж зиг-загаар өгсөнө,
+ * boss-ын өмнөх 3 алхам үргэлж 196 (зүүн гар) → 280 (баруун гар) → 196 (boss) — гарын дүрс зангилааныхаа зүүн, баруун
+ * талд (GateFigure) замаас гадна зогсоно. Хоорондох алхам 196 болох бол (дараалсан хоёр нь нэг баганад) өмнөхийнхөө
+ * эсрэг тал руу шилжинэ: хөрш хоёр зангилаа хэзээ ч нэг баганад биш, нэг баганын хоёр зангилаа дор хаяж 2 алхам зайтай.
+ */
+function zigzagX(k: number, m: number): number {
+  if (k >= m - 2) return k === m - 1 ? 280 : 196;
+  const x = ZIGZAG[k % 4];
+  if (k === m - 3 && x === 196) return ZIGZAG[(k - 1) % 4] === 112 ? 280 : 112;
+  return x;
+}
 /**
  * Хоёр зангилааны хоорондох хамгийн бага босоо зай (dp). Зиг-загийн оройн хоёр талын зангилаа ижил x-тэй, хоёр алхмын
  * зайтай: 2 · 28 = 56 ≥ дарах талбай (56), чулуу + од (−14…+32 = 46). Хичээл олон бол газрын зураг уртасна.
@@ -127,6 +140,11 @@ const ZIGZAG = [112, 196, 280, 196];
 const MIN_STEP = 28;
 /** Boss-ын арал (72×54) том тул түүний доорх ижил баганын зангилаанаас нэмэлт зай (dp). */
 const BOSS_GAP = 8;
+/**
+ * Boss-ын дүрс (≤ 86 dp) ба "BOSS" шошго (22 dp) арлаасаа дээш ~110 dp эзэлнэ: дараагийн бүлгийн эхний зангилаа
+ * (дарах талбайн доод зах +32) түүнээс дээгүүр эхэлнэ.
+ */
+const BOSS_CLEAR = 142;
 
 /**
  * `n` хичээлтэй замын газрын зураг: бүлэг бүрийн хичээлүүдийг world.json-ийн зиг-загаар тэнцүү босоо алхмаар
@@ -140,7 +158,15 @@ export function pathLayout(n: number): PathLayout {
   const steps = bosses.map((boss, u) => boss - (u === 0 ? 0 : bosses[u - 1] + 1));
   const bases = Array.from({ length: UNIT_COUNT }, (_, u) => BASE.filter((t) => t.i !== undefined && Math.floor(t.i / BASE_UNIT) === u));
   const span = (u: number) => bases[u][0].y - bases[u][BASE_UNIT - 1].y;
-  const scale = Math.max(1, ...steps.map((m, u) => (m * MIN_STEP + BOSS_GAP) / span(u)));
+  /** өмнөх бүлгийн boss ба энэ бүлгийн эхлэлийн хоорондох зай (world.json-д) */
+  const gap = (u: number) => (u === 0 ? Infinity : bases[u - 1][BASE_UNIT - 1].y - bases[u][0].y);
+  // Бүлэг бүрт алхам ≥ MIN_STEP, өмнөх boss-ын дээр BOSS_CLEAR байх хамгийн бага сунгалт
+  const need = (u: number) => {
+    const len = steps[u] * MIN_STEP + BOSS_GAP;
+    const s = len / span(u);
+    return s * gap(u) >= BOSS_CLEAR ? s : (len + BOSS_CLEAR) / (span(u) + gap(u));
+  };
+  const scale = Math.max(1, ...steps.map((_, u) => need(u)));
   const sy = (y: number) => Math.round(y * scale);
   const nodes: PathNode[] = [];
   const trail: TrailPoint[] = [];
@@ -159,11 +185,10 @@ export function pathLayout(n: number): PathLayout {
       const bridge = BASE.slice(BASE.findIndex((t) => t.i === u * BASE_UNIT - 1) + 1, BASE.findIndex((t) => t.i === u * BASE_UNIT));
       trail.push(...bridge.map((t) => ({ x: t.x, y: sy(t.y) })));
     }
-    // boss нь зиг-загийн дунд баганад (196), бүлгийн эхэнд хүрэх хүртэл доош тоолно
-    const y0 = sy(bases[u][0].y);
+    const y0 = u === 0 ? sy(bases[u][0].y) : Math.min(sy(bases[u][0].y), nodes[nodes.length - 1].y - BOSS_CLEAR);
     const step = (y0 - sy(bases[u][BASE_UNIT - 1].y) - BOSS_GAP) / Math.max(1, m);
     for (let k = 0; k <= m; k++) {
-      const p = { x: ZIGZAG[(((k - m + 1) % 4) + 4) % 4], y: Math.round(y0 - k * step - (k === m ? BOSS_GAP : 0)) };
+      const p = { x: zigzagX(k, m), y: Math.round(y0 - k * step - (k === m ? BOSS_GAP : 0)) };
       nodes.push({ i: start + k, ...p, kind: kind(start + k) });
       trail.push({ ...p, i: start + k });
     }

@@ -265,9 +265,9 @@ function GateFigure({ g, layout, beaten }: { g: number; layout: PathLayout; beat
   const flip = b.role === 'right';
   // биеийн гол: PixelLab дайсны frame-д довтолгооны эффект нэг тал руу сунадаг
   const cx = golem ? (flip ? bs.width - golem.cx : golem.cx) : bs.width / 2;
-  // зүүн гар зангилааныхаа зүүн талд, баруун гар баруун талд (хөрш зангилаа, тэдгээрийн 56 dp дарах талбайгаас гадна;
+  // зүүн гар зангилааныхаа зүүн талд, баруун гар баруун талд, өөрийн чулуунаас гадна (хөрш зангилаа, тэдгээрийн 56 dp дарах талбайгаас гадна;
   // 320 dp дэлгэцэд ч харагдахаар захаас зайтай)
-  const x = boss ? n.x : b.role === 'left' ? n.x - 84 : n.x + 44;
+  const x = boss ? n.x : b.role === 'left' ? n.x - 84 : n.x + 56;
   const half = (golem ? golem.bw : bs.width) / 2;
   // шошго: boss-ынх голд, гарынх биеийн гадна зах руу тэгшилнэ (дэлгэцийн захаас гарахгүй)
   const tagBox =
