@@ -76,6 +76,12 @@ describe('validateDrafts', () => {
     expect([...d.options].sort()).toEqual(['23', '4', '5', '6']);
   });
 
+  it('"1 : 2" гэх мэт харьцааны сонголтыг угтвар гэж тасдахгүй', () => {
+    const options = ['13 : 12', '1 : 2', '2 : 3 ба 3 : 5', '4 : 5 ба 5 : 4'];
+    const [d] = validateDrafts([good({ options })], [], () => 0.999).drafts;
+    expect([...d.options].sort()).toEqual([...options].sort());
+  });
+
   it('questions массив байхгүй бол бүгд татгалзана', () => {
     expect(validateDrafts({ foo: 1 }, []).drafts).toEqual([]);
     expect(validateDrafts(null, []).rejected[0].reason).toBe('no questions array');
