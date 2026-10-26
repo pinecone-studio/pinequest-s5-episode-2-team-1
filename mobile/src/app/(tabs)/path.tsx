@@ -8,7 +8,7 @@ import Svg, { Path } from 'react-native-svg';
 import { api } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
 import { useTabBarSpace } from '@/components/BottomNav';
-import { MAP_H, PathMap } from '@/components/PathMap';
+import { PathMap } from '@/components/PathMap';
 import { PressScale } from '@/components/pixel';
 import { TopBar } from '@/components/TopBar';
 import { colors, fonts, hardShadow, radius } from '@/constants/theme';
@@ -88,7 +88,7 @@ export default function PathScreen() {
   const scrolledOnce = useRef(false);
   useEffect(() => {
     if (userId === undefined) return; // ScrollView нь me ирсний дараа л mount болно
-    const total = MAP_H + CTA_SPACE + barSpace;
+    const total = layout.height + CTA_SPACE + barSpace;
     const y = Math.max(0, Math.min(total - viewH, layout.nodes[current].y - viewH * 0.55));
     scroll.current?.scrollTo({ y, animated: scrolledOnce.current });
     scrolledOnce.current = true;
@@ -130,7 +130,7 @@ export default function PathScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingBottom: CTA_SPACE + barSpace }]}
         showsVerticalScrollIndicator={false}
       >
-        <PathMap layout={layout} current={current} from={from} beaten={path?.bossesBeaten ?? 0} subject={subject} lessons={lessons} onNodePress={onNode} />
+        <PathMap layout={layout} current={current} stages={path?.stages ?? {}} from={from} beaten={path?.bossesBeaten ?? 0} subject={subject} lessons={lessons} onNodePress={onNode} />
       </ScrollView>
 
       <View style={[styles.header, { top: insets.top + 6 }]} pointerEvents="box-none">

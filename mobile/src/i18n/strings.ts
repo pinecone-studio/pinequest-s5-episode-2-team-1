@@ -276,6 +276,7 @@ export const S = {
     stageHint: 'Дунд шатыг давахад дараагийн зангилаа нээгдэнэ. Ахисан бол нэмэлт сорил.',
     stageLocked: 'Өмнөх шатаа давж байж нээгдэнэ',
     stageDone: 'Давсан',
+    stars: (n: number, of: number) => `${n}/${of} од`,
     stageOpen: 'Эхлэх',
     close: 'Хаах',
     youAreHere: 'Та энд байна',
