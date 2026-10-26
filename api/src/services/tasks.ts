@@ -2,7 +2,7 @@ import type { AnswerResponse, FlagResponse, Me, TaskDto, TaskResult } from '../.
 import { GAME, type Subject, type Tier } from '../config/game';
 import { bossBlock, bossWon } from '../domain/boss';
 import { levelFromXp } from '../domain/level';
-import { currentNode, gateNodes, gateOf, nodesAfter, pathLessons } from '../domain/path';
+import { currentNode, gateNodes, gateOf, nodesAfter, pathLessons, taskPathLessons } from '../domain/path';
 import { ADVANCE_STAGE, STAGES, stageDone } from '../../../shared/path';
 import { taskReward } from '../domain/rewards';
 import { shieldBlock } from '../domain/shield';
@@ -18,6 +18,9 @@ import { LESSON_COUNT_SQL, lessonRef, maybeRefill, pickArgs, pickSql, rangeArgs,
 import { hasPendingRecovery, recoveryCertain, recoveryStatements } from './recovery';
 import { spendLife } from '../domain/lives';
 import { countTasksToday, getUserRow, livesArgs, loadMe, loadSubjectPaths, requireLife, streakStateOf, syncStreak } from './users';
+
+/** Номын сан (замын урт номын хичээлийн тооноос хамаарна). */
+type Books = Pick<Bindings, 'BOOKS'>;
 
 type Ctx = { waitUntil(p: Promise<unknown>): void };
 
@@ -234,7 +237,7 @@ async function findTaskQuestion(db: D1Database, userId: number, taskId: number, 
 }
 
 /** choice: 0–3, эсвэл -1 = "Асуулт буруу байна" (алгассан). */
-async function recordChoice(db: D1Database, userId: number, taskId: number, row: AnswerRow, choice: number, now: number) {
+async function recordChoice(db: D1Database, books: Books, userId: number, taskId: number, row: AnswerRow, choice: number, now: number) {
   const correct = choice === row.correct_index;
   const upd = await db
     .prepare('UPDATE task_questions SET choice = ?, correct = ?, answered_at = ? WHERE task_id = ? AND position = ? AND choice IS NULL')
@@ -248,12 +251,13 @@ async function recordChoice(db: D1Database, userId: number, taskId: number, row:
     .first<{ open: number; wrong: number }>();
   const finished = (count?.open ?? 0) === 0;
   const recovery = finished ? await recoveryStatements(db, userId, taskId, now) : [];
-  const result = finished ? await completeTask(db, userId, taskId, now, recovery) : undefined;
+  const result = finished ? await completeTask(db, books, userId, taskId, now, recovery) : undefined;
   return { correct, finished, result, recovery: recovery.length > 0, wrong: count?.wrong ?? 0 };
 }
 
 export async function answerTask(
   db: D1Database,
+  books: Books,
   userId: number,
   taskId: number,
   questionId: number,
@@ -261,7 +265,7 @@ export async function answerTask(
   now = Date.now(),
 ): Promise<AnswerResponse> {
   const row = await findTaskQuestion(db, userId, taskId, questionId);
-  const r = await recordChoice(db, userId, taskId, row, choice, now);
+  const r = await recordChoice(db, books, userId, taskId, row, choice, now);
   // Буруу бол зөв хариу, тайлбарыг зөвхөн салаа зам заавал нээгдэх үед (2 дахь алдаанаас) хэлэхгүй: тэнд өөрөө
   // дахин бодно. Ганц алдаатай бол салаа зам нээгдэхгүй тул зөв хариуг тэр дор нь харуулна.
   const reveal = r.correct || !recoveryCertain(r.wrong) ? { correctIndex: row.correct_index, explanation: row.explanation } : {};
@@ -271,6 +275,7 @@ export async function answerTask(
 /** Асуултыг flagged болгоно (дахин хэнд ч гарахгүй); даалгаврын дунд бол алгасна. */
 export async function flagQuestion(
   db: D1Database,
+  books: Books,
   userId: number,
   questionId: number,
   taskId: number | undefined,
@@ -292,7 +297,7 @@ export async function flagQuestion(
     .first<AnswerRow>();
   // Хариулсан эсвэл дууссан даалгаварт flag л тэмдэглэгдэнэ.
   if (!row || row.user_id !== userId || row.status !== 'in_progress' || row.choice !== null) return { ok: true, finished: false };
-  const r = await recordChoice(db, userId, taskId, row, -1, now);
+  const r = await recordChoice(db, books, userId, taskId, row, -1, now);
   return { ok: true, finished: r.finished, result: r.result, recovery: r.recovery };
 }
 
@@ -303,6 +308,7 @@ export async function flagQuestion(
 /** `extra` = нэг batch-д хамт бичих statement-ууд (салаа зам). */
 export async function completeTask(
   db: D1Database,
+  books: Books,
   userId: number,
   taskId: number,
   now = Date.now(),
@@ -328,8 +334,10 @@ export async function completeTask(
   // давхар тоолохоос сэргийлнэ).
   const beatBoss = cc.boss != null && cc.boss === path.bossesBeaten && bossWon(correctCount);
   const nodes = path.level - 1;
-  // Даалгавар эхлэх үеийн замын урт (дунд нь ном солигдсон ч тэр зангилааг дуусгана)
-  const n = pathLessons(cc.path_lessons ?? 0);
+  // Даалгавар эхлэх үеийн замын урт (дунд нь ном солигдсон ч тэр зангилааг дуусгана); 0020-оос өмнө эхэлсэнд одоогийн номынх
+  const bookCount =
+    cc.path_lessons === null ? ((await bookLessons(books, cc.subject, user.grade).catch(() => null))?.lessons.length ?? 0) : 0;
+  const n = taskPathLessons(cc.path_lessons, bookCount);
   // Шатны даалгавар: давбал тэр шат тэмдэглэгдэнэ; зам зөвхөн одоогийн зангилааны ADVANCE_STAGE-аас дээш шатаар ахина.
   const stagePassed = cc.stage !== null && correctCount >= GAME.PATH_PASS_CORRECT;
   // Өнөөдрийн хичээл (давтах дасгал) замд нөлөөлөхгүй: зөвхөн оноо, XP, дараалал.
