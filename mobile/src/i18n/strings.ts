@@ -78,7 +78,6 @@ export const S = {
     password: 'Нууц үг',
     grade: 'Хэддүгээр ангид сурдаг вэ?',
     gradeChip: (g: number) => `${g}-р анги`,
-    tierHint: (t: number) => `Түвшин ${t}-ийн асуулт, тулаанд орно`,
     login: 'Нэвтрэх',
     register: 'Бүртгүүлэх',
     toRegister: 'Шинэ хэрэглэгч үү? Бүртгүүлэх',
@@ -97,7 +96,6 @@ export const S = {
     upset: 'Чамд гомдлоо!',
     /** баавгайг ойрхон товшиход */
     ouch: 'Ёоё, өвдөж байна!',
-    tier: (tier: number, grade: number) => `Түвшин ${tier} · ${grade}-р анги`,
     level: (level: number) => `${level}-р шат`,
     xpProgress: (cur: number, need: number) => `${cur} / ${need} туршлага`,
     points: 'Оноо',
@@ -258,7 +256,6 @@ export const S = {
   },
   path: {
     subjectMenu: 'Хичээл солих',
-    level: (tier: number) => `Түвшин ${tier}`,
     streak: 'Дараалал',
     chapterOver: (n: number) => `${n}-Р БҮЛЭГ`,
     lessonOf: (k: number, total: number) => `Хичээл ${k} / ${total}`,
@@ -276,6 +273,12 @@ export const S = {
     bossWon: 'Ялсан',
     locked: 'Түгжээтэй. Өмнөх түвшнээ дуусга.',
     done: 'Дууссан',
+    /** зангилааны 3 шат (бодлогын хүнд) */
+    stages: ['Суурь', 'Дунд', 'Ахисан'],
+    stars: (n: number, of: number) => `${n}/${of} од`,
+    /** popover-ын товч: тухайн зангилааны дараагийн шат */
+    startStage: (stage: string, xp: number) => `ЭХЛЭХ · ${stage} +${xp} XP`,
+    allStages: 'ГУРВАН ШАТ ДАВСАН ★★★',
     youAreHere: 'Та энд байна',
     mapLabel: 'Сурах замын газрын зураг',
   },
@@ -337,6 +340,9 @@ export const S = {
     talk: 'Алдсан бодлогоо баавгайтай ярилцах',
     nodeUp: 'Сурах замын дараагийн шат нээгдлээ!',
     nodeStay: (n: number) => `${n}-ээс доошгүй зөв хариулбал сурах замын дараагийн шат нээгдэнэ.`,
+    stageUp: (next: string) => `${next} шат нээгдлээ! Түүнийг давбал дараагийн зангилаа.`,
+    stageTop: 'Ахисан шатыг давлаа! ★★★',
+    stageStay: (n: number) => `${n}-ээс доошгүй зөв хариулбал дараагийн шат нээгдэнэ.`,
   },
   tutor: {
     title: 'Баавгайтай ярилцах',
@@ -492,6 +498,8 @@ export const errorMessages: Record<ErrorCode | 'NETWORK' | 'TIMEOUT' | 'OFFLINE'
   OWN_DUEL: 'Өөрийнхөө сорилтыг хүлээн авах боломжгүй',
   CODE_NOT_FOUND: 'Ийм кодтой тулаан олдсонгүй. Кодоо шалгаад дахин оролдоорой.',
   BOSS_LOCKED: 'Энэ boss-той одоохондоо тулалдах боломжгүй',
+  NODE_LOCKED: 'Энэ зангилаа хараахан нээгдээгүй',
+  STAGE_LOCKED: 'Өмнөх шатаа давж байж энэ шат нээгдэнэ',
   LLM_UNAVAILABLE: 'Асуулт үүсгэх үйлчилгээ тохируулаагүй байна',
   LLM_FAILED: 'Асуулт үүсгэж чадсангүй',
   TUTOR_UNAVAILABLE: 'Баавгай одоо ярих боломжгүй байна. Дараа дахин оролдоно уу.',

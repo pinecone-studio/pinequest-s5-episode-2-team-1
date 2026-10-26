@@ -3,10 +3,11 @@ import { z } from 'zod';
 import type { AuthResponse, LessonsResponse, MeResponse, MyProfileResponse } from '../../../shared/types';
 import { DEFAULT_EQUIPPED, GAME, SUBJECTS } from '../config/game';
 import { tierForGrade } from '../domain/level';
+import { ubDay } from '../domain/time';
 import type { AppEnv } from '../env';
 import { hashPassword, newSessionToken, normalizeUsername, sha256Hex, usernameError, verifyPassword } from '../lib/auth';
 import { ApiError, readBody } from '../lib/errors';
-import { bearerToken, createSession, requireAuth } from '../lib/session';
+import { bearerToken, createSession, requireAuth, trackActive } from '../lib/session';
 import { loadLessons } from '../services/lessons';
 import { myProfile, rotateProfileCode, setBearLook } from '../services/profiles';
 import { loadMe } from '../services/users';
@@ -39,7 +40,7 @@ authRoutes.post('/register', async (c) => {
   const token = newSessionToken();
   const tokenHash = await sha256Hex(token);
 
-  // Хэрэглэгч, эхлэх онооны ledger, session-ыг нэг batch-аар (атомик) үүсгэнэ.
+  // Хэрэглэгч, эхлэх онооны ledger, session, өнөөдрийн идэвх (dashboard)-ийг нэг batch-аар (атомик) үүсгэнэ.
   try {
     await db.batch([
       db
@@ -54,6 +55,9 @@ authRoutes.post('/register', async (c) => {
       db
         .prepare('INSERT INTO sessions (token_hash, user_id, created_at) SELECT ?, id, ? FROM users WHERE username = ?')
         .bind(tokenHash, now, username),
+      db
+        .prepare('INSERT INTO user_activity (user_id, day, first_at) SELECT id, ?, ? FROM users WHERE username = ?')
+        .bind(ubDay(now), now, username),
     ]);
   } catch (e) {
     if (String(e).includes('UNIQUE')) throw new ApiError(409, 'USERNAME_TAKEN', 'Энэ нэр бүртгэлтэй байна');
@@ -78,6 +82,7 @@ authRoutes.post('/login', async (c) => {
     throw new ApiError(401, 'INVALID_CREDENTIALS', 'Нэр эсвэл нууц үг буруу');
   }
   const token = await createSession(db, user.id);
+  trackActive(c, user.id);
   return c.json<AuthResponse>({ token, me: await loadMe(db, user.id) });
 });
 

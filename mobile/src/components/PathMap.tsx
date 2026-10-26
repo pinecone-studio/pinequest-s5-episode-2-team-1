@@ -1,3 +1,4 @@
+import { STAGES, stageDone } from '@shared/path';
 import type { BookLesson, Subject } from '@shared/types';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
@@ -28,6 +29,10 @@ import {
   trailIndex,
 } from '@/lib/pixelBear/path';
 
+/** Зангилааны одны шар, хэмжээ (dp): 3 од нь алхмын чулууны (48 dp) өргөнөөс хэтрэхгүй */
+const STAR_GOLD = '#FFC93C';
+const STAR = 12;
+const STARS_W = STAR * 3 + 2;
 /** Дарах талбай (dp): 16 зангилаатай бүлэгт хөршүүд хэвтээгээр 84 dp зайтай (mapgen_world.py DESIGN); хичээл олон бол ойртоно */
 const HIT = 56;
 /** Газрын зураг дээрх boss-ын томрол: бусад дайснаас илүү сүрлэг; баруун гар (бараан) харанхуй голын дэргэд тод харагдахаар */
@@ -72,6 +77,7 @@ export const useMapScale = () => useWindowDimensions().width / MAP_W;
 export function PathMap({
   layout,
   current,
+  stages,
   ring,
   beaten,
   subject,
@@ -82,7 +88,9 @@ export function PathMap({
   /** хичээлийн тооноос хамаарсан зам (pathLayout) */
   layout: PathLayout;
   current: number;
-  /** одоогийн зангилааны цагирагийн дүүрсэн хэсэг (0–3) */
+  /** зангилаа → давсан шат (SubjectPath.stages): од болж харагдана */
+  stages: Readonly<Record<number, number>>;
+  /** одоогийн зангилааны цагирагийн дүүрсэн хэсэг = давсан шат (0–3) */
   ring: number;
   /** давсан тулааны хаалганы тоо (boss, 2-р бүлгийн зүүн/баруун гар) */
   beaten: number;
@@ -94,6 +102,8 @@ export function PathMap({
   onNodePress: (i: number, status: NodeStatus) => void;
 }) {
   const curTrail = trailIndex(layout, current);
+  /** Хичээлийн зангилааны од = давсан шат (хаалга, түгжээтэй зангилаанд байхгүй) */
+  const starsAt = (i: number) => (i > current || layout.gates.includes(i) ? 0 : stageDone(stages, i, current));
   const segs = useMemo(() => segments(layout), [layout]);
   const trail = useMemo(
     () => ({
@@ -130,13 +140,14 @@ export function PathMap({
           const status = statusOf(n.i, current);
           const boss = n.kind === 'boss';
           const tile = tileFor(n, status);
+          const stars = starsAt(n.i);
           return (
             <Pressable
               key={n.i}
               accessibilityRole="button"
               accessibilityLabel={`${n.i + 1}. ${lessonTitle(subject, n.i, lessons)}, ${
                 status === 'done' ? S.path.done : status === 'current' ? S.path.youAreHere : S.path.locked
-              }`}
+              }${stars ? `, ${S.path.stars(stars, STAGES)}` : ''}`}
               accessibilityState={{ disabled: status === 'lock' }}
               onPress={() => onNodePress(n.i, status)}
               style={[
@@ -161,6 +172,18 @@ export function PathMap({
               {status === 'current' && !boss ? <ProgressRing filled={ring} /> : null}
             </Pressable>
           );
+        })}
+
+        {/* Од бүх алхмын дээр: доорх зангилааны ард орохгүй */}
+        {layout.nodes.map((n) => {
+          const stars = starsAt(n.i);
+          return stars ? (
+            <View key={`s${n.i}`} style={[styles.stars, { left: n.x - STARS_W / 2, top: n.y + 20 }]} pointerEvents="none">
+              {Array.from({ length: STAGES }, (_, k) => (
+                <Star key={k} on={k < stars} />
+              ))}
+            </View>
+          ) : null;
         })}
 
         {layout.units.map((u, k) => (
@@ -348,7 +371,8 @@ function GateFigure({ g, layout, beaten }: { g: number; layout: PathLayout; beat
 }
 
 /**
- * Duolingo маягийн цагираг: одоогийн чулууны эргэн тойронд 3 хэсэг, дүүрсэн нь лайм. Дээрээс цагийн зүүний дагуу.
+ * Duolingo маягийн цагираг: одоогийн чулууны эргэн тойронд 3 хэсэг (Суурь, Дунд, Ахисан шат), давсан нь лайм.
+ * Дээрээс цагийн зүүний дагуу.
  */
 function ProgressRing({ filled }: { filled: number }) {
   const { rx, ry, w, gap } = RING;
@@ -372,6 +396,21 @@ function ProgressRing({ filled }: { filled: number }) {
   );
 }
 
+/** Шатны од: давсан бол шар, үгүй бол бүдэг. */
+function Star({ on }: { on: boolean }) {
+  return (
+    <Svg width={STAR} height={STAR} viewBox="0 0 12 12" style={on ? null : styles.starOff}>
+      <Path
+        d="M6 0.8l1.6 3.4 3.7.4-2.8 2.5.8 3.7L6 9 2.7 10.8l.8-3.7L.7 4.6l3.7-.4z"
+        fill={on ? STAR_GOLD : colors.white}
+        stroke={colors.ink}
+        strokeWidth={0.9}
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
 /** 2 фреймтэй далавч дэвэх эрвээхэй (steps(2) .32s). */
 function Butterfly() {
   const reduce = useReducedMotion();
@@ -391,6 +430,9 @@ function Butterfly() {
 export { MAP_H, MAP_W };
 
 const styles = StyleSheet.create({
+  // зангилааны доор 3 од: давсан шат тод, үлдсэн нь бүдэг
+  stars: { position: 'absolute', width: STARS_W, flexDirection: 'row', justifyContent: 'center', gap: 1 },
+  starOff: { opacity: 0.45 },
   map: { width: MAP_W, height: MAP_H, overflow: 'hidden' },
   abs: { position: 'absolute' },
   hit: { width: HIT, height: HIT, alignItems: 'center' },

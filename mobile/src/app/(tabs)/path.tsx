@@ -1,3 +1,4 @@
+import { STAGES, stageDone } from '@shared/path';
 import type { BookLesson, LessonsResponse, Subject } from '@shared/types';
 import { router, useFocusEffect } from 'expo-router';
 import { type ComponentRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -161,26 +162,53 @@ export default function PathScreen() {
   }
 
   if (!me) return null;
-  function start() {
-    router.push(bossFight ? `/task/${subject}?boss=${gateOf(n, current)}` : `/task/${subject}`);
+  /** Зангилааны давсан шат (1 Суурь, 2 Дунд, 3 Ахисан) ба дараагийн нээлттэй шат (бүгд давсан бол null) */
+  const doneAt = (i: number) => stageDone(path?.stages ?? {}, i, current);
+  const nextStage = (i: number) => (doneAt(i) >= STAGES ? null : doneAt(i) + 1);
+  const xp = me.questionsPerTask * me.xpPerCorrect;
+
+  /** Сонгосон зангилааг эхлүүлнэ: хаалга бол тулаан, бусад нь тэр зангилааны дараагийн шат (admin бүгд давсан бол Суурь) */
+  function start(i: number) {
+    const gate = gateOf(n, i);
+    if (gate >= 0) return router.push(`/task/${subject}?boss=${gate}`);
+    router.push(`/task/${subject}?node=${i}&stage=${nextStage(i) ?? 1}`);
   }
 
   function onNode(i: number, _status: NodeStatus) {
-    // Admin: дурын зангилаа (boss бол тэр бүлгийн boss) руу шууд орно
-    if (me?.admin) return router.push(gateOf(n, i) >= 0 ? `/task/${subject}?boss=${gateOf(n, i)}` : `/task/${subject}?node=${i}`);
+    // Admin: дурын хаалга руу шууд; бусад зангилааны popover-оос дурын шат руу
+    if (me?.admin && gateOf(n, i) >= 0) return router.push(`/task/${subject}?boss=${gateOf(n, i)}`);
     padNode.current = i;
     setPad(true);
     setSel(i);
   }
 
-  // одоогийн зангилааны цагираг: шатны XP-ийн гуравны нэг бүр нэг хэсэг (зангилаа доторх ахиц сервер дээр байхгүй)
-  const ring = me.levelXpNeeded > 0 ? Math.min(3, Math.floor((3 * me.levelXp) / me.levelXpNeeded)) : 0;
+  // одоогийн зангилааны цагираг: давсан шат бүр нэг хэсэг (хаалганд шат байхгүй)
+  const ring = gateOf(n, current) >= 0 ? 0 : doneAt(current);
   const selNode = sel === null ? null : layout.nodes[sel];
   const selUnit = sel === null ? null : layout.units[unitOf(n, sel)];
   const selStatus = sel === null ? null : statusOf(sel, current);
   // Дээд баннер: харагдаж буй бүлэг, номын бүлгийн нэр (номгүй бол хичээлийн нэр)
   const chapterTitle = lessonAt(lessons, layout.units[chapterIdx].start)?.chapter;
-  const over = `${S.path.chapterOver(chapterIdx + 1)} · ${S.path.level(me.tier).toUpperCase()}`;
+  const over = S.path.chapterOver(chapterIdx + 1);
+  // Popover: хаалга бол тулаан (зөвхөн одоогийнх), бусад нь дараагийн шат (түгжээтэй бол admin-аас бусад нь хаалттай)
+  const selGate = sel === null ? -1 : gateOf(n, sel);
+  const selNext = sel === null ? null : nextStage(sel);
+  const canStart =
+    sel !== null && selStatus !== null && (selGate >= 0 ? selStatus === 'current' && bossFight : (selStatus !== 'lock' || !!me.admin) && (selNext !== null || !!me.admin));
+  const action =
+    selStatus === null
+      ? ''
+      : selGate >= 0
+        ? canStart
+          ? S.path.startXp(xp)
+          : selStatus === 'lock'
+            ? S.path.lockedBtn
+            : S.path.doneBtn
+        : selStatus === 'lock' && !me.admin
+          ? S.path.lockedBtn
+          : selNext === null && !me.admin
+            ? S.path.allStages
+            : S.path.startStage(S.path.stages[(selNext ?? 1) - 1], xp);
 
   return (
     <View style={styles.root}>
@@ -193,7 +221,7 @@ export default function PathScreen() {
       >
         {/* хоосон газар дарахад түр карт хураагдана; зангилаа өөрийн дарилтыг авна */}
         <Pressable accessible={false} onPress={closeCard}>
-          <PathMap layout={layout} current={current} ring={ring} beaten={path?.bossesBeaten ?? 0} subject={subject} lessons={lessons} selected={sel} onNodePress={onNode} />
+          <PathMap layout={layout} current={current} stages={path?.stages ?? {}} ring={ring} beaten={path?.bossesBeaten ?? 0} subject={subject} lessons={lessons} selected={sel} onNodePress={onNode} />
         </Pressable>
 
         {sel !== null && selNode && selUnit && selStatus ? (
@@ -204,15 +232,15 @@ export default function PathScreen() {
             arrowX={Math.max(24, Math.min(viewW - POPOVER_INSET * 2 - 24, selNode.x * k - POPOVER_INSET))}
             title={lessonTitle(subject, sel, lessons)}
             sub={
-              selStatus === 'lock'
+              selStatus === 'lock' && !me.admin
                 ? S.path.locked
-                : selNode.kind === 'boss'
+                : selGate >= 0
                   ? S.path.bossFight
-                  : S.path.lessonOf(sel - selUnit.start + 1, selUnit.boss - selUnit.start)
+                  : `${S.path.lessonOf(sel - selUnit.start + 1, selUnit.boss - selUnit.start)} · ${S.path.stars(doneAt(sel), STAGES)}`
             }
-            action={selStatus === 'current' ? S.path.startXp(me.questionsPerTask * me.xpPerCorrect) : selStatus === 'lock' ? S.path.lockedBtn : S.path.doneBtn}
-            canStart={selStatus === 'current'}
-            onStart={start}
+            action={action}
+            canStart={canStart}
+            onStart={() => start(sel)}
             onClose={closeCard}
             onHeight={setCardH}
           />

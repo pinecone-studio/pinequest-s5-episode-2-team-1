@@ -44,6 +44,8 @@ export type ErrorCode =
   | 'LLM_UNAVAILABLE'
   | 'LLM_FAILED'
   | 'BOSS_LOCKED'
+  | 'NODE_LOCKED'
+  | 'STAGE_LOCKED'
   | 'TUTOR_UNAVAILABLE'
   | 'TUTOR_LIMIT'
   | 'PROFILE_NOT_FOUND'
@@ -126,6 +128,8 @@ export interface SubjectPath {
    * баавгай түүний дэргэд зогсоно.
    */
   bossesBeaten: number;
+  /** Зангилаа → давсан шат (1 Суурь, 2 Дунд, 3 Ахисан); байхгүй бол 0 (shared/path.ts stageDone). */
+  stages: Record<number, number>;
 }
 
 /** Сурах бичгийн гарчгаас гаргасан нэг хичээл (сэдэв). */
@@ -275,6 +279,9 @@ export interface TaskResult {
   levelAfter: number;
   /** Энэ даалгавраар сурах замын дараагийн зангилаа нээгдсэн (4/5+ зөв эсвэл boss ялсан). */
   nodeUp: boolean;
+  /** Зангилааны шатны даалгавар бол тэр шат (тулаан бол null), давсан эсэх. */
+  stage: number | null;
+  stagePassed: boolean;
   me: Me;
 }
 
@@ -592,6 +599,35 @@ export interface PageTextResponse {
   method: string | null;
   quality: TextQuality | null;
   at: number | null;
+}
+
+/** GET /dashboard/stats?days=30 — нийтэд нээлттэй dashboard (/dashboard). Зөвхөн нэгтгэсэн тоо; өдрүүд UB цагаар. */
+export interface DashboardStatsResponse {
+  /** UB өдөр, 'YYYY-MM-DD' */
+  today: string;
+  generatedAt: number;
+  totals: {
+    users: number;
+    /** Сүүлийн 7 / 30 өдөрт (өнөөдрийг оруулаад) дор хаяж нэг удаа орсон хүн */
+    active7d: number;
+    active30d: number;
+  };
+  /** Хуучнаас шинэ рүү, `days` урттай; сүүлийнх нь өнөөдөр. */
+  daily: Array<{
+    day: string;
+    signups: number;
+    /** Тэр өдөр апп ашигласан хүн */
+    active: number;
+    /** active-ийн дотроос өмнөх өдрүүдэд бүртгүүлсэн нь */
+    returning: number;
+    /** Тэр өдөр эхэлж дуусгасан даалгавар */
+    tasks: number;
+    /** Дууссан тулаан */
+    duels: number;
+    /** Баавгайтай ярилцсан удаа */
+    tutor: number;
+  }>;
+  grades: Array<{ grade: number; users: number; activeToday: number }>;
 }
 
 export interface BookOcrResponse {
