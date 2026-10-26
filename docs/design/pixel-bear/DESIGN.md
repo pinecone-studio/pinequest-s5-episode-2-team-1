@@ -1,10 +1,10 @@
-# Pinequest — Pixel Bear UI (design handoff)
+# KUMA — Pixel Bear UI (design handoff)
 
 This document is the single source of truth for the new UI. It **replaces the previous dark-theme UI** entirely.
 Everything needed is in this folder:
 
 ```
-pinequest-ui-handoff/
+kuma-ui-handoff/
 ├─ DESIGN.md               ← this file (spec)
 ├─ CLAUDE_CODE_PROMPT.md   ← the prompt to run in Claude Code
 ├─ sprites/                ← 53 pixel-art PNGs (copy to /public/sprites)
@@ -191,7 +191,7 @@ Routes are suggestions — **map them onto the existing app routes**.
 | 09/10 | States board, Style board | — | documentation only, do not ship |
 
 ### 01 Welcome
-Violet bg with two lighter circles; `pinequest` wordmark (Pixelify 700, 66px, lemon); tagline 27px white; lime + lemon zigzags; twinkling heart/star/coin; `bear_cheer_scarf` at 3× floating; bottom paper sheet (radius 36 top) with indigo "Эхлэх" button and "Надад бүртгэл байгаа" link.
+Violet bg with two lighter circles; `KUMA` wordmark (Pixelify 700, 66px, lemon); tagline 27px white; lime + lemon zigzags; twinkling heart/star/coin; `bear_cheer_scarf` at 3× floating; bottom paper sheet (radius 36 top) with indigo "Эхлэх" button and "Надад бүртгэл байгаа" link.
 
 ### 02 Subject pick
 Back button, 3-segment progress (2 done violet), bear head + speech bubble "Юуг эхэлж сурах вэ? Дараа нь хүссэн үедээ солино.", 5 subject cards (Math lemon w/ "САНАЛ БОЛГОХ" + 3px ink outline when selected, English violet, Science lime, History pink, CS sky), each with a huge faint glyph (½, Aa, H₂O, 1206, </>), indigo "Үргэлжлүүлэх".
