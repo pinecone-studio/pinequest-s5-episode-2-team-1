@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { ADVANCE_STAGE, stageDone } from '../../shared/path';
 import { nodesAfter } from '../src/domain/path';
 
 describe('сурах замын зангилаа даалгавраар ахина', () => {
@@ -24,5 +25,14 @@ describe('сурах замын зангилаа даалгавраар ахин
     expect([1, 2, 3].map((g) => nodesAfter(45, 28 + g, g, 3, true))).toEqual([30, 31, 32]);
     expect(nodesAfter(45, 47, 4, 3, true)).toBe(47);
     expect(nodesAfter(45, 47, 5, 5, false)).toBe(47);
+  });
+});
+
+describe('зангилааны шат', () => {
+  it('давсан шат: өмнөх зангилаа дор хаяж Дунд, одоогийнх тэмдэглэснээрээ', () => {
+    expect(stageDone({}, 0, 3)).toBe(ADVANCE_STAGE);
+    expect(stageDone({ 0: 3 }, 0, 3)).toBe(3);
+    expect(stageDone({}, 3, 3)).toBe(0);
+    expect(stageDone({ 3: 1 }, 3, 3)).toBe(1);
   });
 });

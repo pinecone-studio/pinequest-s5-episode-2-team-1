@@ -4,7 +4,7 @@ import type { RecoveryAnswerResponse, RecoveryDto, Subject } from '../../../shar
 import { GAME, type Tier } from '../config/game';
 import { TOPICS } from '../config/topics';
 import { ApiError } from '../lib/errors';
-import { generate, type Template, templateById, templatesFor } from '../templates';
+import { generate, levelOf, type Template, templateById, templatesFor } from '../templates';
 import { IN_RANGE, OWN_GRADE, parseLessonRef, rangeArgs, storeGenerated } from './pool';
 
 interface Missed {
@@ -60,10 +60,10 @@ export async function recoveryStatements(db: D1Database, userId: number, taskId:
   // Admin-д нөхөх давтлага үүсэхгүй.
   const task = await db
     .prepare(
-      'SELECT t.subject, t.lesson_ref, u.grade FROM tasks t JOIN users u ON u.id = t.user_id WHERE t.id = ? AND t.user_id = ? AND u.is_admin = 0',
+      'SELECT t.subject, t.lesson_ref, t.stage, u.grade FROM tasks t JOIN users u ON u.id = t.user_id WHERE t.id = ? AND t.user_id = ? AND u.is_admin = 0',
     )
     .bind(taskId, userId)
-    .first<{ subject: Subject; lesson_ref: string | null; grade: number }>();
+    .first<{ subject: Subject; lesson_ref: string | null; stage: number | null; grade: number }>();
   if (!task) return [];
   // Flag (-1) бол жинхэнэ алдаа биш.
   const { results: missed } = await db
@@ -81,7 +81,7 @@ export async function recoveryStatements(db: D1Database, userId: number, taskId:
   const group = mainGroup(missed);
   // Хамгийн олон алдсан хичээлд загвар байвал ижил төрлийн шинэ бодлого (тоо нь өөр) үүсгэнэ.
   const templates = lesson ? lessonTemplates(lesson, group[0].book_ref) : [];
-  const made = await storeGenerated(db, group[0].tier, task.subject, task.grade, generate(templates, GAME.RECOVERY_PRACTICE), now);
+  const made = await storeGenerated(db, group[0].tier, task.subject, task.grade, generate(templates, GAME.RECOVERY_PRACTICE, levelOf(task.stage)), now);
   const same = lesson ? IN_RANGE : SAME_LESSON;
   const { results } = await db
     .prepare(
@@ -222,8 +222,13 @@ export async function answerRecovery(
   // Загвараас гарсан бол ижил төрлийн шинэ хувилбар; үгүй бол ижил хичээлийн, салаа замд болон тэр даалгаварт ороогүй
   // асуулт (хараагүйг түрүүлж).
   const template = q.source.startsWith('template:') ? templateById(q.source.slice('template:'.length)) : undefined;
-  const grade = template ? (await db.prepare('SELECT grade FROM users WHERE id = ?').bind(userId).first<{ grade: number }>())?.grade : undefined;
-  const fresh = template && grade !== undefined ? await storeGenerated(db, q.tier, subject, grade, generate([template], 1), now) : [];
+  const from = template
+    ? await db
+        .prepare('SELECT u.grade, t.stage FROM users u JOIN tasks t ON t.id = ? WHERE u.id = ?')
+        .bind(p.row.task_id, userId)
+        .first<{ grade: number; stage: number | null }>()
+    : null;
+  const fresh = template && from ? await storeGenerated(db, q.tier, subject, from.grade, generate([template], 1, levelOf(from.stage)), now) : [];
   const next = fresh.length
     ? { id: fresh[0] }
     : await db

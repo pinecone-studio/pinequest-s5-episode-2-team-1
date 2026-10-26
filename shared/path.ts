@@ -54,3 +54,12 @@ export function currentNode(n: number, level: number, gatesBeaten: number): numb
   const gate = gatesBeaten < GATE_COUNT ? gates[gatesBeaten] : last;
   return Math.max(start, Math.min(gate, level - 1));
 }
+
+/** Зангилааны шат (бодлогын хүнд): 1 Суурь, 2 Дунд, 3 Ахисан. Шат бүр нэг даалгавар. */
+export const STAGES = 3;
+/** Энэ шатыг давахад сурах замын дараагийн зангилаа нээгдэнэ; түүнээс дээш нь заавал биш сорил. */
+export const ADVANCE_STAGE = 2;
+
+/** Зангилааны давсан шат: өмнөх зангилаанууд (шат гарахаас өмнө давсан ч) дор хаяж ADVANCE_STAGE. */
+export const stageDone = (stages: Readonly<Record<number, number>>, node: number, current: number) =>
+  Math.max(stages[node] ?? 0, node < current ? ADVANCE_STAGE : 0);

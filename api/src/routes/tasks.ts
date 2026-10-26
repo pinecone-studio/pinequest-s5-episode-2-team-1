@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import type { AnswerResponse, FlagResponse, MeResponse, TaskDto } from '../../../shared/types';
 import { GAME, SUBJECTS } from '../config/game';
-import { UNIT_GATE } from '../../../shared/path';
+import { STAGES, UNIT_GATE } from '../../../shared/path';
 import type { AppEnv } from '../env';
 import { parseId, readBody } from '../lib/errors';
 import { requireAuth } from '../lib/session';
@@ -12,7 +12,7 @@ export const taskRoutes = new Hono<AppEnv>();
 taskRoutes.use('*', requireAuth);
 
 taskRoutes.post('/', async (c) => {
-  const { subject, gate, boss, node } = await readBody(
+  const { subject, gate, boss, node, stage } = await readBody(
     c,
     z.object({
       subject: z.enum(SUBJECTS),
@@ -21,9 +21,11 @@ taskRoutes.post('/', async (c) => {
       /** хуучин апп: бүлгийн дугаар → тэр бүлгийн boss-ын хаалга (зүүн/баруун гарыг давалгүй тулалдахыг сервер хаана) */
       boss: z.number().int().min(0).max(GAME.BOSS.COUNT - 1).optional(),
       node: z.number().int().min(0).optional(),
+      /** зангилааны шат: 1 Суурь, 2 Дунд, 3 Ахисан (өгөөгүй бол дараагийн давах шат) */
+      stage: z.number().int().min(1).max(STAGES).optional(),
     }),
   );
-  return c.json<TaskDto>(await startTask(c.env, c.executionCtx, c.get('userId'), subject, gate ?? (boss === undefined ? undefined : UNIT_GATE[boss]), node));
+  return c.json<TaskDto>(await startTask(c.env, c.executionCtx, c.get('userId'), subject, gate ?? (boss === undefined ? undefined : UNIT_GATE[boss]), node, stage));
 });
 
 taskRoutes.post('/:id/answer', async (c) => {

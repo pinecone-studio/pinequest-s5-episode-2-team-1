@@ -1,3 +1,4 @@
+import { STAGES, stageDone } from '@shared/path';
 import type { BookLesson, Subject } from '@shared/types';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
@@ -6,13 +7,13 @@ import Svg, { Path } from 'react-native-svg';
 import { frameSize, Motion, SheetFrame, SheetLoop, Sprite } from '@/components/pixel';
 import { colors, fonts, radius } from '@/constants/theme';
 import { S } from '@/i18n/strings';
+import { sprites } from '@/sprites';
 import golems from '@/lib/pixelBear/golems.json';
 import { tagFrames } from '@/lib/pixelBear/anim';
 import {
   BOSSES,
   HOVER,
   lessonTitle,
-  MAP_H,
   MAP_PIECES,
   MAP_W,
   type NodeStatus,
@@ -25,6 +26,10 @@ import {
 } from '@/lib/pixelBear/path';
 
 const STEP_MS = 260;
+/** Зангилааны одны шар, хэмжээ (dp): 3 од нь алхмын чулууны (48 dp) өргөнөөс хэтрэхгүй */
+const STAR_GOLD = '#FFC93C';
+const STAR = 12;
+const STARS_W = STAR * 3 + 2;
 /** Дарах талбай (dp): 16 зангилаатай бүлэгт хөршүүд хэвтээгээр 84 dp зайтай (mapgen_world.py DESIGN); хичээл олон бол ойртоно */
 const HIT = 56;
 /** Boss-ын арал дээр баавгай boss-ын зүүн талд, арлын гадна зогсоно (давхцахгүй) */
@@ -64,6 +69,7 @@ function segments(layout: PathLayout) {
 export function PathMap({
   layout,
   current,
+  stages,
   from,
   beaten,
   subject,
@@ -73,6 +79,8 @@ export function PathMap({
   /** хичээлийн тооноос хамаарсан зам (pathLayout) */
   layout: PathLayout;
   current: number;
+  /** зангилаа → давсан шат (SubjectPath.stages): од болж харагдана */
+  stages: Readonly<Record<number, number>>;
   from: number | null;
   /** давсан тулааны хаалганы тоо (boss, 2-р бүлгийн зүүн/баруун гар) */
   beaten: number;
@@ -82,6 +90,8 @@ export function PathMap({
   onNodePress: (i: number, status: NodeStatus) => void;
 }) {
   const curTrail = trailIndex(layout, current);
+  /** Хичээлийн зангилааны од = давсан шат (хаалга, түгжээтэй зангилаанд байхгүй) */
+  const starsAt = (i: number) => (i > current || layout.gates.includes(i) ? 0 : stageDone(stages, i, current));
   const segs = useMemo(() => segments(layout), [layout]);
   const trail = useMemo(
     () => ({
@@ -92,19 +102,21 @@ export function PathMap({
   );
   // 390 dp-ээс өргөн дэлгэцэд хажуугийн зай: ижил дэвсгэрийг хэвтээгээр сунгаж ард нь тавина (хурц газрын зураг голд)
   const width = Math.max(MAP_W, useWindowDimensions().width);
+  const pieceH = (id: (typeof MAP_PIECES)[number]) => Math.round(sprites[id].height * layout.scale);
 
   return (
-    <View style={{ width, height: MAP_H }}>
+    <View style={{ width, height: layout.height }}>
       {width > MAP_W ? (
         <View style={StyleSheet.absoluteFill} pointerEvents="none">
           {MAP_PIECES.map((id) => (
-            <Sprite key={id} id={id} style={{ width }} />
+            <Sprite key={id} id={id} style={{ width, height: pieceH(id) }} />
           ))}
         </View>
       ) : null}
-      <View style={[styles.map, { marginLeft: (width - MAP_W) / 2 }]} accessibilityLabel={S.path.mapLabel}>
+      <View style={[styles.map, { height: layout.height, marginLeft: (width - MAP_W) / 2 }]} accessibilityLabel={S.path.mapLabel}>
+        {/* хичээл олон бол дэвсгэр босоо чиглэлд сунана (pathLayout scale) */}
         {MAP_PIECES.map((id) => (
-          <Sprite key={id} id={id} />
+          <Sprite key={id} id={id} style={{ height: pieceH(id) }} />
         ))}
 
         {layout.units.map((u, k) => (
@@ -118,7 +130,7 @@ export function PathMap({
           </View>
         ))}
 
-        <Svg width={MAP_W} height={MAP_H} style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Svg width={MAP_W} height={layout.height} style={StyleSheet.absoluteFill} pointerEvents="none">
           <Path d={trail.todo} stroke="rgba(255,255,255,0.55)" strokeWidth={DOT} strokeDasharray={`${DOT} ${DOT_GAP - DOT}`} fill="none" />
           <Path d={trail.done} stroke="#9CF06A" strokeWidth={DOT} strokeDasharray={`${DOT} ${DOT_GAP - DOT}`} fill="none" />
         </Svg>
@@ -128,13 +140,14 @@ export function PathMap({
           const status = statusOf(n.i, current);
           const boss = n.kind === 'boss';
           const tile = tileFor(n, status);
+          const stars = starsAt(n.i);
           return (
             <Pressable
               key={n.i}
               accessibilityRole="button"
               accessibilityLabel={`${n.i + 1}. ${lessonTitle(subject, n.i, lessons)}, ${
                 status === 'done' ? S.path.done : status === 'current' ? S.path.youAreHere : S.path.locked
-              }`}
+              }${stars ? `, ${S.path.stars(stars, STAGES)}` : ''}`}
               accessibilityState={{ disabled: status === 'lock' }}
               onPress={() => onNodePress(n.i, status)}
               style={[
@@ -155,6 +168,18 @@ export function PathMap({
             </Pressable>
           );
         }).reverse()}
+
+        {/* Од бүх алхмын дээр: доорх зангилааны ард орохгүй */}
+        {layout.nodes.map((n) => {
+          const stars = starsAt(n.i);
+          return stars ? (
+            <View key={`s${n.i}`} style={[styles.stars, { left: n.x - STARS_W / 2, top: n.y + 20 }]} pointerEvents="none">
+              {Array.from({ length: STAGES }, (_, k) => (
+                <Star key={k} on={k < stars} />
+              ))}
+            </View>
+          ) : null;
+        })}
 
         {layout.units.map((u, k) => (
           <UnitProps key={k} k={k} unit={u} layout={layout} current={current} />
@@ -240,9 +265,9 @@ function GateFigure({ g, layout, beaten }: { g: number; layout: PathLayout; beat
   const flip = b.role === 'right';
   // биеийн гол: PixelLab дайсны frame-д довтолгооны эффект нэг тал руу сунадаг
   const cx = golem ? (flip ? bs.width - golem.cx : golem.cx) : bs.width / 2;
-  // зүүн гар зангилааныхаа зүүн талд, баруун гар баруун талд (хөрш зангилаа, тэдгээрийн 56 dp дарах талбайгаас гадна;
+  // зүүн гар зангилааныхаа зүүн талд, баруун гар баруун талд, өөрийн чулуунаас гадна (хөрш зангилаа, тэдгээрийн 56 dp дарах талбайгаас гадна;
   // 320 dp дэлгэцэд ч харагдахаар захаас зайтай)
-  const x = boss ? n.x : b.role === 'left' ? n.x - 84 : n.x + 44;
+  const x = boss ? n.x : b.role === 'left' ? n.x - 84 : n.x + 56;
   const half = (golem ? golem.bw : bs.width) / 2;
   // шошго: boss-ынх голд, гарынх биеийн гадна зах руу тэгшилнэ (дэлгэцийн захаас гарахгүй)
   const tagBox =
@@ -360,6 +385,21 @@ function WalkingBear({
   );
 }
 
+/** Шатны од: давсан бол шар, үгүй бол бүдэг. */
+function Star({ on }: { on: boolean }) {
+  return (
+    <Svg width={STAR} height={STAR} viewBox="0 0 12 12" style={on ? null : styles.starOff}>
+      <Path
+        d="M6 0.8l1.6 3.4 3.7.4-2.8 2.5.8 3.7L6 9 2.7 10.8l.8-3.7L.7 4.6l3.7-.4z"
+        fill={on ? STAR_GOLD : colors.white}
+        stroke={colors.ink}
+        strokeWidth={0.9}
+        strokeLinejoin="round"
+      />
+    </Svg>
+  );
+}
+
 /** 2 фреймтэй далавч дэвэх эрвээхэй (steps(2) .32s). */
 function Butterfly() {
   const reduce = useReducedMotion();
@@ -376,10 +416,13 @@ function Butterfly() {
   );
 }
 
-export { MAP_H, MAP_W };
+export { MAP_W };
 
 const styles = StyleSheet.create({
-  map: { width: MAP_W, height: MAP_H, overflow: 'hidden' },
+  // зангилааны доор 3 од: давсан шат тод, үлдсэн нь бүдэг
+  stars: { position: 'absolute', width: STARS_W, flexDirection: 'row', justifyContent: 'center', gap: 1 },
+  starOff: { opacity: 0.45 },
+  map: { width: MAP_W, overflow: 'hidden' },
   abs: { position: 'absolute' },
   hit: { width: HIT, height: HIT, alignItems: 'center' },
   islandHit: { width: 72, height: 56 },
