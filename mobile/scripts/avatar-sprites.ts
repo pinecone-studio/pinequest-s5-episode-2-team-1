@@ -13,7 +13,8 @@ import { CL, FUR, FURS, hsl, L, lerp, MUZZLE } from './fur.ts';
 import { at, crop, hex, type RGB, ramp, SPRITES, scale, source } from './sprite-kit.ts';
 
 export { FURS };
-export const FACES = ['calm', 'happy', 'sleepy', 'smile', 'wink', 'surprised', 'laugh', 'smug'] as const;
+export { BEAR_FACES as FACES } from '../../shared/bear.ts';
+import { BEAR_FACES as FACES } from '../../shared/bear.ts';
 
 // толгой → эх зураг ба bear_idle дээрх байрлал (тохирох байрлалыг pixel харьцуулж олсон)
 const HEADS = {
@@ -105,7 +106,8 @@ export function portrait(fur: (typeof FURS)[number], face: (typeof FACES)[number
       const k = kind(c, y);
       const l = hsl(c)[2];
       let out: RGB | null = null;
-      if (k === 'outline') out = fur === 'brown' ? null : lerp(L, FUR[fur], 0);
+      // нүдний мөрийн зураас (хүүхэн хараа) бараан хэвээр
+      if (k === 'outline') out = fur === 'brown' || (y >= EYES[0] && y < EYES[1]) ? null : lerp(L, FUR[fur], 0);
       else if (k === 'fur') out = lerp(L, FUR[fur], l);
       else if (k === 'cream' && y >= NECK) out = patch ? lerp(CL, PATCH, l) : lerp(L, FUR[fur], l - 0.2);
       else if (k === 'cream') out = MUZZLE[fur] && lerp(CL, MUZZLE[fur], l);

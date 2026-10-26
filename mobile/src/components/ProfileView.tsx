@@ -32,11 +32,12 @@ export function ProfileView({ profile, index = 0 }: { profile: PublicProfile; in
 
       <Enter index={index + 1} style={styles.identity}>
         <View style={styles.photo}>
-          <Avatar size={72} border={4} look={profile.look} label={S.avatar.preview(profile.name)} />
+          <Avatar size={72} border={4} look={profile.look} label={S.avatar.preview(profile.name ?? profile.username)} />
         </View>
         <Text accessibilityRole="header" style={type.h2} numberOfLines={1}>
-          {profile.name}
+          {profile.name ?? profile.username}
         </Text>
+        <Text style={type.small}>@{profile.username}</Text>
         <Text style={type.small}>{S.profile.meta(profile.grade, profile.joinedAt)}</Text>
         <View style={styles.bar}>
           <BracketBar

@@ -37,9 +37,7 @@ export const cosmeticById = (id: string): Cosmetic | undefined => COSMETICS.find
 /** Хувцас болж өмсөгддөг дэлгүүрийн эд зүйл (mobile catalog-ийн serverItemId): хувцасны key → items.id */
 export const OUTFIT_ITEMS: Readonly<Record<string, string>> = { glasses: 'acc_glasses', headphones: 'acc_headphones' };
 
-/** Профайлын баавгайн үс, царай (mobile/scripts/avatar-sprites.ts-ийн FURS, FACES) */
-export const BEAR_FURS = ['brown', 'black', 'white'] as const satisfies readonly BearLook['fur'][];
-export const BEAR_FACES = ['calm', 'happy', 'sleepy', 'smile', 'wink', 'surprised', 'laugh', 'smug'] as const satisfies readonly BearLook['face'][];
+export { BEAR_FACES, BEAR_FURS } from '../../../shared/bear';
 
 /** Сонголт хадгалаагүй хэрэглэгчийн баавгай (mobile catalog-ийн DEFAULT_BG_ID, DEFAULT_OUTFIT_ID). */
 export const DEFAULT_LOOK: BearLook = { bg: 'nimbeg', outfit: 'scarf', fur: 'brown', face: 'calm', chest: true };

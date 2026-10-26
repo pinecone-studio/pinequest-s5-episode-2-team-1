@@ -14,7 +14,7 @@ export function FriendRow({ friend, onPress, children }: { friend: FriendDto; on
     <View style={styles.row}>
       <PressScale
         accessibilityRole="link"
-        accessibilityLabel={`${friend.name}, ${S.friends.meta(friend.level, friend.grade)}, ${S.profile.streak} ${friend.streak}`}
+        accessibilityLabel={`${friend.name ?? friend.username}, @${friend.username}, ${S.friends.meta(friend.level, friend.grade)}, ${S.profile.streak} ${friend.streak}`}
         onPress={onPress}
         style={styles.main}
       >
@@ -23,11 +23,11 @@ export function FriendRow({ friend, onPress, children }: { friend: FriendDto; on
         </View>
         <View style={styles.text}>
           <Text style={styles.name} numberOfLines={1}>
-            {friend.name}
+            {friend.name ?? friend.username}
           </Text>
           <View style={styles.metaRow}>
             <Text style={styles.meta} numberOfLines={1}>
-              {S.friends.meta(friend.level, friend.grade)}
+              @{friend.username} · {S.friends.meta(friend.level, friend.grade)}
             </Text>
             <Sprite id="icon_flame_12x12" />
             <Text style={styles.meta}>{friend.streak}</Text>

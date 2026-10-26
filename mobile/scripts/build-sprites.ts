@@ -12,6 +12,7 @@
  * Гаралт:      mobile/assets/sprites/<name>_<w>x<h>[@2x|@3x].png  +  mobile/src/sprites/index.ts
  */
 import { existsSync, readdirSync, statSync, unlinkSync, writeFileSync } from 'node:fs';
+import { BEAR_FACES, BEAR_FURS } from '../../shared/bear.ts';
 import { recolorFur } from './fur.ts';
 import { blank, type Img, readPng, samePixels, writePng } from './png.ts';
 
@@ -50,8 +51,8 @@ M.head_tired = [[40, 34]];
 M.head_neglected = [[40, 34]];
 M.head_sleep = [[54, 34]];
 // профайлын баавгай (scripts/avatar-sprites.ts): аватар 48, сонгох дэлгэцийн том хөрөг 160
-for (const fur of ['brown', 'black', 'white'])
-  for (const face of ['calm', 'happy', 'sleepy', 'smile', 'wink', 'surprised', 'laugh', 'smug']) for (const chest of ['patch', 'plain']) M[`avatar_${fur}_${face}_${chest}`] = [[48, 48], [160, 160]];
+for (const fur of BEAR_FURS)
+  for (const face of BEAR_FACES) for (const chest of ['patch', 'plain']) M[`avatar_${fur}_${face}_${chest}`] = [[48, 48], [160, 160]];
 // зам
 for (const n of ['map_cloud_a', 'map_cloud_b', 'map_ring', 'map_butterfly_sheet']) M[n] = [2];
 // замын зангилааны хажуугийн жижиг тэмдэг (PathMap)

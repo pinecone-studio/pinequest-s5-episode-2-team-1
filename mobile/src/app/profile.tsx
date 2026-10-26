@@ -135,9 +135,9 @@ export default function ProfileScreen() {
           {me ? (
             <Enter index={0}>
               <Card style={styles.photoCard}>
-                <Avatar size={64} look={me.look} label={S.avatar.preview(me.name)} />
+                <Avatar size={64} look={me.look} label={S.avatar.preview(me.name ?? me.username)} />
                 <Text style={[styles.cardTitle, { flex: 1 }]} numberOfLines={1}>
-                  {me.name}
+                  {me.name ?? me.username}
                 </Text>
                 <Button title={S.avatar.change} variant="secondary" small onPress={() => router.push('/avatar')} />
               </Card>
@@ -166,7 +166,7 @@ export default function ProfileScreen() {
                         variant="white"
                         small
                         disabled={busy !== null}
-                        accessibilityLabel={`${S.friends.decline}: ${f.name}`}
+                        accessibilityLabel={`${S.friends.decline}: ${f.name ?? f.username}`}
                         onPress={() => remove(f.code)}
                       />
                     </View>
