@@ -44,6 +44,8 @@ export type ErrorCode =
   | 'LLM_UNAVAILABLE'
   | 'LLM_FAILED'
   | 'BOSS_LOCKED'
+  | 'NODE_LOCKED'
+  | 'STAGE_LOCKED'
   | 'TUTOR_UNAVAILABLE'
   | 'TUTOR_LIMIT'
   | 'PROFILE_NOT_FOUND'
@@ -126,6 +128,8 @@ export interface SubjectPath {
    * баавгай түүний дэргэд зогсоно.
    */
   bossesBeaten: number;
+  /** Зангилаа → давсан шат (1 Суурь, 2 Дунд, 3 Ахисан); байхгүй бол 0 (shared/path.ts stageDone). */
+  stages: Record<number, number>;
 }
 
 /** Сурах бичгийн гарчгаас гаргасан нэг хичээл (сэдэв). */
@@ -275,6 +279,9 @@ export interface TaskResult {
   levelAfter: number;
   /** Энэ даалгавраар сурах замын дараагийн зангилаа нээгдсэн (4/5+ зөв эсвэл boss ялсан). */
   nodeUp: boolean;
+  /** Зангилааны шатны даалгавар бол тэр шат (тулаан бол null), давсан эсэх. */
+  stage: number | null;
+  stagePassed: boolean;
   me: Me;
 }
 

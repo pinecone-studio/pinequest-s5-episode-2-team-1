@@ -6,8 +6,10 @@ import type { PageRange } from '../services/grounding';
 import { MATH6 } from './math6';
 
 export type Rng = () => number;
-/** Бодлогын хүнд: 1 Суурь, 2 Дунд (сурах бичгийн дасгал), 3 Ахисан. */
+/** Зангилааны шат = бодлогын хүнд: 1 Суурь, 2 Дунд, 3 Ахисан (shared/path.ts STAGES). */
 export type Level = 1 | 2 | 3;
+/** Даалгаврын шатны бодлогын хүнд; шатгүй (тулаан, хуучин даалгавар) бол Дунд. Давтлага ижил хүндээр. */
+export const levelOf = (stage: number | null): Level => (stage === 1 || stage === 3 ? stage : 2);
 
 export interface Template {
   /** номын хичээлийн хуудас = questions.book_ref ('math-6:5-6') */

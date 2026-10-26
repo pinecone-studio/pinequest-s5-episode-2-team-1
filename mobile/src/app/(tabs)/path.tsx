@@ -15,6 +15,7 @@ import { colors, fonts, hardShadow, radius } from '@/constants/theme';
 import { S, subjectNames } from '@/i18n/strings';
 import { kvGet, kvSet } from '@/lib/kv';
 import { usePixelBear } from '@/lib/mock/pixelBear';
+import { STAGES, stageDone } from '@shared/path';
 import { bossAhead, currentNode, gateOf, lessonAt, lessonTitle, type NodeStatus, pathLayout, pathLessons, unitOf } from '@/lib/pixelBear/path';
 
 const SUBJECTS: Subject[] = ['math', 'mongolian', 'physics'];
@@ -34,6 +35,8 @@ export default function PathScreen() {
   const viewH = useWindowDimensions().height;
   const [menu, setMenu] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  /** шат сонгох цонх нээгдсэн зангилаа */
+  const [sheet, setSheet] = useState<number | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -98,16 +101,26 @@ export default function PathScreen() {
   }, [note]);
 
   if (!me) return null;
+  /** Зангилааны давсан шат ба дараагийн нээлттэй шат */
+  const doneAt = (i: number) => stageDone(path?.stages ?? {}, i, current);
+  const nextStage = Math.min(STAGES, doneAt(current) + 1);
+  const openStage = (i: number, k: number) => {
+    setSheet(null);
+    router.push(`/task/${subject}?node=${i}&stage=${k}`);
+  };
   function start() {
-    router.push(bossFight ? `/task/${subject}?boss=${gateOf(n, current)}` : `/task/${subject}`);
+    if (bossFight) router.push(`/task/${subject}?boss=${gateOf(n, current)}`);
+    else openStage(current, nextStage);
   }
 
   function onNode(i: number, status: NodeStatus) {
-    // Admin: дурын зангилаа (boss бол тэр бүлгийн boss) руу шууд орно
-    if (me?.admin) return router.push(gateOf(n, i) >= 0 ? `/task/${subject}?boss=${gateOf(n, i)}` : `/task/${subject}?node=${i}`);
+    const gate = gateOf(n, i);
+    // Admin: дурын хаалга руу шууд, дурын зангилааны шат руу
+    if (me?.admin && gate >= 0) return router.push(`/task/${subject}?boss=${gate}`);
+    if (me?.admin) return setSheet(i);
     if (status === 'lock') setNote(S.path.locked);
-    else if (status === 'done') setNote(`${lessonTitle(subject, i, lessons)} · ${S.path.done}`);
-    else start();
+    else if (gate >= 0) status === 'current' ? start() : setNote(`${lessonTitle(subject, i, lessons)} · ${S.path.done}`);
+    else setSheet(i);
   }
 
   return (
@@ -135,9 +148,6 @@ export default function PathScreen() {
               <Path d={menu ? 'm6 15 6-6 6 6' : 'm6 9 6 6 6-6'} />
             </Svg>
           </Pressable>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{S.path.levelBadge(me.tier)}</Text>
-          </View>
         </View>
         {menu ? (
           <Animated.View entering={FadeInDown.duration(180)} exiting={FadeOut.duration(120)} style={styles.menu}>
@@ -184,9 +194,43 @@ export default function PathScreen() {
           <Svg width={16} height={16} viewBox="0 0 24 24">
             <Path d="M7 4.5v15l13-7.5z" fill={colors.ink} />
           </Svg>
-          <Text style={styles.ctaBtnText}>{S.path.start}</Text>
+          <Text style={styles.ctaBtnText}>{bossFight ? S.path.start : S.path.stages[nextStage - 1]}</Text>
         </PressScale>
       </View>
+
+      {sheet === null ? null : (
+        <Pressable accessibilityLabel={S.path.close} onPress={() => setSheet(null)} style={[styles.sheetBack, { paddingBottom: barSpace + 12 }]}>
+          {/* цонхон дээр дарвал хаагдахгүй */}
+          <Animated.View entering={FadeInDown.duration(180)} style={styles.sheet} onStartShouldSetResponder={() => true}>
+            <Text style={styles.sheetTitle} numberOfLines={2}>
+              {lessonTitle(subject, sheet, lessons)}
+            </Text>
+            <Text style={styles.sheetHint}>{S.path.stageHint}</Text>
+            {S.path.stages.map((name, k) => {
+              const stage = k + 1;
+              const done = doneAt(sheet) >= stage;
+              const open = !!me.admin || stage <= doneAt(sheet) + 1;
+              return (
+                <Pressable
+                  key={name}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${stage}. ${name}, ${done ? S.path.stageDone : open ? S.path.stageOpen : S.path.stageLocked}`}
+                  accessibilityState={{ disabled: !open }}
+                  onPress={() => (open ? openStage(sheet, stage) : setNote(S.path.stageLocked))}
+                  style={[styles.stageRow, { backgroundColor: done ? colors.lime : open ? colors.lemon : colors.paper, opacity: open ? 1 : 0.6 }]}
+                >
+                  <Text style={styles.stageNo}>{stage}</Text>
+                  <Text style={styles.stageName}>{name}</Text>
+                  <Text style={styles.stageState}>{done ? `✓ ${S.path.stageDone}` : open ? `▶ ${S.path.stageOpen}` : '🔒'}</Text>
+                </Pressable>
+              );
+            })}
+            <Pressable accessibilityRole="button" onPress={() => setSheet(null)} style={styles.sheetClose}>
+              <Text style={styles.sheetCloseText}>{S.path.close}</Text>
+            </Pressable>
+          </Animated.View>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -208,8 +252,34 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   dropText: { fontFamily: fonts.bold, fontSize: 14, color: colors.ink },
-  badge: { height: 30, paddingHorizontal: 11, borderRadius: radius.pill, backgroundColor: colors.lime, justifyContent: 'center' },
-  badgeText: { fontFamily: fonts.extrabold, fontSize: 12, letterSpacing: 0.7, color: colors.ink },
+  sheetBack: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, backgroundColor: 'rgba(20,16,40,0.45)', justifyContent: 'flex-end' },
+  sheet: {
+    marginHorizontal: 12,
+    padding: 16,
+    gap: 10,
+    borderRadius: radius.card,
+    backgroundColor: colors.white,
+    borderWidth: 2,
+    borderColor: colors.ink,
+    ...hardShadow(4),
+  },
+  sheetTitle: { fontFamily: fonts.extrabold, fontSize: 18, letterSpacing: -0.3, color: colors.ink },
+  sheetHint: { fontFamily: fonts.semibold, fontSize: 13, lineHeight: 18, color: colors.muted },
+  stageRow: {
+    minHeight: 56,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: colors.ink,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  stageNo: { fontFamily: fonts.pixel, fontSize: 20, color: colors.ink, width: 22, textAlign: 'center' },
+  stageName: { flex: 1, fontFamily: fonts.bold, fontSize: 16, color: colors.ink },
+  stageState: { fontFamily: fonts.bold, fontSize: 13, color: colors.ink },
+  sheetClose: { alignSelf: 'center', paddingVertical: 8, paddingHorizontal: 16 },
+  sheetCloseText: { fontFamily: fonts.bold, fontSize: 15, color: colors.muted },
   menu: { alignSelf: 'flex-start', backgroundColor: colors.white, borderRadius: 20, padding: 6, gap: 4, borderWidth: 2, borderColor: colors.ink },
   menuItem: { minHeight: 44, paddingHorizontal: 14, borderRadius: 14, justifyContent: 'center' },
   menuText: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink },
