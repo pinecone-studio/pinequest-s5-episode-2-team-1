@@ -24,7 +24,17 @@ export const BACKGROUNDS: BgDef[] = [
 
 export const DEFAULT_BG_ID = 'nimbeg';
 
-export type OutfitId = 'scarf' | 'glasses' | 'gradcap' | 'headphones';
+const STAFF_OUTFITS = [
+  { id: 'staff00', name: 'Модон таяг', tile: '#D9D2F2', imgTop: -52, card: 'outfit_staff00_82x140', item: 'staff00' },
+  { id: 'staff03', name: 'Мөнгөн таяг', tile: '#D9D2F2', imgTop: -52, card: 'outfit_staff03_82x140', item: 'staff03' },
+  { id: 'staff04', name: 'Галт таяг', tile: '#D9D2F2', imgTop: -52, card: 'outfit_staff04_82x140', item: 'staff04' },
+  { id: 'staff05', name: 'Алтан таяг', tile: '#D9D2F2', imgTop: -52, card: 'outfit_staff05_82x140', item: 'staff05' },
+  { id: 'holly_staff', name: 'Ариун таяг', tile: '#D9D2F2', imgTop: -52, card: 'outfit_holly_staff_82x140', item: 'holly_staff' },
+  { id: 'pestilence_staff', name: 'Хар шидийн таяг', tile: '#D9D2F2', imgTop: -52, card: 'outfit_pestilence_staff_82x140', item: 'pestilence_staff' },
+  { id: 'w_staff_256', name: 'Болор таяг', tile: '#D9D2F2', imgTop: -52, card: 'outfit_w_staff_256_82x140', item: 'w_staff_256' },
+] as const;
+
+export type OutfitId = 'scarf' | 'glasses' | 'gradcap' | 'headphones' | 'warrior_helmet' | (typeof STAFF_OUTFITS)[number]['id'];
 
 export interface OutfitDef {
   id: OutfitId;
@@ -41,6 +51,7 @@ export interface OutfitDef {
 
 export const OUTFITS: OutfitDef[] = [
   { id: 'scarf', name: 'Монгол ороолт', tile: '#D4F55E', imgTop: -26, card: 'outfit_scarf_82x140' },
+  { id: 'warrior_helmet', name: 'Баатрын дуулга', tile: '#EBCF9B', imgTop: 0, card: 'outfit_warrior_helmet_82x140', item: 'warrior_helmet' },
   {
     id: 'glasses',
     name: 'Нүдний шил',
@@ -60,6 +71,7 @@ export const OUTFITS: OutfitDef[] = [
     card: 'outfit_headphones_82x140',
     serverItemId: 'acc_headphones',
   },
+  ...STAFF_OUTFITS,
 ];
 
 export const DEFAULT_OUTFIT_ID: OutfitId = 'scarf';

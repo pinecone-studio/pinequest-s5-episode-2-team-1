@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { BgSwatch, type SwatchStatus } from '@/components/BgSwatch';
+import { MagicBurst } from '@/components/MagicBurst';
 import { OutfitCard } from '@/components/OutfitCard';
 import { PressScale, Sprite } from '@/components/pixel';
 import { PreviewStage } from '@/components/PreviewStage';
@@ -44,6 +45,7 @@ export default function ShopScreen() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [castKey, setCastKey] = useState(0);
 
   const isBg = tab === 'bg';
   const bgDef = bgById(isBg ? selBg : bear.bgId);
@@ -53,33 +55,33 @@ export default function ShopScreen() {
   // Одоо харж буй зүйлийн үйлдэл
   const cur = isBg
     ? {
-        name: bgDef.name,
-        equipped: bgDef.id === bear.bgId,
-        owned: bear.ownedBgs.includes(bgDef.id),
-        price: bear.priceOf('bg', bgDef.id),
-        lockedLevel: null as number | null,
-      }
+      name: bgDef.name,
+      equipped: bgDef.id === bear.bgId,
+      owned: bear.ownedBgs.includes(bgDef.id),
+      price: bear.priceOf('bg', bgDef.id),
+      lockedLevel: null as number | null,
+    }
     : {
-        name: outfitDef.name,
-        equipped: outfitDef.id === bear.outfitId,
-        owned: outfitView.owned,
-        price: outfitView.price,
-        lockedLevel: outfitView.lockedLevel,
-      };
+      name: outfitDef.name,
+      equipped: outfitDef.id === bear.outfitId,
+      owned: outfitView.owned,
+      price: outfitView.price,
+      lockedLevel: outfitView.lockedLevel,
+    };
   const cantAfford = !cur.owned && cur.price > bear.coins;
   const action = !outfits.loaded
     ? { title: '…', bg: colors.stoneAlt, fg: colors.muted, disabled: true }
     : cur.equipped
-    ? { title: S.shop.equipped, bg: colors.white, fg: colors.okText, disabled: true }
-    : cur.owned
-      ? { title: S.shop.equip, bg: colors.indigo, fg: colors.white, disabled: false }
-      : !online
-        ? { title: S.offline.needsInternet, bg: colors.stoneAlt, fg: colors.muted, disabled: true }
-        : cur.lockedLevel
-          ? { title: S.shop.levelNeeded(cur.lockedLevel), bg: colors.stoneAlt, fg: colors.muted, disabled: true }
-          : cantAfford
-            ? { title: S.shop.noCoins, bg: colors.stoneAlt, fg: colors.muted, disabled: true }
-            : { title: S.shop.buyFor(formatNumber(cur.price)), bg: colors.indigo, fg: colors.white, disabled: false };
+      ? { title: S.shop.equipped, bg: colors.white, fg: colors.okText, disabled: true }
+      : cur.owned
+        ? { title: S.shop.equip, bg: colors.indigo, fg: colors.white, disabled: false }
+        : !online
+          ? { title: S.offline.needsInternet, bg: colors.stoneAlt, fg: colors.muted, disabled: true }
+          : cur.lockedLevel
+            ? { title: S.shop.levelNeeded(cur.lockedLevel), bg: colors.stoneAlt, fg: colors.muted, disabled: true }
+            : cantAfford
+              ? { title: S.shop.noCoins, bg: colors.stoneAlt, fg: colors.muted, disabled: true }
+              : { title: S.shop.buyFor(formatNumber(cur.price)), bg: colors.indigo, fg: colors.white, disabled: false };
 
   async function onAction() {
     if (busy || action.disabled) return;
@@ -87,7 +89,10 @@ export default function ShopScreen() {
     setError('');
     if (cur.owned) {
       if (isBg) bear.equipBg(bgDef.id);
-      else bear.equipOutfit(outfitDef.id);
+      else {
+        bear.equipOutfit(outfitDef.id);
+        if (outfitDef.id === 'pestilence_staff') setCastKey((k) => k + 1);
+      }
       void Haptics.selectionAsync();
       return;
     }
@@ -104,6 +109,7 @@ export default function ShopScreen() {
       setError(err);
       return;
     }
+    if (!isBg && outfitDef.id === 'pestilence_staff') setCastKey((k) => k + 1);
     setMessage(S.shop.bought(cur.name));
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }
@@ -123,23 +129,26 @@ export default function ShopScreen() {
         <CountPill icon="icon_coin_24x24" value={bear.coins} label="Coin" />
       </View>
 
-      <PreviewStage
-        bg={bgDef}
-        outfit={outfitDef}
-        name={isBg ? S.shop.bgPreview(bgDef.name) : outfitDef.name}
-        alt={S.shop.previewAlt(outfitDef.name, bgDef.name)}
-        action={
-          <PressScale
-            accessibilityRole="button"
-            accessibilityState={{ disabled: action.disabled, busy }}
-            disabled={action.disabled || busy}
-            onPress={onAction}
-            style={[styles.action, { backgroundColor: action.bg }]}
-          >
-            {busy ? <ActivityIndicator color={action.fg} /> : <Text style={[styles.actionText, { color: action.fg }]}>{action.title}</Text>}
-          </PressScale>
-        }
-      />
+      <View>
+        <PreviewStage
+          bg={bgDef}
+          outfit={outfitDef}
+          name={isBg ? S.shop.bgPreview(bgDef.name) : outfitDef.name}
+          alt={S.shop.previewAlt(outfitDef.name, bgDef.name)}
+          action={
+            <PressScale
+              accessibilityRole="button"
+              accessibilityState={{ disabled: action.disabled, busy }}
+              disabled={action.disabled || busy}
+              onPress={onAction}
+              style={[styles.action, { backgroundColor: action.bg }]}
+            >
+              {busy ? <ActivityIndicator color={action.fg} /> : <Text style={[styles.actionText, { color: action.fg }]}>{action.title}</Text>}
+            </PressScale>
+          }
+        />
+        <MagicBurst active={!isBg && outfitDef.id === 'pestilence_staff'} castKey={castKey} />
+      </View>
 
       {online ? null : <Text style={styles.offline}>{S.offline.shopNote}</Text>}
       {message ? (
@@ -196,7 +205,10 @@ export default function ShopScreen() {
                     coins: bear.coins,
                     lockedLevel: v.lockedLevel,
                   })}
-                  onPress={() => setSelOutfit(v.def.id)}
+                  onPress={() => {
+                    setSelOutfit(v.def.id);
+                    if (v.def.id === 'pestilence_staff') setCastKey((k) => k + 1);
+                  }}
                 />
               ))}
             </View>

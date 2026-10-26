@@ -1,0 +1,22 @@
+{
+  "tool": "PixelLab pixelart_workbench edit",
+  "purpose": "Continue each staff shaft through the transparent grip gap so the animated bear paw can cover it without a visible break.",
+  "grip": [16, 54],
+  "closedPaw": {
+    "imageId": "0ad25eaa-a93f-453b-b4cb-12dbf206ff24",
+    "source": "staff_grip.png",
+    "pivot": [8, 8],
+    "purpose": "Curled fingers cover the shaft at the palm center in the waving frames. Staff and fingers are baked into the same animation frame."
+  },
+  "repairedRows": [54, 64],
+  "editedSprites": {
+    "staff00": "0ddf44ec-c946-4c57-9ec6-943d679cc11b",
+    "staff03": "5d0eff53-b51f-484b-8851-c927f0adc8ab",
+    "staff04": "ac5f2fa4-3da6-4b9c-993b-8681482d002e",
+    "staff05": "61220bdf-9ce5-4f80-b58b-f9ec901d4913",
+    "holly_staff": "1d970a26-9ccf-4681-b23c-d3da6fc8e80d",
+    "w_staff_256": "984bc147-7420-4fb9-ae68-477470edb3cc"
+  },
+  "alreadyContinuous": ["pestilence_staff"],
+  "generationCost": 0
+}

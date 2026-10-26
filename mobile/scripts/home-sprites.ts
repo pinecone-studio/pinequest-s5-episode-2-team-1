@@ -9,7 +9,7 @@
  * Ажиллуулах:  npm run sprites:home && npm run sprites   (mobile/)
  * Шалгах:      node scripts/home-sprites.ts --preview <dir>
  */
-import { writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { blank, type Img, readPng, writeApng, writePng } from './png.ts';
 import { at, bbox, clone, crop, type Frame, scale, source, SPRITES, toSheet } from './sprite-kit.ts';
 
@@ -23,11 +23,37 @@ const ITEMS_META = new URL('../src/lib/pixelBear/bear-items.json', import.meta.u
  * нэмнэ, бүх хөдөлгөөн дээр автоматаар өмсөгдөнө. `loose` = толгойг жинтэй дагах (малгай, чихэвч), үгүй бол хөдөлгөөнгүй
  * наалттай (нүдний шил).
  */
-const ITEMS: Record<string, { loose: boolean }> = {
+const STAFF_IDS = ['staff00', 'staff03', 'staff04', 'staff05', 'holly_staff', 'pestilence_staff', 'w_staff_256'] as const;
+const ITEMS: Record<string, { loose: boolean; layer?: string; at?: [number, number]; anchor?: 'hand' }> = {
   glasses: { loose: false },
   gradcap: { loose: true },
   headphones: { loose: true },
+  warrior_helmet: { loose: false, layer: 'item_warrior_helmet', at: [-6, -14] },
 };
+for (const id of STAFF_IDS) ITEMS[id] = { loose: false, layer: `item_${id}`, at: [-16, -54], anchor: 'hand' };
+
+/** Staff grip points for each animation frame. In happy, use the paw that actually waves. */
+const HANDS: Record<string, [number, number][]> = {
+  thriving: [[10,67],[10,63],[9,62],[9,62],[10,66]],
+  sleep: [[33,79],[33,79],[34,77],[35,75],[35,75]],
+  happy: [[66,94],[66,94],[72,91],[74,69],[76,61],[74,70],[74,79]],
+  tired: [[12,93],[12,93],[12,93],[12,93],[12,93],[12,93],[12,93]],
+  welcome: [[13,67],[13,67],[13,67],[13,67],[13,67],[32,84],[40,84],[47,84],[47,84]],
+  ouch: [[12,100],[12,100],[12,100],[13,61],[13,61],[13,61],[13,61]],
+  neglected: [[12,95],[13,92],[23,88],[29,74],[30,77],[29,77],[32,76]],
+};
+
+function handAt(img: Img, point: [number, number]): [number, number] {
+  let nearest: [number, number] = point;
+  let best = Infinity;
+  for (let dy = -6; dy <= 6; dy++) for (let dx = -6; dx <= 6; dx++) {
+    const x = point[0] + dx, y = point[1] + dy;
+    if (x < 0 || y < 0 || x >= img.w || y >= img.h || img.d[at(img, x, y) + 3] < 128) continue;
+    if (dx * dx + dy * dy < best) { best = dx * dx + dy * dy; nearest = [x, y]; }
+  }
+  if (!Number.isFinite(best)) throw new Error('Staff grip is outside paw silhouette');
+  return nearest;
+}
 /** bear_idle_scarf-ийн нээлттэй нүд (хөмсөгтэй нь): нүд анисан frame-д тавьж нээнэ */
 const EYES = [
   [19, 37, 35, 56],
@@ -96,6 +122,8 @@ for (let i = 0; i < plain.d.length; i += 4) if (!sameAt(plain, capped, i) && sam
 
 /** item = outfit sprite-ийн ороолтгүй (эсвэл ороолттой) баавгайгаас ялгарах pixel-ууд + доор нь контакт сүүдэр */
 function itemLayer(id: string): { img: Img; at: [number, number] } {
+  const direct = ITEMS[id];
+  if (direct.layer && direct.at) return { img: source(direct.layer), at: direct.at };
   const o = source(`outfit_${id}`);
   const differs = (base: Img) => Array.from({ length: o.w * o.h }, (_, p) => !sameAt(o, base, p * 4));
   const [a, b] = [differs(plain), differs(REF)];
@@ -196,6 +224,81 @@ function withOpenEyes(img: Img): Img {
 }
 
 const items = Object.fromEntries(Object.keys(ITEMS).map((id) => [id, itemLayer(id)]));
+
+// A held frame contains BOTH the staff and its foreground fingers. Their grip
+// cannot drift due to separate runtime transforms, scaling or animation clocks.
+const GRIP = source('staff_grip'); // PixelLab edited closed fingers, pivot [8, 8]
+const HELD = { w: 64, h: 112, pivot: [32, 60] as const };
+const MAGIC_TIP = [-3, -42] as const; // pestilence staff tip relative to its grip
+function heldPatch(base: Img, hand: [number, number], id: string, angle = 0, closed = false): Img {
+  const out = blank(HELD.w, HELD.h);
+  const item = items[id];
+  const theta = angle * Math.PI / 180;
+  const cos = Math.cos(theta), sin = Math.sin(theta);
+  for (let y = 0; y < out.h; y++) for (let x = 0; x < out.w; x++) {
+    const dx = x - HELD.pivot[0], dy = y - HELD.pivot[1];
+    const sx = Math.round(cos * dx + sin * dy - item.at[0]);
+    const sy = Math.round(-sin * dx + cos * dy - item.at[1]);
+    if (sx >= 0 && sy >= 0 && sx < item.img.w && sy < item.img.h)
+      out.d.set(item.img.d.subarray(at(item.img, sx, sy), at(item.img, sx, sy) + 4), at(out, x, y));
+  }
+  for (let dy = -5; dy <= 5; dy++) for (let dx = -5; dx <= 5; dx++) {
+    const x = hand[0] + dx, y = hand[1] + dy;
+    if (x < 0 || y < 0 || x >= base.w || y >= base.h) continue;
+    const b = at(base, x, y);
+    if (!base.d[b + 3]) continue;
+    const dst = at(out, HELD.pivot[0] + dx, HELD.pivot[1] + dy);
+    out.d.set(base.d.subarray(b, b + 4), dst);
+    if (closed) {
+      const g = at(GRIP, dx + 8, dy + 8);
+      if (GRIP.d[g + 3]) out.d.set(GRIP.d.subarray(g, g + 4), dst);
+    }
+  }
+  return out;
+}
+function heldFrame(name: string, frame: number, base: Img, id: string): Img {
+  const hand = handAt(base, HANDS[name][frame]);
+  const angle = name === 'happy' ? Math.min(10, Math.max(0, Math.round((94 - hand[1]) / 3))) : 0;
+  return heldPatch(base, hand, id, angle, name === 'happy' && frame >= 3);
+}
+function overlay(base: Img, layer: Img, ox: number, oy: number) {
+  for (let y = 0; y < layer.h; y++) for (let x = 0; x < layer.w; x++) {
+    const px = ox + x, py = oy + y;
+    if (px < 0 || py < 0 || px >= base.w || py >= base.h) continue;
+    const s = at(layer, x, y), d = at(base, px, py), a = layer.d[s + 3] / 255;
+    if (!a) continue;
+    for (let c = 0; c < 3; c++) base.d[d + c] = Math.round(layer.d[s + c] * a + base.d[d + c] * (1 - a));
+    base.d[d + 3] = Math.max(base.d[d + 3], layer.d[s + 3]);
+  }
+}
+
+/** Hide only head pixels protruding beyond the original helmet's outer contour.
+ * The equipment PNG stays unchanged; the normal bear sheets remain untouched.
+ */
+function helmetBase(img: Img, head: [number, number]): Img {
+  const out = clone(img);
+  const helmet = items.warrior_helmet;
+  for (let ry = HEAD[1]; ry < HEAD[3]; ry++) {
+    const hy = ry - HEAD[1] - helmet.at[1];
+    if (hy < 0 || hy >= helmet.img.h) continue;
+    let left = helmet.img.w;
+    let right = -1;
+    for (let x = 0; x < helmet.img.w; x++)
+      if (helmet.img.d[at(helmet.img, x, hy) + 3] > 32) {
+        left = Math.min(left, x);
+        right = Math.max(right, x);
+      }
+    if (right < left) continue;
+    for (let rx = HEAD[0]; rx < HEAD[2]; rx++) {
+      const hx = rx - HEAD[0] - helmet.at[0];
+      if (hx >= left && hx <= right) continue;
+      const x = head[0] + rx - HEAD[0];
+      const y = head[1] + ry - HEAD[1];
+      if (x >= 0 && x < out.w && y >= 0 && y < out.h) out.d.fill(0, at(out, x, y), at(out, x, y) + 4);
+    }
+  }
+  return out;
+}
 const meta: Record<string, unknown> = {};
 const sheets: Record<string, { frames: Frame[]; heads: [number, number][]; seq: number[] }> = {};
 for (const [name, s] of Object.entries(STATES)) {
@@ -227,7 +330,7 @@ for (const [name, s] of Object.entries(STATES)) {
     /** frame-ийн зүүн дээд булан анхны sprite-ийн координатаар */
     offset: [x0 - l, y0 - t],
     /** frame бүрийн хугацаа ба толгойн (HEAD) зүүн дээд булан: item-ийг үүнд тааруулж өмсгөнө */
-    frames: frames.map(({ name: n, duration }, i) => ({ name: n, duration, head: heads[i] })),
+    frames: frames.map(({ name: n, duration, img }, i) => ({ name: n, duration, head: heads[i], hand: handAt(img, HANDS[name][i]) })),
     tags: { in: tag(s.in), loop: tag(s.loop) },
   };
   const span = ([from, to, dir]: Tag) => {
@@ -239,10 +342,67 @@ for (const [name, s] of Object.entries(STATES)) {
 
 const preview = process.argv.indexOf('--preview');
 if (preview < 0) {
+  // Direct PixelLab overlays also produce the Shop card on the unchanged reference bear.
+  for (const [id, def] of Object.entries(ITEMS)) {
+    if (!def.layer) continue;
+    const card = id === 'warrior_helmet' ? helmetBase(REF, [HEAD[0], HEAD[1]]) : clone(REF);
+    if (def.anchor === 'hand') {
+      const hand: [number, number] = [68, 104];
+      overlay(card, heldPatch(REF, hand, id), hand[0] - HELD.pivot[0], hand[1] - HELD.pivot[1]);
+      writePng(new URL(`outfit_${id}.png`, SPRITES), card);
+      continue;
+    }
+    const layer = items[id];
+    const pivot = [HEAD[0], HEAD[1]];
+    const ox = pivot[0] + layer.at[0];
+    const oy = pivot[1] + layer.at[1];
+    for (let y = 0; y < layer.img.h; y++)
+      for (let x = 0; x < layer.img.w; x++) {
+        const [px, py] = [ox + x, oy + y];
+        if (px < 0 || py < 0 || px >= card.w || py >= card.h) continue;
+        const i = at(layer.img, x, y);
+        const alpha = layer.img.d[i + 3] / 255;
+        if (!alpha) continue;
+        const j = at(card, px, py);
+        for (let c = 0; c < 3; c++) card.d[j + c] = Math.round(layer.img.d[i + c] * alpha + card.d[j + c] * (1 - alpha));
+        card.d[j + 3] = Math.max(card.d[j + 3], layer.img.d[i + 3]);
+      }
+    writePng(new URL(`outfit_${id}.png`, SPRITES), card);
+  }
   for (const [name, { frames }] of Object.entries(sheets)) writePng(new URL(`bear_home_${name}.png`, SPRITES), toSheet(frames, STATES[name].cols ?? frames.length));
+  for (const [name, { frames, heads }] of Object.entries(sheets)) {
+    const fitted = frames.map((f, i) => ({ ...f, img: helmetBase(f.img, heads[i]) }));
+    writePng(new URL(`bear_helmet_base_${name}.png`, SPRITES), toSheet(fitted, STATES[name].cols ?? frames.length));
+  }
   for (const [id, { img }] of Object.entries(items)) writePng(new URL(`item_${id}.png`, SPRITES), img);
+  const heldSheets: Record<string, Record<string, string>> = {};
+  for (const id of STAFF_IDS) {
+    heldSheets[id] = {};
+    for (const [name, { frames }] of Object.entries(sheets)) {
+      const cols = STATES[name].cols ?? frames.length;
+      const scale = name === 'welcome' ? 3 : 2;
+      const stem = `held_${id}_${name}`;
+      const strip = toSheet(frames.map((f, i) => ({ ...f, img: heldFrame(name, i, f.img, id) })), cols);
+      writePng(new URL(`${stem}.png`, SPRITES), strip);
+      heldSheets[id][name] = `${stem}_${strip.w * scale}x${strip.h * scale}`;
+    }
+  }
+  // PixelLab's 5-column VFX export becomes a one-row strip for SheetLoop.
+  const magicAtlas = readPng(new URL('black-staff-vfx.png', PIXELLAB));
+  const magicJson = JSON.parse(readFileSync(new URL('black-staff-vfx.json', PIXELLAB), 'utf8')) as {
+    frames: { frame: { x: number; y: number; w: number; h: number }; duration: number }[];
+  };
+  const magicFrames = magicJson.frames.map(({ frame: rect, duration }, i) => ({
+    name: `magic${i}`, duration,
+    img: crop(magicAtlas, rect.x, rect.y, rect.w, rect.h),
+  }));
+  writePng(new URL('magic_pestilence_staff.png', SPRITES), toSheet(magicFrames, magicFrames.length));
   writeFileSync(META, `${JSON.stringify(meta, null, 2)}\n`);
-  const itemMeta = Object.fromEntries(Object.entries(items).map(([id, { at: a }]) => [id, { at: a, loose: ITEMS[id].loose }]));
+  const itemMeta = Object.fromEntries(Object.entries(items).map(([id, { at: a }]) => [id, {
+    at: a, loose: ITEMS[id].loose,
+    ...(ITEMS[id].anchor ? { anchor: ITEMS[id].anchor, held: { at: HELD.pivot.map(v => -v), sheets: heldSheets[id] } } : {}),
+    ...(id === 'pestilence_staff' ? { magicTip: MAGIC_TIP } : {}),
+  }]));
   writeFileSync(ITEMS_META, `${JSON.stringify(itemMeta, null, 2)}\n`);
   console.log(`bear_home: ${Object.entries(sheets).map(([n, { frames }]) => `${n} ${frames.length}`).join(', ')}`);
 } else {
@@ -251,11 +411,17 @@ if (preview < 0) {
   for (const [name, { frames, heads, seq }] of Object.entries(sheets))
     for (const id of ['', ...Object.keys(items)]) {
       const shots = seq.map((i, n) => {
-        const img = clone(frames[i].img);
+        const img = id === 'warrior_helmet' ? helmetBase(frames[i].img, heads[i]) : clone(frames[i].img);
         if (!id) return scale(img, 3);
         const head = heads[i];
         const prev = heads[seq[(n + seq.length - 1) % seq.length]];
-        const [hx, hy] = ITEMS[id].loose ? [Math.round((head[0] + prev[0]) / 2), Math.round((head[1] + prev[1]) / 2)] : head;
+        const held = ITEMS[id].anchor === 'hand';
+        const anchor = held ? handAt(frames[i].img, HANDS[name][i]) : head;
+        if (held) {
+          overlay(img, heldFrame(name, i, frames[i].img, id), anchor[0] - HELD.pivot[0], anchor[1] - HELD.pivot[1]);
+          return scale(img, 3);
+        }
+        const [hx, hy] = ITEMS[id].loose ? [Math.round((head[0] + prev[0]) / 2), Math.round((head[1] + prev[1]) / 2)] : anchor;
         const it = items[id];
         for (let y = 0; y < it.img.h; y++)
           for (let x = 0; x < it.img.w; x++) {
@@ -267,6 +433,11 @@ if (preview < 0) {
             for (let c = 0; c < 3; c++) img.d[j + c] = Math.round(it.img.d[k + c] * al + img.d[j + c] * (1 - al));
             img.d[j + 3] = Math.max(img.d[j + 3], it.img.d[k + 3]);
           }
+        if (held) for (let y = hy - 4; y <= hy + 4; y++) for (let x = hx - 4; x <= hx + 4; x++) {
+          if (x < 0 || y < 0 || x >= img.w || y >= img.h) continue;
+          const j = at(img, x, y);
+          img.d.set(frames[i].img.d.subarray(j, j + 4), j);
+        }
         return scale(img, 3);
       });
       writeApng(`${dir}home_${name}${id ? `_${id}` : ''}.png`, shots, seq.map((i) => frames[i].duration));
