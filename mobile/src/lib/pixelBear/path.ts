@@ -1,12 +1,13 @@
 import { currentNode as nodeAt, gateNodes, gateOf, isBossNode, pathLessons, unitOf, UNITS } from '@shared/path';
 import type { BookLesson, Subject, SubjectPath } from '@shared/types';
+import type { ThemeId } from '@/constants/chapterTheme';
 import { S } from '@/i18n/strings';
-import type { SpriteKey } from '@/sprites';
+import { type SpriteKey, sprites } from '@/sprites';
 import golems from './golems.json';
 import world from './world.json';
 
-// Адал явдлын газрын зураг: DESIGN.md §8-04-ийн бүлгийг доороос дээш 3 бүлэг (ой → тал → мөсөн уул) болгосон.
-// Зангилааны байрлал ба дэвсгэр зураг хоёулаа docs/design/pixel-bear/tools/mapgen_world.py-аас үүснэ.
+// Адал явдлын газрын зураг: DESIGN.md §8-04-ийн бүлгийг 3 бүлэг болгосон; Duolingo шиг дээрээс доош явна
+// (хулууны ой → чулуун балгас, гол → цасан уул). Бүлэг бүр өөрийн дэвсгэр зураг дээр, зангилаанууд нь зигзаг.
 // Зангилаа бүр сурах бичгийн нэг хичээл (GET /me/lessons/:subject; ном байхгүй бол доорх TITLES), бүлэг бүрийн төгсгөлд
 // boss: замын урт хичээлийн тооноос (shared/path.ts, сервертэй нэг эх). `n` = замын хичээлийн тоо (pathLessons).
 
@@ -16,7 +17,7 @@ export type NodeStatus = 'done' | 'current' | 'lock';
 export interface TrailPoint {
   x: number;
   y: number;
-  /** түвшний зангилааны дугаар; бүлэг хоорондын гүүр чулуунд байхгүй */
+  /** түвшний зангилааны дугаар */
   i?: number;
 }
 
@@ -29,10 +30,41 @@ export interface PathNode {
 }
 
 export const MAP_W = world.width;
-export const MAP_H = world.height;
 export const UNIT_COUNT = UNITS;
-/** Дэвсгэрийн хэсгүүд, дээрээс доош */
-export const MAP_PIECES = ['map_world_2_390x448', 'map_world_1_390x760', 'map_world_0_390x760'] as const satisfies readonly SpriteKey[];
+
+export interface MapChapter {
+  bg: SpriteKey;
+  themeId: ThemeId;
+  /** зургийн дээд талын энэ хэдэн мөрийг тайрна (өөр бүлэгтэй уусах зориулалттай шилжилт) */
+  cropTop?: number;
+  /** дэвсгэр богино бол доор нь зургийн энэ мөрөөс доошхи хэсгийг дахин тавьж уртасгана */
+  extend?: number;
+  /** зургийн зүүн, баруун захын энэ хэдэн багана гажигтай (үүсгэлтийн зурвас): хөрш багануудаар халхална */
+  edgeFix?: number;
+}
+/**
+ * Бүлэг бүрийн дэвсгэр ба самбарын theme, дээрээс доош (UNIT_COUNT ширхэг, бүлгийн дарааллаар). Шинэ бүлэгт дэвсгэр,
+ * themeId хоёрыг нэмэхэд хангалттай.
+ */
+export const MAP_CHAPTERS: readonly MapChapter[] = [
+  { bg: 'map_world_0_390x760', themeId: 'halloween' },
+  // дээд 112 мөр нь цасан бүлэгтэй уусах цайвар манан (зураг анх цасны доор байсан): энд хэрэггүй
+  // хоёр захад 6 px босоо зурвас (PixelLab үүсгэлтийн үлдэгдэл)
+  { bg: 'map_world_1_390x760', themeId: 'moonstone', cropTop: 112, edgeFix: 6 },
+  // цасан зураг 448 dp: уулын доорх цасыг давтаж бусадтай ойролцоо өндөртэй болгоно
+  { bg: 'map_world_2_390x448', themeId: 'forest', extend: 140 },
+];
+export const chapterHeight = (c: MapChapter) => sprites[c.bg].height * (c.extend === undefined ? 1 : 2) - (c.extend ?? 0) - (c.cropTop ?? 0);
+/** Бүлэг бүрийн дээд зах (газрын зураг дээрх dp) */
+export const CHAPTER_TOPS = MAP_CHAPTERS.map((_, k) => MAP_CHAPTERS.slice(0, k).reduce((sum, c) => sum + chapterHeight(c), 0));
+export const MAP_H = CHAPTER_TOPS[CHAPTER_TOPS.length - 1] + chapterHeight(MAP_CHAPTERS[MAP_CHAPTERS.length - 1]);
+
+/** Газрын зургийн `y` цэг аль бүлгийн дэвсгэр дээр байгаа вэ (самбарын theme, дээд баннер). */
+export function chapterAtY(y: number): number {
+  let k = 0;
+  while (k < CHAPTER_TOPS.length - 1 && y >= CHAPTER_TOPS[k + 1]) k++;
+  return k;
+}
 
 export interface Boss {
   name: string;
@@ -96,7 +128,7 @@ export interface PathUnit {
   gift: number;
   myst: number;
   boss: number;
-  /** 0-р бүлгийн хуучин 390×760 газрын зурагтай харьцуулсан бүлгийн шилжилт: декорын байрлал бүлэг бүрт адил */
+  /** бүлгийн дэвсгэрийн дээд зах: декорын (үүл, эрвээхэй) байрлал бүлэг бүрт адил */
   top: number;
 }
 
@@ -104,60 +136,58 @@ export interface PathLayout {
   /** замын хичээлийн тоо */
   n: number;
   nodes: PathNode[];
-  /** Баавгайн алхах зам: зангилаа + гүүр чулуу, доороос дээш */
+  /** Зангилаанууд, дээрээс доош (Duolingo шиг) */
   trail: TrailPoint[];
   units: PathUnit[];
   /** тулааны хаалганы зангилаа (BOSSES ижил дараалалтай) */
   gates: number[];
 }
 
-/** world.json-ийн бүлэг бүрийн 16 цэгтэй зам (mapgen_world.py мод тарихгүй орхидог), гүүр чулуутай. */
-const BASE: TrailPoint[] = world.trail;
-const BASE_UNIT = world.unitSize;
-
-/** Шугаман замын `t` (0–1) хэсэгт байх цэг. */
-function along(pts: readonly TrailPoint[], t: number): { x: number; y: number } {
-  const seg = pts.slice(1).map((p, k) => Math.hypot(p.x - pts[k].x, p.y - pts[k].y));
-  let left = t * seg.reduce((a, b) => a + b, 0);
-  for (let k = 0; k < seg.length; k++) {
-    if (left <= seg[k] || k === seg.length - 1) {
-      const f = seg[k] ? Math.min(1, left / seg[k]) : 0;
-      return { x: Math.round(pts[k].x + (pts[k + 1].x - pts[k].x) * f), y: Math.round(pts[k].y + (pts[k + 1].y - pts[k].y) * f) };
-    }
-    left -= seg[k];
-  }
-  return pts[0];
-}
+/** Зигзагийн далайц (төвөөс), зангилааны хэвтээ хязгаар (хамгаалагчид дэлгэцээс гарахгүй), бүлгийн дээд/доод зай */
+const ZIG = 80;
+const X_MIN = 115;
+const X_MAX = 275;
+const PAD_TOP = 70;
+/** 1-р бүлгийн эхэнд: дээд баннер газрын зураг дээр хөвдөг тул эхний зангилаа түүний доор */
+const PAD_FIRST = 150;
+/** 2-р бүлгийн зүүн/баруун гарын зангилаа голдоо ойр: хамгаалагчид газрын зургийн хоёр захад зогсоно (PathMap) */
+const GUARD_NODE_DX = 20;
+/** boss болон түүний доорх шошгонд зай: дараагийн бүлгийн баннер хүртэл */
+const PAD_BOTTOM = 112;
 
 /**
- * `n` хичээлтэй замын газрын зураг: бүлэг бүрийн хичээлүүдийг world.json-ийн тэр бүлгийн зам дагуу жигд зайтай
- * байрлуулна (хичээл олон бол ойр, цөөн бол алс), boss нь бүлгийн замын төгсгөлд. Нахиа, бэлэг, хэцүү сорил нь
+ * `n` хичээлтэй замын газрын зураг: бүлэг бүрийн хичээлүүд өөрийн дэвсгэр дээр дээрээс доош жигд зайтай (хичээл
+ * олон бол ойр, цөөн бол алс), Duolingo шиг зигзаг; boss нь бүлгийн доод талд голдоо. Нахиа, бэлэг, хэцүү сорил нь
  * бүлгийн ижил хэсэгт (16 зангилаатай анхны зургийн 3, 9, 12).
  */
 export function pathLayout(n: number): PathLayout {
   const gates = gateNodes(n);
   const nodes: PathNode[] = [];
-  const trail: TrailPoint[] = [];
   const units: PathUnit[] = [];
   for (let u = 0; u < UNIT_COUNT; u++) {
-    const base = BASE.filter((t) => t.i !== undefined && Math.floor(t.i / BASE_UNIT) === u);
+    const top = CHAPTER_TOPS[u];
+    const y0 = top + (u === 0 ? PAD_FIRST : PAD_TOP);
+    const y1 = top + chapterHeight(MAP_CHAPTERS[u]) - PAD_BOTTOM;
     const boss = gates[[0, 3, 4][u]];
     const start = u === 0 ? 0 : units[u - 1].boss + 1;
     const m = boss - start;
     const at = (f: number) => start + Math.min(m - 1, Math.round(f * m));
-    const unit = { start, sapling: at(3 / 15), gift: at(9 / 15), myst: at(12 / 15), boss, top: base[0].y - BASE[0].y };
+    const unit = { start, sapling: at(3 / 15), gift: at(9 / 15), myst: at(12 / 15), boss, top };
     units.push(unit);
     const kind = (i: number): NodeKind =>
       i === boss ? 'boss' : i === unit.myst ? 'myst' : i === unit.gift ? 'gift' : i === unit.sapling ? 'sapling' : 'stone';
-    // бүлэг хоорондын гүүр чулуу
-    if (u > 0) trail.push(...BASE.slice(BASE.findIndex((t) => t.i === u * BASE_UNIT - 1) + 1, BASE.findIndex((t) => t.i === u * BASE_UNIT)));
     for (let k = 0; k <= m; k++) {
-      const p = along(base, m ? k / m : 1);
-      nodes.push({ i: start + k, x: p.x, y: p.y, kind: kind(start + k) });
-      trail.push({ ...p, i: start + k });
+      const g = gates.indexOf(start + k);
+      const x =
+        k === m
+          ? MAP_W / 2
+          : g === 1 || g === 2
+            ? MAP_W / 2 + (g === 1 ? GUARD_NODE_DX : -GUARD_NODE_DX)
+            : Math.round(Math.max(X_MIN, Math.min(X_MAX, MAP_W / 2 + ZIG * Math.sin((k * Math.PI) / 4))));
+      nodes.push({ i: start + k, x, y: Math.round(m ? y0 + ((y1 - y0) * k) / m : y1), kind: kind(start + k) });
     }
   }
-  return { n, nodes, trail, units, gates };
+  return { n, nodes, trail: nodes.map(({ x, y, i }) => ({ x, y, i })), units, gates };
 }
 
 /**
@@ -172,10 +202,6 @@ export const bossAhead = (n: number, i: number, bossesBeaten: number) => gateOf(
 export const statusOf = (i: number, current: number): NodeStatus => (i < current ? 'done' : i === current ? 'current' : 'lock');
 
 export const trailIndex = (layout: PathLayout, i: number) => layout.trail.findIndex((t) => t.i === i);
-
-/** `from` зангилаанаас `to` хүртэл алхах цэгүүд (`from` өөрөө ороогүй). */
-export const walkPoints = (layout: PathLayout, from: number, to: number) =>
-  layout.trail.slice(trailIndex(layout, from) + 1, trailIndex(layout, to) + 1);
 
 /** Алхмын төлөв: дууссан = ногоон ✓, одоогийн = шар хүрээтэй тод, түгжээтэй = бүдэг саарал + цоож; boss = 1.5× том арал. */
 export function tileFor(node: PathNode, status: NodeStatus): SpriteKey {

@@ -1,26 +1,39 @@
 import type { BookLesson, LessonsResponse, Subject } from '@shared/types';
 import { router, useFocusEffect } from 'expo-router';
 import { type ComponentRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import Animated, { FadeInDown, FadeOut } from 'react-native-reanimated';
+import { type NativeScrollEvent, type NativeSyntheticEvent, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
 import { api } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
+import { MapHeader } from '@/components/MapHeader';
 import { useTabBarSpace } from '@/components/BottomNav';
-import { MAP_H, PathMap } from '@/components/PathMap';
-import { PressScale } from '@/components/pixel';
-import { TopBar } from '@/components/TopBar';
-import { colors, fonts, hardShadow, radius } from '@/constants/theme';
+import { NodePopover, POPOVER_INSET } from '@/components/NodePopover';
+import { MAP_H, PathMap, useMapScale } from '@/components/PathMap';
+import { setChapterTheme, themeOf } from '@/constants/chapterTheme';
 import { S, subjectNames } from '@/i18n/strings';
-import { kvGet, kvSet } from '@/lib/kv';
 import { usePixelBear } from '@/lib/mock/pixelBear';
-import { bossAhead, currentNode, gateOf, lessonAt, lessonTitle, type NodeStatus, pathLayout, pathLessons, unitOf } from '@/lib/pixelBear/path';
+import {
+  bossAhead,
+  chapterAtY,
+  currentNode,
+  gateOf,
+  lessonAt,
+  lessonTitle,
+  MAP_CHAPTERS,
+  type NodeStatus,
+  pathLayout,
+  pathLessons,
+  statusOf,
+  unitOf,
+} from '@/lib/pixelBear/path';
 
-const SUBJECTS: Subject[] = ['math', 'mongolian', 'physics'];
-const CTA_SPACE = 112;
-/** Нэг дор алхах хамгийн олон зангилаа (олон шат ахисан бол сүүлийн хэсгийг л алхана) */
-const MAX_WALK = 6;
+/** Popover-ын өндрийг хэмжихээс өмнөх тооцоо */
+const POP_EST = 180;
+/** Popover зангилааны доор хэр холоос эхлэх: чулуу (цагирагтай) ба boss-ын арал (шошготой) */
+const popOffset = (boss: boolean) => (boss ? 74 : 50);
+/** Зангилааны дээд талд харагдах зай: boss-ын томорсон бие өндөр */
+const nodeHead = (boss: boolean) => (boss ? 120 : 44);
 
 /** 04 · Сурах зам (адал явдлын газрын зураг). */
 export default function PathScreen() {
@@ -31,9 +44,25 @@ export default function PathScreen() {
   const barSpace = useTabBarSpace();
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
   // ScrollView бүтэн дэлгэцийг эзэлдэг (толгой, цэс дээр нь хөвнө); web дээр onLayout анх ажилладаггүй
-  const viewH = useWindowDimensions().height;
-  const [menu, setMenu] = useState(false);
-  const [note, setNote] = useState<string | null>(null);
+  const { height: viewH, width: viewW } = useWindowDimensions();
+  // газрын зураг дэлгэцийн өргөнд томорно: зургийн y → дэлгэцийн y × k
+  const k = useMapScale();
+  // Толгойн бодит өндөр (scroll padding), сонгосон зангилаа, popover-ын өндөр, харагдаж буй бүлэг
+  // Газрын зураг stat-уудын самбарын доороос эхэлнэ (mapTop); бүлгийн баннер зураг дээр хөвөх тул харагдах хэсгийн
+  // дээд зах нь баннерын доод зах (headerH)
+  const [mapTop, setMapTop] = useState(insets.top + 56);
+  const [headerH, setHeaderH] = useState(insets.top + 140);
+  // толгойн өндөр анх хэмжигдсэн эсэх: бүлгийн баннерын бичвэр солигдож өндөр өөрчлөгдөхөд дахин голлуулахгүй
+  const [headerReady, setHeaderReady] = useState(false);
+  const [sel, setSel] = useState<number | null>(null);
+  const [cardH, setCardH] = useState(0);
+  // Popover-ын зай (scroll padding): нээгдэхэд нэмэгдэнэ, хаахад газрын зураг доош үсрэхгүйн тулд гүйлгэж дууссаны дараа хасна
+  const [pad, setPad] = useState(false);
+  const padNode = useRef(0);
+  const reduce = useReducedMotion();
+  // дэлгэцийн төвд байгаа бүлэг; scroll хийтэл одоогийн зангилааных
+  const [visible, setVisible] = useState<number | null>(null);
+  const scrollY = useRef(0);
 
   useFocusEffect(
     useCallback(() => {
@@ -63,197 +92,147 @@ export default function PathScreen() {
   const bossFight = !!path && bossAhead(n, current, path.bossesBeaten);
   const unit = layout.units[unitOf(n, current)];
   const userId = me?.id;
+  const chapterIdx = visible ?? chapterAtY(layout.nodes[current].y);
+  const chapter = MAP_CHAPTERS[chapterIdx].themeId;
+  const theme = themeOf(chapter);
 
-  // Баавгай сүүлд харсан зангилаанаасаа одоогийнх руу алхана (апп хаагдсан ч төхөөрөмж дээр санана)
-  const [from, setFrom] = useState<number | null>(null);
+  // Самбарын theme: дэлгэцийн төвд байгаа бүлгийн; өөр tab руу гарахад үндсэн theme
+  useFocusEffect(
+    useCallback(() => {
+      setChapterTheme(chapter);
+      return () => setChapterTheme('default');
+    }, [chapter]),
+  );
+  useEffect(() => setVisible(null), [layout, current]);
   useEffect(() => {
-    if (userId === undefined) return;
-    let alive = true;
-    setFrom(null); // өөр хичээлийн замаас алхаж ирэхгүй
-    const key = `pq.path.seen.${userId}.${subject}`;
-    void kvGet<number>(key).then((seen) => {
-      if (!alive) return;
-      setFrom(seen === null || seen >= current ? current : Math.max(seen, current - MAX_WALK));
-      void kvSet(key, current);
-    });
-    return () => {
-      alive = false;
-    };
-  }, [userId, subject, current]);
+    setSel(null);
+    setPad(false);
+  }, [subject]);
+
+  // Сүүлийн зангилаануудын popover газрын зургийн доод захаас хэтэрнэ: зөвхөн тэр хэсэгт нэмэлт scroll зай
+  const popH = cardH || POP_EST;
+  const padAt = layout.nodes[Math.min(padNode.current, layout.nodes.length - 1)];
+  const reserve = pad ? Math.max(0, padAt.y * k + popOffset(padAt.kind === 'boss') + popH + 40 - MAP_H * k) : 0;
+  /** popover-ын зайгүй үеийн хамгийн доод scroll: газрын зургийн доод зах цэсний дээд ирмэгт */
+  const baseMax = mapTop + MAP_H * k + barSpace - viewH;
+  /** `mapY` цэгийг толгой, доод цэсийн хоорондох хэсгийн төвд гаргах scroll */
+  const centerOn = (mapY: number) => Math.max(0, Math.min(baseMax, mapTop + mapY * k + 4 - (headerH + (viewH - barSpace - headerH) / 2)));
 
   // Одоогийн зангилааг дэлгэцийн дунд харуулна (XP өсөхөд зөөлөн гүйлгэнэ)
   const scrolledOnce = useRef(false);
   useEffect(() => {
     if (userId === undefined) return; // ScrollView нь me ирсний дараа л mount болно
-    const total = MAP_H + CTA_SPACE + barSpace;
-    const y = Math.max(0, Math.min(total - viewH, layout.nodes[current].y - viewH * 0.55));
-    scroll.current?.scrollTo({ y, animated: scrolledOnce.current });
+    scroll.current?.scrollTo({ y: centerOn(layout.nodes[current].y), animated: scrolledOnce.current });
     scrolledOnce.current = true;
-  }, [userId, current, viewH, barSpace, layout]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, current, viewH, barSpace, headerReady, layout]);
 
+  // Зангилаа ба доорх popover бүхэлдээ харагдахаар аажуухан гүйлгэнэ (padding нэмэгдсэний дараа; popover-ын бодит
+  // өндөр хэмжигдэх, толгой өндөрсөхөд дахин шалгана). Хоёулаа багтахгүй бол зангилаа нь харагдана.
   useEffect(() => {
-    if (!note) return;
-    const t = setTimeout(() => setNote(null), 2200);
-    return () => clearTimeout(t);
-  }, [note]);
+    if (sel === null) return;
+    const node = layout.nodes[sel];
+    const boss = node.kind === 'boss';
+    const top = mapTop + node.y * k - nodeHead(boss);
+    const bottom = mapTop + node.y * k + popOffset(boss) + popH + 28;
+    let y = scrollY.current;
+    if (bottom - y > viewH - barSpace) y = bottom - (viewH - barSpace);
+    if (top - y < headerH) y = top - headerH;
+    if (y !== scrollY.current) scroll.current?.scrollTo({ y: Math.max(0, y), animated: !reduce });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sel, cardH, headerH, mapTop]);
+
+  const onHeaderHeight = useCallback((panel: number, total: number) => {
+    setMapTop(panel);
+    setHeaderH(total);
+    setHeaderReady(true);
+  }, []);
+
+  function onScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
+    scrollY.current = e.nativeEvent.contentOffset.y;
+    setVisible(chapterAtY((scrollY.current + (headerH + viewH - barSpace) / 2 - mapTop) / k));
+    if (sel === null && pad && scrollY.current <= baseMax + 1) setPad(false);
+  }
+
+  function closeCard() {
+    setSel(null);
+    if (scrollY.current > baseMax + 1) scroll.current?.scrollTo({ y: Math.max(0, baseMax), animated: !reduce });
+    else setPad(false);
+  }
 
   if (!me) return null;
   function start() {
     router.push(bossFight ? `/task/${subject}?boss=${gateOf(n, current)}` : `/task/${subject}`);
   }
 
-  function onNode(i: number, status: NodeStatus) {
+  function onNode(i: number, _status: NodeStatus) {
     // Admin: дурын зангилаа (boss бол тэр бүлгийн boss) руу шууд орно
     if (me?.admin) return router.push(gateOf(n, i) >= 0 ? `/task/${subject}?boss=${gateOf(n, i)}` : `/task/${subject}?node=${i}`);
-    if (status === 'lock') setNote(S.path.locked);
-    else if (status === 'done') setNote(`${lessonTitle(subject, i, lessons)} · ${S.path.done}`);
-    else start();
+    padNode.current = i;
+    setPad(true);
+    setSel(i);
   }
+
+  // одоогийн зангилааны цагираг: шатны XP-ийн гуравны нэг бүр нэг хэсэг (зангилаа доторх ахиц сервер дээр байхгүй)
+  const ring = me.levelXpNeeded > 0 ? Math.min(3, Math.floor((3 * me.levelXp) / me.levelXpNeeded)) : 0;
+  const selNode = sel === null ? null : layout.nodes[sel];
+  const selUnit = sel === null ? null : layout.units[unitOf(n, sel)];
+  const selStatus = sel === null ? null : statusOf(sel, current);
+  // Дээд баннер: харагдаж буй бүлэг, номын бүлгийн нэр (номгүй бол хичээлийн нэр)
+  const chapterTitle = lessonAt(lessons, layout.units[chapterIdx].start)?.chapter;
+  const over = `${S.path.chapterOver(chapterIdx + 1)} · ${S.path.level(me.tier).toUpperCase()}`;
 
   return (
     <View style={styles.root}>
       <ScrollView
         ref={scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: CTA_SPACE + barSpace }]}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: mapTop, paddingBottom: reserve + barSpace }]}
         showsVerticalScrollIndicator={false}
+        scrollEventThrottle={32}
+        onScroll={onScroll}
       >
-        <PathMap layout={layout} current={current} from={from} beaten={path?.bossesBeaten ?? 0} subject={subject} lessons={lessons} onNodePress={onNode} />
+        {/* хоосон газар дарахад түр карт хураагдана; зангилаа өөрийн дарилтыг авна */}
+        <Pressable accessible={false} onPress={closeCard}>
+          <PathMap layout={layout} current={current} ring={ring} beaten={path?.bossesBeaten ?? 0} subject={subject} lessons={lessons} selected={sel} onNodePress={onNode} />
+        </Pressable>
+
+        {sel !== null && selNode && selUnit && selStatus ? (
+          <NodePopover
+            // popover-ын өнгө нь сонгосон зангилааны бүлгийнх
+            theme={themeOf(MAP_CHAPTERS[unitOf(n, sel)].themeId)}
+            top={mapTop + selNode.y * k + popOffset(selNode.kind === 'boss')}
+            arrowX={Math.max(24, Math.min(viewW - POPOVER_INSET * 2 - 24, selNode.x * k - POPOVER_INSET))}
+            title={lessonTitle(subject, sel, lessons)}
+            sub={
+              selStatus === 'lock'
+                ? S.path.locked
+                : selNode.kind === 'boss'
+                  ? S.path.bossFight
+                  : S.path.lessonOf(sel - selUnit.start + 1, selUnit.boss - selUnit.start)
+            }
+            action={selStatus === 'current' ? S.path.startXp(me.questionsPerTask * me.xpPerCorrect) : selStatus === 'lock' ? S.path.lockedBtn : S.path.doneBtn}
+            canStart={selStatus === 'current'}
+            onStart={start}
+            onClose={closeCard}
+            onHeight={setCardH}
+          />
+        ) : null}
       </ScrollView>
 
-      <View style={[styles.header, { top: insets.top + 6 }]} pointerEvents="box-none">
-        <TopBar onMap />
-        <View style={styles.row2} pointerEvents="box-none">
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`${S.path.subjectMenu}: ${subjectNames[subject]}`}
-            accessibilityState={{ expanded: menu }}
-            onPress={() => setMenu((m) => !m)}
-            style={styles.dropdown}
-          >
-            <Text style={styles.dropText}>{subjectNames[subject]}</Text>
-            <Svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke={colors.ink} strokeWidth={3} strokeLinecap="round" strokeLinejoin="round">
-              <Path d={menu ? 'm6 15 6-6 6 6' : 'm6 9 6 6 6-6'} />
-            </Svg>
-          </Pressable>
-          <View style={styles.badge}>
-            <Text style={styles.badgeText}>{S.path.levelBadge(me.tier)}</Text>
-          </View>
-        </View>
-        {menu ? (
-          <Animated.View entering={FadeInDown.duration(180)} exiting={FadeOut.duration(120)} style={styles.menu}>
-            {SUBJECTS.map((s) => (
-              <Pressable
-                key={s}
-                accessibilityRole="menuitem"
-                accessibilityState={{ selected: s === subject }}
-                onPress={() => {
-                  setSubject(s);
-                  setMenu(false);
-                }}
-                style={[styles.menuItem, s === subject && { backgroundColor: colors.indigo }]}
-              >
-                <Text style={[styles.menuText, s === subject && { color: colors.white }]}>{subjectNames[s]}</Text>
-              </Pressable>
-            ))}
-          </Animated.View>
-        ) : null}
-      </View>
-
-      {note ? (
-        <Animated.View
-          entering={FadeInDown.duration(200)}
-          exiting={FadeOut.duration(150)}
-          style={[styles.toast, { bottom: barSpace + 96 }]}
-          pointerEvents="none"
-        >
-          <Text style={styles.toastText}>{note}</Text>
-        </Animated.View>
-      ) : null}
-
-      <View style={[styles.cta, { bottom: barSpace + 12 }]}>
-        <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-          <Text style={styles.ctaSmall} numberOfLines={1}>
-            {lessonAt(lessons, current)?.chapter ??
-              S.path.chapter(unitOf(n, current) + 1, subjectNames[subject], current - unit.start, unit.boss - unit.start + 1)}
-          </Text>
-          <Text style={styles.ctaTitle} numberOfLines={1}>
-            {lessonTitle(subject, current, lessons)}
-          </Text>
-        </View>
-        <PressScale accessibilityRole="button" accessibilityLabel={`${S.path.start}: ${lessonTitle(subject, current, lessons)}`} onPress={start} style={styles.ctaBtn}>
-          <Svg width={16} height={16} viewBox="0 0 24 24">
-            <Path d="M7 4.5v15l13-7.5z" fill={colors.ink} />
-          </Svg>
-          <Text style={styles.ctaBtnText}>{S.path.start}</Text>
-        </PressScale>
-      </View>
+      <MapHeader
+        theme={theme}
+        subject={subject}
+        over={chapterTitle ? `${subjectNames[subject].toUpperCase()} · ${over}` : over}
+        title={chapterTitle ?? subjectNames[subject]}
+        onSubject={setSubject}
+        onHeight={onHeaderHeight}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  // газрын зургийн доод захын (1-р бүлэг) өнгө: доод карт, цэсний ард хоосон ногоон зурвас гарахгүй
-  root: { flex: 1, backgroundColor: '#2E1766' },
+  // газрын зургийн доод захын (цасан бүлэг) өнгө: сүүлийн popover-ын доорх зай газрын зурагтай нийлнэ
+  root: { flex: 1, backgroundColor: '#EEF3EF' },
   scrollContent: { alignItems: 'center' },
-  header: { position: 'absolute', left: 20, right: 20, gap: 10 },
-  row2: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  dropdown: {
-    height: 40,
-    paddingLeft: 14,
-    paddingRight: 12,
-    borderRadius: radius.pill,
-    backgroundColor: colors.white,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  dropText: { fontFamily: fonts.bold, fontSize: 14, color: colors.ink },
-  badge: { height: 30, paddingHorizontal: 11, borderRadius: radius.pill, backgroundColor: colors.lime, justifyContent: 'center' },
-  badgeText: { fontFamily: fonts.extrabold, fontSize: 12, letterSpacing: 0.7, color: colors.ink },
-  menu: { alignSelf: 'flex-start', backgroundColor: colors.white, borderRadius: 20, padding: 6, gap: 4, borderWidth: 2, borderColor: colors.ink },
-  menuItem: { minHeight: 44, paddingHorizontal: 14, borderRadius: 14, justifyContent: 'center' },
-  menuText: { fontFamily: fonts.bold, fontSize: 15, color: colors.ink },
-  toast: {
-    position: 'absolute',
-    left: 20,
-    right: 20,
-    bottom: 100,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 16,
-    backgroundColor: colors.ink,
-  },
-  toastText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.white, textAlign: 'center' },
-  cta: {
-    position: 'absolute',
-    left: 20,
-    right: 20,
-    bottom: 16,
-    height: 72,
-    paddingLeft: 14,
-    paddingRight: 12,
-    borderRadius: radius.card,
-    backgroundColor: colors.white,
-    borderWidth: 2,
-    borderColor: colors.ink,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    ...hardShadow(4),
-  },
-  ctaSmall: { fontFamily: fonts.bold, fontSize: 12, color: colors.muted },
-  ctaTitle: { fontFamily: fonts.bold, fontSize: 17, letterSpacing: -0.3, color: colors.ink },
-  ctaBtn: {
-    height: 48,
-    paddingLeft: 14,
-    paddingRight: 16,
-    borderRadius: radius.pill,
-    backgroundColor: colors.lemon,
-    borderWidth: 2,
-    borderColor: colors.ink,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  ctaBtnText: { fontFamily: fonts.extrabold, fontSize: 15, color: colors.ink },
 });
