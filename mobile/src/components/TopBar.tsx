@@ -7,22 +7,31 @@ import { colors } from '@/constants/theme';
 import { S } from '@/i18n/strings';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 
-/** Нүүр, Сурах зам дээрх дээд мөр: аватар (→ миний профайл), XP, дараалал, coin. */
-export function TopBar({ xp = 'total', onMap }: { xp?: 'total' | 'level' | 'none'; onMap?: boolean }) {
+/** Аватар (→ миний профайл); хариулаагүй найзын хүсэлт байвал цэг. */
+export function AvatarLink({ size = 48, border, dotBorder = colors.paper }: { size?: number; border?: number; dotBorder?: string }) {
+  const { me } = useAuth();
+  if (!me) return null;
+  return (
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel={me.friendRequests > 0 ? `${S.profile.open}, ${S.friends.dot(me.friendRequests)}` : S.profile.open}
+      onPress={() => router.push('/profile')}
+      style={[styles.avatarTap, { minWidth: Math.max(size, 44), minHeight: Math.max(size, 44) }]}
+    >
+      <Avatar size={size} border={border} />
+      {me.friendRequests > 0 ? <View style={[styles.dot, { borderColor: dotBorder }]} /> : null}
+    </Pressable>
+  );
+}
+
+/** Нүүр дээрх дээд мөр: аватар, XP, дараалал, coin. (Сурах замын мөр: MapHeader.) */
+export function TopBar({ xp = 'total' }: { xp?: 'total' | 'level' | 'none' }) {
   const { me } = useAuth();
   const { coins } = usePixelBear();
   if (!me) return null;
   return (
     <View style={styles.row}>
-      <Pressable
-        accessibilityRole="link"
-        accessibilityLabel={me.friendRequests > 0 ? `${S.profile.open}, ${S.friends.dot(me.friendRequests)}` : S.profile.open}
-        onPress={() => router.push('/profile')}
-        style={styles.avatarTap}
-      >
-        <Avatar size={48} border={onMap ? 2 : undefined} />
-        {me.friendRequests > 0 ? <View style={styles.dot} /> : null}
-      </Pressable>
+      <AvatarLink />
       {xp === 'none' ? null : (
         <XpPill
           text={xp === 'total' ? `${me.xp} XP` : `${me.levelXp}/${me.levelXpNeeded}`}
@@ -39,7 +48,7 @@ export function TopBar({ xp = 'total', onMap }: { xp?: 'total' | 'level' | 'none
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  avatarTap: { minWidth: 48, minHeight: 48 },
+  avatarTap: { alignItems: 'center', justifyContent: 'center' },
   // Хариулаагүй найзын хүсэлт
   dot: {
     position: 'absolute',
@@ -49,7 +58,6 @@ const styles = StyleSheet.create({
     height: 16,
     borderRadius: 8,
     borderWidth: 3,
-    borderColor: colors.paper,
     backgroundColor: colors.dangerText,
   },
 });
