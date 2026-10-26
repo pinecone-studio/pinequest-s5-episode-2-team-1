@@ -68,7 +68,7 @@ describe('Математик 6-ын бодлогын загвар', () => {
 
   it('зангилааны хуудасны хүрээнд эхэлдэг загваруудыг олно', () => {
     expect(templatesFor({ slug: 'math-6', from: 10, to: 13 }).map((t) => t.id)).toEqual(['mul-div-integers', 'divisible-by']);
-    expect(templatesFor({ slug: 'math-7', from: 5, to: 6 })).toEqual([]);
+    expect(templatesFor({ slug: 'math-7', from: 5, to: 6 }).map((t) => t.id)).toEqual(['math7-absolute-value']);
   });
 
   it('хоёр загвартай зангилаанд ээлжлэн, 5 ялгаатай бодлого', () => {

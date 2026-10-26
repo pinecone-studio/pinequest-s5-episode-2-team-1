@@ -4,6 +4,7 @@ import type { QuestionDraft } from '../llm/types';
 import { shuffleOptions } from '../llm/validate';
 import type { PageRange } from '../services/grounding';
 import { MATH6 } from './math6';
+import { MATH7 } from './math7';
 
 export type Rng = () => number;
 /** Зангилааны шат = бодлогын хүнд: 1 Суурь, 2 Дунд, 3 Ахисан (shared/path.ts STAGES). */
@@ -20,7 +21,7 @@ export interface Template {
   make(rng: Rng, level: Level): Omit<QuestionDraft, 'correctIndex' | 'topic'>;
 }
 
-const ALL: readonly Template[] = MATH6;
+const ALL: readonly Template[] = [...MATH6, ...MATH7];
 
 export const templateById = (id: string): Template | undefined => ALL.find((t) => t.id === id);
 
