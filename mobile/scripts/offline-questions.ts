@@ -26,16 +26,19 @@ interface SeedQuestion {
 }
 
 const read = (name: string) => JSON.parse(readFileSync(new URL(name, SEED), 'utf8')) as SeedQuestion[];
+/** Апп-ын ангиуд (api/src/config/game.ts-ийн GRADE_MIN..GRADE_MAX): бусад ангийн номын асуулт (жишээ нь math-12) апп-д гарахгүй. */
+const APP_GRADES = new Set([6, 7, 8, 9, 10]);
 const seen = new Set<string>();
 const out: object[] = [];
 
 for (const q of [...read('questions.json'), ...read('lesson-questions.json')]) {
   if (q.options.length !== 4 || q.correctIndex < 0 || q.correctIndex > 3) throw new Error(`Буруу асуулт: ${q.prompt}`);
+  // 'math-6:5-6' → 6-р анги
+  const grade = q.bookRef ? Number(q.bookRef.split(':')[0].split('-').pop()) : undefined;
+  if (grade !== undefined && !APP_GRADES.has(grade)) continue;
   const key = `${q.tier}|${q.subject}|${q.prompt}`;
   if (seen.has(key)) continue;
   seen.add(key);
-  // 'math-6:5-6' → 6-р анги
-  const grade = q.bookRef ? Number(q.bookRef.split(':')[0].split('-').pop()) : undefined;
   out.push({
     id: out.length + 1,
     tier: q.tier,
