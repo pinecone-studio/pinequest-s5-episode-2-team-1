@@ -6,14 +6,16 @@ import type { PageRange } from '../services/grounding';
 import { MATH6 } from './math6';
 
 export type Rng = () => number;
+/** Бодлогын хүнд: 1 Суурь, 2 Дунд (сурах бичгийн дасгал), 3 Ахисан. */
+export type Level = 1 | 2 | 3;
 
 export interface Template {
   /** номын хичээлийн хуудас = questions.book_ref ('math-6:5-6') */
   ref: string;
   id: string;
   topic?: string;
-  /** Нэг хувилбар: options[0] нь зөв хариу (дараа нь холино). */
-  make(rng: Rng): Omit<QuestionDraft, 'correctIndex' | 'topic'>;
+  /** `level` түвшний нэг хувилбар: options[0] нь зөв хариу (дараа нь холино). */
+  make(rng: Rng, level: Level): Omit<QuestionDraft, 'correctIndex' | 'topic'>;
 }
 
 const ALL: readonly Template[] = MATH6;
@@ -35,19 +37,20 @@ export function templatesFor(range: PageRange): Template[] {
 }
 
 /**
- * `templates`-ээс ээлжлэн `count` ялгаатай бодлого. Хариуг холино; давхардсан текстийг дахин үүсгэнэ.
+ * `templates`-ээс ээлжлэн `level` түвшний `count` ялгаатай бодлого. Хариуг холино; давхардсан текстийг дахин үүсгэнэ.
  * Буцаах бодлого бүрт ямар загвараас (тэгэхээр аль хуудаснаас) гарсан нь хамт.
  */
 export function generate(
   templates: readonly Template[],
   count: number,
+  level: Level = 2,
   rng: Rng = Math.random,
 ): { template: Template; draft: QuestionDraft }[] {
   const out: { template: Template; draft: QuestionDraft }[] = [];
   const seen = new Set<string>();
   for (let tries = 0; out.length < count && templates.length > 0 && tries < count * 20; tries++) {
     const template = templates[out.length % templates.length];
-    const q = template.make(rng);
+    const q = template.make(rng, level);
     if (seen.has(q.prompt)) continue;
     seen.add(q.prompt);
     out.push({
