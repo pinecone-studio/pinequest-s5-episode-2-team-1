@@ -8,8 +8,9 @@ import { Screen } from '@/components/ui';
 import { colors, fonts, subjectTheme } from '@/constants/theme';
 import { S, subjectGlyphs, subjectNames } from '@/i18n/strings';
 import { usePixelBear } from '@/lib/mock/pixelBear';
+import { PATH_SUBJECTS } from '@/lib/pixelBear/path';
 
-const SUBJECTS: Subject[] = ['math', 'mongolian', 'physics'];
+const SUBJECTS = PATH_SUBJECTS;
 const SUGGESTED: Subject = 'math';
 
 /** 02 · Хичээл сонгох (onboarding). Сонголт нь төхөөрөмж дээр хадгалагдаж, Сурах замын анхны хичээл болно. */

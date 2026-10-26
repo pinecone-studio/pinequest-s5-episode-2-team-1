@@ -12,9 +12,10 @@ import { type ChapterTheme, useThemeFade } from '@/constants/chapterTheme';
 import { colors, fonts } from '@/constants/theme';
 import { S, subjectNames } from '@/i18n/strings';
 import { usePixelBear } from '@/lib/mock/pixelBear';
+import { PATH_SUBJECTS } from '@/lib/pixelBear/path';
 import type { SpriteKey } from '@/sprites';
 
-const SUBJECTS: Subject[] = ['math', 'mongolian', 'physics'];
+const SUBJECTS = PATH_SUBJECTS;
 
 /**
  * Сурах замын дээд хэсэг (Duolingo шиг, хүрээгүй): самбар дээр аватар · XP · гал · coin жигд зайтай; түүнээс тусдаа,

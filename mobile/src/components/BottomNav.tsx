@@ -23,7 +23,8 @@ interface NavItem {
 /** Таван tab: гэр · даалгавар · заагч · тэрэг · туг. */
 const ITEMS: NavItem[] = [
   { route: 'index', label: 'Нүүр', on: 'nav2_home_on_30x30', off: 'nav2_home_off_30x30' },
-  { route: 'tasks', label: 'Хичээл', on: 'nav2_tasks_on_30x30', off: 'nav2_tasks_off_30x30' },
+  // shortcut: "Өнөөдрийн даалгавар" tab түр нуусан (дэлгэц нь (tabs)/tasks.tsx-д хэвээр); буцаахад энэ мөрийг сэргээнэ.
+  // { route: 'tasks', label: 'Хичээл', on: 'nav2_tasks_on_30x30', off: 'nav2_tasks_off_30x30' },
   { route: 'path', label: 'Аялал', on: 'nav2_path_on_30x30', off: 'nav2_path_off_30x30' },
   { route: 'shop', label: 'Дэлгүүр', on: 'nav2_shop_on_30x30', off: 'nav2_shop_off_30x30' },
   { route: 'duel', label: 'Зорилго', on: 'nav2_crew_on_30x30', off: 'nav2_crew_off_30x30' },
