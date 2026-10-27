@@ -3,7 +3,7 @@ import { TOPICS } from '../config/topics';
 import type { Excerpt } from '../services/grounding';
 import fixtures from '../../seed/fixtures.json';
 
-const GRADES: Record<Tier, string> = { 1: '6–7-р анги', 2: '8–9-р анги', 3: '10-р анги' };
+const GRADES: Record<Tier, string> = { 1: '6–7-р анги', 2: '8–9-р анги', 3: '10–12-р анги' };
 
 const SUBJECT_NAMES: Record<Subject, string> = { math: 'Математик', mongolian: 'Монгол хэл', physics: 'Физик' };
 
