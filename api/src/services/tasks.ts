@@ -3,7 +3,7 @@ import { GAME, type Subject, type Tier } from '../config/game';
 import { bossBlock, bossWon } from '../domain/boss';
 import { levelFromXp } from '../domain/level';
 import { currentNode, gateNodes, gateOf, nodesAfter, pathLessons, taskPathLessons } from '../domain/path';
-import { ADVANCE_STAGE, STAGES, stageDone } from '../../../shared/path';
+import { ADVANCE_STAGE, GATE_BONUS, GATE_STAGE, STAGES, stageDone } from '../../../shared/path';
 import { taskReward } from '../domain/rewards';
 import { shieldBlock } from '../domain/shield';
 import { normalizeStreak, registerTaskDay } from '../domain/streak';
@@ -146,7 +146,7 @@ export async function startTask(
         )?.n ?? 0)
       : 0;
   const made = shouldGenerateTemplates(templates, storedBefore, GAME.QUESTIONS_PER_TASK)
-    ? await storeGenerated(db, tier, subject, user.grade, generate(templates, GAME.QUESTIONS_PER_TASK, levelOf(stageNo)), now)
+    ? await storeGenerated(db, tier, subject, user.grade, generate(templates, GAME.QUESTIONS_PER_TASK, levelOf(stageNo ?? (boss === undefined ? null : (GATE_STAGE[boss] ?? null)))), now)
     : [];
   if (lesson && (preferStored ? storedBefore < GAME.QUESTIONS_PER_TASK : made.length < GAME.QUESTIONS_PER_TASK)) {
     const refill = lessonRefill(lesson);
@@ -226,7 +226,7 @@ interface AnswerRow {
   explanation: string;
 }
 
-async function findTaskQuestion(db: D1Database, userId: number, taskId: number, questionId: number): Promise<AnswerRow> {
+export async function findTaskQuestion(db: D1Database, userId: number, taskId: number, questionId: number): Promise<AnswerRow> {
   const row = await db
     .prepare(
       `SELECT t.user_id, t.status, tq.position, tq.choice, q.correct_index, q.explanation
@@ -335,11 +335,13 @@ export async function completeTask(
     .first<{ subject: Subject; kind: string; boss: number | null; path_lessons: number | null; node: number | null; stage: number | null; n: number }>();
   if (!cc) throw new ApiError(404, 'NOT_FOUND', 'Даалгавар олдсонгүй');
   const correctCount = cc.n;
-  const reward = taskReward(correctCount, after.streak);
+  const base = taskReward(correctCount, after.streak);
   const path = (await loadSubjectPaths(db, userId))[cc.subject];
   // Тухайн хичээлийн дараагийн boss-ыг ялбал тэр хичээлийн дараагийн бүлэг нээгдэнэ (bosses_beaten = boss нөхцөл
   // давхар тоолохоос сэргийлнэ).
   const beatBoss = cc.boss != null && cc.boss === path.bossesBeaten && bossWon(correctCount);
+  // Хаалгыг анх давахад нэг удаагийн шагнал (давсан хаалгатай дахин тулалдах боломжгүй тул давхардахгүй)
+  const reward = { ...base, points: base.points + (beatBoss && cc.boss != null ? (GATE_BONUS[cc.boss] ?? 0) : 0) };
   const nodes = path.level - 1;
   // Даалгавар эхлэх үеийн замын урт (дунд нь ном солигдсон ч тэр зангилааг дуусгана); 0020-оос өмнө эхэлсэнд одоогийн номынх
   const bookCount =
@@ -430,6 +432,8 @@ export async function completeTask(
     levelBefore: levelFromXp(user.xp),
     levelAfter: me.level,
     nodeUp: me.paths[cc.subject].level > path.level,
+    gate: cc.boss,
+    gateBeaten: beatBoss,
     stage: cc.stage,
     stagePassed,
     review,

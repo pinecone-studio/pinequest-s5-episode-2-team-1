@@ -28,17 +28,42 @@ export const isBossNode = (n: number, i: number) => i === bossNode(n, unitOf(n, 
 /** Зангилааны хичээлийн дугаар (0-ээс); boss бол null. */
 export const lessonIndex = (n: number, i: number) => (isBossNode(n, i) ? null : i - unitOf(n, i));
 
+const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v));
+
+/**
+ * 3-р бүлгийн (Нарны элсэн хаант улс) 2 цэргийн тулаан: бүлгийн хичээлүүдийн 3/8, 6/8 орчимд (хичээлийн зангилаа,
+ * тэр хичээлийн асуултаар тулална). Цэрэг бүрийн өмнөх хичээлд нууц хайрцаг (chestNodes).
+ */
+function soldierNodes(n: number): [number, number] {
+  const start = bossNode(n, 1) + 1;
+  const m = bossNode(n, 2) - start;
+  const a = clamp(Math.round((m * 3) / 8), 1, m - 2);
+  return [start + a, start + clamp(Math.round((m * 6) / 8), a + 1, m - 1)];
+}
+
 /**
  * Дарааллаар давах тулааны зангилаа (хаалга): бүлэг бүрийн boss; 2-р бүлэгт boss-ын өмнөх 2 хичээлд зүүн гар, баруун
- * гар (тэдгээр хичээлийн асуултаар тулална). subject_progress.bosses_beaten = давсан хаалганы тоо.
+ * гар; 3-р бүлэгт 2 цэрэг (тэдгээр хичээлийн асуултаар тулална). subject_progress.bosses_beaten = давсан хаалганы тоо.
  */
 export function gateNodes(n: number): number[] {
   const boss = [0, 1, 2].map((u) => bossNode(n, u));
-  return [boss[0], boss[1] - 2, boss[1] - 1, boss[1], boss[2]];
+  return [boss[0], boss[1] - 2, boss[1] - 1, boss[1], ...soldierNodes(n), boss[2]];
 }
-export const GATE_COUNT = 5;
+export const GATE_COUNT = 7;
 /** Бүлгийн boss-ын хаалга (хуучин апп boss-ыг бүлгийн дугаараар илгээдэг). */
-export const UNIT_GATE = [0, 3, 4] as const;
+export const UNIT_GATE = [0, 3, 6] as const;
+/** Хаалганы тулааны асуултын хүнд (1 Суурь, 2 Дунд, 3 Ахисан): 3-р бүлгийн цэрэг → ахлагч → boss улам хүнд. */
+export const GATE_STAGE: readonly (number | null)[] = [null, null, null, null, 1, 2, 3];
+/** Хаалгыг анх давахад нэмэгдэх оноо (coin): 3-р бүлгийн цэрэг, ахлагч, Нарны арслан. */
+export const GATE_BONUS: readonly number[] = [0, 0, 0, 0, 20, 40, 150];
+
+/** Нууц хайрцагтай хичээлийн зангилаа: цэрэг бүрийн өмнөх хичээл (хаалга биш бол). Давсны дараа нэг л удаа нээгдэнэ. */
+export function chestNodes(n: number): number[] {
+  const start = bossNode(n, 1) + 1;
+  return soldierNodes(n)
+    .map((s) => s - 1)
+    .filter((c, k, all) => c >= start && !gateNodes(n).includes(c) && all.indexOf(c) === k);
+}
 
 /** Зангилааны хаалганы дугаар, хаалга биш бол −1. */
 export const gateOf = (n: number, i: number) => gateNodes(n).indexOf(i);
