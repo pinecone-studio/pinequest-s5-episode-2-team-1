@@ -144,7 +144,7 @@ function Decor({ state, ink, dark }: { state: BearView['state']; ink: string; da
             <Sprite id="icon_heart_36x36" />
           </Twinkle>
           <Twinkle style={{ right: 50, top: 196 }}>
-            <Sprite id="icon_coin_36x36" />
+            <Sprite id="btn_honey_36x36" />
           </Twinkle>
         </>
       );

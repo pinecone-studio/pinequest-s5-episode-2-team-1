@@ -443,7 +443,7 @@ export async function completeTask(
   };
 }
 
-/** Streak хамгаалалт: 50 оноо, гартаа нэгээс илүүгүй, 7 хоногт нэг. */
+/** Streak хамгаалалт: 50 зөгийн бал, гартаа нэгээс илүүгүй, 7 хоногт нэг. */
 export async function buyShield(db: D1Database, userId: number, now = Date.now()): Promise<Me> {
   const today = ubDay(now);
   const user = await syncStreak(db, await getUserRow(db, userId), today);
@@ -469,7 +469,7 @@ export async function buyShield(db: D1Database, userId: number, now = Date.now()
     ]);
     if (!res[0].meta.changes) throw new ApiError(409, 'SHIELD_HELD', 'Хамгаалалт авах боломжгүй');
   } catch (e) {
-    if (isConstraintError(e, 'CHECK')) throw new ApiError(409, 'INSUFFICIENT_POINTS', 'Оноо хүрэлцэхгүй');
+    if (isConstraintError(e, 'CHECK')) throw new ApiError(409, 'INSUFFICIENT_POINTS', 'Зөгийн бал хүрэлцэхгүй');
     throw e;
   }
   return loadMe(db, userId, now);

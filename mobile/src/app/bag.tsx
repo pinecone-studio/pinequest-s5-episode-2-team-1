@@ -26,7 +26,7 @@ export default function BagScreen() {
   const outfit = outfitById(bear.outfitId);
   const ownedBgs = BACKGROUNDS.filter((b) => bear.ownedBgs.includes(b.id));
   const ownedOutfits = outfits.views.filter((v) => v.owned);
-  const ok = { color: colors.okText, showCoin: false, locked: false };
+  const ok = { color: colors.okText, showHoney: false, locked: false };
 
   return (
     <Screen>
@@ -38,7 +38,7 @@ export default function BagScreen() {
           </Text>
           <Text style={type.small}>{S.bag.subtitle}</Text>
         </View>
-        <CountPill icon="icon_coin_24x24" value={bear.coins} label="Coin" />
+        <CountPill icon="btn_honey_24x24" value={bear.honey} label="Зөгийн бал" />
       </View>
 
       <Enter index={0}>

@@ -195,7 +195,7 @@ export async function createChallenge(
   await sweepStale(db, now);
   const user = await getUserRow(db, userId);
   const err = stakeError(stake, user.points);
-  if (err) throw new ApiError(400, err, `Бооцоо 1–${maxStake(user.points)} оноо байна`);
+  if (err) throw new ApiError(400, err, `Бооцоо 1–${maxStake(user.points)} зөгийн бал байна`);
   // "Завгүй эсэх"-ийг INSERT дотор шалгана: зэрэг хоёр хүсэлт хоёр сорилт үүсгэхгүй.
   // Урилгын код нээлттэй сорилтуудын дунд давтагдвал (UNIQUE index) шинэ кодоор дахин оролдоно.
   const insert = db.prepare(
@@ -264,11 +264,11 @@ async function startDuel(env: Bindings, userId: number, duel: DuelRow, now: numb
   if (active) throw new ApiError(409, 'DUEL_EXISTS', 'Явагдаж буй тулаан байна');
 
   if (stakeError(duel.stake, creator.points)) {
-    // Үүсгэгчийн оноо буурч 20%-ийн хязгаар зөрчигдсөн → сорилт хүчингүй.
+    // Үүсгэгчийн зөгийн бал буурч 20%-ийн хязгаар зөрчигдсөн → сорилт хүчингүй.
     await cancelChallenge(db, creator.id, duelId, now).catch(() => undefined);
-    throw new ApiError(409, 'OPPONENT_STAKE_TOO_HIGH', 'Үүсгэгчийн онооны 20%-иас хэтэрсэн');
+    throw new ApiError(409, 'OPPONENT_STAKE_TOO_HIGH', 'Үүсгэгчийн зөгийн балны 20%-иас хэтэрсэн');
   }
-  if (stakeError(duel.stake, acceptor.points)) throw new ApiError(400, 'STAKE_TOO_HIGH', 'Таны онооны 20%-иас их бооцоо');
+  if (stakeError(duel.stake, acceptor.points)) throw new ApiError(400, 'STAKE_TOO_HIGH', 'Таны зөгийн балны 20%-иас их бооцоо');
 
   // Хоёулаа хараагүй асуултыг илүүд үзнэ. Хурдны тулд LLM дуудахгүй, pool-оос. Номын асуулт зөвхөн хоёулангийнх нь
   // ангийн номынх.
@@ -322,7 +322,7 @@ async function startDuel(env: Bindings, userId: number, duel: DuelRow, now: numb
     }
   } catch (e) {
     if (e instanceof ApiError) throw e;
-    if (isConstraintError(e, 'CHECK')) throw new ApiError(409, 'INSUFFICIENT_POINTS', 'Оноо хүрэлцэхгүй');
+    if (isConstraintError(e, 'CHECK')) throw new ApiError(409, 'INSUFFICIENT_POINTS', 'Зөгийн бал хүрэлцэхгүй');
     throw e;
   }
 

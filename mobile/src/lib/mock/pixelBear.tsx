@@ -9,7 +9,7 @@ import { BEAR_STATES, type BearState, type BearView, deriveBear, previewBear } f
 
 /**
  * Pixel Bear-ийн төлөв.
- * - Дэвсгэр, хувцасны үнэ, эзэмшил, худалдан авалт серверт (`/cosmetics`); Coin = серверийн оноо.
+ * - Дэвсгэр, хувцасны үнэ, эзэмшил, худалдан авалт серверт (`/cosmetics`); зөгийн бал = серверийн оноо.
  * - Аль дэвсгэр/хувцсыг өмссөн, сонгосон хичээл нь зөвхөн харагдац тул төхөөрөмж дээр хэрэглэгч бүрээр хадгалагдана.
  *   Өмссөн дэвсгэр, хувцсыг серверт ч илгээнэ (`PUT /me/look`): профайлаа хуваалцахад бусдад ингэж харагдана.
  * - Офлайн үед эзэмшил, үнийг сүүлд ирсэн хариунаас (cache) харуулна: хувцсаа үзэж, сонгож болно, худалдаж авахгүй.
@@ -32,8 +32,8 @@ interface PixelBearValue {
   ownedOutfits: string[];
   /** Сонгосон хичээл (onboarding); null = сонгоогүй */
   subject: Subject | null;
-  /** Серверийн оноо */
-  coins: number;
+  /** Хэрэглэгчид зөгийн бал гэж харагдах серверийн оноо */
+  honey: number;
   /** /cosmetics ачаалагдсан эсэх (үнэ, эзэмшил мэдэгдэж байгаа) */
   cosmeticsLoaded: boolean;
   priceOf: (kind: CosmeticKind, key: string) => number;
@@ -161,7 +161,7 @@ export function PixelBearProvider({ children }: { children: ReactNode }) {
       ownedBgs,
       ownedOutfits: ownedKeys('outfit', DEFAULT_OUTFIT_ID),
       subject: data.subject,
-      coins: me?.points ?? 0,
+      honey: me?.points ?? 0,
       cosmeticsLoaded: cosmetics !== null,
       priceOf: (kind, key) => find(kind, key)?.price ?? 0,
       reloadCosmetics,

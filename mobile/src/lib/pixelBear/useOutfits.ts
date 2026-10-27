@@ -63,7 +63,7 @@ export function useOutfits() {
 
   /** Худалдаж аваад өмсгөнө. Алдаа гарвал мессежийг буцаана. */
   async function buy(v: OutfitView): Promise<string | null> {
-    if (v.price > bear.coins) return S.shop.noCoins;
+    if (v.price > bear.honey) return S.shop.noHoney;
     if (v.server && v.def.serverItemId) {
       try {
         const r = await api<ShopResponse>(`/shop/${v.def.serverItemId}/buy`, { method: 'POST' });

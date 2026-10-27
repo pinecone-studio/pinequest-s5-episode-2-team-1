@@ -72,7 +72,7 @@ export default function HomeScreen() {
       <View style={styles.bottom}>
         <PixelButton icon="btn_calendar_30x30" label={S.homeMin.calendar} onPress={() => router.push('/calendar')} />
         <View style={{ flex: 1 }} />
-        <PixelButton icon="btn_honey_30x30" label={S.homeMin.feed} onPress={feed} />
+        <PixelButton icon="btn_honey_jar_30x30" label={S.homeMin.feed} onPress={feed} />
       </View>
     </Screen>
   );

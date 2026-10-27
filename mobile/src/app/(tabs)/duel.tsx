@@ -33,7 +33,7 @@ export default function DuelLobby() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState('');
   const entered = useRef<number | null>(null);
-  const { coins } = usePixelBear();
+  const { honey } = usePixelBear();
 
   const load = useCallback(async () => {
     try {
@@ -152,7 +152,7 @@ export default function DuelLobby() {
           </Text>
           <Text style={type.small}>{S.duel.hint}</Text>
         </View>
-        <CountPill icon="icon_coin_24x24" value={coins} label="Coin" />
+        <CountPill icon="btn_honey_24x24" value={honey} label="Зөгийн бал" />
       </View>
 
       {mine ? (
@@ -160,7 +160,7 @@ export default function DuelLobby() {
           <Text style={styles.cardTitle}>{mine.status === 'accepted' ? S.duel.inProgress : S.duel.mineTitle}</Text>
           <View style={styles.lineRow}>
             <Text style={styles.line}>{subjectNames[mine.subject]} ·</Text>
-            <Sprite id="icon_coin_12x12" />
+            <Sprite id="btn_honey_12x12" />
             <Text style={styles.line}>{S.duel.stakeLabel(mine.stake)}</Text>
           </View>
           {mine.status === 'open' ? (
@@ -334,7 +334,7 @@ function ChallengeCard({
       </View>
       <View style={{ alignItems: 'flex-end', gap: 8 }}>
         <View style={styles.lineRow}>
-          <Sprite id="icon_coin_24x24" />
+          <Sprite id="btn_honey_24x24" />
           <Text style={styles.stake}>{duel.stake}</Text>
         </View>
         {canAfford ? (
