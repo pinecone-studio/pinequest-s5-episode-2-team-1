@@ -14,7 +14,7 @@
  */
 import { existsSync, writeFileSync } from 'node:fs';
 import { blank, type Img, readPng, writePng } from './png.ts';
-import { at, bbox, crop, flipX, type Frame, groundShadow, has, largest, put, SPRITES, tagOf, toSheet, trim, white } from './sprite-kit.ts';
+import { at, bbox, crop, cutout, flipX, type Frame, groundShadow, has, largest, put, SPRITES, tagOf, toSheet, trim, white } from './sprite-kit.ts';
 
 const REF = new URL('../../docs/design/pixel-bear/reference/', import.meta.url);
 const PIXELLAB = new URL('../../docs/design/pixel-bear/pixellab/', import.meta.url);
@@ -23,32 +23,6 @@ const CELL = 88;
 /** дүрийн өндөр (pixel): boss хамгийн том */
 const GOLEMS = { boss: 64, left: 54, right: 66, lion: 72, captain: 58, scarab: 44, yak: 74, leopard: 56, owl: 64, santa: 78 } as const;
 type Name = keyof typeof GOLEMS;
-
-/** цагаан дэвсгэрийг захаас нь үерлэж арилгана (дүрийн доторх цагаан гэрэл үлдэнэ) */
-function cutout(img: Img): Img {
-  const out = { w: img.w, h: img.h, d: img.d.slice() };
-  const bg = (x: number, y: number) => {
-    const i = at(img, x, y);
-    return img.d[i] > 228 && img.d[i + 1] > 228 && img.d[i + 2] > 228;
-  };
-  const seen = new Uint8Array(img.w * img.h);
-  const stack: number[] = [];
-  for (let x = 0; x < img.w; x++) stack.push(x, (img.h - 1) * img.w + x);
-  for (let y = 0; y < img.h; y++) stack.push(y * img.w, y * img.w + img.w - 1);
-  while (stack.length) {
-    const p = stack.pop() as number;
-    if (seen[p]) continue;
-    const [x, y] = [p % img.w, Math.floor(p / img.w)];
-    if (!bg(x, y)) continue;
-    seen[p] = 1;
-    out.d[p * 4 + 3] = 0;
-    if (x > 0) stack.push(p - 1);
-    if (x < img.w - 1) stack.push(p + 1);
-    if (y > 0) stack.push(p - img.w);
-    if (y < img.h - 1) stack.push(p + img.w);
-  }
-  return out;
-}
 
 /**
  * Том зургийг `w×h` pixel руу: нүдний тал нь тунгалаг бол тунгалаг; бараан тойм нүдний 22%-иас их бол тойм (нимгэн

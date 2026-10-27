@@ -69,7 +69,7 @@ for (const n of ['map_bear_small', 'map_bear_small_blink']) M[n] = [1];
 for (const n of ['map_world_sun', 'map_world_sun_foot', 'lair_sun', 'lair_sun_scarab', 'lair_sun_captain']) M[n] = [2];
 // 4-р бүлэг «Мөнх цаст оргил» (scripts/snow-sprites.ts)
 for (const n of ['map_world_snow', 'lair_snow', 'lair_snow_leopard', 'lair_snow_owl', 'lair_snow_yak']) M[n] = [2];
-for (const n of ['map_chest', 'map_chest_open', 'item_amber', 'item_honey']) M[n] = [1, 4];
+for (const n of ['map_chest', 'map_chest_open', 'item_amber', 'item_honey', 'item_bell']) M[n] = [1, 4];
 for (const n of ['map_world_0', 'map_world_1', 'map_world_2', 'map_flag', 'fx_magic', 'lair_0', 'lair_1', 'lair_1_left', 'lair_1_right', 'lair_2', 'bear_battle', 'fx_honey_shatter', 'fx_spark', 'fx_spark_magic', 'fx_slash']) M[n] = [2];
 // boss: тулаанд 4× (boss_pumpkin.py, mapgen_world.py); газрын зураг дээр ~70 dp өндөр (хулуу 1.5×, бусад 2.5×)
 M.boss_pumpkin_sheet = [[376, 71], 4];
@@ -89,6 +89,7 @@ M.defeat_pumpkin = [4];
 for (const n of ['fx_crystal_bolt', 'fx_golem_orb', 'fx_moon_crescent', 'fx_golem_impact']) M[n] = [1];
 for (const n of ['sun_fireball', 'sun_blast', 'sun_disc', 'gold_hit', 'sand_ball', 'sand_dust', 'ghost_flame', 'ghost_hit', 'moon_hit', 'crystal_strike', 'crystal_blast']) M[`fx_${n}`] = [1];
 for (const n of ['ice_shard', 'ice_hit', 'frost_orb', 'frost_strike', 'glacier_orb', 'glacier_blast', 'santa_orb', 'santa_boom']) M[`fx_${n}`] = [1];
+M.fx_santa_ice_burst = [1];
 // эцсийн цохилтын KO: 2× (тулаанд томруулсан дайснаас жижиг харагдахгүй)
 M.fx_ko_burst = [2];
 for (const n of ['claw', 'cross', 'boom', 'cracks', 'dust', 'aura']) M[`fx_bear_${n}`] = [1];

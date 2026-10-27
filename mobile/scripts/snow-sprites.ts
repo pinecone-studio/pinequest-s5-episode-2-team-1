@@ -11,7 +11,7 @@
  * Ажиллуулах:  node scripts/snow-sprites.ts && npm run sprites   (mobile/)
  */
 import { type Img, readPng, writePng } from './png.ts';
-import { depixelize, SPRITES } from './sprite-kit.ts';
+import { bbox, contact, crop, cutout, depixelize, shrink, SPRITES, toSheet } from './sprite-kit.ts';
 
 const REF = new URL('../../docs/design/pixel-bear/reference/', import.meta.url);
 const save = (name: string, img: Img) => writePng(new URL(`${name}.png`, SPRITES), img);
@@ -47,4 +47,18 @@ for (const [file, name] of [
   ['sun_soldier-outpost-bg.png', 'lair_snow_yak'],
 ] as const)
   save(name, toIce(depixelize(readPng(new URL(file, REF)), 215, 232)));
-console.log('snow sprites: map_world_snow, lair_snow(_leopard/_owl)');
+// Бүх нүдийг нэг хүрээгээр тайрна: цагираг, болор ургахдаа байрандаа үлдэнэ.
+const burst = cutout(readPng(new URL('santa_ice-burst-sheet.png', REF)));
+const cells = Array.from({ length: 6 }, (_, i) => crop(burst, (i % 3) * 512, Math.floor(i / 3) * 512, 512, 512));
+const bounds = bbox(cells.map((img) => ({ ...img, d: img.d.map((v, i) => (i % 4 === 3 && v < 128 ? 0 : v)) })));
+const frames = cells.map((img, i) => ({ name: `burst${i}`, duration: 90, img: shrink(img, 96, bounds) }));
+const sheet = toSheet(frames, 3);
+const bell = shrink(cutout(readPng(new URL('item_ice-bell.png', REF))), 30);
+save('fx_santa_ice_burst', sheet);
+save('item_bell', bell);
+const preview = process.argv.indexOf('--preview');
+if (preview >= 0) {
+  writePng(`${process.argv[preview + 1]}/santa_ice_burst_contact.png`, contact(sheet));
+  writePng(`${process.argv[preview + 1]}/item_bell_contact.png`, contact(bell));
+}
+console.log(`snow sprites: map_world_snow, lair_snow(_leopard/_owl/_yak), burst ${frames[0].img.w}×96, bell ${bell.w}×30`);
