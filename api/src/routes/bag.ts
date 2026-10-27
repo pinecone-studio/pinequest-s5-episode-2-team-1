@@ -5,7 +5,7 @@ import { SUBJECTS } from '../config/game';
 import type { AppEnv } from '../env';
 import { readBody } from '../lib/errors';
 import { requireAuth } from '../lib/session';
-import { openChest, useAmber, useHoney } from '../services/bag';
+import { openChest, useAmber, useBell, useHoney } from '../services/bag';
 
 /** Нууц хайрцаг ба цүнхний хэрэглэгдэхүүн (shared/loot.ts). */
 export const bagRoutes = new Hono<AppEnv>();
@@ -19,6 +19,9 @@ bagRoutes.post('/chests', async (c) => {
 
 /** Зөгийн балны сав: нэг амь нөхнө. */
 bagRoutes.post('/honey', async (c) => c.json<MeResponse>(await useHoney(c.env.DB, c.get('userId'))));
+
+/** Мөсөн хонх: бүх амийг нөхнө. */
+bagRoutes.post('/bell', async (c) => c.json<MeResponse>(await useBell(c.env.DB, c.get('userId'))));
 
 /** Хувын болор: даалгаврын хариулаагүй асуултын 2 буруу хариултыг нууна. */
 bagRoutes.post('/amber', async (c) => {

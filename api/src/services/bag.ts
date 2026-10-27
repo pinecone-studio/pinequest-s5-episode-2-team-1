@@ -83,6 +83,15 @@ export async function useHoney(db: D1Database, userId: number, now = Date.now())
   return { me: await loadMe(db, userId, now) };
 }
 
+/** Мөсөн хонх: бүх амийг нөхнө (дүүрэн бол зарцуулахгүй). */
+export async function useBell(db: D1Database, userId: number, now = Date.now()): Promise<MeResponse> {
+  const lives = livesNow(livesOf(await getUserRow(db, userId)), now);
+  if (lives.lives >= GAME.LIVES.MAX) throw new ApiError(409, 'LIVES_FULL', 'Амь дүүрэн байна');
+  await spend(db, userId, 'bell');
+  await db.prepare('UPDATE users SET lives = ?, lives_at = NULL WHERE id = ?').bind(GAME.LIVES.MAX, userId).run();
+  return { me: await loadMe(db, userId, now) };
+}
+
 /** Буруу хариултуудаас нуух 2 нь (асуулт бүрт тогтмол: дахин дарахад ижил). */
 export function hintHide(options: number, correct: number, questionId: number): number[] {
   const wrong = Array.from({ length: options }, (_, i) => i).filter((i) => i !== correct);
