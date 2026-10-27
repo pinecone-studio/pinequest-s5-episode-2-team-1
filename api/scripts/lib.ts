@@ -56,8 +56,15 @@ export async function call<T>(
     headers?: Record<string, string>;
     /** Хариу хэдэн минут хүлээгдэж болох хүсэлт (Gemini OCR): fetch-ийн 5 минутын хязгааргүй. */
     slow?: boolean;
+    /** Даалгавар эхлүүлэхийн өмнө амийг дүүргэхгүй (амийн шалгалтад). */
+    keepLives?: boolean;
   } = {},
 ): Promise<T> {
+  // Сценарийн хэрэглэгчид олон даалгавар хийдэг: зангилаа руу орох бүрт амь хасагддаг тул эхлүүлэхийн өмнө дүүргэнэ.
+  if (method === 'POST' && path === '/tasks' && opts.token && !opts.keepLives && ADMIN_TOKEN) {
+    const { me } = await call<{ me: { id: number } }>('GET', '/me', { token: opts.token });
+    await call('POST', `/admin/debug/users/${me.id}/lives`, { admin: true, body: { lives: 5 } });
+  }
   const headers: Record<string, string> = { 'content-type': opts.raw?.type ?? 'application/json', ...opts.headers };
   if (opts.token) headers.authorization = `Bearer ${opts.token}`;
   if (opts.admin && ADMIN_TOKEN) headers['x-admin-token'] = ADMIN_TOKEN;

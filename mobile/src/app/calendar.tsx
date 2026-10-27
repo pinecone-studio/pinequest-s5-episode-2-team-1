@@ -161,7 +161,7 @@ export default function CalendarScreen() {
       </Enter>
 
       <View style={styles.profile}>
-        <Text style={styles.profileText}>{S.calendar.profile(me.username, me.grade)}</Text>
+        <Text style={styles.profileText}>{S.calendar.profile(me.name ?? me.username, me.grade)}</Text>
         <Button title={S.calendar.toProfile} variant="lemon" small onPress={() => router.push('/profile')} />
         <Button title={S.calendar.logout} variant="white" small onPress={onLogout} />
       </View>

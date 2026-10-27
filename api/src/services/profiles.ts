@@ -1,4 +1,4 @@
-import type { BearLook, Me, MyProfileResponse, ProfileResponse, PublicProfile, SubjectSkill } from '../../../shared/types';
+import type { AvatarBody, LookBody, Me, OnboardingBody, MyProfileResponse, ProfileResponse, PublicProfile, SubjectSkill } from '../../../shared/types';
 import { COSMETICS, type Cosmetic, OUTFIT_ITEMS } from '../config/cosmetics';
 import { SUBJECTS, type Subject } from '../config/game';
 import { bossesIn } from '../domain/boss';
@@ -71,6 +71,7 @@ export async function loadPublicProfile(db: D1Database, userId: number, now = Da
   const progress = levelProgress(user.xp);
   return {
     username: user.username,
+    name: user.display_name ?? user.username,
     grade: user.grade,
     level: progress.level,
     levelXp: progress.current,
@@ -105,15 +106,41 @@ export async function findProfile(db: D1Database, viewerId: number, input: strin
 }
 
 /** Нүүрэн дээр сонгосон дэвсгэр, хувцсыг хадгална (профайл дээр бусдад харагдана). Зөвхөн эзэмшиж буйгаа. */
-export async function setBearLook(db: D1Database, userId: number, look: BearLook): Promise<Me> {
+export async function setBearLook(db: D1Database, userId: number, look: LookBody): Promise<Me> {
   const known = (kind: Cosmetic['kind'], key: string) =>
     COSMETICS.some((c) => c.kind === kind && c.key === key) || (kind === 'outfit' && Object.keys(OUTFIT_ITEMS).includes(key));
   if (!known('bg', look.bg) || !known('outfit', look.outfit)) throw new ApiError(400, 'BAD_REQUEST', 'Дэвсгэр эсвэл хувцас буруу');
   const { bgs, outfits } = await loadCollection(db, userId);
   if (!bgs.includes(look.bg) || !outfits.includes(look.outfit)) throw new ApiError(403, 'NOT_OWNED', 'Эхлээд авна уу');
+  // үс, царай, цээжний толбыг (PUT /me/avatar) хөндөхгүй
+  await db.prepare(`UPDATE users SET bear_look = json_set(${LOOK_JSON}, '$.bg', ?, '$.outfit', ?) WHERE id = ?`).bind(look.bg, look.outfit, userId).run();
+  return loadMe(db, userId);
+}
+
+/** bear_look хоосон эсвэл эвдэрсэн бол хоосон объектоос эхэлнэ */
+const LOOK_JSON = "CASE WHEN json_valid(bear_look) THEN bear_look ELSE '{}' END";
+
+/** Профайлын нэр ба баавгайн үс, царай, цээжний толбо (бүртгүүлсний дараа, дараа нь профайлаас солино). */
+/**
+ * Анх орохдоо асуудаг асуултын хариулт. Анги (түвшин) нь зөвхөн анх бөглөхөд солигдоно: дараа нь солих нь
+ * хичээлийн зам, асуултын санг эвдэнэ. Дахин илгээвэл зөвхөн хариулт шинэчлэгдэнэ.
+ */
+export async function setOnboarding(db: D1Database, userId: number, body: OnboardingBody, tier: number): Promise<Me> {
+  const { grade, ...answers } = body;
   await db
-    .prepare('UPDATE users SET bear_look = ? WHERE id = ?')
-    .bind(JSON.stringify({ bg: look.bg, outfit: look.outfit } satisfies BearLook), userId)
+    .prepare(
+      `UPDATE users SET grade = CASE WHEN onboarding IS NULL THEN ? ELSE grade END,
+         tier = CASE WHEN onboarding IS NULL THEN ? ELSE tier END, onboarding = ? WHERE id = ?`,
+    )
+    .bind(grade, tier, JSON.stringify(answers), userId)
+    .run();
+  return loadMe(db, userId);
+}
+
+export async function setAvatar(db: D1Database, userId: number, body: AvatarBody): Promise<Me> {
+  await db
+    .prepare(`UPDATE users SET display_name = ?, bear_look = json_set(${LOOK_JSON}, '$.fur', ?, '$.face', ?, '$.chest', json(?)) WHERE id = ?`)
+    .bind(body.name, body.fur, body.face, String(body.chest), userId)
     .run();
   return loadMe(db, userId);
 }

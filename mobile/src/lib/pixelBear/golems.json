@@ -7,6 +7,8 @@
     },
     "columns": 6,
     "feet": 82,
+    "dx": 3,
+    "dy": 1,
     "cx": 43,
     "bw": 63,
     "head": 21,
@@ -102,6 +104,8 @@
     },
     "columns": 6,
     "feet": 75,
+    "dx": 6,
+    "dy": 5,
     "cx": 39,
     "bw": 52,
     "head": 30,
@@ -201,6 +205,8 @@
     },
     "columns": 6,
     "feet": 80,
+    "dx": 4,
+    "dy": 3,
     "cx": 40,
     "bw": 45,
     "head": 15,
@@ -275,6 +281,293 @@
       },
       "hurt": {
         "from": 11,
+        "to": 13,
+        "direction": "forward"
+      }
+    }
+  },
+  "lion": {
+    "sheet": "golem_lion_sheet",
+    "frameSize": {
+      "w": 80,
+      "h": 82
+    },
+    "columns": 6,
+    "feet": 79,
+    "dx": 4,
+    "dy": 4,
+    "cx": 41,
+    "bw": 68,
+    "head": 8,
+    "frames": [
+      {
+        "name": "idle0",
+        "duration": 220
+      },
+      {
+        "name": "idle1",
+        "duration": 220
+      },
+      {
+        "name": "idle2",
+        "duration": 220
+      },
+      {
+        "name": "idle3",
+        "duration": 220
+      },
+      {
+        "name": "attack0",
+        "duration": 110
+      },
+      {
+        "name": "attack1",
+        "duration": 110
+      },
+      {
+        "name": "attack2",
+        "duration": 130
+      },
+      {
+        "name": "attack3",
+        "duration": 140
+      },
+      {
+        "name": "attack4",
+        "duration": 70
+      },
+      {
+        "name": "impact",
+        "duration": 160
+      },
+      {
+        "name": "attack6",
+        "duration": 110
+      },
+      {
+        "name": "attack7",
+        "duration": 110
+      },
+      {
+        "name": "flash",
+        "duration": 80
+      },
+      {
+        "name": "hurt0",
+        "duration": 100
+      },
+      {
+        "name": "hurt1",
+        "duration": 100
+      },
+      {
+        "name": "hurt2",
+        "duration": 100
+      },
+      {
+        "name": "hurt3",
+        "duration": 100
+      }
+    ],
+    "tags": {
+      "idle": {
+        "from": 0,
+        "to": 3,
+        "direction": "pingpong"
+      },
+      "attack": {
+        "from": 4,
+        "to": 11,
+        "direction": "forward"
+      },
+      "hurt": {
+        "from": 12,
+        "to": 16,
+        "direction": "forward"
+      }
+    }
+  },
+  "captain": {
+    "sheet": "golem_captain_sheet",
+    "frameSize": {
+      "w": 70,
+      "h": 82
+    },
+    "columns": 6,
+    "feet": 79,
+    "dx": 9,
+    "dy": 4,
+    "cx": 36,
+    "bw": 57,
+    "head": 24,
+    "frames": [
+      {
+        "name": "idle0",
+        "duration": 220
+      },
+      {
+        "name": "idle1",
+        "duration": 220
+      },
+      {
+        "name": "idle2",
+        "duration": 220
+      },
+      {
+        "name": "idle3",
+        "duration": 220
+      },
+      {
+        "name": "attack0",
+        "duration": 110
+      },
+      {
+        "name": "attack1",
+        "duration": 110
+      },
+      {
+        "name": "attack2",
+        "duration": 130
+      },
+      {
+        "name": "attack3",
+        "duration": 140
+      },
+      {
+        "name": "attack4",
+        "duration": 70
+      },
+      {
+        "name": "impact",
+        "duration": 160
+      },
+      {
+        "name": "attack6",
+        "duration": 110
+      },
+      {
+        "name": "attack7",
+        "duration": 110
+      },
+      {
+        "name": "flash",
+        "duration": 80
+      },
+      {
+        "name": "hurt0",
+        "duration": 100
+      },
+      {
+        "name": "hurt1",
+        "duration": 100
+      },
+      {
+        "name": "hurt2",
+        "duration": 100
+      }
+    ],
+    "tags": {
+      "idle": {
+        "from": 0,
+        "to": 3,
+        "direction": "pingpong"
+      },
+      "attack": {
+        "from": 4,
+        "to": 11,
+        "direction": "forward"
+      },
+      "hurt": {
+        "from": 12,
+        "to": 15,
+        "direction": "forward"
+      }
+    }
+  },
+  "scarab": {
+    "sheet": "golem_scarab_sheet",
+    "frameSize": {
+      "w": 44,
+      "h": 48
+    },
+    "columns": 6,
+    "feet": 45,
+    "dx": 23,
+    "dy": 38,
+    "cx": 24,
+    "bw": 33,
+    "head": 4,
+    "frames": [
+      {
+        "name": "idle0",
+        "duration": 220
+      },
+      {
+        "name": "idle1",
+        "duration": 220
+      },
+      {
+        "name": "idle2",
+        "duration": 220
+      },
+      {
+        "name": "idle3",
+        "duration": 220
+      },
+      {
+        "name": "attack0",
+        "duration": 110
+      },
+      {
+        "name": "attack1",
+        "duration": 110
+      },
+      {
+        "name": "attack2",
+        "duration": 130
+      },
+      {
+        "name": "attack3",
+        "duration": 140
+      },
+      {
+        "name": "attack4",
+        "duration": 70
+      },
+      {
+        "name": "impact",
+        "duration": 160
+      },
+      {
+        "name": "attack6",
+        "duration": 110
+      },
+      {
+        "name": "attack7",
+        "duration": 110
+      },
+      {
+        "name": "flash",
+        "duration": 80
+      },
+      {
+        "name": "hurt0",
+        "duration": 100
+      }
+    ],
+    "tags": {
+      "idle": {
+        "from": 0,
+        "to": 3,
+        "direction": "pingpong"
+      },
+      "attack": {
+        "from": 4,
+        "to": 11,
+        "direction": "forward"
+      },
+      "hurt": {
+        "from": 12,
         "to": 13,
         "direction": "forward"
       }

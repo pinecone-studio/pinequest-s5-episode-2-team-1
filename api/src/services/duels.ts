@@ -31,16 +31,18 @@ interface DuelRow {
 
 interface SummaryRow extends DuelRow {
   c_username: string;
+  c_name: string;
   c_xp: number;
   c_equipped: string;
   o_username: string | null;
+  o_name: string | null;
   o_xp: number | null;
   o_equipped: string | null;
 }
 
 const SUMMARY_SELECT = `
-  SELECT d.*, c.username AS c_username, c.xp AS c_xp, c.equipped AS c_equipped,
-         o.username AS o_username, o.xp AS o_xp, o.equipped AS o_equipped
+  SELECT d.*, c.username AS c_username, COALESCE(c.display_name, c.username) AS c_name, c.xp AS c_xp, c.equipped AS c_equipped,
+         o.username AS o_username, COALESCE(o.display_name, o.username) AS o_name, o.xp AS o_xp, o.equipped AS o_equipped
   FROM duels d
   JOIN users c ON c.id = d.creator_id
   LEFT JOIN users o ON o.id = d.opponent_id`;
@@ -53,8 +55,8 @@ export function duelRoomName(duelId: number): string {
   return `duel-${duelId}`;
 }
 
-function player(id: number, username: string, xp: number, equipped: string, catalog: Map<string, CatalogItem>): DuelPlayerDto {
-  return { id, username, level: levelFromXp(xp), avatar: avatarLook(parseEquipped(equipped), catalog) };
+function player(id: number, username: string, name: string, xp: number, equipped: string, catalog: Map<string, CatalogItem>): DuelPlayerDto {
+  return { id, username, name, level: levelFromXp(xp), avatar: avatarLook(parseEquipped(equipped), catalog) };
 }
 
 /** `viewerId` = хэн харж байгаа: урилгын кодыг зөвхөн үүсгэгчид харуулна. */
@@ -67,9 +69,9 @@ function toSummary(r: SummaryRow, catalog: Map<string, CatalogItem>, viewerId: n
     visibility: r.visibility,
     code: viewerId === r.creator_id && r.status === 'open' ? r.code : null,
     createdAt: r.created_at,
-    creator: player(r.creator_id, r.c_username, r.c_xp, r.c_equipped, catalog),
+    creator: player(r.creator_id, r.c_username, r.c_name, r.c_xp, r.c_equipped, catalog),
     opponent:
-      r.opponent_id && r.o_username !== null ? player(r.opponent_id, r.o_username, r.o_xp ?? 0, r.o_equipped ?? '{}', catalog) : null,
+      r.opponent_id && r.o_username !== null ? player(r.opponent_id, r.o_username, r.o_name ?? r.o_username, r.o_xp ?? 0, r.o_equipped ?? '{}', catalog) : null,
     winnerId: r.winner_id,
     endReason: r.end_reason,
     creatorScore: r.creator_score,
@@ -165,10 +167,10 @@ export async function lobby(db: D1Database, userId: number, now = Date.now()): P
   const { results: open } = await db
     .prepare(
       `${SUMMARY_SELECT}
-       WHERE d.status = 'open' AND d.visibility = 'public' AND d.tier = ? AND d.creator_id != ? AND d.creator_seen_at >= ?
+       WHERE d.status = 'open' AND d.visibility = 'public' AND c.grade = ? AND d.creator_id != ? AND d.creator_seen_at >= ?
        ORDER BY d.created_at DESC LIMIT 30`,
     )
-    .bind(user.tier, userId, now - GAME.DUEL.LOBBY_PRESENCE_MS)
+    .bind(user.grade, userId, now - GAME.DUEL.LOBBY_PRESENCE_MS)
     .all<SummaryRow>();
   const mine = await db
     .prepare(`${SUMMARY_SELECT} WHERE (d.creator_id = ? OR d.opponent_id = ?) AND d.status IN ('open', 'accepted') ORDER BY d.id DESC LIMIT 1`)
@@ -252,14 +254,15 @@ async function startDuel(env: Bindings, userId: number, duel: DuelRow, now: numb
   if (duel.status !== 'open') throw new ApiError(409, duel.status === 'accepted' ? 'DUEL_TAKEN' : 'DUEL_NOT_OPEN', 'Сорилт хаагдсан');
 
   const acceptor = await getUserRow(db, userId);
-  if (acceptor.tier !== duel.tier) throw new ApiError(403, 'WRONG_TIER', 'Өөр түвшний сорилт');
+  const creator = await getUserRow(db, duel.creator_id);
+  // Ижил ангийнхан л тулална (асуулт хоёулангийнх нь ангийн номынх).
+  if (acceptor.grade !== creator.grade) throw new ApiError(403, 'WRONG_GRADE', 'Өөр ангийн сорилт');
   const active = await db
     .prepare(`SELECT id FROM duels WHERE status = 'accepted' AND (creator_id = ? OR opponent_id = ?) LIMIT 1`)
     .bind(userId, userId)
     .first();
   if (active) throw new ApiError(409, 'DUEL_EXISTS', 'Явагдаж буй тулаан байна');
 
-  const creator = await getUserRow(db, duel.creator_id);
   if (stakeError(duel.stake, creator.points)) {
     // Үүсгэгчийн оноо буурч 20%-ийн хязгаар зөрчигдсөн → сорилт хүчингүй.
     await cancelChallenge(db, creator.id, duelId, now).catch(() => undefined);
@@ -268,7 +271,7 @@ async function startDuel(env: Bindings, userId: number, duel: DuelRow, now: numb
   if (stakeError(duel.stake, acceptor.points)) throw new ApiError(400, 'STAKE_TOO_HIGH', 'Таны онооны 20%-иас их бооцоо');
 
   // Хоёулаа хараагүй асуултыг илүүд үзнэ. Хурдны тулд LLM дуудахгүй, pool-оос. Номын асуулт зөвхөн хоёулангийнх нь
-  // ангийн номынх (өөр ангийнхан бол зөвхөн номгүй асуулт).
+  // ангийн номынх.
   const { results: picked } = await db
     .prepare(
       `SELECT q.id, q.prompt, q.options, q.correct_index, q.explanation FROM questions q
@@ -324,7 +327,7 @@ async function startDuel(env: Bindings, userId: number, duel: DuelRow, now: numb
   }
 
   const catalog = await getCatalog(db);
-  const info = (u: UserRow) => ({ id: u.id, username: u.username, avatar: avatarLook(parseEquipped(u.equipped), catalog) });
+  const info = (u: UserRow) => ({ id: u.id, username: u.username, name: u.display_name ?? u.username, avatar: avatarLook(parseEquipped(u.equipped), catalog) });
   const questions: DuelQuestion[] = picked.map((q) => ({
     id: q.id,
     prompt: q.prompt,

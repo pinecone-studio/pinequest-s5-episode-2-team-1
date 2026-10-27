@@ -1,3 +1,6 @@
+import type { BEAR_FACES, BEAR_FURS } from './bear';
+import type { BagItem, LootKind } from './loot';
+import type { HeardFrom, Reason, SelfLevel } from './onboarding';
 // API ба WebSocket-ийн гэрээ. api/ болон mobile/ хоёулаа зөвхөн `import type`-аар ашиглана
 // (runtime код энд байхгүй тул Metro энэ файлыг bundle хийх шаардлагагүй).
 
@@ -38,13 +41,19 @@ export type ErrorCode =
   | 'DUEL_EXISTS'
   | 'DUEL_TAKEN'
   | 'DUEL_NOT_OPEN'
-  | 'WRONG_TIER'
+  | 'WRONG_GRADE'
   | 'OWN_DUEL'
   | 'CODE_NOT_FOUND'
   | 'LLM_UNAVAILABLE'
   | 'LLM_FAILED'
   | 'BOSS_LOCKED'
   | 'NODE_LOCKED'
+  | 'NO_LIVES'
+  | 'CHEST_LOCKED'
+  | 'NO_ITEM'
+  | 'LIVES_FULL'
+  | 'NO_REVIEW'
+  | 'REVIEW_DONE'
   | 'STAGE_LOCKED'
   | 'TUTOR_UNAVAILABLE'
   | 'TUTOR_LIMIT'
@@ -79,6 +88,12 @@ export interface ShieldStatus {
 export interface Me {
   id: number;
   username: string;
+  /** Профайлын нэр (хоч); тохируулаагүй бол username */
+  name: string;
+  /** Профайлаа (нэр, баавгай) тохируулсан эсэх: бүртгүүлсний дараах алхмыг нэг л удаа харуулна */
+  profileSet: boolean;
+  /** Анх орохдоо асуудаг асуултаа (хаанаас сонссон, анги, зорилго, түвшин) бөглөсөн эсэх */
+  onboarded: boolean;
   grade: number;
   /** Ангийн түвшин 1–3 */
   tier: number;
@@ -110,12 +125,25 @@ export interface Me {
   today: string;
   /** Хөгжүүлэгч: бүх зангилаа, boss руу орно, давтлагагүй, бүх хувцас эзэмшинэ. */
   admin: boolean;
+  /** Амь: зангилаа руу орох бүрт нэг хасагдана; 0 бол бодлого, давтлага, баавгай хаалттай. */
+  lives: number;
+  maxLives: number;
+  /** Дараагийн амь нөхөгдөх мөч (ms); дүүрэн бол null. */
+  nextLifeAt: number | null;
+  /** Цүнхний хэрэглэгдэхүүн (нууц хайрцгаас): Хувын болор, Зөгийн балны сав */
+  bag: Record<BagItem, number>;
 }
 
-/** Баавгайн дэвсгэр, хувцас: mobile catalog-ийн key ('nimbeg', 'gradcap'…). */
+export type BearFur = (typeof BEAR_FURS)[number];
+export type BearFace = (typeof BEAR_FACES)[number];
+
+/** Баавгайн дэвсгэр, хувцас (mobile catalog-ийн key: 'nimbeg', 'gradcap'…), үс, царай, цээжний цагаан толбо. */
 export interface BearLook {
   bg: string;
   outfit: string;
+  fur: BearFur;
+  face: BearFace;
+  chest: boolean;
 }
 
 export interface SubjectPath {
@@ -130,6 +158,8 @@ export interface SubjectPath {
   bossesBeaten: number;
   /** Зангилаа → давсан шат (1 Суурь, 2 Дунд, 3 Ахисан); байхгүй бол 0 (shared/path.ts stageDone). */
   stages: Record<number, number>;
+  /** Нээсэн нууц хайрцгийн зангилаанууд (shared/path.ts chestNodes) */
+  chests: number[];
 }
 
 /** Сурах бичгийн гарчгаас гаргасан нэг хичээл (сэдэв). */
@@ -178,6 +208,7 @@ export interface SubjectSkill {
  */
 export interface PublicProfile {
   username: string;
+  name: string;
   grade: number;
   level: number;
   levelXp: number;
@@ -221,6 +252,7 @@ export interface FriendDto {
   /** Профайлын код: /u/<код>, мөн хүсэлт зөвшөөрөх, хасахад */
   code: string;
   username: string;
+  name: string;
   grade: number;
   level: number;
   streak: number;
@@ -247,7 +279,19 @@ export interface FriendActionResponse {
 }
 
 /** PUT /me/look */
-export type LookBody = BearLook;
+export type LookBody = Pick<BearLook, 'bg' | 'outfit'>;
+
+/** PUT /me/onboarding: анги нь зөвхөн анх бөглөхөд хэрэгжинэ (дараа нь өөрчлөгдвөл зам эвдэрнэ) */
+export interface OnboardingBody {
+  heardFrom: HeardFrom;
+  grade: number;
+  reason: Reason;
+  subject: Subject;
+  level: SelfLevel;
+}
+
+/** PUT /me/avatar: профайлын нэр ба баавгайн төрх */
+export type AvatarBody = { name: string } & Pick<BearLook, 'fur' | 'face' | 'chest'>;
 
 // ---------- Даалгавар ----------
 
@@ -265,6 +309,8 @@ export interface TaskDto {
   questions: TaskQuestion[];
   answeredCount: number;
   correctCount: number;
+  /** Өнөөдрийн хичээл бол давтаж буй хичээлийн нэр (номгүй бол null). */
+  title?: string | null;
 }
 
 export interface TaskResult {
@@ -279,9 +325,14 @@ export interface TaskResult {
   levelAfter: number;
   /** Энэ даалгавраар сурах замын дараагийн зангилаа нээгдсэн (4/5+ зөв эсвэл boss ялсан). */
   nodeUp: boolean;
+  /** Тулааны хаалганы даалгавар бол тэр хаалга (boss, гар, цэрэг), бусад нь null; энэ удаа анх давсан эсэх. */
+  gate: number | null;
+  gateBeaten: boolean;
   /** Зангилааны шатны даалгавар бол тэр шат (тулаан бол null), давсан эсэх. */
   stage: number | null;
   stagePassed: boolean;
+  /** Өнөөдрийн хичээл (өмнөх хичээлээс давтах дасгал): замд нөлөөлөхгүй. */
+  review: boolean;
   me: Me;
 }
 
@@ -301,6 +352,23 @@ export interface FlagResponse {
   finished: boolean;
   result?: TaskResult;
   recovery?: boolean;
+}
+
+// ---------- Нууц хайрцаг, цүнх ----------
+
+/** POST /me/chests: нээсэн хайрцгийн шагнал (дахин нээхэд ижил, fresh = false). */
+export interface ChestOpenResponse {
+  node: number;
+  kind: LootKind;
+  qty: number;
+  fresh: boolean;
+  me: Me;
+}
+
+/** POST /tasks/:id/hint: Хувын болор нуусан 2 буруу хариулт. */
+export interface HintResponse {
+  hide: number[];
+  bag: Record<BagItem, number>;
 }
 
 // ---------- Нөхөх салаа зам ----------
@@ -333,6 +401,8 @@ export type DuelVisibility = 'public' | 'private';
 export interface DuelPlayerDto {
   id: number;
   username: string;
+  /** Профайлын нэр (хоч) */
+  name: string;
   level: number;
   avatar: AvatarLook;
 }
@@ -422,6 +492,7 @@ export type DuelPhase = 'waiting' | 'countdown' | 'question' | 'reveal' | 'finis
 export interface WsPlayer {
   id: number;
   username: string;
+  name: string;
   avatar: AvatarLook;
   connected: boolean;
   score: number;
@@ -599,6 +670,35 @@ export interface PageTextResponse {
   method: string | null;
   quality: TextQuality | null;
   at: number | null;
+}
+
+/** GET /dashboard/stats?days=30 — нийтэд нээлттэй dashboard (/dashboard). Зөвхөн нэгтгэсэн тоо; өдрүүд UB цагаар. */
+export interface DashboardStatsResponse {
+  /** UB өдөр, 'YYYY-MM-DD' */
+  today: string;
+  generatedAt: number;
+  totals: {
+    users: number;
+    /** Сүүлийн 7 / 30 өдөрт (өнөөдрийг оруулаад) дор хаяж нэг удаа орсон хүн */
+    active7d: number;
+    active30d: number;
+  };
+  /** Хуучнаас шинэ рүү, `days` урттай; сүүлийнх нь өнөөдөр. */
+  daily: Array<{
+    day: string;
+    signups: number;
+    /** Тэр өдөр апп ашигласан хүн */
+    active: number;
+    /** active-ийн дотроос өмнөх өдрүүдэд бүртгүүлсэн нь */
+    returning: number;
+    /** Тэр өдөр эхэлж дуусгасан даалгавар */
+    tasks: number;
+    /** Дууссан тулаан */
+    duels: number;
+    /** Баавгайтай ярилцсан удаа */
+    tutor: number;
+  }>;
+  grades: Array<{ grade: number; users: number; activeToday: number }>;
 }
 
 export interface BookOcrResponse {

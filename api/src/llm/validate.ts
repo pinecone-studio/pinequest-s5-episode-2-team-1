@@ -8,6 +8,7 @@ const rawSchema = z.object({
   correctIndex: z.number().int(),
   explanation: z.string(),
   topic: z.string().optional(),
+  difficulty: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
 });
 
 const CYRILLIC = /[Ѐ-ӿ]/;
@@ -26,7 +27,8 @@ function hasMixedScriptWord(text: string): boolean {
     (w) => w.length >= 5 && /[\u0400-\u04FF]/.test(w) && /[a-zA-Z]/.test(w),
   );
 }
-const OPTION_PREFIX = /^\s*(?:[A-DА-Г]|[1-4])\s*[).:]\s+/;
+/** "A) ", "Б. ", "C: ", "1) ", "2. " угтвар. Тоонд ":" авахгүй: "1 : 2" нь харьцаа, угтвар биш. */
+const OPTION_PREFIX = /^\s*(?:[A-DА-Г]\s*[).:]|[1-4]\s*[).])\s+/;
 /**
  * Сурагч харахгүй эх сурвалж руу заасан асуулт ("дээрх зураг", "сурах бичгийн 45-р хуудас") нь
  * сангаас үүсгэхэд гардаг алдаа: асуулт дангаараа ойлгогдох ёстой.
@@ -90,7 +92,14 @@ function checkOne(raw: unknown, topics: readonly string[]): QuestionDraft | Reje
 
   // Жагсаалтад байхгүй сэдэвтэй асуултыг хаяхгүй (квот хэмнэнэ), зөвхөн сэдэвгүй хадгална.
   const topic = q.topic?.trim();
-  return { prompt, options, correctIndex: q.correctIndex, explanation, ...(topic && topics.includes(topic) ? { topic } : {}) };
+  return {
+    prompt,
+    options,
+    correctIndex: q.correctIndex,
+    explanation,
+    ...(topic && topics.includes(topic) ? { topic } : {}),
+    ...(q.difficulty ? { difficulty: q.difficulty } : {}),
+  };
 }
 
 /**

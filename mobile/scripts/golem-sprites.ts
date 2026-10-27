@@ -1,5 +1,6 @@
 /**
- * 2-р бүлгийн дайснууд: Хадан аварга (boss), Сарны хамгаалагч (зүүн гар), Болор шидтэн (баруун гар).
+ * 2-р бүлгийн дайснууд: Хадан аварга (boss), Сарны хамгаалагч (зүүн гар), Болор шидтэн (баруун гар); 3-р бүлгийн
+ * Нарны арслан (boss), Бамбайт ахлагч, Элсэн цох (цэргүүд; эх зураг нь тунгалаг дэвсгэртэй).
  *
  * 1) Эх зургаас (docs/design/pixel-bear/reference/golem_*.png, цагаан дэвсгэртэй AI зураг) жинхэнэ pixel хэмжээтэй
  *    дүр гаргаж 88×88 суурь болгоно: pixellab/golem-<name>-base.png. Түүнийг PixelLab correct_pixelart-аар (0.15)
@@ -20,7 +21,7 @@ const PIXELLAB = new URL('../../docs/design/pixel-bear/pixellab/', import.meta.u
 const META = new URL('../src/lib/pixelBear/golems.json', import.meta.url);
 const CELL = 88;
 /** дүрийн өндөр (pixel): boss хамгийн том */
-const GOLEMS = { boss: 64, left: 54, right: 66 } as const;
+const GOLEMS = { boss: 64, left: 54, right: 66, lion: 72, captain: 58, scarab: 44 } as const;
 type Name = keyof typeof GOLEMS;
 
 /** цагаан дэвсгэрийг захаас нь үерлэж арилгана (дүрийн доторх цагаан гэрэл үлдэнэ) */
@@ -113,9 +114,14 @@ console.log(`golem bases: ${NAMES.join(', ')}`);
 // ---------- 2) PixelLab strip-үүдээс sheet ----------
 const ANIMS = ['idle', 'attack', 'hurt'] as const;
 /** амьсгалын давталтад авах нүд (0 = суурь): PixelLab-ийн сүүлийн frame-үүд дүрээсээ холдож (болор алга болох г.м.) эхэлдэг */
-const IDLE: Record<Name, number[]> = { boss: [0, 1, 2], left: [1, 2, 3, 4], right: [0, 1, 2] };
-/** цочих нүд: шидтэний 3–4-р frame-д таяг нөгөө гар руу шилждэг (буцах агшинд үсрэлт гарна) */
-const HURT: Record<Name, number[]> = { boss: [1, 2, 3, 4], left: [1, 2, 3, 4], right: [1, 2] };
+const IDLE: Record<Name, number[]> = { boss: [0, 1, 2], left: [1, 2, 3, 4], right: [0, 1, 2], lion: [0, 1, 2, 3], captain: [0, 1, 2, 3], scarab: [0, 1, 2, 3] };
+/** цочих нүд: шидтэний 3–4-р frame-д таяг нөгөө гар руу шилждэг (буцах агшинд үсрэлт гарна); ахлагч бамбайгаа өргөөд буулгана; цохын 1–3 нь эргэлттэй, очтой */
+const HURT: Record<Name, number[]> = { boss: [1, 2, 3, 4], left: [1, 2, 3, 4], right: [1, 2], lion: [1, 2, 3, 4], captain: [1, 2, 1], scarab: [4] };
+/**
+ * довтолгооны нүд (1–8; impact = 6-р байр): ахлагчийн 7–8-р frame-д бамбай алга болдог тул өргөх → урагш цохих → буцах;
+ * цох 4-өөс хойш эргэж, утаа гаргадаг тул 1–3-аар бөхийх → дайрах
+ */
+const ATTACK: Partial<Record<Name, number[]>> = { captain: [1, 2, 4, 5, 6, 3, 2, 1], scarab: [1, 2, 3, 2, 3, 3, 2, 1] };
 const strip = (n: Name, a: string) => new URL(`golem-${n}-${a}.png`, PIXELLAB);
 const ready = NAMES.filter((n) => ANIMS.every((a) => existsSync(strip(n, a))));
 const meta: Record<string, unknown> = {};
@@ -128,7 +134,7 @@ for (const n of ready) {
   };
   const idle = IDLE[n].map((i) => cells('idle')[i]);
   idle.forEach((img, i) => all.push({ name: `idle${i}`, duration: 220, img }));
-  const attack = cells('attack').slice(1);
+  const attack = ATTACK[n]?.map((i) => cells('attack')[i]) ?? cells('attack').slice(1);
   // 8 frame: бэлдэх (0–3, удаан) → цохих агшин (impact = 5) → буцах
   attack.forEach((img, i) => all.push({ name: i === 5 ? 'impact' : `attack${i}`, duration: [110, 110, 130, 140, 70, 160, 110, 110][i] ?? 110, img }));
   const hurt = HURT[n].map((i) => cells('hurt')[i]);
@@ -152,6 +158,9 @@ for (const n of ready) {
     frameSize: { w: frames[0].img.w, h: frames[0].img.h },
     columns: COLS,
     feet: sy1 - dy,
+    /** 88×88 нүдээс frame тайрсан зай (scripts/defeat-sprites.ts ялагдлын frame-ийг ижил байрлалд тайрна) */
+    dx,
+    dy,
     /** зогсож буй биеийн голын x (frame дотор): эффект нэг тал руу сунадаг тул frame-ийн гол биш */
     cx: Math.round((sx0 + sx1) / 2) - dx,
     /** зогсож буй биеийн өргөн: ойроос довтлоход бие нь (frame биш) баавгайд тулна */
@@ -173,6 +182,23 @@ for (const [from, to] of [
   ['golem-orb', 'fx_golem_orb'],
   ['moon-crescent', 'fx_moon_crescent'],
   ['golem-impact', 'fx_golem_impact'],
+  // дайсан бүрийн өөрийн skill: нарны галт бөмбөг/дэлбэрэлт (арслан), алтан диск/оч (ахлагч), элсэн бөмбөг/тоос (цох),
+  // ногоон сүнсний гал/оч (хулуу)
+  ['sun-fireball', 'fx_sun_fireball'],
+  ['sun-blast', 'fx_sun_blast'],
+  ['sun-disc', 'fx_sun_disc'],
+  ['gold-hit', 'fx_gold_hit'],
+  ['sand-ball', 'fx_sand_ball'],
+  ['sand-dust', 'fx_sand_dust'],
+  ['ghost-flame', 'fx_ghost_flame'],
+  ['ghost-hit', 'fx_ghost_hit'],
+  // 2-р бүлэг: сарны оч (зүүн гар), болор аянга (баруун гар), болор дэлбэрэлт (boss); эцсийн цохилтын алтан KO
+  ['moon-hit', 'fx_moon_hit'],
+  ['crystal-bolt-strike', 'fx_crystal_strike'],
+  ['crystal-blast', 'fx_crystal_blast'],
+  ['ko-burst', 'fx_ko_burst'],
+  // баавгайн skill: сарвуу, хос сарвуу, балны бөмбөг, газар хагарах, давхих тоос, хүчний дөл
+  ...['claw', 'cross', 'boom', 'cracks', 'dust', 'aura'].map((n) => [`bear-${n}`, `fx_bear_${n}`]),
 ])
   if (existsSync(new URL(`${from}.png`, PIXELLAB))) writePng(new URL(`${to}.png`, SPRITES), readPng(new URL(`${from}.png`, PIXELLAB)));
 

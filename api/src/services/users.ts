@@ -1,6 +1,8 @@
+import { BAG_ITEMS, type BagItem } from '../../../shared/loot';
 import type { Me, SubjectPath } from '../../../shared/types';
 import { GAME, SUBJECTS, type Subject } from '../config/game';
 import { levelProgress } from '../domain/level';
+import { type Lives, livesNow, nextLifeAt } from '../domain/lives';
 import { parseBearLook } from '../domain/profile';
 import { shieldBlock, shieldNextBuyDay } from '../domain/shield';
 import { maxStake } from '../domain/stake';
@@ -12,6 +14,7 @@ import { avatarLook, type CatalogItem, getCatalog, parseEquipped } from './items
 export interface UserRow {
   id: number;
   username: string;
+  display_name: string | null;
   grade: number;
   tier: number;
   xp: number;
@@ -25,10 +28,13 @@ export interface UserRow {
   bear_look: string | null;
   created_at: number;
   is_admin: number;
+  lives: number;
+  lives_at: number | null;
+  onboarding: string | null;
 }
 
 const USER_COLUMNS =
-  'id, username, grade, tier, xp, points, streak, last_streak_day, shield_held, shield_bought_day, shield_used_day, equipped, bear_look, created_at, is_admin';
+  'id, username, display_name, grade, tier, xp, points, streak, last_streak_day, shield_held, shield_bought_day, shield_used_day, equipped, bear_look, created_at, is_admin, lives, lives_at, onboarding';
 
 export async function getUserRow(db: D1Database, id: number): Promise<UserRow> {
   const row = await db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE id = ?`).bind(id).first<UserRow>();
@@ -96,12 +102,13 @@ export async function countFriendRequests(db: D1Database, userId: number): Promi
 
 /** Хичээл бүрийн сурах замын ахиц (subject_progress); тухайн хичээлд даалгавар хийгээгүй бол 0. */
 export async function loadSubjectPaths(db: D1Database, userId: number): Promise<Record<Subject, SubjectPath>> {
-  const [{ results }, { results: stages }] = await Promise.all([
+  const [{ results }, { results: stages }, { results: chests }] = await Promise.all([
     db
       .prepare('SELECT subject, xp, nodes, bosses_beaten FROM subject_progress WHERE user_id = ?')
       .bind(userId)
       .all<{ subject: Subject; xp: number; nodes: number; bosses_beaten: number }>(),
     db.prepare('SELECT subject, node, stage FROM node_stages WHERE user_id = ?').bind(userId).all<{ subject: Subject; node: number; stage: number }>(),
+    db.prepare('SELECT subject, node FROM chests WHERE user_id = ?').bind(userId).all<{ subject: Subject; node: number }>(),
   ]);
   const paths = {} as Record<Subject, SubjectPath>;
   for (const subject of SUBJECTS) {
@@ -111,6 +118,7 @@ export async function loadSubjectPaths(db: D1Database, userId: number): Promise<
       level: (row?.nodes ?? 0) + 1,
       bossesBeaten: row?.bosses_beaten ?? 0,
       stages: Object.fromEntries(stages.filter((s) => s.subject === subject).map((s) => [s.node, s.stage])),
+      chests: chests.filter((c) => c.subject === subject).map((c) => c.node),
     };
   }
   return paths;
@@ -123,7 +131,10 @@ export function buildMe(
   catalog: Map<string, CatalogItem>,
   paths: Record<Subject, SubjectPath>,
   friendRequests: number,
+  bag: Record<BagItem, number>,
+  now = Date.now(),
 ): Me {
+  const lives = livesNow(livesOf(user), now);
   const s = streakStateOf(user);
   const progress = levelProgress(user.xp);
   const block = shieldBlock(s, user.points, today);
@@ -131,6 +142,9 @@ export function buildMe(
   return {
     id: user.id,
     username: user.username,
+    name: user.display_name ?? user.username,
+    profileSet: user.display_name !== null,
+    onboarded: user.onboarding !== null,
     grade: user.grade,
     tier: user.tier,
     xp: user.xp,
@@ -161,17 +175,41 @@ export function buildMe(
     friendRequests,
     today,
     admin: user.is_admin === 1,
+    lives: lives.lives,
+    maxLives: GAME.LIVES.MAX,
+    nextLifeAt: nextLifeAt(lives),
+    bag,
   };
+}
+
+/** Цүнхний хэрэглэгдэхүүний тоо (нууц хайрцгаас, shared/loot.ts). */
+export async function loadBag(db: D1Database, userId: number): Promise<Record<BagItem, number>> {
+  const { results } = await db.prepare('SELECT item, qty FROM inventory WHERE user_id = ?').bind(userId).all<{ item: string; qty: number }>();
+  return Object.fromEntries(BAG_ITEMS.map((i) => [i, results.find((r) => r.item === i)?.qty ?? 0])) as Record<BagItem, number>;
+}
+
+export const livesOf = (u: Pick<UserRow, 'lives' | 'lives_at'>): Lives => ({ lives: u.lives, at: u.lives_at });
+/** users.lives, lives_at-д бичих утга */
+export const livesArgs = (l: Lives) => [l.lives, l.at] as const;
+
+/**
+ * Амьгүй бол (admin биш) NO_LIVES: нөхөгдтөл бодлого, давтлага, баавгайтай ярилцах хаалттай. Одоогийн амийг буцаана.
+ */
+export function requireLife(user: UserRow, now = Date.now()): Lives {
+  const lives = livesNow(livesOf(user), now);
+  if (lives.lives <= 0 && user.is_admin !== 1) throw new ApiError(409, 'NO_LIVES', 'Амь дууссан. Шинэ амь нөхөгдөхийг хүлээнэ үү');
+  return lives;
 }
 
 export async function loadMe(db: D1Database, userId: number, now = Date.now()): Promise<Me> {
   const today = ubDay(now);
   const user = await syncStreak(db, await getUserRow(db, userId), today);
-  const [todayTasks, catalog, paths, friendRequests] = await Promise.all([
+  const [todayTasks, catalog, paths, friendRequests, bag] = await Promise.all([
     countTasksToday(db, userId, today),
     getCatalog(db),
     loadSubjectPaths(db, userId),
     countFriendRequests(db, userId),
+    loadBag(db, userId),
   ]);
-  return buildMe(user, today, todayTasks, catalog, paths, friendRequests);
+  return buildMe(user, today, todayTasks, catalog, paths, friendRequests, bag, now);
 }

@@ -1,5 +1,6 @@
 import type { Context } from 'hono';
 import { createMiddleware } from 'hono/factory';
+import { ubDay } from '../domain/time';
 import type { AppEnv } from '../env';
 import { newSessionToken, sha256Hex } from './auth';
 import { ApiError } from './errors';
@@ -40,11 +41,23 @@ export async function socketUserId(c: Context<AppEnv>): Promise<number> {
   return userId;
 }
 
+/**
+ * Хэрэглэгч өнөөдөр (UB) апп ашигласныг admin dashboard-д тэмдэглэнэ: өдөрт нэг мөр, дараагийн хүсэлтүүд юу ч
+ * бичихгүй. Хариуг хүлээлгэхгүй, алдаа нь хүсэлтийг унагахгүй.
+ */
+export function trackActive(c: Context<AppEnv>, userId: number, now = Date.now()) {
+  const insert = c.env.DB.prepare('INSERT OR IGNORE INTO user_activity (user_id, day, first_at) VALUES (?, ?, ?)')
+    .bind(userId, ubDay(now), now)
+    .run();
+  c.executionCtx.waitUntil(insert.catch((e) => console.error('[activity]', e)));
+}
+
 /** `Authorization: Bearer <token>` шаардана, c.var.userId-г тохируулна. */
 export const requireAuth = createMiddleware<AppEnv>(async (c, next) => {
   const token = bearerToken(c);
   const userId = token ? await userIdForToken(c.env.DB, token) : null;
   if (!userId) throw new ApiError(401, 'UNAUTHORIZED', 'Нэвтрэх шаардлагатай');
   c.set('userId', userId);
+  trackActive(c, userId);
   await next();
 });

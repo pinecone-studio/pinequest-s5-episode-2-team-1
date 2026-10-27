@@ -10,7 +10,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { ConfirmHost } from '@/components/ConfirmHost';
-import { Sprite } from '@/components/pixel';
+import { FurContext, Sprite } from '@/components/pixel';
 import { ServerStatus } from '@/components/ServerStatus';
 import { colors, fonts } from '@/constants/theme';
 import { type } from '@/constants/type';
@@ -56,7 +56,7 @@ export default function RootLayout() {
 }
 
 function RootNavigator() {
-  const { status, retryBoot } = useAuth();
+  const { status, me, retryBoot } = useAuth();
 
   if (status === 'loading') {
     return (
@@ -81,26 +81,31 @@ function RootNavigator() {
 
   const signedIn = status === 'signedIn';
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }}>
-      <Stack.Protected guard={signedIn}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="onboarding" />
-        <Stack.Screen name="calendar" options={{ animation: 'slide_from_bottom' }} />
-        <Stack.Screen name="bag" />
-        <Stack.Screen name="profile" />
-        <Stack.Screen name="u/[code]" />
-        <Stack.Screen name="scan" options={{ animation: 'slide_from_bottom' }} />
-        <Stack.Screen name="task/[subject]" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />
-        <Stack.Screen name="recovery/[subject]" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />
-        <Stack.Screen name="duel/[id]" options={{ gestureEnabled: false }} />
-        <Stack.Screen name="tutor" options={{ animation: 'slide_from_bottom' }} />
-      </Stack.Protected>
-      <Stack.Protected guard={!signedIn}>
-        <Stack.Screen name="welcome" />
-        <Stack.Screen name="login" />
-        <Stack.Screen name="register" />
-      </Stack.Protected>
-    </Stack>
+    // баавгайн бүх animation нь профайлд сонгосон үсний өнгөөр (хуучин кэшэлсэн профайлд look.fur байхгүй)
+    <FurContext.Provider value={me?.look?.fur ?? 'brown'}>
+      <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }}>
+        <Stack.Protected guard={signedIn}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="avatar" />
+          <Stack.Screen name="onboarding" />
+          <Stack.Screen name="calendar" options={{ animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="bag" />
+          <Stack.Screen name="chest" options={{ animation: 'fade', gestureEnabled: false }} />
+          <Stack.Screen name="profile" />
+          <Stack.Screen name="u/[code]" />
+          <Stack.Screen name="scan" options={{ animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="task/[subject]" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="recovery/[subject]" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="duel/[id]" options={{ gestureEnabled: false }} />
+          <Stack.Screen name="tutor" options={{ animation: 'slide_from_bottom' }} />
+        </Stack.Protected>
+        <Stack.Protected guard={!signedIn}>
+          <Stack.Screen name="welcome" />
+          <Stack.Screen name="login" />
+          <Stack.Screen name="register" />
+        </Stack.Protected>
+      </Stack>
+    </FurContext.Provider>
   );
 }
 

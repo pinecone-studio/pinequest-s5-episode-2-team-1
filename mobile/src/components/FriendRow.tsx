@@ -4,30 +4,30 @@ import { StyleSheet, Text, View } from 'react-native';
 import { PressScale, Sprite } from '@/components/pixel';
 import { colors, fonts, radius } from '@/constants/theme';
 import { S } from '@/i18n/strings';
-import { bgById, outfitById } from '@/lib/pixelBear/catalog';
+import { bgById } from '@/lib/pixelBear/catalog';
+import { avatarSprite } from '@/components/Avatar';
 
-/** Найз эсвэл хүсэлтийн мөр: баавгайн толгой (дэвсгэр өнгөн дээр), нэр, шат, дараалал, баруун талд үйлдэл. */
+/** Найз эсвэл хүсэлтийн мөр: баавгайн хөрөг (дэвсгэр өнгөн дээр), нэр, шат, дараалал, баруун талд үйлдэл. */
 export function FriendRow({ friend, onPress, children }: { friend: FriendDto; onPress: () => void; children?: ReactNode }) {
   const bg = bgById(friend.look.bg);
-  const outfit = outfitById(friend.look.outfit);
   return (
     <View style={styles.row}>
       <PressScale
         accessibilityRole="link"
-        accessibilityLabel={`${friend.username}, ${S.friends.meta(friend.level, friend.grade)}, ${S.profile.streak} ${friend.streak}`}
+        accessibilityLabel={`${friend.name ?? friend.username}, @${friend.username}, ${S.friends.meta(friend.level, friend.grade)}, ${S.profile.streak} ${friend.streak}`}
         onPress={onPress}
         style={styles.main}
       >
         <View style={[styles.head, { backgroundColor: bg.hex }]}>
-          <Sprite id={outfit.card} style={{ marginTop: outfit.imgTop }} />
+          <Sprite id={avatarSprite(friend.look, 48)} />
         </View>
         <View style={styles.text}>
           <Text style={styles.name} numberOfLines={1}>
-            {friend.username}
+            {friend.name ?? friend.username}
           </Text>
           <View style={styles.metaRow}>
             <Text style={styles.meta} numberOfLines={1}>
-              {S.friends.meta(friend.level, friend.grade)}
+              @{friend.username} · {S.friends.meta(friend.level, friend.grade)}
             </Text>
             <Sprite id="icon_flame_12x12" />
             <Text style={styles.meta}>{friend.streak}</Text>
@@ -42,7 +42,7 @@ export function FriendRow({ friend, onPress, children }: { friend: FriendDto; on
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   main: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56 },
-  head: { width: 56, height: 56, borderRadius: radius.sm, alignItems: 'center', overflow: 'hidden' },
+  head: { width: 56, height: 56, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'flex-end', overflow: 'hidden' },
   text: { flex: 1, gap: 3 },
   name: { fontFamily: fonts.bold, fontSize: 16, color: colors.ink },
   metaRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },

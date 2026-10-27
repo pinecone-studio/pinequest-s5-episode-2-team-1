@@ -190,3 +190,25 @@ export function trim(frames: Frame[]): { frames: Frame[]; dx: number; dy: number
   const [dx, dy, w, h] = [x0 - 1, y0 - 1, x1 - x0 + 2, y1 - y0 + 2];
   return { frames: frames.map((f) => ({ ...f, img: crop(f.img, dx, dy, w, h) })), dx, dy };
 }
+
+/** AI-ээр томруулсан pixel зургийг жинхэнэ pixel хэмжээ рүү: нүд бүрийн голын хагасыг дундажилна (холилдсон ирмэгийг алгасна). */
+export function depixelize(img: Img, w: number, h: number, top = 0): Img {
+  const ch = img.h - top;
+  const cw = (ch * w) / h;
+  const x0 = (img.w - cw) / 2;
+  const o = blank(w, h);
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      const sx = x0 + (x / w) * cw;
+      const sy = top + (y / h) * ch;
+      const sum = [0, 0, 0];
+      let n = 0;
+      for (let yy = Math.round(sy + (ch / h) * 0.25); yy < Math.round(sy + (ch / h) * 0.75); yy++)
+        for (let xx = Math.round(sx + (cw / w) * 0.25); xx < Math.round(sx + (cw / w) * 0.75); xx++) {
+          for (let c = 0; c < 3; c++) sum[c] += img.d[at(img, xx, yy) + c];
+          n++;
+        }
+      put(o, x, y, [Math.round(sum[0] / n), Math.round(sum[1] / n), Math.round(sum[2] / n)]);
+    }
+  return o;
+}

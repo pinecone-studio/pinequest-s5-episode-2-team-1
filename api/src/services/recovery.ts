@@ -4,7 +4,7 @@ import type { RecoveryAnswerResponse, RecoveryDto, Subject } from '../../../shar
 import { GAME, type Tier } from '../config/game';
 import { TOPICS } from '../config/topics';
 import { ApiError } from '../lib/errors';
-import { generate, levelOf, type Template, templateById, templatesFor } from '../templates';
+import { generate, levelOf, shouldGenerateTemplates, type Template, templateById, templatesFor } from '../templates';
 import { IN_RANGE, OWN_GRADE, parseLessonRef, rangeArgs, storeGenerated } from './pool';
 
 interface Missed {
@@ -57,10 +57,11 @@ export const recoveryCertain = (wrong: number) => wrong >= GAME.RECOVERY_MIN_WRO
  * орно: шагнал олгогдоод салаа зам нээгдэхгүй үлдэх (эсвэл эсрэгээрээ) боломжгүй.
  */
 export async function recoveryStatements(db: D1Database, userId: number, taskId: number, now = Date.now()): Promise<D1PreparedStatement[]> {
-  // Admin-д нөхөх давтлага үүсэхгүй.
+  // Admin-д, өнөөдрийн хичээлд (давтах дасгал) нөхөх давтлага үүсэхгүй.
   const task = await db
     .prepare(
-      'SELECT t.subject, t.lesson_ref, t.stage, u.grade FROM tasks t JOIN users u ON u.id = t.user_id WHERE t.id = ? AND t.user_id = ? AND u.is_admin = 0',
+      `SELECT t.subject, t.lesson_ref, t.stage, u.grade FROM tasks t JOIN users u ON u.id = t.user_id
+       WHERE t.id = ? AND t.user_id = ? AND u.is_admin = 0 AND t.kind = 'path'`,
     )
     .bind(taskId, userId)
     .first<{ subject: Subject; lesson_ref: string | null; stage: number | null; grade: number }>();
@@ -79,9 +80,9 @@ export async function recoveryStatements(db: D1Database, userId: number, taskId:
   // нэг хичээл/сэдвээс. 2 хичээлтэй зангилаанд хамгийн олон алдсан хичээлийнхийг түрүүлнэ.
   const lesson = parseLessonRef(task.lesson_ref);
   const group = mainGroup(missed);
-  // Хамгийн олон алдсан хичээлд загвар байвал ижил төрлийн шинэ бодлого (тоо нь өөр) үүсгэнэ.
+  // Хамгийн олон алдсан хичээлийн тусгай загвараар шинэ бодлого үүсгэнэ. Ерөнхий загвар нь хадгалсан бодлого
+  // хүрэлцэхгүй үед л нөөц болно.
   const templates = lesson ? lessonTemplates(lesson, group[0].book_ref) : [];
-  const made = await storeGenerated(db, group[0].tier, task.subject, task.grade, generate(templates, GAME.RECOVERY_PRACTICE, levelOf(task.stage)), now);
   const same = lesson ? IN_RANGE : SAME_LESSON;
   const { results } = await db
     .prepare(
@@ -102,6 +103,9 @@ export async function recoveryStatements(db: D1Database, userId: number, taskId:
       GAME.RECOVERY_PRACTICE,
     )
     .all<{ id: number }>();
+  const made = shouldGenerateTemplates(templates, results.length, GAME.RECOVERY_PRACTICE)
+    ? await storeGenerated(db, group[0].tier, task.subject, task.grade, generate(templates, GAME.RECOVERY_PRACTICE, levelOf(task.stage)), now)
+    : [];
   const picked = [...made, ...results.map((r) => r.id).filter((id) => !made.includes(id))];
   const ids = practiceIds(picked, (lesson ? missed : group).map((q) => q.id));
 

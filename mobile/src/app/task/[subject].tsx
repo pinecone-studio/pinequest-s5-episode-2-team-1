@@ -8,6 +8,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { ApiError, api, errorText, isOfflineError } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
+import { AmberButton } from '@/components/AmberButton';
+import { BattleNotice } from '@/components/BattleNotice';
 import { BossArena, type Strike } from '@/components/BossArena';
 import { Button } from '@/components/Button';
 import { LessonBackdrop, LessonBear, type LessonMood } from '@/components/LessonBear';
@@ -21,6 +23,7 @@ import { goBack } from '@/lib/nav';
 import { type Practice, startPractice } from '@/lib/offline/practice';
 import { isOnline, useOnline } from '@/lib/online';
 import { BOSSES } from '@/lib/pixelBear/path';
+import { skillOf } from '@/lib/pixelBear/skills';
 
 /** хичээлийн дэвсгэрийн хананы дээд өнгө (scripts/lesson-sprites.ts): өндөр дэлгэцэнд дэвсгэрээс дээш хэсгийг дүүргэнэ */
 const LESSON_WALL = '#3b2a8f';
@@ -31,7 +34,14 @@ const LESSON_WALL = '#3b2a8f';
  * Сервер хүрэхгүй бол офлайн дасгал: апп доторх асуултаар, хариуг утсан дээр шалгана, XP/оноо цуглуулахгүй.
  */
 export default function TaskScreen() {
-  const { subject, boss, node, stage } = useLocalSearchParams<{ subject: Subject; boss?: string; node?: string; stage?: string }>();
+  const { subject, boss, node, stage, review } = useLocalSearchParams<{
+    subject: Subject;
+    boss?: string;
+    node?: string;
+    stage?: string;
+    /** өнөөдрийн хичээл: өмнө хийсэн хичээлээс 3 бодлого */
+    review?: string;
+  }>();
   const foe = boss === undefined ? undefined : BOSSES[Number(boss)];
   const { me, setMe } = useAuth();
   const online = useOnline();
@@ -54,9 +64,11 @@ export default function TaskScreen() {
   const [pending, setPending] = useState<TaskResult | null>(null);
   const [result, setResult] = useState<TaskResult | null>(null);
   const [recovery, setRecovery] = useState(false); // даалгавар дуусаад нөхөх салаа зам нээгдсэн
-  const [error, setError] = useState<{ message: string; fatal: boolean } | null>(null);
+  const [error, setError] = useState<{ message: string; fatal: boolean; code?: string } | null>(null);
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
+  /** Хувын болороор нуусан хариултууд (асуултын id-тай) */
+  const [hidden, setHidden] = useState<{ q: number; hide: number[] } | null>(null);
 
   const load = useCallback(async () => {
     setTask(null);
@@ -88,7 +100,11 @@ export default function TaskScreen() {
     if (!isOnline()) return offline();
     try {
       const at = { ...(node ? { node: Number(node) } : {}), ...(stage ? { stage: Number(stage) } : {}) };
-      begin(await api<TaskDto>('/tasks', { body: foe ? { subject, gate: Number(boss) } : { subject, ...at } }));
+      begin(
+        review
+          ? await api<TaskDto>('/tasks/review', { body: { subject } })
+          : await api<TaskDto>('/tasks', { body: foe ? { subject, gate: Number(boss) } : { subject, ...at } }),
+      );
     } catch (e) {
       // Олон алдсан өмнөх даалгаврын салаа зам дуусаагүй бол түүн рүү.
       if (e instanceof ApiError && e.code === 'RECOVERY_REQUIRED') {
@@ -96,10 +112,10 @@ export default function TaskScreen() {
         return;
       }
       if (isOfflineError(e)) return offline();
-      const fatal = e instanceof ApiError && (e.code === 'NO_QUESTIONS' || e.code === 'BOSS_LOCKED');
-      setError({ message: errorText(e), fatal });
+      const fatal = e instanceof ApiError && (e.code === 'NO_QUESTIONS' || e.code === 'BOSS_LOCKED' || e.code === 'NO_LIVES' || e.code === 'NO_REVIEW' || e.code === 'REVIEW_DONE');
+      setError({ message: errorText(e), fatal, code: e instanceof ApiError ? e.code : undefined });
     }
-  }, [subject, foe, boss, node, stage, tier, grade, size]);
+  }, [subject, foe, boss, node, stage, review, tier, grade, size]);
 
   useEffect(() => {
     void load();
@@ -131,7 +147,8 @@ export default function TaskScreen() {
     setAnswered((n) => n + 1);
     if (r.correct) setHits((n) => n + 1);
     else setMisses((n) => n + 1);
-    setStrike({ n: answered + 1, correct: r.correct });
+    // дараалсан зөвийн тоо: баавгайн хүчтэй skill (lib/pixelBear/skills.ts)
+    setStrike((s) => ({ n: answered + 1, correct: r.correct, combo: r.correct ? (s?.correct ? (s.combo ?? 1) : 0) + 1 : 0 }));
     void Haptics.notificationAsync(r.correct ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error);
   }
 
@@ -194,8 +211,9 @@ export default function TaskScreen() {
         ? { alt: S.lesson.bearWrong, bubble: S.lesson.wrongBubble }
         : { alt: S.lesson.bearThinking, bubble: error ? error.message : S.lesson.thinking };
 
+  const hide = hidden && q && hidden.q === q.id ? hidden.hide : [];
   const stateOf = (i: number): OptionState => {
-    if (!feedback) return selected === i ? 'selected' : 'idle';
+    if (!feedback) return hide.includes(i) ? 'dim' : selected === i ? 'selected' : 'idle';
     if (i === feedback.correctIndex) return 'correct';
     if (i === selected) return 'wrong';
     return 'dim';
@@ -204,20 +222,21 @@ export default function TaskScreen() {
   const promptSize = !q ? 26 : q.prompt.length <= 18 ? 36 : q.prompt.length <= 60 ? 26 : 20;
   const shown = Math.min(answered + (feedback ? 0 : 1), total);
 
+  // давсан хаалга руу дахин орох гэсэн (сервер BOSS_LOCKED): ялсан гэж харуулна
+  const beaten = !!foe && error?.code === 'BOSS_LOCKED' && (me?.paths[subject]?.bossesBeaten ?? 0) > Number(boss);
   // Boss тулаан: олонх зөв бол ялна (5 асуултад 3 зөв = boss-ын 3 амь, 3 буруу = баавгайн 3 зүрх)
   const needed = Math.floor(total / 2) + 1;
   const hearts = total - needed + 1;
-  const bossMessage = !foe
-    ? ''
-    : error
-      ? error.message
+  const bossMessage =
+    !foe || error
+      ? ''
       : hits >= needed
         ? S.boss.won(foe.name)
         : misses >= hearts
           ? S.boss.lost(foe.name)
           : feedback
             ? feedback.correct
-              ? S.boss.hit
+              ? S.boss.skill[skillOf(strike?.n ?? 1, strike?.combo ?? 0)]
               : S.boss.ouch
             : answered === 0
               ? S.boss.intro(foe.name)
@@ -230,7 +249,7 @@ export default function TaskScreen() {
           {foe ? (
             <BossArena
               boss={foe}
-              hits={hits}
+              hits={beaten ? needed : hits}
               misses={misses}
               needed={needed}
               hearts={hearts}
@@ -251,7 +270,7 @@ export default function TaskScreen() {
               </Svg>
             </Pressable>
             <View style={styles.subjectPill}>
-              <Text style={styles.subjectText}>{practice ? S.offline.pill(subjectName) : subjectName}</Text>
+              <Text style={styles.subjectText}>{practice ? S.offline.pill(subjectName) : review ? S.review.pill : subjectName}</Text>
             </View>
           </View>
 
@@ -277,11 +296,13 @@ export default function TaskScreen() {
 
         <View style={styles.body}>
           {error ? (
-            <View style={{ gap: 12 }}>
-              <Text style={styles.prompt}>{error.message}</Text>
-              {!error.fatal && <Button title={S.common.retry} onPress={load} />}
-              <Button title={S.task.home} variant="white" onPress={() => goBack()} />
-            </View>
+            <BattleNotice
+              tone={beaten ? 'won' : 'locked'}
+              title={beaten ? S.boss.beatenTitle : error.code === 'BOSS_LOCKED' ? S.boss.lockedTitle : S.boss.errorTitle}
+              body={beaten ? S.boss.beatenBody : error.code === 'BOSS_LOCKED' ? S.boss.lockedBody : error.message}
+              primary={error.fatal ? { title: foe ? S.boss.toMap : S.task.home, onPress: () => goBack('/path') } : { title: S.common.retry, onPress: load }}
+              secondary={error.fatal ? undefined : { title: S.task.home, onPress: () => goBack() }}
+            />
           ) : !task || !q ? (
             <View style={styles.loading}>
               <ActivityIndicator color={colors.violet} size="large" />
@@ -291,7 +312,7 @@ export default function TaskScreen() {
             <Animated.View key={q.id} entering={FadeInDown.duration(320)} style={{ gap: 18 }}>
               <View style={{ gap: 6 }}>
                 <Text style={styles.label}>
-                  {subjectName} · {S.lesson.questionN(shown, total)}
+                  {task?.title ?? subjectName} · {S.lesson.questionN(shown, total)}
                 </Text>
                 <Text accessibilityRole="header" style={[styles.prompt, { fontSize: promptSize, lineHeight: promptSize * 1.2 }]}>
                   {q.prompt}
@@ -306,11 +327,24 @@ export default function TaskScreen() {
                     label={opt}
                     grid={grid}
                     state={stateOf(i)}
-                    disabled={!!feedback || busy}
+                    disabled={!!feedback || busy || hide.includes(i)}
                     onPress={() => setSelected(i)}
                   />
                 ))}
               </View>
+
+              {!feedback && !practice && !hide.length ? (
+                <AmberButton
+                  taskId={task.id}
+                  questionId={q.id}
+                  onHide={(h) => {
+                    setHidden({ q: q.id, hide: h });
+                    if (selected !== null && h.includes(selected)) setSelected(null);
+                    setNote(S.items.amberHint);
+                  }}
+                  onError={setNote}
+                />
+              ) : null}
 
               {feedback ? (
                 <Animated.View

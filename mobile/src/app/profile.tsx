@@ -5,6 +5,7 @@ import { useCallback, useRef, useState } from 'react';
 import { ActivityIndicator, Share, StyleSheet, Text, View } from 'react-native';
 import { api, errorText } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
+import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { FriendRow } from '@/components/FriendRow';
 import { Enter } from '@/components/pixel';
@@ -28,7 +29,7 @@ const POLL_MS = 3_000;
  * байдал. Найз нь QR-ийг уншуулаад «Найз болох» дармагц хүсэлт энд гарч ирэхэд «Зөвшөөрөх» дарна.
  */
 export default function ProfileScreen() {
-  const { refreshMe } = useAuth();
+  const { me, refreshMe } = useAuth();
   const { bgId } = usePixelBear();
   const [data, setData] = useState<MyProfileResponse | null>(null);
   const [friends, setFriends] = useState<FriendsResponse | null>(null);
@@ -131,6 +132,18 @@ export default function ProfileScreen() {
         </View>
       ) : (
         <>
+          {me ? (
+            <Enter index={0}>
+              <Card style={styles.photoCard}>
+                <Avatar size={64} look={me.look} label={S.avatar.preview(me.name ?? me.username)} />
+                <Text style={[styles.cardTitle, { flex: 1 }]} numberOfLines={1}>
+                  {me.name ?? me.username}
+                </Text>
+                <Button title={S.avatar.change} variant="secondary" small onPress={() => router.push('/avatar')} />
+              </Card>
+            </Enter>
+          ) : null}
+
           {incoming.length > 0 ? (
             <Enter index={0}>
               <Card style={styles.requests}>
@@ -153,7 +166,7 @@ export default function ProfileScreen() {
                         variant="white"
                         small
                         disabled={busy !== null}
-                        accessibilityLabel={`${S.friends.decline}: ${f.username}`}
+                        accessibilityLabel={`${S.friends.decline}: ${f.name ?? f.username}`}
                         onPress={() => remove(f.code)}
                       />
                     </View>
@@ -217,6 +230,7 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   center: { paddingVertical: 40, alignItems: 'center' },
+  photoCard: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   requests: { backgroundColor: colors.lavender },
   cardTitle: { fontFamily: fonts.semibold, fontSize: 18, color: colors.ink },
   qrCard: { gap: 10 },

@@ -12,33 +12,11 @@
  * Ажиллуулах:  npm run sprites:map && npm run sprites   (mobile/) — mapgen_world.py-г дахин ажиллуулсны дараа ч (map_world_0/1, lair_0/1-г дарж бичдэг)
  */
 import { blank, type Img, readPng, writePng } from './png.ts';
-import { at, BAYER, clone, has, hex, put, type RGB, source, SPRITES } from './sprite-kit.ts';
+import { at, BAYER, clone, depixelize, has, hex, put, type RGB, source, SPRITES } from './sprite-kit.ts';
 
 const REF = new URL('../../docs/design/pixel-bear/reference/', import.meta.url);
 const save = (name: string, img: Img) => writePng(new URL(`${name}.png`, SPRITES), img);
 const rgb = (img: Img, x: number, y: number): RGB => [img.d[at(img, x, y)], img.d[at(img, x, y) + 1], img.d[at(img, x, y) + 2]];
-
-/** AI-ээр томруулсан pixel зургийг жинхэнэ pixel хэмжээ рүү: нүд бүрийн голын хагасыг дундажилна (холилдсон ирмэгийг алгасна). */
-function depixelize(img: Img, w: number, h: number, top = 0): Img {
-  const ch = img.h - top;
-  const cw = (ch * w) / h;
-  const x0 = (img.w - cw) / 2;
-  const o = blank(w, h);
-  for (let y = 0; y < h; y++)
-    for (let x = 0; x < w; x++) {
-      const sx = x0 + (x / w) * cw;
-      const sy = top + (y / h) * ch;
-      const sum = [0, 0, 0];
-      let n = 0;
-      for (let yy = Math.round(sy + (ch / h) * 0.25); yy < Math.round(sy + (ch / h) * 0.75); yy++)
-        for (let xx = Math.round(sx + (cw / w) * 0.25); xx < Math.round(sx + (cw / w) * 0.75); xx++) {
-          for (let c = 0; c < 3; c++) sum[c] += img.d[at(img, xx, yy) + c];
-          n++;
-        }
-      put(o, x, y, [Math.round(sum[0] / n), Math.round(sum[1] / n), Math.round(sum[2] / n)]);
-    }
-  return o;
-}
 
 /** 3/4 болгох: 4×4 блок бүрээс 3×3; нүд бүрд хамгийн их давхцсан эх pixel-ийн өнгө (нүд, хамар зэрэг 1 pixel-ийн нарийн зүйл үлдэнэ). */
 function threeQuarter(img: Img): Img {

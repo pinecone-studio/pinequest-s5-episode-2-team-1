@@ -23,6 +23,7 @@ import {
 import { SpeechQueue, speechChunkEnd } from '../llm/speech';
 import { cleanForSpeech, speechMode, ttsAvailable, ttsStream } from '../llm/tts';
 import { endTutorSession, loadTutorContext, startTutorSession } from '../services/tutor';
+import { getUserRow, requireLife } from '../services/users';
 
 export const tutorRoutes = new Hono<AppEnv>();
 
@@ -58,6 +59,8 @@ tutorRoutes.get('/ws', async (c) => {
       load: async () => {
         // Upgrade-ийн өмнө HTTP 503 өгвөл клиент зөвхөн "холбоо тасарлаа" л хардаг тул socket-оор мэдэгдэнэ.
         if (!key) throw new ApiError(503, 'TUTOR_UNAVAILABLE', 'Баавгай одоо ярих боломжгүй байна. Дараа дахин оролдоно уу.');
+        // Амьгүй бол нөхөгдтөл баавгайтай ярилцах хаалттай.
+        requireLife(await getUserRow(c.env.DB, userId));
         return loadTutorContext(c.env.DB, userId, questionId);
       },
     }),

@@ -2,8 +2,8 @@ import type { AnswerResponse, FlagResponse, Me, TaskDto, TaskResult } from '../.
 import { GAME, type Subject, type Tier } from '../config/game';
 import { bossBlock, bossWon } from '../domain/boss';
 import { levelFromXp } from '../domain/level';
-import { currentNode, gateNodes, gateOf, nodesAfter, pathLessons } from '../domain/path';
-import { ADVANCE_STAGE, STAGES, stageDone } from '../../../shared/path';
+import { currentNode, gateNodes, gateOf, nodesAfter, pathLessons, taskPathLessons } from '../domain/path';
+import { ADVANCE_STAGE, GATE_BONUS, GATE_STAGE, STAGES, stageDone } from '../../../shared/path';
 import { taskReward } from '../domain/rewards';
 import { shieldBlock } from '../domain/shield';
 import { normalizeStreak, registerTaskDay } from '../domain/streak';
@@ -13,10 +13,14 @@ import { isConstraintError, newTx } from '../lib/db';
 import { ApiError } from '../lib/errors';
 import type { PageRange } from './grounding';
 import { bookLessons, lessonPages } from './lessons';
-import { generate, levelOf, templatesFor } from '../templates';
-import { LESSON_COUNT_SQL, lessonRef, maybeRefill, pickArgs, pickSql, rangeArgs, refillLesson, refillPool, storeGenerated } from './pool';
+import { generate, levelOf, shouldGenerateTemplates, templatesFor } from '../templates';
+import { LESSON_COUNT_SQL, lessonRef, maybeRefill, pickQuestions, rangeArgs, refillLesson, refillPool, storeGenerated } from './pool';
 import { hasPendingRecovery, recoveryCertain, recoveryStatements } from './recovery';
-import { countTasksToday, getUserRow, loadMe, loadSubjectPaths, streakStateOf, syncStreak } from './users';
+import { spendLife } from '../domain/lives';
+import { countTasksToday, getUserRow, livesArgs, loadMe, loadSubjectPaths, requireLife, streakStateOf, syncStreak } from './users';
+
+/** Номын сан (замын урт номын хичээлийн тооноос хамаарна). */
+type Books = Pick<Bindings, 'BOOKS'>;
 
 type Ctx = { waitUntil(p: Promise<unknown>): void };
 
@@ -109,12 +113,14 @@ export async function startTask(
   if (stageNo !== null && stageNo > done + 1 && !admin) throw new ApiError(409, 'STAGE_LOCKED', 'Өмнөх шатаа давж байж энэ шат нээгдэнэ');
 
   const existing = await db
-    .prepare(`SELECT id, boss, node, stage FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress' ORDER BY id DESC LIMIT 1`)
+    .prepare(`SELECT id, boss, node, stage FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress' AND kind = 'path' ORDER BY id DESC LIMIT 1`)
     .bind(userId, subject, today)
     .first<{ id: number; boss: number | null; node: number | null; stage: number | null }>();
   if (existing && existing.boss === (boss ?? null) && existing.node === node && existing.stage === stageNo) {
     return loadTask(db, userId, existing.id);
   }
+  // Шинэ зангилаа руу орох бүрт нэг амь (дуусаагүй ижил даалгаврыг үргэлжлүүлэх үнэгүй); амьгүй бол хаалттай.
+  const lives = requireLife(user, now);
   if (existing) {
     // Өөр зангилаа, шат, хаалга сонговол өнөөдрийн дуусаагүй даалгаврыг орхино (оноо, XP зөвхөн дуусгахад олгогддог)
     await db.prepare(`DELETE FROM tasks WHERE id = ? AND status = 'in_progress'`).bind(existing.id).run();
@@ -126,32 +132,41 @@ export async function startTask(
   const lesson = book && lessonPages(book, node);
   const lessonRefill = (range: PageRange) =>
     refillLesson(env, tier, subject, { grade: user.grade, range }, userId).catch((e) => console.error('[pool] lesson refill failed', e));
-  // Хичээлд бодлогын загвар байвал нэг төрлийн бодлогыг тоо, нөхцөлийг нь сольж шатны хүндээр үүсгэнэ (Gemini
-  // хэрэггүй); тулаан Дунд түвшинд.
+  // Тусгай загвар байвал шатны хүндээр шинэ хувилбар үүсгэнэ. Ерөнхий загвар хадгалсан асуулт хүрэлцэхгүй үед
+  // л нөөц болно; тулаан Дунд түвшинд.
   const templates = lesson ? templatesFor(lesson) : [];
-  const made = templates.length
-    ? await storeGenerated(db, tier, subject, user.grade, generate(templates, GAME.QUESTIONS_PER_TASK, levelOf(stageNo)), now)
+  const preferStored = templates.length > 0 && templates.every((template) => template.preferStored);
+  const storedBefore =
+    lesson && preferStored
+      ? ((
+          await db
+            .prepare(LESSON_COUNT_SQL)
+            .bind(tier, subject, ...rangeArgs(lesson))
+            .first<{ n: number }>()
+        )?.n ?? 0)
+      : 0;
+  // Шатны хүнд (1 Суурь … 3 Ахисан): загвар тэр хүндээр үүсгэж, хадгалсан бодлогоос тэр хүндийг түрүүлж сонгоно.
+  const level = levelOf(stageNo ?? (boss === undefined ? null : (GATE_STAGE[boss] ?? null)));
+  const made = shouldGenerateTemplates(templates, storedBefore, GAME.QUESTIONS_PER_TASK)
+    ? await storeGenerated(db, tier, subject, user.grade, generate(templates, GAME.QUESTIONS_PER_TASK, level), now)
     : [];
-  if (lesson && made.length < GAME.QUESTIONS_PER_TASK) {
+  if (lesson && (preferStored ? storedBefore < GAME.QUESTIONS_PER_TASK : made.length < GAME.QUESTIONS_PER_TASK)) {
     const refill = lessonRefill(lesson);
     ctx.waitUntil(refill);
     // Хичээлд нэг даалгаварт хүрэлцэх асуулт байвал (хүүхэд харсан ч) хүлээхгүй: тэднийг давтана, шинэ нь background-д.
-    const have = await db
-      .prepare(LESSON_COUNT_SQL)
-      .bind(tier, subject, ...rangeArgs(lesson))
-      .first<{ n: number }>();
-    if ((have?.n ?? 0) < GAME.QUESTIONS_PER_TASK) await Promise.race([refill, new Promise((r) => setTimeout(r, GAME.POOL.LESSON_WAIT_MS))]);
+    if (made.length < GAME.QUESTIONS_PER_TASK) {
+      const have = await db
+        .prepare(LESSON_COUNT_SQL)
+        .bind(tier, subject, ...rangeArgs(lesson))
+        .first<{ n: number }>();
+      if ((have?.n ?? 0) < GAME.QUESTIONS_PER_TASK) await Promise.race([refill, new Promise((r) => setTimeout(r, GAME.POOL.LESSON_WAIT_MS))]);
+    }
   }
 
   const picked =
     made.length >= GAME.QUESTIONS_PER_TASK
       ? made.map((id) => ({ id }))
-      : (
-          await db
-            .prepare(pickSql(lesson !== null))
-            .bind(...pickArgs(userId, tier, subject, lesson, GAME.QUESTIONS_PER_TASK))
-            .all<{ id: number }>()
-        ).results;
+      : await pickQuestions(db, userId, tier, subject, lesson, GAME.QUESTIONS_PER_TASK, level);
   if (picked.length < GAME.QUESTIONS_PER_TASK) {
     ctx.waitUntil(refillPool(env, tier, subject, { grade: user.grade }));
     throw new ApiError(503, 'NO_QUESTIONS', 'Асуулт хүрэлцэхгүй байна');
@@ -171,17 +186,26 @@ export async function startTask(
       .prepare(
         `INSERT INTO tasks (user_id, subject, day, status, boss, lesson_ref, path_lessons, node, stage, tx, created_at)
          SELECT ?, ?, ?, 'in_progress', ?, ?, ?, ?, ?, ?, ?
-         WHERE NOT EXISTS (SELECT 1 FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress')`,
+         WHERE NOT EXISTS (SELECT 1 FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress' AND kind = 'path')`,
       )
       .bind(userId, subject, today, boss ?? null, lesson ? lessonRef(lesson) : null, pathLen, node, stageNo, tx, now, userId, subject, today),
     ...picked.map((q, i) => tq.bind(tx, i, q.id, tx)),
     ...picked.map((q) => seen.bind(userId, q.id, now, tx)),
+    // shortcut: зэрэг эхлүүлсэн хоёр хичээлийн даалгавар нэг амь зарцуулж болно (утга нь шууд бичигдэнэ); амийг
+    // харьцангуйгаар (lives - 1) бичих хэрэгтэй болбол тоолуурыг SQL-д шилжүүлнэ.
+    ...(admin
+      ? []
+      : [
+          db
+            .prepare(`UPDATE users SET lives = ?, lives_at = ? WHERE id = ? AND ${taskId} IS NOT NULL`)
+            .bind(...livesArgs(spendLife(lives, now)), userId, tx),
+        ]),
   ]);
   const created = await db.prepare('SELECT id FROM tasks WHERE tx = ?').bind(tx).first<{ id: number }>();
   if (!created) {
     // Зэрэг ирсэн хүсэлт энэ хичээлийн даалгаврыг түрүүлж үүсгэсэн бол түүнийг буцаана.
     const other = await db
-      .prepare(`SELECT id FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress'`)
+      .prepare(`SELECT id FROM tasks WHERE user_id = ? AND subject = ? AND day = ? AND status = 'in_progress' AND kind = 'path'`)
       .bind(userId, subject, today)
       .first<{ id: number }>();
     if (other) return loadTask(db, userId, other.id);
@@ -190,7 +214,7 @@ export async function startTask(
 
   // Дараагийн зангилааны хичээлийн асуултыг даалгавар хийх хооронд бэлдэнэ.
   const next = book && lessonPages(book, node + 1);
-  if (next && templatesFor(next).length === 0) ctx.waitUntil(lessonRefill(next));
+  if (next && !templatesFor(next).some((template) => !template.preferStored)) ctx.waitUntil(lessonRefill(next));
   await maybeRefill(env, ctx, tier, subject, userId, user.grade);
   return loadTask(db, userId, created.id);
 }
@@ -204,7 +228,7 @@ interface AnswerRow {
   explanation: string;
 }
 
-async function findTaskQuestion(db: D1Database, userId: number, taskId: number, questionId: number): Promise<AnswerRow> {
+export async function findTaskQuestion(db: D1Database, userId: number, taskId: number, questionId: number): Promise<AnswerRow> {
   const row = await db
     .prepare(
       `SELECT t.user_id, t.status, tq.position, tq.choice, q.correct_index, q.explanation
@@ -222,7 +246,7 @@ async function findTaskQuestion(db: D1Database, userId: number, taskId: number, 
 }
 
 /** choice: 0–3, эсвэл -1 = "Асуулт буруу байна" (алгассан). */
-async function recordChoice(db: D1Database, userId: number, taskId: number, row: AnswerRow, choice: number, now: number) {
+async function recordChoice(db: D1Database, books: Books, userId: number, taskId: number, row: AnswerRow, choice: number, now: number) {
   const correct = choice === row.correct_index;
   const upd = await db
     .prepare('UPDATE task_questions SET choice = ?, correct = ?, answered_at = ? WHERE task_id = ? AND position = ? AND choice IS NULL')
@@ -236,12 +260,13 @@ async function recordChoice(db: D1Database, userId: number, taskId: number, row:
     .first<{ open: number; wrong: number }>();
   const finished = (count?.open ?? 0) === 0;
   const recovery = finished ? await recoveryStatements(db, userId, taskId, now) : [];
-  const result = finished ? await completeTask(db, userId, taskId, now, recovery) : undefined;
+  const result = finished ? await completeTask(db, books, userId, taskId, now, recovery) : undefined;
   return { correct, finished, result, recovery: recovery.length > 0, wrong: count?.wrong ?? 0 };
 }
 
 export async function answerTask(
   db: D1Database,
+  books: Books,
   userId: number,
   taskId: number,
   questionId: number,
@@ -249,7 +274,7 @@ export async function answerTask(
   now = Date.now(),
 ): Promise<AnswerResponse> {
   const row = await findTaskQuestion(db, userId, taskId, questionId);
-  const r = await recordChoice(db, userId, taskId, row, choice, now);
+  const r = await recordChoice(db, books, userId, taskId, row, choice, now);
   // Буруу бол зөв хариу, тайлбарыг зөвхөн салаа зам заавал нээгдэх үед (2 дахь алдаанаас) хэлэхгүй: тэнд өөрөө
   // дахин бодно. Ганц алдаатай бол салаа зам нээгдэхгүй тул зөв хариуг тэр дор нь харуулна.
   const reveal = r.correct || !recoveryCertain(r.wrong) ? { correctIndex: row.correct_index, explanation: row.explanation } : {};
@@ -259,6 +284,7 @@ export async function answerTask(
 /** Асуултыг flagged болгоно (дахин хэнд ч гарахгүй); даалгаврын дунд бол алгасна. */
 export async function flagQuestion(
   db: D1Database,
+  books: Books,
   userId: number,
   questionId: number,
   taskId: number | undefined,
@@ -280,7 +306,7 @@ export async function flagQuestion(
     .first<AnswerRow>();
   // Хариулсан эсвэл дууссан даалгаварт flag л тэмдэглэгдэнэ.
   if (!row || row.user_id !== userId || row.status !== 'in_progress' || row.choice !== null) return { ok: true, finished: false };
-  const r = await recordChoice(db, userId, taskId, row, -1, now);
+  const r = await recordChoice(db, books, userId, taskId, row, -1, now);
   return { ok: true, finished: r.finished, result: r.result, recovery: r.recovery };
 }
 
@@ -291,6 +317,7 @@ export async function flagQuestion(
 /** `extra` = нэг batch-д хамт бичих statement-ууд (салаа зам). */
 export async function completeTask(
   db: D1Database,
+  books: Books,
   userId: number,
   taskId: number,
   now = Date.now(),
@@ -302,25 +329,31 @@ export async function completeTask(
   const after = registerTaskDay(normalized.state, today);
   const cc = await db
     .prepare(
-      `SELECT t.subject, t.boss, t.path_lessons, t.node, t.stage,
+      `SELECT t.subject, t.kind, t.boss, t.path_lessons, t.node, t.stage,
          (SELECT COUNT(*) FROM task_questions WHERE task_id = t.id AND correct = 1) AS n
        FROM tasks t WHERE t.id = ?`,
     )
     .bind(taskId)
-    .first<{ subject: Subject; boss: number | null; path_lessons: number | null; node: number | null; stage: number | null; n: number }>();
+    .first<{ subject: Subject; kind: string; boss: number | null; path_lessons: number | null; node: number | null; stage: number | null; n: number }>();
   if (!cc) throw new ApiError(404, 'NOT_FOUND', 'Даалгавар олдсонгүй');
   const correctCount = cc.n;
-  const reward = taskReward(correctCount, after.streak);
+  const base = taskReward(correctCount, after.streak);
   const path = (await loadSubjectPaths(db, userId))[cc.subject];
   // Тухайн хичээлийн дараагийн boss-ыг ялбал тэр хичээлийн дараагийн бүлэг нээгдэнэ (bosses_beaten = boss нөхцөл
   // давхар тоолохоос сэргийлнэ).
   const beatBoss = cc.boss != null && cc.boss === path.bossesBeaten && bossWon(correctCount);
+  // Хаалгыг анх давахад нэг удаагийн шагнал (давсан хаалгатай дахин тулалдах боломжгүй тул давхардахгүй)
+  const reward = { ...base, points: base.points + (beatBoss && cc.boss != null ? (GATE_BONUS[cc.boss] ?? 0) : 0) };
   const nodes = path.level - 1;
-  // Даалгавар эхлэх үеийн замын урт (дунд нь ном солигдсон ч тэр зангилааг дуусгана)
-  const n = pathLessons(cc.path_lessons ?? 0);
+  // Даалгавар эхлэх үеийн замын урт (дунд нь ном солигдсон ч тэр зангилааг дуусгана); 0020-оос өмнө эхэлсэнд одоогийн номынх
+  const bookCount =
+    cc.path_lessons === null ? ((await bookLessons(books, cc.subject, user.grade).catch(() => null))?.lessons.length ?? 0) : 0;
+  const n = taskPathLessons(cc.path_lessons, bookCount);
   // Шатны даалгавар: давбал тэр шат тэмдэглэгдэнэ; зам зөвхөн одоогийн зангилааны ADVANCE_STAGE-аас дээш шатаар ахина.
   const stagePassed = cc.stage !== null && correctCount >= GAME.PATH_PASS_CORRECT;
-  const advances = cc.stage === null || (cc.stage >= ADVANCE_STAGE && cc.node === currentNode(n, path.level, path.bossesBeaten));
+  // Өнөөдрийн хичээл (давтах дасгал) замд нөлөөлөхгүй: зөвхөн оноо, XP, дараалал.
+  const review = cc.kind === 'review';
+  const advances = !review && (cc.stage === null || (cc.stage >= ADVANCE_STAGE && cc.node === currentNode(n, path.level, path.bossesBeaten)));
   const nodesNext = advances ? nodesAfter(n, nodes, path.bossesBeaten, correctCount, beatBoss) : nodes;
 
   const tx = newTx();
@@ -401,8 +434,11 @@ export async function completeTask(
     levelBefore: levelFromXp(user.xp),
     levelAfter: me.level,
     nodeUp: me.paths[cc.subject].level > path.level,
+    gate: cc.boss,
+    gateBeaten: beatBoss,
     stage: cc.stage,
     stagePassed,
+    review,
     me,
   };
 }

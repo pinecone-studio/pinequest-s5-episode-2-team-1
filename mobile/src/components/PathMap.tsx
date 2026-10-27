@@ -2,19 +2,25 @@ import { STAGES, stageDone } from '@shared/path';
 import type { BookLesson, Subject } from '@shared/types';
 import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withSequence, withTiming } from 'react-native-reanimated';
+import { useReducedMotion } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
+import { MapChests } from '@/components/MapChests';
 import { frameSize, Motion, SheetFrame, SheetLoop, Sprite } from '@/components/pixel';
-import { colors, fonts, radius } from '@/constants/theme';
-import { S } from '@/i18n/strings';
-import { sprites } from '@/sprites';
+import { THEMES } from '@/constants/chapterTheme';
+import { colors, fonts } from '@/constants/theme';
+import { S, subjectNames } from '@/i18n/strings';
 import golems from '@/lib/pixelBear/golems.json';
 import { tagFrames } from '@/lib/pixelBear/anim';
+import { sprites } from '@/sprites';
 import {
   BOSSES,
+  CHAPTER_TOPS,
+  chapterHeight,
   HOVER,
+  lessonAt,
   lessonTitle,
-  MAP_PIECES,
+  MAP_CHAPTERS,
+  MAP_H,
   MAP_W,
   type NodeStatus,
   type PathLayout,
@@ -22,30 +28,28 @@ import {
   statusOf,
   tileFor,
   trailIndex,
-  walkPoints,
 } from '@/lib/pixelBear/path';
 
-const STEP_MS = 260;
 /** Зангилааны одны шар, хэмжээ (dp): 3 од нь алхмын чулууны (48 dp) өргөнөөс хэтрэхгүй */
 const STAR_GOLD = '#FFC93C';
 const STAR = 12;
 const STARS_W = STAR * 3 + 2;
 /** Дарах талбай (dp): 16 зангилаатай бүлэгт хөршүүд хэвтээгээр 84 dp зайтай (mapgen_world.py DESIGN); хичээл олон бол ойртоно */
 const HIT = 56;
-/** Boss-ын арал дээр баавгай boss-ын зүүн талд, арлын гадна зогсоно (давхцахгүй) */
-const CHALLENGER_DX = -62;
-const CHALLENGER_DY = 6;
+/** Газрын зураг дээрх boss-ын томрол: бусад дайснаас илүү сүрлэг; баруун гар (бараан) харанхуй голын дэргэд тод харагдахаар */
+const BOSS_SCALE = 1.4;
+const GUARD_SCALE = { left: 1, right: 1.25 } as const;
+/** Хамгаалагчдын биеийн төв газрын зургийн захаас: зангилаа (голдоо ойр), шошгыг халхлахгүй */
+const GUARD_EDGE = 62;
+/** Одоогийн зангилааны 3 хэсэгтэй цагираг (зууван: чулуу өргөн, нам) */
+const RING = { rx: 40, ry: 31, w: 5, gap: 18 };
 /** Замын цэг: алхам, хэмжээ, зангилааны төвөөс хэр холоос эхлэх */
 const DOT_GAP = 10;
 const DOT = 4;
+/** бүлэг хоорондын баннерын өндөр */
+const BAND_H = 60;
 
 const isBoss = (layout: PathLayout, i: number) => layout.nodes[i].kind === 'boss';
-
-/** Баавгайн зогсох цэг: энгийн зангилаан дээр, boss-ынх бол арлын хажууд. */
-const standAt = (layout: PathLayout, i: number) => {
-  const n = layout.nodes[i];
-  return isBoss(layout, i) ? { x: n.x + CHALLENGER_DX, y: n.y + CHALLENGER_DY } : n;
-};
 
 /** Зангилаа хоорондын нарийн цэгэн зам (дууссан хэсэг нь ногоон): хэсэг бүр SVG шугам, зангилааны чулуу, арлын доор нуугдах хэсгийг тайрна. */
 function segments(layout: PathLayout) {
@@ -62,32 +66,46 @@ function segments(layout: PathLayout) {
 }
 
 /**
- * Адал явдлын газрын зураг (DESIGN.md §8-04-ийг дээш 3 бүлэг болгосон). Давхарга: дэвсгэр → үүл → цэгэн зам → алхмын
- * чулуу ба boss-ын арал → тэмдэг, boss → баавгай ("Чи энд") → эрвээхэй.
- * `from` өгвөл баавгай тэр зангилаанаас `current` хүртэл замаар алхана; `null` бол баавгайг хараахан харуулахгүй.
+ * Газрын зургийг дэлгэцийн өргөнд жигд томруулж/жижигрүүлнэ: хажуу тийш сунгасан зурвас гарахгүй, зангилаа ч хамт.
+ * Газрын зургийн цэг (x, y) дэлгэц дээр (x, y) × scale.
+ */
+export const useMapScale = () => useWindowDimensions().width / MAP_W;
+
+/**
+ * Адал явдлын газрын зураг (DESIGN.md §8-04-ийг 3 бүлэг болгосон, дээрээс доош). Давхарга: дэвсгэр → үүл → цэгэн зам →
+ * алхмын чулуу ба boss-ын арал (одоогийнх нь 3 хэсэгтэй цагирагтай) → тэмдэг, boss → эрвээхэй.
  */
 export function PathMap({
   layout,
   current,
   stages,
-  from,
+  ring,
   beaten,
   subject,
   lessons,
+  selected,
   onNodePress,
+  chests,
+  onChest,
 }: {
   /** хичээлийн тооноос хамаарсан зам (pathLayout) */
   layout: PathLayout;
   current: number;
   /** зангилаа → давсан шат (SubjectPath.stages): од болж харагдана */
   stages: Readonly<Record<number, number>>;
-  from: number | null;
+  /** одоогийн зангилааны цагирагийн дүүрсэн хэсэг = давсан шат (0–3) */
+  ring: number;
   /** давсан тулааны хаалганы тоо (boss, 2-р бүлгийн зүүн/баруун гар) */
   beaten: number;
   subject: Subject;
   /** сурах бичгийн хичээлүүд (хоосон бол хуучин сэдвүүд) */
   lessons: readonly BookLesson[];
+  /** сонгосон зангилаа (түр карт нээлттэй үед) */
+  selected: number | null;
   onNodePress: (i: number, status: NodeStatus) => void;
+  /** нээсэн нууц хайрцгийн зангилаанууд ба хайрцаг дарахад */
+  chests: readonly number[];
+  onChest: (node: number) => void;
 }) {
   const curTrail = trailIndex(layout, current);
   /** Хичээлийн зангилааны од = давсан шат (хаалга, түгжээтэй зангилаанд байхгүй) */
@@ -100,24 +118,12 @@ export function PathMap({
     }),
     [segs, curTrail],
   );
-  // 390 dp-ээс өргөн дэлгэцэд хажуугийн зай: ижил дэвсгэрийг хэвтээгээр сунгаж ард нь тавина (хурц газрын зураг голд)
-  const width = Math.max(MAP_W, useWindowDimensions().width);
-  const pieceH = (id: (typeof MAP_PIECES)[number]) => Math.round(sprites[id].height * layout.scale);
+  const scale = useMapScale();
 
   return (
-    <View style={{ width, height: layout.height }}>
-      {width > MAP_W ? (
-        <View style={StyleSheet.absoluteFill} pointerEvents="none">
-          {MAP_PIECES.map((id) => (
-            <Sprite key={id} id={id} style={{ width, height: pieceH(id) }} />
-          ))}
-        </View>
-      ) : null}
-      <View style={[styles.map, { height: layout.height, marginLeft: (width - MAP_W) / 2 }]} accessibilityLabel={S.path.mapLabel}>
-        {/* хичээл олон бол дэвсгэр босоо чиглэлд сунана (pathLayout scale) */}
-        {MAP_PIECES.map((id) => (
-          <Sprite key={id} id={id} style={{ height: pieceH(id) }} />
-        ))}
+    <View style={{ width: MAP_W * scale, height: MAP_H * scale, overflow: 'hidden' }}>
+      <View style={[styles.map, { transform: [{ scale }], transformOrigin: 'top left' }]} accessibilityLabel={S.path.mapLabel}>
+        <MapBackground />
 
         {layout.units.map((u, k) => (
           <View key={k} style={[styles.abs, { left: 0, top: u.top }]} pointerEvents="none">
@@ -130,13 +136,13 @@ export function PathMap({
           </View>
         ))}
 
-        <Svg width={MAP_W} height={layout.height} style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Svg width={MAP_W} height={MAP_H} style={StyleSheet.absoluteFill} pointerEvents="none">
           <Path d={trail.todo} stroke="rgba(255,255,255,0.55)" strokeWidth={DOT} strokeDasharray={`${DOT} ${DOT_GAP - DOT}`} fill="none" />
           <Path d={trail.done} stroke="#9CF06A" strokeWidth={DOT} strokeDasharray={`${DOT} ${DOT_GAP - DOT}`} fill="none" />
         </Svg>
 
         {/* Алхмууд: дээд талынх нь ард (эхэлж зурна) */}
-        {layout.nodes.map((n) => {
+        {[...layout.nodes].sort((a, b) => a.y - b.y).map((n) => {
           const status = statusOf(n.i, current);
           const boss = n.kind === 'boss';
           const tile = tileFor(n, status);
@@ -159,15 +165,20 @@ export function PathMap({
                 },
               ]}
             >
-              {boss && status === 'current' ? (
+              {boss && status !== 'done' ? (
+                // давж амжаагүй boss-ын арлын эргэн тойронд улаан анивчих цагираг (одоогийнх бол шар)
                 <Motion preset="ring" style={[styles.abs, { left: -8, top: 8 }]}>
-                  <Sprite id="map_ring_88x44" />
+                  <Sprite id="map_ring_88x44" style={status === 'current' ? null : styles.dangerRing} />
                 </Motion>
               ) : null}
+              {selected === n.i && !(status === 'current' && !boss) ? (
+                <View style={[styles.selected, boss ? styles.selectedBoss : null]} pointerEvents="none" />
+              ) : null}
               <Sprite id={tile} style={boss ? null : { marginTop: status === 'current' ? 6 : 10 }} />
+              {status === 'current' && !boss ? <ProgressRing filled={ring} /> : null}
             </Pressable>
           );
-        }).reverse()}
+        })}
 
         {/* Од бүх алхмын дээр: доорх зангилааны ард орохгүй */}
         {layout.nodes.map((n) => {
@@ -182,22 +193,12 @@ export function PathMap({
         })}
 
         {layout.units.map((u, k) => (
-          <UnitProps key={k} k={k} unit={u} layout={layout} current={current} />
+          <UnitProps key={k} unit={u} layout={layout} current={current} />
         ))}
+        <MapChests layout={layout} current={current} opened={chests} onOpen={onChest} />
         {layout.gates.map((_, g) => (
           <GateFigure key={g} g={g} layout={layout} beaten={g < beaten} />
         ))}
-
-        {from === null ? null : (
-          <WalkingBear
-            key={`${from}-${current}`}
-            layout={layout}
-            from={from}
-            to={current}
-            label={`${S.path.youAreHere}: ${lessonTitle(subject, current, lessons)}`}
-            onPress={() => onNodePress(current, 'current')}
-          />
-        )}
 
         {layout.units.map((u, k) => (
           <View key={k} style={[styles.abs, { left: 0, top: u.top }]} pointerEvents="none">
@@ -210,26 +211,70 @@ export function PathMap({
           </View>
         ))}
       </View>
+
+      {/* Бүлэг хоорондын баннер (Duolingo шиг): дэвсгэрийн заагийг халхална, өргөн дэлгэцэд бүтэн өргөнөөр */}
+      {layout.units.slice(1).map((u, j) => {
+        const theme = THEMES[MAP_CHAPTERS[j + 1].themeId];
+        return (
+          <View key={j} style={[styles.band, { top: CHAPTER_TOPS[j + 1] * scale - BAND_H / 2, backgroundColor: theme.panel }]} accessibilityRole="header">
+            <Text style={[styles.bandOver, { color: theme.muted }]}>{S.path.chapterOver(j + 2)}</Text>
+            <Text style={[styles.bandTitle, { color: theme.text }]} numberOfLines={1}>
+              {lessonAt(lessons, u.start)?.chapter ?? subjectNames[subject]}
+            </Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+/** Бүлгүүдийн дэвсгэр дээрээс доош; `cropTop` мөрийг тайрч, богино дэвсгэрийг (`extend`) доод хэсгийг нь давтаж уртасгана. */
+/** Захын хоёр давхаргын байрлал ба зургийн шилжилт: зүүн захад [e, 2e) багана, баруун захад [W − 2e, W − e) багана */
+const edgeFixes = (e?: number) =>
+  e === undefined
+    ? []
+    : [
+        { left: 0, shift: -e },
+        { left: MAP_W - e, shift: -(MAP_W - 2 * e) },
+      ];
+
+function MapBackground() {
+  const width = MAP_W;
+  return (
+    <View pointerEvents="none">
+      {MAP_CHAPTERS.map((c) => (
+        <View key={c.bg} style={{ width, height: chapterHeight(c), overflow: 'hidden' }}>
+          <Sprite id={c.bg} style={{ width, marginTop: -(c.cropTop ?? 0) }} />
+          {/* захын гажигтай `edgeFix` баганын оронд хажуугийн ижил өргөнтэй баганыг давхарлана */}
+          {edgeFixes(c.edgeFix).map(({ left, shift }) => (
+            <View key={left} style={[styles.abs, { left, top: 0, width: c.edgeFix, height: chapterHeight(c), overflow: 'hidden' }]}>
+              <Sprite id={c.bg} style={{ width, marginTop: -(c.cropTop ?? 0), marginLeft: shift }} />
+            </View>
+          ))}
+          {c.foot ? <Sprite id={c.foot} style={{ width }} /> : null}
+          {c.extend === undefined ? null : (
+            // `extend` мөрөөс доошхи хэсгийг л харуулна
+            <View style={{ height: sprites[c.bg].height - c.extend, overflow: 'hidden' }}>
+              <Sprite id={c.bg} style={{ width, marginTop: -c.extend }} />
+            </View>
+          )}
+        </View>
+      ))}
     </View>
   );
 }
 
 /** Бүлгийн тэмдэг: нахиа, бэлэг, хэцүү сорил зангилааны хажууд. */
-function UnitProps({ k, unit, layout, current }: { k: number; unit: PathUnit; layout: PathLayout; current: number }) {
+function UnitProps({ unit, layout, current }: { unit: PathUnit; layout: PathLayout; current: number }) {
   const { nodes } = layout;
   const sapling = nodes[unit.sapling];
   const gift = nodes[unit.gift];
   const myst = nodes[unit.myst];
-  const start = nodes[unit.start];
+  // нууц хайрцагтай бүлэгт бэлэг, хэцүү сорилын тэмдэг хэрэггүй
+  if (unit.chests.length) return null;
 
   return (
     <>
-      {k > 0 ? (
-        <View style={[styles.pill, { right: 44, top: start.y - 14 }]} pointerEvents="none">
-          <Text style={styles.pillMuted}>{S.path.nextChapter(k + 1)}</Text>
-        </View>
-      ) : null}
-
       {current < myst.i ? (
         <Motion preset="blockBob" style={[styles.abs, { left: myst.x + 24, top: myst.y - 22 }]}>
           <Sprite id="map_qblock_19x19" label={S.path.hardTitle} />
@@ -262,18 +307,20 @@ function GateFigure({ g, layout, beaten }: { g: number; layout: PathLayout; beat
   const bs = frameSize(b.map, b.frames, b.cols);
   // тулаанд дайснууд баруун тийш (баавгай руу) хардаг; газрын зураг дээр баруун гар замын баруун талд тул зам руу
   // (зүүн тийш) харуулахаар толин тусгална
-  const flip = b.role === 'right';
+  // 3-р бүлгийн цэрэг зангилааныхаа эсрэг захад (замыг халхлахгүй), зам руу харж зогсоно
+  const side = b.role ?? (b.soldier ? (n.x < MAP_W / 2 ? 'right' : 'left') : undefined);
+  const flip = side === 'right';
   // биеийн гол: PixelLab дайсны frame-д довтолгооны эффект нэг тал руу сунадаг
   const cx = golem ? (flip ? bs.width - golem.cx : golem.cx) : bs.width / 2;
-  // зүүн гар зангилааныхаа зүүн талд, баруун гар баруун талд, өөрийн чулуунаас гадна (хөрш зангилаа, тэдгээрийн 56 dp дарах талбайгаас гадна;
-  // 320 dp дэлгэцэд ч харагдахаар захаас зайтай)
-  const x = boss ? n.x : b.role === 'left' ? n.x - 84 : n.x + 56;
-  const half = (golem ? golem.bw : bs.width) / 2;
+  // зүүн гар газрын зургийн зүүн захад, баруун гар баруун захад; тэдний зангилаа голдоо ойр тул давхцахгүй
+  const x = boss || !side ? n.x : side === 'left' ? GUARD_EDGE : MAP_W - GUARD_EDGE;
+  const scale = boss ? BOSS_SCALE : b.role ? GUARD_SCALE[b.role] : 1;
+  const half = ((golem ? golem.bw : bs.width) / 2) * scale;
   // шошго: boss-ынх голд, гарынх биеийн гадна зах руу тэгшилнэ (дэлгэцийн захаас гарахгүй)
   const tagBox =
-    boss || !b.role
+    boss || !side
       ? { left: cx - 60, right: bs.width - cx - 60 }
-      : b.role === 'left'
+      : side === 'left'
         ? { left: cx - half, right: bs.width - cx - 120, alignItems: 'flex-start' as const }
         : { left: cx - 120, right: bs.width - cx - half, alignItems: 'flex-end' as const };
   const feet = boss ? n.y + 4 : n.y + 10;
@@ -293,95 +340,71 @@ function GateFigure({ g, layout, beaten }: { g: number; layout: PathLayout; beat
         </View>
       </View>
     );
+  // boss томорсон тул шошго нь толгойн дээр биш арлын доор (өмнөх зангилааг халхлахгүй); арал 72×54, n.y − 20-оос.
+  // Гарынх толгойн дээр: томорвол толгойн шинэ өндөр = H − (H − толгой) × томрол
+  const head = golem ? golem.head : 0;
+  const tagTop = boss ? n.y + 38 - top : bs.height - (bs.height - head) * scale - 22;
   return (
     <View style={[styles.abs, { left: x - cx, top }]} pointerEvents="none">
-      {golem ? (
-        <View style={flip ? styles.mirror : null}>
-          <SheetLoop id={b.map} frames={b.frames} cols={b.cols} loop={tagFrames(golem, 'idle')} ms={260} label={b.name} />
-        </View>
-      ) : b.frames > 1 ? (
-        <SheetLoop id={b.map} frames={b.frames} loop={HOVER} ms={420} label={b.name} />
-      ) : (
-        <Motion preset="breathe" originBottom>
-          <Sprite id={b.map} label={b.name} />
+      {side ? (
+        // хамгаалагчийн хөл доор ягаан анивчих цагираг: харанхуй дэвсгэр дээр ялгарна
+        <Motion preset="ring" style={[styles.abs, { left: cx - 44, top: bs.height - 30 }]}>
+          <Sprite id="map_ring_88x44" style={styles.guardRing} />
         </Motion>
-      )}
-      <View style={[styles.tagWrap, { top: (golem ? golem.head : 0) - 22 }, tagBox]}>
-        <View style={[styles.bossTag, boss ? null : styles.guardTag]}>
-          <Text style={styles.bossTagText}>{boss ? S.path.bossTag : S.path.guardTag(b.role === 'left')}</Text>
-        </View>
+      ) : null}
+      {/* хөлөөрөө тулж томорно */}
+      <View style={scale !== 1 ? { transform: [{ scale }], transformOrigin: `${cx}px 100%` } : null}>
+        {golem ? (
+          <View style={flip ? styles.mirror : null}>
+            <SheetLoop id={b.map} frames={b.frames} cols={b.cols} loop={tagFrames(golem, 'idle')} ms={260} label={b.name} />
+          </View>
+        ) : b.frames > 1 ? (
+          <SheetLoop id={b.map} frames={b.frames} loop={HOVER} ms={420} label={b.name} />
+        ) : (
+          <Motion preset="breathe" originBottom>
+            <Sprite id={b.map} label={b.name} />
+          </Motion>
+        )}
+      </View>
+      <View style={[styles.tagWrap, { top: tagTop }, tagBox]}>
+        {boss ? (
+          <View style={[styles.bossTag, styles.bossTagBig]}>
+            <Sprite id="hud_skull_34x30" style={styles.skull} />
+            <Text style={[styles.bossTagText, styles.bossTagTextBig]}>{S.path.bossTag}</Text>
+          </View>
+        ) : (
+          <View style={[styles.bossTag, styles.guardTag]}>
+            <Text style={styles.bossTagText}>{b.soldier ? S.path.soldierTag : S.path.guardTag(b.role === 'left')}</Text>
+          </View>
+        )}
       </View>
     </View>
   );
 }
 
-/** Баавгай `from`-оос `to` хүртэл зангилаа бүрээр богино, зөөлөн алхана; зогсохдоо үл ялиг амьсгална. */
-function WalkingBear({
-  layout,
-  from,
-  to,
-  label,
-  onPress,
-}: {
-  layout: PathLayout;
-  from: number;
-  to: number;
-  label: string;
-  onPress: () => void;
-}) {
-  const reduce = useReducedMotion();
-  const start = standAt(layout, from);
-  const x = useSharedValue(start.x);
-  const y = useSharedValue(start.y);
-  const lift = useSharedValue(0);
-
-  useEffect(() => {
-    const end = standAt(layout, to);
-    const pts = [...walkPoints(layout, from, to).slice(0, -1), end];
-    if (reduce || from === to) {
-      x.value = end.x;
-      y.value = end.y;
-      return;
-    }
-    const step = (v: number) => withTiming(v, { duration: STEP_MS, easing: Easing.inOut(Easing.quad) });
-    x.value = withSequence(...pts.map((p) => step(p.x)));
-    y.value = withSequence(...pts.map((p) => step(p.y)));
-    lift.value = withRepeat(
-      withSequence(
-        withTiming(-5, {
-          duration: STEP_MS / 2,
-          easing: Easing.out(Easing.quad),
-        }),
-        withTiming(0, {
-          duration: STEP_MS / 2,
-          easing: Easing.in(Easing.quad),
-        }),
-      ),
-      pts.length,
-    );
-  }, [layout, from, to, reduce, x, y, lift]);
-
-  // хөл нь чулууны дээд хавтгайн төвд (y + 2)
-  const animated = useAnimatedStyle(() => ({
-    transform: [{ translateX: x.value - 13 }, { translateY: y.value - 44 + lift.value }],
-  }));
-
+/**
+ * Duolingo маягийн цагираг: одоогийн чулууны эргэн тойронд 3 хэсэг (Суурь, Дунд, Ахисан шат), давсан нь лайм.
+ * Дээрээс цагийн зүүний дагуу.
+ */
+function ProgressRing({ filled }: { filled: number }) {
+  const { rx, ry, w, gap } = RING;
+  const W = (rx + w) * 2;
+  const H = (ry + w) * 2;
+  const at = (deg: number) => {
+    const r = (deg * Math.PI) / 180;
+    return `${(W / 2 + rx * Math.cos(r)).toFixed(1)},${(H / 2 + ry * Math.sin(r)).toFixed(1)}`;
+  };
+  const arc = (k: number) => {
+    const a = -90 + k * 120 + gap / 2;
+    return `M${at(a)}A${rx},${ry} 0 0 1 ${at(a + 120 - gap)}`;
+  };
+  // чулууны төв нь дарах талбайн (56) хэвтээ төв, 28 dp-ээс доош (tile_step_cur 56×44, marginTop 6)
   return (
-    <Animated.View style={[styles.abs, styles.bear, animated]}>
-      <View style={[styles.tagWrap, { top: -24 }]} pointerEvents="none">
-        <View style={styles.hereTag}>
-          <Text style={styles.hereText}>{S.path.here}</Text>
-        </View>
-      </View>
-      <Pressable accessibilityRole="button" accessibilityLabel={label} onPress={onPress} style={styles.bearHit}>
-        <Motion preset="breathe" originBottom>
-          <Sprite id="map_bear_small_26x46" />
-          <Motion preset="blink" style={StyleSheet.absoluteFill}>
-            <Sprite id="map_bear_small_blink_26x46" />
-          </Motion>
-        </Motion>
-      </Pressable>
-    </Animated.View>
+    <Svg width={W} height={H} style={[styles.abs, { left: HIT / 2 - W / 2, top: 28 - H / 2 }]} pointerEvents="none">
+      {[0, 1, 2].map((k) => (
+        <Path key={k} d={arc(k)} stroke={k < filled ? colors.lime : 'rgba(10,8,24,0.55)'} strokeWidth={w} strokeLinecap="round" fill="none" />
+      ))}
+    </Svg>
   );
 }
 
@@ -416,43 +439,22 @@ function Butterfly() {
   );
 }
 
-export { MAP_W };
+export { MAP_H, MAP_W };
 
 const styles = StyleSheet.create({
   // зангилааны доор 3 од: давсан шат тод, үлдсэн нь бүдэг
   stars: { position: 'absolute', width: STARS_W, flexDirection: 'row', justifyContent: 'center', gap: 1 },
   starOff: { opacity: 0.45 },
-  map: { width: MAP_W, overflow: 'hidden' },
+  map: { width: MAP_W, height: MAP_H, overflow: 'hidden' },
   abs: { position: 'absolute' },
   hit: { width: HIT, height: HIT, alignItems: 'center' },
   islandHit: { width: 72, height: 56 },
-  // баавгай 26×46; дарах талбай 56×56 (баавгайн төвд)
-  bear: { left: 0, top: 0, width: 26, height: 46 },
-  bearHit: {
-    position: 'absolute',
-    left: -15,
-    top: -6,
-    width: HIT,
-    height: HIT,
-    alignItems: 'center',
-    paddingTop: 6,
-  },
   tagWrap: {
     position: 'absolute',
     left: -40,
     right: -40,
     alignItems: 'center',
   },
-  hereTag: {
-    height: 18,
-    paddingHorizontal: 7,
-    borderRadius: radius.pill,
-    backgroundColor: colors.lemon,
-    borderWidth: 1.5,
-    borderColor: colors.ink,
-    justifyContent: 'center',
-  },
-  hereText: { fontFamily: fonts.extrabold, fontSize: 10, color: colors.ink },
   bossTag: {
     height: 18,
     paddingHorizontal: 7,
@@ -463,6 +465,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   guardTag: { backgroundColor: '#5B4FD6' },
+  bossTagBig: { height: 26, paddingLeft: 4, paddingRight: 9, flexDirection: 'row', alignItems: 'center', gap: 4, backgroundColor: '#B3122B' },
+  bossTagTextBig: { fontSize: 13, letterSpacing: 1.5 },
+  // hud_skull 34×30-ийн яг хагас (pixel тэгш)
+  skull: { width: 17, height: 15 },
+  dangerRing: { tintColor: '#FF3B4A' },
+  guardRing: { tintColor: '#B9A8FF' },
+  selected: { position: 'absolute', left: 2, right: 2, top: 4, height: 46, borderRadius: 16, borderWidth: 2.5, borderColor: colors.lime },
+  selectedBoss: { left: -2, right: -2, top: -2, height: 58 },
   mirror: { transform: [{ scaleX: -1 }] },
   bossTagText: {
     fontFamily: fonts.pixel,
@@ -470,13 +480,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     color: colors.white,
   },
-  pill: {
-    position: 'absolute',
-    height: 28,
-    paddingHorizontal: 10,
-    borderRadius: radius.pill,
-    backgroundColor: colors.white,
-    justifyContent: 'center',
-  },
-  pillMuted: { fontFamily: fonts.bold, fontSize: 12, color: colors.muted },
+  band: { position: 'absolute', left: 0, right: 0, height: BAND_H, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'center', gap: 2 },
+  bandOver: { fontFamily: fonts.extrabold, fontSize: 11, letterSpacing: 1.2 },
+  bandTitle: { fontFamily: fonts.bold, fontSize: 16 },
 });

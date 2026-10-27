@@ -1,17 +1,27 @@
 import { router, Tabs } from 'expo-router';
 import { useEffect } from 'react';
+import { useAuth } from '@/auth/AuthContext';
 import { BottomNav } from '@/components/BottomNav';
 import { colors } from '@/constants/theme';
 import { usePixelBear } from '@/lib/mock/pixelBear';
+import { useOnline } from '@/lib/online';
 import { S } from '@/i18n/strings';
 
 export default function TabsLayout() {
   const { ready, subject } = usePixelBear();
+  const { me } = useAuth();
+  const online = useOnline();
+  // хуучин кэшэлсэн профайлд profileSet байхгүй (undefined): /me шинэчлэгдтэл чиглүүлэхгүй
+  const needsProfile = me?.profileSet === false && online;
+  // анх орохдоо асуудаг асуултаа бөглөөгүй (хуучин кэшэд onboarded байхгүй = бөглөсөн гэж үзнэ)
+  const needsQuiz = me?.onboarded === false && online;
 
-  // Анх орсон хэрэглэгч эхлээд хичээлээ сонгоно (02 · Хичээл сонгох)
+  // Анх орсон хэрэглэгч эхлээд профайлаа үүсгээд (нэр, баавгай), дараа нь асуултад хариулж, хичээлээ сонгоно.
+  // Профайлыг офлайн хадгалж чадахгүй тул сүлжээгүй үед алгасна.
   useEffect(() => {
-    if (ready && subject === null) router.replace('/onboarding');
-  }, [ready, subject]);
+    if (needsProfile) router.replace('/avatar');
+    else if (needsQuiz || (ready && subject === null)) router.replace('/onboarding');
+  }, [needsProfile, needsQuiz, ready, subject]);
 
   return (
     <Tabs

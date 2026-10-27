@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import type { BearFur } from '@shared/types';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { Image, type ImageStyle, type StyleProp, View } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 import { type SpriteKey, sprites } from '@/sprites';
@@ -8,8 +9,18 @@ import { type SpriteKey, sprites } from '@/sprites';
  * урьдчилан томруулагдсан (mobile/scripts/build-sprites.ts) тул runtime дээр дахин resample хийгдэхгүй,
  * бүдгэрэхгүй. `id` нь `<нэр>_<өргөн>x<өндөр>` хэлбэртэй бөгөөд буруу хослолыг TypeScript барина.
  */
+/** Баавгайн үсний өнгө: баавгайтай sprite нь энэ өнгөний хувилбараараа зурагдана (анхдагч нь нэвтэрсэн хэрэглэгчийнх). */
+export const FurContext = createContext<BearFur>('brown');
+
+/** `<нэр>_<w>x<h>` → `<нэр>_<өнгө>_<w>x<h>` (scripts/build-sprites.ts); хувилбаргүй sprite өөрөө үлдэнэ */
+function furVariant(id: SpriteKey, fur: BearFur): SpriteKey {
+  if (fur === 'brown') return id;
+  const key = id.replace(/_(\d+x\d+)$/, `_${fur}_$1`);
+  return key in sprites ? (key as SpriteKey) : id;
+}
+
 export function Sprite({ id, style, label }: { id: SpriteKey; style?: StyleProp<ImageStyle>; label?: string }) {
-  const s = sprites[id];
+  const s = sprites[furVariant(id, useContext(FurContext))];
   return (
     <Image
       source={s.source}

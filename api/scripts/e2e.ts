@@ -1,6 +1,6 @@
 // Ажиллаж буй dev сервер дээр демо сценарийн гол урсгалыг автоматаар шалгана.
 //   npm run e2e                 # даалгавар, оноо, streak, хамгаалалт, өдрийн хязгаар, тулаан
-//   npm run e2e -- --only tasks # зөвхөн нэг хэсэг (tasks | paths | gates | recovery | shop | profiles | friends | duel | books)
+//   npm run e2e -- --only tasks # зөвхөн нэг хэсэг (tasks | paths | lives | review | gates | recovery | shop | profiles | friends | duel | books)
 import type { AnswerResponse, CosmeticsResponse, MeResponse, RecoveryAnswerResponse, RecoveryDto, ShopResponse, TaskDto } from '../../shared/types';
 import { runBooksScenario } from './e2e-books';
 import { runDuelScenario } from './e2e-duel';
@@ -93,6 +93,55 @@ async function tasksScenario() {
   await expectError(call('POST', `/questions/${other.questions[0].id}/flag`, { token: fresh.token, body: {} }), 'NOT_FOUND', 'Хараагүй асуултыг flag хийхгүй');
 
   return { a, b };
+}
+
+async function reviewScenario() {
+  console.log('\n— Өнөөдрийн хичээл');
+  const u = await register('e2e_review', 7);
+  await expectError(call('POST', '/tasks/review', { token: u.token, body: { subject: 'math' } }), 'NO_REVIEW', 'Хичээл хийгээгүй бол өнөөдрийн хичээл байхгүй');
+  await doTask(u.token, 'math', true);
+  const before = (await me(u.token)).paths.math;
+  const t = await call<TaskDto>('POST', '/tasks/review', { token: u.token, body: { subject: 'math' } });
+  check(t.questions.length === 3 && !!t.title, 'Өмнө хийсэн хичээлээс 3 бодлого, хичээлийн нэртэй', t.title);
+  const again = await call<TaskDto>('POST', '/tasks/review', { token: u.token, body: { subject: 'math' } });
+  check(again.id === t.id, 'Дуусаагүй өнөөдрийн хичээл руу буцаж орно');
+  let last: AnswerResponse | null = null;
+  for (const [i, q] of t.questions.entries()) {
+    const ci = await correctIndex(q.id);
+    last = await call<AnswerResponse>('POST', `/tasks/${t.id}/answer`, { token: u.token, body: { questionId: q.id, choice: i === 0 ? ci : (ci + 1) % 4 } });
+  }
+  const after = (await me(u.token)).paths.math;
+  check(
+    last?.result?.review === true && !last.recovery && after.level === before.level && JSON.stringify(after.stages) === JSON.stringify(before.stages),
+    '2 алдсан ч давтлага үүсэхгүй, сурах зам хөдлөхгүй',
+    { before, after, recovery: last?.recovery },
+  );
+  const points = (await me(u.token)).points;
+  await expectError(call('POST', '/tasks/review', { token: u.token, body: { subject: 'math' } }), 'REVIEW_DONE', 'Өнөөдрийн хичээл хичээл бүрт өдөрт нэг удаа');
+  check((await me(u.token)).points === points, 'Дахин оролдоход оноо нэмэгдэхгүй');
+}
+
+async function livesScenario() {
+  console.log('\n— Амь');
+  const u = await register('e2e_lives', 7);
+  const setLives = (lives: number, livesAt?: number) =>
+    call('POST', `/admin/debug/users/${u.me.id}/lives`, { admin: true, body: { lives, livesAt } });
+  check(u.me.lives === 5 && u.me.maxLives === 5 && u.me.nextLifeAt === null, 'Шинэ хэрэглэгч 5 амьтай');
+  const t = await call<TaskDto>('POST', '/tasks', { token: u.token, body: { subject: 'math' }, keepLives: true });
+  const m1 = await me(u.token);
+  check(
+    m1.lives === 4 && m1.nextLifeAt !== null && m1.nextLifeAt - Date.now() > 2 * 60 * 60_000 - 60_000,
+    'Зангилаа руу ороход 1 амь хасагдаж, дараагийн амь 2 цагийн дараа',
+    m1,
+  );
+  const again = await call<TaskDto>('POST', '/tasks', { token: u.token, body: { subject: 'math' }, keepLives: true });
+  check(again.id === t.id && (await me(u.token)).lives === 4, 'Дуусаагүй ижил даалгавар руу буцаж ороход амь хасагдахгүй');
+  await setLives(0);
+  await expectError(call('POST', '/tasks', { token: u.token, body: { subject: 'physics' }, keepLives: true }), 'NO_LIVES', 'Амьгүй бол шинэ бодлого хаалттай');
+  await expectError(call('GET', '/recovery/math', { token: u.token }), 'NO_LIVES', 'Амьгүй бол давтлага хаалттай');
+  await setLives(0, Date.now() - 2 * 60 * 60_000 - 1000);
+  const m2 = await me(u.token);
+  check(m2.lives === 1 && m2.nextLifeAt !== null, '2 цагийн дараа нэг амь нөхөгдөнө', m2);
 }
 
 async function pathsScenario() {
@@ -268,6 +317,8 @@ async function main() {
   const only = arg('only');
   if (!only || only === 'tasks') await tasksScenario();
   if (!only || only === 'paths') await pathsScenario();
+  if (!only || only === 'lives') await livesScenario();
+  if (!only || only === 'review') await reviewScenario();
   if (!only || only === 'gates') await gatesScenario();
   if (!only || only === 'recovery') await recoveryScenario();
   if (!only || only === 'shop') await shopScenario();

@@ -11,6 +11,8 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
+import { BearSkillFx } from '@/components/BearSkillFx';
+import { DefeatAnim } from '@/components/DefeatAnim';
 import { AnimatedBar, frameSize, Motion, Pop, SheetFrame, SheetLoop, Sprite } from '@/components/pixel';
 import { colors, fonts, radius } from '@/constants/theme';
 import { S } from '@/i18n/strings';
@@ -18,6 +20,7 @@ import { tagFrames } from '@/lib/pixelBear/anim';
 import bear from '@/lib/pixelBear/bear.json';
 import golems from '@/lib/pixelBear/golems.json';
 import { BOSS_FRAME, type Boss, HOVER } from '@/lib/pixelBear/path';
+import { SKILL_HIT, skillOf } from '@/lib/pixelBear/skills';
 import type { SpriteKey } from '@/sprites';
 
 // Баавгайн frame бүр өөрийн хугацаатай, tag-аар бүлэглэгдсэн (mobile/scripts/bear-sprites.ts → bear.json).
@@ -122,6 +125,8 @@ function aim(boss: Boss, width: number): { boss: Point; bear: Point; bossTop: nu
 export interface Strike {
   n: number;
   correct: boolean;
+  /** энэ хариултыг оруулаад дараалсан зөвийн тоо: COMBO_AT-аас дээш бол баавгайн хүчтэй skill */
+  combo?: number;
 }
 
 /**
@@ -184,12 +189,24 @@ export function BossArena({
   const wrongRun = useRef({ n: -1, run: 0 });
   // Амь дуусах цохилт: баавгай унаж хэвтээд биеэс нь сүнс гарна
   const [down, setDown] = useState(false);
+  // Ялагдсан дайсан: 'play' = эцсийн цохилтоор унаж уусна, 'still' = аль хэдийн ялагдсан (унасан байдлаар)
+  const [ko, setKo] = useState<'play' | 'still' | null>(null);
+  // ялагдсан дайсантай дараагийн асуултуудад тулаан тоглохгүй (даалгавар 5 асуулт хүртэл үргэлжилнэ)
+  const koDone = useRef(false);
+  /** дайсныг унагасан цохилтын дугаар (түүний skill эффект дуустал харагдана) */
+  const [koN, setKoN] = useState(-1);
   // цохилтгүйгээр (аль хэдийн ялагдсан даалгаврыг дахин нээх, шинэ даалгавар) хэвтсэн/зогссон байдал шууд тогтоно
   useEffect(() => {
     if (strike) return;
-    const t = setTimeout(() => setDown(lost), 0);
+    const t = setTimeout(() => {
+      setDown(lost);
+      if (won && boss.defeat) {
+        koDone.current = true;
+        setKo((k) => k ?? 'still');
+      }
+    }, 0);
     return () => clearTimeout(t);
-  }, [strike, lost]);
+  }, [strike, lost, won, boss.defeat]);
   useEffect(() => {
     if (reduce) return;
     const t = setInterval(() => setTick((n) => n + 1), TICK_MS);
@@ -218,6 +235,7 @@ export function BossArena({
   const [spark, setSpark] = useState<Spark | null>(null);
   const [damage, setDamage] = useState(0); // boss-д онох бүрт шинэ «-1» хөвөн гарна
   const fly = useSharedValue(0);
+  const charge = useSharedValue(0); // дайсан skill-ээ гартаа цэнэглэх (0 → 1), шидэх агшинд алга
   const route = useSharedValue({ fx: 0, fy: 0, tx: 0, ty: 0, spin: 0 });
   const bossX = useSharedValue(0);
   const bearX = useSharedValue(0);
@@ -232,10 +250,18 @@ export function BossArena({
     // `lost` нь strike-тэй нэг render-т өөрчлөгддөг тул энэ effect-ийг дахин тоглуулахгүй
     const dead = !strike.correct && lost;
     const daze = !dead && wrongRun.current.run >= DAZE_AFTER;
+    // эцсийн зөв цохилт: дайсан цочихын оронд ялагдлын анимациар унана
+    if (koDone.current) return;
+    const finish = strike.correct && won && !!boss.defeat;
+    if (finish) {
+      koDone.current = true;
+      setTimeout(() => setKoN(strike.n), 0); // effect дотор шууд setState хийхгүй
+    }
     if (reduce) {
       const t = setTimeout(() => {
         setDazed(daze);
         setDown(dead);
+        if (finish) setKo('still');
       }, 0);
       return () => clearTimeout(t);
     }
@@ -277,6 +303,7 @@ export function BossArena({
       );
       fly.value = 0;
       fly.value = withDelay(RELEASE_AT, withTiming(1, { duration: FLY_MS, easing: Easing.linear }));
+      if (!strike.correct) charge.value = withSequence(withTiming(1, { duration: RELEASE_AT, easing: Easing.in(Easing.quad) }), withTiming(0, { duration: 0 }));
     }
     // hit-stop: оносон тал HITSTOP_MS хөлдөөд дараа нь хойш түлхэгдэнэ
     target.value = withDelay(
@@ -284,8 +311,9 @@ export function BossArena({
       withSequence(withTiming(dir * 16, { duration: 120, easing: Easing.out(Easing.quad) }), withTiming(0, { duration: 420, easing: smooth })),
     );
     const step = (v: number) => withTiming(v, { duration: 35 });
-    shakeX.value = withDelay(hitAt, withSequence(step(5), step(-4), step(3), step(-2), step(1), step(0)));
-    shakeY.value = withDelay(hitAt, withSequence(step(-3), step(2), step(-1), step(0)));
+    const k = finish ? 2 : 1; // эцсийн цохилт хүчтэй чичирнэ
+    shakeX.value = withDelay(hitAt, withSequence(step(5 * k), step(-4 * k), step(3 * k), step(-2 * k), step(k), step(0)));
+    shakeY.value = withDelay(hitAt, withSequence(step(-3 * k), step(2 * k), step(-k), step(0)));
     if (strike.correct && boss.white) {
       bossWhite.value = withDelay(hitAt, withSequence(withTiming(1, { duration: 0 }), withDelay(HITSTOP_MS + 40, withTiming(0, { duration: 120 }))));
     }
@@ -326,7 +354,7 @@ export function BossArena({
       later(end, () => setBossAct(null));
     };
     /** баавгай онох агшинд boss: PixelLab дайсан цагаан анивчиж цочино, бусад нь pose-оор */
-    const bossHit = () => (golem ? playBoss(golem, 'hurt', hitAt) : hit(setBossPose));
+    const bossHit = () => (finish ? later(hitAt, () => setKo('play')) : golem ? playBoss(golem, 'hurt', hitAt) : hit(setBossPose));
     const hurt = () => {
       const end = play('hurt', hitAt);
       if (dead) {
@@ -382,11 +410,17 @@ export function BossArena({
     }
     // оч: зөгийн бал boss-д тусвал сав хагарч бал цацагдана (7 frame), бусад нь 3 frame-ийн оч
     const honey = strike.correct && !melee;
-    const fx = honey
-      ? { id: SHATTER, frames: bear.honey.frames, cols: bear.honey.columns, pivot: bear.honey.pivot, ms: SHATTER_MS }
-      : !strike.correct && boss.impact
-        ? { ...boss.impact, pivot: [0.5, 0.5], ms: 70 }
-        : { id: melee ? ('fx_slash_144x48' as const) : strike.correct ? ('fx_spark_90x30' as const) : ('fx_spark_magic_90x30' as const), frames: 3, cols: 3, pivot: [0.5, 0.5], ms: 70 };
+    // эцсийн цохилт: дайсан дээр алтан KO дэлбэрэлт (унах анимацийн өмнө)
+    const skill = skillOf(strike.n, strike.combo ?? 0);
+    const fx = finish
+      ? { id: 'fx_ko_burst_768x576' as const, frames: 12, cols: 4, pivot: [0.5, 0.5], ms: 70 }
+      : strike.correct && skill !== 'honey'
+        ? { ...SKILL_HIT[skill], pivot: [0.5, 0.5] }
+        : honey
+        ? { id: SHATTER, frames: bear.honey.frames, cols: bear.honey.columns, pivot: bear.honey.pivot, ms: SHATTER_MS }
+        : !strike.correct && boss.impact
+          ? { ...boss.impact, pivot: [0.5, 0.5], ms: 70 }
+          : { id: melee ? ('fx_slash_144x48' as const) : strike.correct ? ('fx_spark_90x30' as const) : ('fx_spark_magic_90x30' as const), frames: 3, cols: 3, pivot: [0.5, 0.5], ms: 70 };
     const { width: fw, height: fh } = frameSize(fx.id, fx.frames, fx.cols);
     const pivot = { x: fw * fx.pivot[0], y: fh * fx.pivot[1] };
     for (let frame = 0; frame < fx.frames; frame++)
@@ -394,7 +428,7 @@ export function BossArena({
     later(hitAt + fx.frames * fx.ms, () => setSpark(null));
     if (strike.correct) later(hitAt, () => setDamage((n) => n + 1));
     return () => timers.forEach(clearTimeout);
-  }, [strike, lost, reduce, boss, golem, width, fly, route, bossX, bearX, bossWhite, shakeX, shakeY]);
+  }, [strike, lost, won, reduce, boss, golem, width, fly, charge, route, bossX, bearX, bossWhite, shakeX, shakeY]);
 
   const shotStyle = useAnimatedStyle(() => {
     const p = fly.value;
@@ -408,13 +442,17 @@ export function BossArena({
       ],
     };
   });
+  const chargeStyle = useAnimatedStyle(() => ({
+    opacity: charge.value > 0.02 ? 1 : 0,
+    transform: [{ translateX: route.value.fx - 15 }, { translateY: route.value.fy - 15 }, { scale: 0.25 + charge.value * 0.75 }],
+  }));
   const worldStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shakeX.value }, { translateY: shakeY.value }] }));
 
   // Ялагдсан boss бүдгэрнэ (онсны дараа); ялагдсан баавгай бүдгэрэхгүй — унаж хэвтээд сүнс нь гарна
   const bossFade = useSharedValue(1);
   useEffect(() => {
-    bossFade.value = withDelay(reduce ? 0 : HIT_AT + HITSTOP_MS, withTiming(won ? 0.2 : 1, { duration: 500 }));
-  }, [won, reduce, bossFade]);
+    bossFade.value = withDelay(reduce ? 0 : HIT_AT + HITSTOP_MS, withTiming(won && !boss.defeat ? 0.2 : 1, { duration: 500 }));
+  }, [won, reduce, bossFade, boss.defeat]);
   const bossStyle = useAnimatedStyle(() => ({ opacity: bossFade.value, transform: [{ translateX: bossX.value }] }));
   const shadowStyle = useAnimatedStyle(() => ({ transform: [{ translateX: bossX.value }] }));
   const bossWhiteStyle = useAnimatedStyle(() => ({ opacity: bossWhite.value }));
@@ -445,20 +483,26 @@ export function BossArena({
           >
             {/* өргөсөн хадуур толгойн ард, дүүжлэхэд урд */}
             {weapon === 0 && boss.weapon ? <Weapon {...boss.weapon} frame={0} /> : null}
-            {golem ? (
-              <SheetFrame id={boss.battle} frames={boss.frames} cols={boss.cols} frame={bossAct ?? bossIdle} label={boss.name} />
-            ) : boss.frames > 1 ? (
-              <SheetFrame id={boss.battle} frames={boss.frames} frame={bossFrame} label={boss.name} />
-            ) : (
-              <Motion preset="breathe" originBottom>
-                <Sprite id={boss.battle} label={boss.name} />
-                {boss.white ? (
-                  <Animated.View style={[StyleSheet.absoluteFill, bossWhiteStyle]}>
-                    <Sprite id={boss.white} />
-                  </Animated.View>
-                ) : null}
-              </Motion>
-            )}
+            {/* ялагдсан үед тулааны дүр нуугдана (хэмжээ нь хэвээр: ялагдлын sheet түүнтэй ижил байрлалд) */}
+            <View style={ko && boss.defeat ? styles.gone : null}>
+              {golem ? (
+                <SheetFrame id={boss.battle} frames={boss.frames} cols={boss.cols} frame={bossAct ?? bossIdle} label={boss.name} />
+              ) : boss.frames > 1 ? (
+                <SheetFrame id={boss.battle} frames={boss.frames} frame={bossFrame} label={boss.name} />
+              ) : (
+                <Motion preset="breathe" originBottom>
+                  <Sprite id={boss.battle} label={boss.name} />
+                  {boss.white ? (
+                    <Animated.View style={[StyleSheet.absoluteFill, bossWhiteStyle]}>
+                      <Sprite id={boss.white} />
+                    </Animated.View>
+                  ) : null}
+                </Motion>
+              )}
+            </View>
+            {boss.defeat ? (
+              <DefeatAnim id={boss.defeat.id} k={boss.defeat.k} active={!!ko} still={ko === 'still'} drop={boss.floats ? 24 : 0} label={boss.name} />
+            ) : null}
             {weapon !== null && weapon > 0 && boss.weapon ? <Weapon {...boss.weapon} frame={weapon} /> : null}
           </Animated.View>
 
@@ -481,6 +525,22 @@ export function BossArena({
             ) : null}
           </Animated.View>
 
+          {strike?.correct && !reduce && ko !== 'still' && (koN === -1 || koN === strike.n) ? (
+            <BearSkillFx
+              n={strike.n}
+              skill={skillOf(strike.n, strike.combo ?? 0)}
+              bearFeet={{ x: width - BEAR_RIGHT - BEAR_W / 2, y: GROUND }}
+              bossFeet={{ x: BOSS_LEFT + (golem ? (golem.cx * size.width) / golem.frameSize.w : size.width / 2), y: GROUND }}
+              runAt={READY_MS}
+              hitAt={strike.n % 2 === 0 ? READY_MS + DASH_MS + CLAW_HIT : HIT_AT}
+              releaseAt={RELEASE_AT}
+            />
+          ) : null}
+          {shot.frames > 1 ? (
+            <Animated.View style={[styles.abs, styles.origin, styles.shot, chargeStyle]}>
+              <SheetLoop id={shot.id} frames={shot.frames} cols={shot.cols} loop={Array.from({ length: shot.frames }, (_, i) => i)} ms={80} />
+            </Animated.View>
+          ) : null}
           <Animated.View style={[styles.abs, styles.origin, styles.shot, shotStyle]}>
             {shot.frames > 1 ? (
               <SheetLoop id={shot.id} frames={shot.frames} cols={shot.cols} loop={Array.from({ length: shot.frames }, (_, i) => i)} ms={80} />
@@ -499,7 +559,7 @@ export function BossArena({
 
       {/* Довтолгоонд л гардаг зургуудыг урьдчилж ачаална: анх гарах агшинд хоосон харагдаж "алга болохгүй" */}
       <View style={styles.preload}>
-        {['fx_slash_144x48', 'fx_spark_90x30', 'fx_spark_magic_90x30', 'fx_magic_22x22', HONEY_JAR, SHATTER, boss.weapon?.sheet, boss.white, boss.shot?.id, boss.impact?.id]
+        {['fx_slash_144x48', 'fx_spark_90x30', 'fx_spark_magic_90x30', 'fx_magic_22x22', HONEY_JAR, SHATTER, boss.weapon?.sheet, boss.white, boss.shot?.id, boss.impact?.id, boss.defeat?.id, 'fx_ko_burst_768x576']
           .filter((id): id is SpriteKey => !!id)
           .map((id) => (
             <Sprite key={id} id={id} />
@@ -514,11 +574,14 @@ export function BossArena({
           <HpBar side="right" name={S.boss.bearName} value={heartsLeft / hearts} segments={hearts} label={S.boss.heartsLabel(heartsLeft, hearts)} />
         </View>
 
-        <Pop trigger={message} from={0.85} style={styles.bubbleWrap}>
-          <View style={styles.bubble}>
-            <Text style={styles.bubbleText}>{message}</Text>
-          </View>
-        </Pop>
+        {/* алдаа зэрэг хоосон үед хөөс гарахгүй (тайлбар нь доорх самбарт) */}
+        {message ? (
+          <Pop trigger={message} from={0.85} style={styles.bubbleWrap}>
+            <View style={styles.bubble}>
+              <Text style={styles.bubbleText}>{message}</Text>
+            </View>
+          </Pop>
+        ) : null}
 
       </View>
     </View>
@@ -609,6 +672,7 @@ const styles = StyleSheet.create({
   abs: { position: 'absolute' },
   preload: { position: 'absolute', left: 0, top: 0, opacity: 0 },
   mirror: { transform: [{ scaleX: -1 }] },
+  gone: { opacity: 0 },
   origin: { left: 0, top: 0, zIndex: 4 },
   shot: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
   damage: { width: 60, alignItems: 'center', zIndex: 5 },
