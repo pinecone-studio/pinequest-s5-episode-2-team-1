@@ -67,7 +67,8 @@ function segments(layout: PathLayout) {
  * Газрын зургийг дэлгэцийн өргөнд жигд томруулж/жижигрүүлнэ: хажуу тийш сунгасан зурвас гарахгүй, зангилаа ч хамт.
  * Газрын зургийн цэг (x, y) дэлгэц дээр (x, y) × scale.
  */
-export const useMapScale = () => useWindowDimensions().width / MAP_W;
+// апп нь 430 dp-ийн баганад төвлөрдөг (app/_layout.tsx column): өргөн цонхонд бүтэн өргөнөөр томруулахгүй
+export const useMapScale = () => Math.min(useWindowDimensions().width, 430) / MAP_W;
 
 /**
  * Адал явдлын газрын зураг (DESIGN.md §8-04-ийг 3 бүлэг болгосон, дээрээс доош). Давхарга: дэвсгэр → үүл → цэгэн зам →
