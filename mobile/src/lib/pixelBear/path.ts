@@ -1,4 +1,4 @@
-import { chestNodes, currentNode as nodeAt, gateNodes, gateOf, isBossNode, pathLessons, UNIT_GATE, unitOf, UNITS } from '@shared/path';
+import { chestNodes, currentNode as nodeAt, gateNodes, gateOf, isBossNode, lessonIndex, nodeCount, pathLessons, UNIT_GATE, unitOf, UNITS } from '@shared/path';
 import type { BookLesson, Subject, SubjectPath } from '@shared/types';
 import type { DefeatKey } from '@/components/DefeatAnim';
 import type { ThemeId } from '@/constants/chapterTheme';
@@ -7,10 +7,9 @@ import { type SpriteKey, sprites } from '@/sprites';
 import golems from './golems.json';
 import world from './world.json';
 
-// Адал явдлын газрын зураг: DESIGN.md §8-04-ийн бүлгийг 3 бүлэг болгосон; Duolingo шиг дээрээс доош явна
-// (хулууны ой → чулуун балгас, гол → цасан уул). Бүлэг бүр өөрийн дэвсгэр зураг дээр, зангилаанууд нь зигзаг.
-// Зангилаа бүр сурах бичгийн нэг хичээл (GET /me/lessons/:subject; ном байхгүй бол доорх TITLES), бүлэг бүрийн төгсгөлд
-// boss: замын урт хичээлийн тооноос (shared/path.ts, сервертэй нэг эх). `n` = замын хичээлийн тоо (pathLessons).
+// Адал явдлын газрын зураг: 3 тоглоомын ертөнцөөр дээрээс доош явна (хулууны ой → чулуун балгас, гол → цасан уул).
+// Номын бүлгүүдийг эдгээр ертөнц дотор тусдаа banner, зайгаар харуулна. Зангилаа бүр сурах бичгийн нэг хичээл
+// (GET /me/lessons/:subject; ном байхгүй бол доорх TITLES), ертөнц бүрийн төгсгөлд boss байна.
 
 export type NodeKind = 'stone' | 'sapling' | 'gift' | 'myst' | 'chest' | 'boss';
 export type NodeStatus = 'done' | 'current' | 'lock';
@@ -46,7 +45,7 @@ export interface MapChapter {
   foot?: SpriteKey;
 }
 /**
- * Бүлэг бүрийн дэвсгэр ба самбарын theme, дээрээс доош (UNIT_COUNT ширхэг, бүлгийн дарааллаар). Шинэ бүлэгт дэвсгэр,
+ * Ертөнц бүрийн дэвсгэр ба самбарын theme, дээрээс доош (UNIT_COUNT ширхэг). Шинэ ертөнцөд дэвсгэр,
  * themeId хоёрыг нэмэхэд хангалттай.
  */
 export const MAP_CHAPTERS: readonly MapChapter[] = [
@@ -61,16 +60,6 @@ export const MAP_CHAPTERS: readonly MapChapter[] = [
 ];
 export const chapterHeight = (c: MapChapter) =>
   sprites[c.bg].height * (c.extend === undefined ? 1 : 2) - (c.extend ?? 0) - (c.cropTop ?? 0) + (c.foot ? sprites[c.foot].height : 0);
-/** Бүлэг бүрийн дээд зах (газрын зураг дээрх dp) */
-export const CHAPTER_TOPS = MAP_CHAPTERS.map((_, k) => MAP_CHAPTERS.slice(0, k).reduce((sum, c) => sum + chapterHeight(c), 0));
-export const MAP_H = CHAPTER_TOPS[CHAPTER_TOPS.length - 1] + chapterHeight(MAP_CHAPTERS[MAP_CHAPTERS.length - 1]);
-
-/** Газрын зургийн `y` цэг аль бүлгийн дэвсгэр дээр байгаа вэ (самбарын theme, дээд баннер). */
-export function chapterAtY(y: number): number {
-  let k = 0;
-  while (k < CHAPTER_TOPS.length - 1 && y >= CHAPTER_TOPS[k + 1]) k++;
-  return k;
-}
 
 export interface Boss {
   name: string;
@@ -169,10 +158,21 @@ export interface PathUnit {
   gift: number;
   myst: number;
   boss: number;
-  /** бүлгийн дэвсгэрийн дээд зах: декорын (үүл, эрвээхэй) байрлал бүлэг бүрт адил */
+  /** ертөнцийн дэвсгэрийн дээд зах ба номын бүлгийн зайг нэмсэн өндөр */
   top: number;
   /** нууц хайрцагтай зангилаанууд (3-р бүлэг): бэлэг, хэцүү сорилын тэмдгийн оронд */
   chests: number[];
+  height: number;
+}
+
+export interface PathBookChapter {
+  title: string;
+  /** эхний хичээлийн map node */
+  start: number;
+  /** banner-ын босоо төв */
+  y: number;
+  /** аль тоглоомын ертөнцөд байгаагийн индекс */
+  unit: number;
 }
 
 export interface PathLayout {
@@ -182,6 +182,10 @@ export interface PathLayout {
   /** Зангилаанууд, дээрээс доош (Duolingo шиг) */
   trail: TrailPoint[];
   units: PathUnit[];
+  /** API-аас ирсэн номын бүлгүүд; номгүй замд хоосон */
+  chapters: PathBookChapter[];
+  /** номын бүлгийн завсрыг оруулсан нийт өндөр */
+  height: number;
   /** тулааны хаалганы зангилаа (BOSSES ижил дараалалтай) */
   gates: number[];
 }
@@ -197,26 +201,47 @@ const PAD_FIRST = 150;
 const GUARD_NODE_DX = 20;
 /** boss болон түүний доорх шошгонд зай: дараагийн бүлгийн баннер хүртэл */
 const PAD_BOTTOM = 112;
+/** Номын хоёр бүлгийн хоорондох banner-ын зай. */
+const BOOK_CHAPTER_GAP = 72;
+
+function chapterStarts(n: number, lessons: readonly BookLesson[]): { title: string; start: number }[] {
+  if (lessons.length !== n) return [];
+  const out: { title: string; start: number }[] = [];
+  for (let lesson = 0; lesson < lessons.length; lesson++) {
+    if (lesson > 0 && lessons[lesson].chapter === lessons[lesson - 1].chapter) continue;
+    for (let i = 0; i < nodeCount(n); i++) {
+      if (lessonIndex(n, i) === lesson) {
+        out.push({ title: lessons[lesson].chapter, start: i });
+        break;
+      }
+    }
+  }
+  return out;
+}
 
 /**
- * `n` хичээлтэй замын газрын зураг: бүлэг бүрийн хичээлүүд өөрийн дэвсгэр дээр дээрээс доош жигд зайтай (хичээл
+ * `n` хичээлтэй замын газрын зураг: ертөнц бүрийн хичээлүүд өөрийн дэвсгэр дээр дээрээс доош жигд зайтай (хичээл
  * олон бол ойр, цөөн бол алс), Duolingo шиг зигзаг; boss нь бүлгийн доод талд голдоо. Нахиа, бэлэг, хэцүү сорил нь
  * бүлгийн ижил хэсэгт (16 зангилаатай анхны зургийн 3, 9, 12).
  */
-export function pathLayout(n: number): PathLayout {
+export function pathLayout(n: number, lessons: readonly BookLesson[] = []): PathLayout {
   const gates = gateNodes(n);
   const chests = chestNodes(n);
   const nodes: PathNode[] = [];
   const units: PathUnit[] = [];
+  const starts = chapterStarts(n, lessons);
+  let top = 0;
   for (let u = 0; u < UNIT_COUNT; u++) {
-    const top = CHAPTER_TOPS[u];
     const y0 = top + (u === 0 ? PAD_FIRST : PAD_TOP);
-    const y1 = top + chapterHeight(MAP_CHAPTERS[u]) - PAD_BOTTOM;
+    const baseHeight = chapterHeight(MAP_CHAPTERS[u]);
     const boss = gates[UNIT_GATE[u]];
     const start = u === 0 ? 0 : units[u - 1].boss + 1;
+    const breaks = starts.slice(1).filter((chapter) => chapter.start > start && chapter.start <= boss).map((chapter) => chapter.start);
+    const height = baseHeight + breaks.length * BOOK_CHAPTER_GAP;
+    const y1 = top + baseHeight - PAD_BOTTOM;
     const m = boss - start;
     const at = (f: number) => start + Math.min(m - 1, Math.round(f * m));
-    const unit = { start, sapling: at(3 / 15), gift: at(9 / 15), myst: at(12 / 15), boss, top, chests: chests.filter((c) => c >= start && c < boss) };
+    const unit = { start, sapling: at(3 / 15), gift: at(9 / 15), myst: at(12 / 15), boss, top, height, chests: chests.filter((c) => c >= start && c < boss) };
     units.push(unit);
     const kind = (i: number): NodeKind =>
       i === boss ? 'boss' : unit.chests.includes(i) ? 'chest' : i === unit.myst ? 'myst' : i === unit.gift ? 'gift' : i === unit.sapling ? 'sapling' : 'stone';
@@ -228,10 +253,31 @@ export function pathLayout(n: number): PathLayout {
           : g >= 0 && BOSSES[g].role
             ? MAP_W / 2 + (BOSSES[g].role === 'left' ? GUARD_NODE_DX : -GUARD_NODE_DX)
             : Math.round(Math.max(X_MIN, Math.min(X_MAX, MAP_W / 2 + ZIG * Math.sin((k * Math.PI) / 4))));
-      nodes.push({ i: start + k, x, y: Math.round(m ? y0 + ((y1 - y0) * k) / m : y1), kind: kind(start + k) });
+      const i = start + k;
+      const chapterOffset = breaks.filter((chapterStart) => chapterStart <= i).length * BOOK_CHAPTER_GAP;
+      nodes.push({ i, x, y: Math.round(m ? y0 + ((y1 - y0) * k) / m + chapterOffset : y1), kind: kind(i) });
     }
+    top += height;
   }
-  return { n, nodes, trail: nodes.map(({ x, y, i }) => ({ x, y, i })), units, gates };
+  const chapters = starts.map(({ title, start }) => ({
+    title,
+    start,
+    y: Math.round(start === 0 ? nodes[0].y / 2 : (nodes[start - 1].y + nodes[start].y) / 2),
+    unit: unitOf(n, start),
+  }));
+  return { n, nodes, trail: nodes.map(({ x, y, i }) => ({ x, y, i })), units, chapters, height: top, gates };
+}
+
+/** Дэлгэцийн төвийн y аль тоглоомын ертөнцөд байгааг олно. */
+export function unitAtY(layout: PathLayout, y: number): number {
+  let unit = 0;
+  while (unit < layout.units.length - 1 && y >= layout.units[unit + 1].top) unit++;
+  return unit;
+}
+
+/** Дэлгэцийн төвд хамгийн ойр зангилаа; номын бүлгийн дээд гарчгийг scroll-той хамт солино. */
+export function closestNodeAtY(layout: PathLayout, y: number): number {
+  return layout.nodes.reduce((best, node) => (Math.abs(node.y - y) < Math.abs(layout.nodes[best].y - y) ? node.i : best), 0);
 }
 
 /**
@@ -258,6 +304,15 @@ export function lessonAt(lessons: readonly BookLesson[], i: number): BookLesson 
   const n = lessons.length;
   if (pathLessons(n) !== n || isBossNode(n, i)) return null;
   return lessons[i - unitOf(n, i)] ?? null;
+}
+
+/** Сонгосон хичээл өөрийн номын бүлгийн хэд дэх зангилаа вэ. */
+export function lessonGroupAt(lessons: readonly BookLesson[], i: number): { position: number; total: number } | null {
+  const lesson = lessonAt(lessons, i);
+  if (!lesson) return null;
+  const index = lessons.indexOf(lesson);
+  const same = lessons.map((item, k) => ({ item, k })).filter(({ item }) => item.chapter === lesson.chapter);
+  return { position: same.findIndex(({ k }) => k === index) + 1, total: same.length };
 }
 
 // Ном байхгүй үед: бүлэг бүрт 8 сэдэв, сэдэв бүр нэг зангилаа (shared/path.ts DEFAULT_LESSONS)

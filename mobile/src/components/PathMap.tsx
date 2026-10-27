@@ -14,13 +14,11 @@ import { tagFrames } from '@/lib/pixelBear/anim';
 import { sprites } from '@/sprites';
 import {
   BOSSES,
-  CHAPTER_TOPS,
   chapterHeight,
   HOVER,
   lessonAt,
   lessonTitle,
   MAP_CHAPTERS,
-  MAP_H,
   MAP_W,
   type NodeStatus,
   type PathLayout,
@@ -69,7 +67,8 @@ function segments(layout: PathLayout) {
  * Газрын зургийг дэлгэцийн өргөнд жигд томруулж/жижигрүүлнэ: хажуу тийш сунгасан зурвас гарахгүй, зангилаа ч хамт.
  * Газрын зургийн цэг (x, y) дэлгэц дээр (x, y) × scale.
  */
-export const useMapScale = () => useWindowDimensions().width / MAP_W;
+// апп нь 430 dp-ийн баганад төвлөрдөг (app/_layout.tsx column): өргөн цонхонд бүтэн өргөнөөр томруулахгүй
+export const useMapScale = () => Math.min(useWindowDimensions().width, 430) / MAP_W;
 
 /**
  * Адал явдлын газрын зураг (DESIGN.md §8-04-ийг 3 бүлэг болгосон, дээрээс доош). Давхарга: дэвсгэр → үүл → цэгэн зам →
@@ -121,9 +120,9 @@ export function PathMap({
   const scale = useMapScale();
 
   return (
-    <View style={{ width: MAP_W * scale, height: MAP_H * scale, overflow: 'hidden' }}>
-      <View style={[styles.map, { transform: [{ scale }], transformOrigin: 'top left' }]} accessibilityLabel={S.path.mapLabel}>
-        <MapBackground />
+    <View style={{ width: MAP_W * scale, height: layout.height * scale, overflow: 'hidden' }}>
+      <View style={[styles.map, { height: layout.height, transform: [{ scale }], transformOrigin: 'top left' }]} accessibilityLabel={S.path.mapLabel}>
+        <MapBackground layout={layout} />
 
         {layout.units.map((u, k) => (
           <View key={k} style={[styles.abs, { left: 0, top: u.top }]} pointerEvents="none">
@@ -136,7 +135,7 @@ export function PathMap({
           </View>
         ))}
 
-        <Svg width={MAP_W} height={MAP_H} style={StyleSheet.absoluteFill} pointerEvents="none">
+        <Svg width={MAP_W} height={layout.height} style={StyleSheet.absoluteFill} pointerEvents="none">
           <Path d={trail.todo} stroke="rgba(255,255,255,0.55)" strokeWidth={DOT} strokeDasharray={`${DOT} ${DOT_GAP - DOT}`} fill="none" />
           <Path d={trail.done} stroke="#9CF06A" strokeWidth={DOT} strokeDasharray={`${DOT} ${DOT_GAP - DOT}`} fill="none" />
         </Svg>
@@ -212,18 +211,39 @@ export function PathMap({
         ))}
       </View>
 
-      {/* Бүлэг хоорондын баннер (Duolingo шиг): дэвсгэрийн заагийг халхална, өргөн дэлгэцэд бүтэн өргөнөөр */}
-      {layout.units.slice(1).map((u, j) => {
-        const theme = THEMES[MAP_CHAPTERS[j + 1].themeId];
-        return (
-          <View key={j} style={[styles.band, { top: CHAPTER_TOPS[j + 1] * scale - BAND_H / 2, backgroundColor: theme.panel }]} accessibilityRole="header">
-            <Text style={[styles.bandOver, { color: theme.muted }]}>{S.path.chapterOver(j + 2)}</Text>
-            <Text style={[styles.bandTitle, { color: theme.text }]} numberOfLines={1}>
-              {lessonAt(lessons, u.start)?.chapter ?? subjectNames[subject]}
-            </Text>
-          </View>
-        );
-      })}
+      {/* Номын бүлэг бүрийн баннер; номгүй замд хуучин 3 ертөнцийн баннер. */}
+      {layout.chapters.length > 0
+        ? layout.chapters.map((chapter) => {
+            const theme = THEMES[MAP_CHAPTERS[chapter.unit].themeId];
+            return (
+              <View
+                key={`${chapter.start}:${chapter.title}`}
+                pointerEvents="none"
+                style={[styles.band, { top: chapter.y * scale - BAND_H / 2, backgroundColor: theme.panel }]}
+                accessibilityRole="header"
+              >
+                <Text style={[styles.bandTitle, { color: theme.text }]} numberOfLines={2}>
+                  {chapter.title}
+                </Text>
+              </View>
+            );
+          })
+        : layout.units.slice(1).map((u, j) => {
+            const theme = THEMES[MAP_CHAPTERS[j + 1].themeId];
+            return (
+              <View
+                key={j}
+                pointerEvents="none"
+                style={[styles.band, { top: u.top * scale - BAND_H / 2, backgroundColor: theme.panel }]}
+                accessibilityRole="header"
+              >
+                <Text style={[styles.bandOver, { color: theme.muted }]}>{S.path.chapterOver(j + 2)}</Text>
+                <Text style={[styles.bandTitle, { color: theme.text }]} numberOfLines={1}>
+                  {lessonAt(lessons, u.start)?.chapter ?? subjectNames[subject]}
+                </Text>
+              </View>
+            );
+          })}
     </View>
   );
 }
@@ -238,28 +258,34 @@ const edgeFixes = (e?: number) =>
         { left: MAP_W - e, shift: -(MAP_W - 2 * e) },
       ];
 
-function MapBackground() {
+function MapBackground({ layout }: { layout: PathLayout }) {
   const width = MAP_W;
   return (
     <View pointerEvents="none">
-      {MAP_CHAPTERS.map((c) => (
-        <View key={c.bg} style={{ width, height: chapterHeight(c), overflow: 'hidden' }}>
-          <Sprite id={c.bg} style={{ width, marginTop: -(c.cropTop ?? 0) }} />
-          {/* захын гажигтай `edgeFix` баганын оронд хажуугийн ижил өргөнтэй баганыг давхарлана */}
-          {edgeFixes(c.edgeFix).map(({ left, shift }) => (
-            <View key={left} style={[styles.abs, { left, top: 0, width: c.edgeFix, height: chapterHeight(c), overflow: 'hidden' }]}>
-              <Sprite id={c.bg} style={{ width, marginTop: -(c.cropTop ?? 0), marginLeft: shift }} />
+      {MAP_CHAPTERS.map((c, unit) => {
+        const baseHeight = chapterHeight(c);
+        const height = layout.units[unit].height;
+        return (
+          <View key={c.bg} style={{ width, height, overflow: 'hidden' }}>
+            <View style={{ width, height: baseHeight, transform: [{ scaleY: height / baseHeight }], transformOrigin: 'top left' }}>
+              <Sprite id={c.bg} style={{ width, marginTop: -(c.cropTop ?? 0) }} />
+              {/* захын гажигтай `edgeFix` баганын оронд хажуугийн ижил өргөнтэй баганыг давхарлана */}
+              {edgeFixes(c.edgeFix).map(({ left, shift }) => (
+                <View key={left} style={[styles.abs, { left, top: 0, width: c.edgeFix, height: baseHeight, overflow: 'hidden' }]}>
+                  <Sprite id={c.bg} style={{ width, marginTop: -(c.cropTop ?? 0), marginLeft: shift }} />
+                </View>
+              ))}
+              {c.foot ? <Sprite id={c.foot} style={{ width }} /> : null}
+              {c.extend === undefined ? null : (
+                // `extend` мөрөөс доошхи хэсгийг л харуулна
+                <View style={{ height: sprites[c.bg].height - c.extend, overflow: 'hidden' }}>
+                  <Sprite id={c.bg} style={{ width, marginTop: -c.extend }} />
+                </View>
+              )}
             </View>
-          ))}
-          {c.foot ? <Sprite id={c.foot} style={{ width }} /> : null}
-          {c.extend === undefined ? null : (
-            // `extend` мөрөөс доошхи хэсгийг л харуулна
-            <View style={{ height: sprites[c.bg].height - c.extend, overflow: 'hidden' }}>
-              <Sprite id={c.bg} style={{ width, marginTop: -c.extend }} />
-            </View>
-          )}
-        </View>
-      ))}
+          </View>
+        );
+      })}
     </View>
   );
 }
@@ -439,13 +465,13 @@ function Butterfly() {
   );
 }
 
-export { MAP_H, MAP_W };
+export { MAP_W };
 
 const styles = StyleSheet.create({
   // зангилааны доор 3 од: давсан шат тод, үлдсэн нь бүдэг
   stars: { position: 'absolute', width: STARS_W, flexDirection: 'row', justifyContent: 'center', gap: 1 },
   starOff: { opacity: 0.45 },
-  map: { width: MAP_W, height: MAP_H, overflow: 'hidden' },
+  map: { width: MAP_W, overflow: 'hidden' },
   abs: { position: 'absolute' },
   hit: { width: HIT, height: HIT, alignItems: 'center' },
   islandHit: { width: 72, height: 56 },
@@ -482,5 +508,5 @@ const styles = StyleSheet.create({
   },
   band: { position: 'absolute', left: 0, right: 0, height: BAND_H, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'center', gap: 2 },
   bandOver: { fontFamily: fonts.extrabold, fontSize: 11, letterSpacing: 1.2 },
-  bandTitle: { fontFamily: fonts.bold, fontSize: 16 },
+  bandTitle: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, textAlign: 'center' },
 });

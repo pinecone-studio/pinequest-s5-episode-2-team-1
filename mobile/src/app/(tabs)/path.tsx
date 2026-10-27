@@ -10,17 +10,18 @@ import { useAuth } from '@/auth/AuthContext';
 import { MapHeader } from '@/components/MapHeader';
 import { useTabBarSpace } from '@/components/BottomNav';
 import { NodePopover, POPOVER_INSET } from '@/components/NodePopover';
-import { MAP_H, PathMap, useMapScale } from '@/components/PathMap';
+import { PathMap, useMapScale } from '@/components/PathMap';
 import { setChapterTheme, themeOf } from '@/constants/chapterTheme';
 import { S, subjectNames } from '@/i18n/strings';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 import {
   BOSSES,
   bossAhead,
-  chapterAtY,
+  closestNodeAtY,
   currentNode,
   gateOf,
   lessonAt,
+  lessonGroupAt,
   lessonTitle,
   MAP_CHAPTERS,
   type NodeStatus,
@@ -28,6 +29,7 @@ import {
   pathLessons,
   pathSubject,
   statusOf,
+  unitAtY,
   unitOf,
 } from '@/lib/pixelBear/path';
 
@@ -63,8 +65,8 @@ export default function PathScreen() {
   const [pad, setPad] = useState(false);
   const padNode = useRef(0);
   const reduce = useReducedMotion();
-  // дэлгэцийн төвд байгаа бүлэг; scroll хийтэл одоогийн зангилааных
-  const [visible, setVisible] = useState<number | null>(null);
+  // дэлгэцийн төвд хамгийн ойр зангилаа; scroll хийтэл одоогийн зангилаа
+  const [visibleNode, setVisibleNode] = useState<number | null>(null);
   const scrollY = useRef(0);
 
   useFocusEffect(
@@ -87,15 +89,14 @@ export default function PathScreen() {
   const lessons = book?.subject === subject ? book.lessons : [];
   // Замын урт = хичээлийн тоо + boss: хичээл бүр нэг зангилаа
   const n = pathLessons(lessons.length);
-  const layout = useMemo(() => pathLayout(n), [n]);
+  const layout = useMemo(() => pathLayout(n, lessons), [n, lessons]);
 
   // Хичээл бүр өөрийн сурах замтай: хичээл солиход тэр хичээлийн хамгийн сүүлд хүрсэн зангилаа гарна.
   const path = me?.paths[subject];
   const current = path ? currentNode(n, path) : 0;
   const bossFight = !!path && bossAhead(n, current, path.bossesBeaten);
-  const unit = layout.units[unitOf(n, current)];
   const userId = me?.id;
-  const chapterIdx = visible ?? chapterAtY(layout.nodes[current].y);
+  const chapterIdx = unitAtY(layout, layout.nodes[visibleNode ?? current].y);
   const chapter = MAP_CHAPTERS[chapterIdx].themeId;
   const theme = themeOf(chapter);
 
@@ -106,7 +107,7 @@ export default function PathScreen() {
       return () => setChapterTheme('default');
     }, [chapter]),
   );
-  useEffect(() => setVisible(null), [layout, current]);
+  useEffect(() => setVisibleNode(null), [layout, current]);
   useEffect(() => {
     setSel(null);
     setPad(false);
@@ -115,9 +116,9 @@ export default function PathScreen() {
   // Сүүлийн зангилаануудын popover газрын зургийн доод захаас хэтэрнэ: зөвхөн тэр хэсэгт нэмэлт scroll зай
   const popH = cardH || POP_EST;
   const padAt = layout.nodes[Math.min(padNode.current, layout.nodes.length - 1)];
-  const reserve = pad ? Math.max(0, padAt.y * k + popOffset(padAt.kind === 'boss') + popH + 40 - MAP_H * k) : 0;
+  const reserve = pad ? Math.max(0, padAt.y * k + popOffset(padAt.kind === 'boss') + popH + 40 - layout.height * k) : 0;
   /** popover-ын зайгүй үеийн хамгийн доод scroll: газрын зургийн доод зах цэсний дээд ирмэгт */
-  const baseMax = mapTop + MAP_H * k + barSpace - viewH;
+  const baseMax = mapTop + layout.height * k + barSpace - viewH;
   /** `mapY` цэгийг толгой, доод цэсийн хоорондох хэсгийн төвд гаргах scroll */
   const centerOn = (mapY: number) => Math.max(0, Math.min(baseMax, mapTop + mapY * k + 4 - (headerH + (viewH - barSpace - headerH) / 2)));
 
@@ -153,7 +154,7 @@ export default function PathScreen() {
 
   function onScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
     scrollY.current = e.nativeEvent.contentOffset.y;
-    setVisible(chapterAtY((scrollY.current + (headerH + viewH - barSpace) / 2 - mapTop) / k));
+    setVisibleNode(closestNodeAtY(layout, (scrollY.current + (headerH + viewH - barSpace) / 2 - mapTop) / k));
     if (sel === null && pad && scrollY.current <= baseMax + 1) setPad(false);
   }
 
@@ -189,8 +190,10 @@ export default function PathScreen() {
   const selNode = sel === null ? null : layout.nodes[sel];
   const selUnit = sel === null ? null : layout.units[unitOf(n, sel)];
   const selStatus = sel === null ? null : statusOf(sel, current);
-  // Дээд баннер: харагдаж буй бүлэг, номын бүлгийн нэр (номгүй бол хичээлийн нэр)
-  const chapterTitle = lessonAt(lessons, layout.units[chapterIdx].start)?.chapter;
+  const selectedGroup = sel === null ? null : lessonGroupAt(lessons, sel);
+  // Дээд баннер: сонгосон эсвэл дэлгэцийн төвд байгаа номын бүлэг; boss нь өмнөх номын бүлэгтээ үлдэнэ.
+  const chapterNode = sel ?? visibleNode ?? current;
+  const chapterTitle = layout.chapters.reduce<string | null>((title, chapter) => (chapter.start <= chapterNode ? chapter.title : title), null);
   const over = S.path.chapterOver(chapterIdx + 1);
   // Popover: хаалга бол тулаан (зөвхөн одоогийнх), бусад нь дараагийн шат (түгжээтэй бол admin-аас бусад нь хаалттай)
   const selGate = sel === null ? -1 : gateOf(n, sel);
@@ -242,7 +245,7 @@ export default function PathScreen() {
                     : BOSSES[selGate].helper
                       ? S.path.helperFight
                       : S.path.bossFight
-                  : `${S.path.lessonOf(sel - selUnit.start + 1, selUnit.boss - selUnit.start)} · ${S.path.stars(doneAt(sel), STAGES)}`
+                  : `${S.path.lessonOf(selectedGroup?.position ?? sel - selUnit.start + 1, selectedGroup?.total ?? selUnit.boss - selUnit.start)} · ${S.path.stars(doneAt(sel), STAGES)}`
             }
             action={action}
             canStart={canStart}
@@ -256,7 +259,7 @@ export default function PathScreen() {
       <MapHeader
         theme={theme}
         subject={subject}
-        over={chapterTitle ? `${subjectNames[subject].toUpperCase()} · ${over}` : over}
+        over={chapterTitle ? subjectNames[subject].toUpperCase() : over}
         title={chapterTitle ?? subjectNames[subject]}
         onSubject={setSubject}
         onHeight={onHeaderHeight}
