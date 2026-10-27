@@ -45,12 +45,13 @@ describe('Математик 6, 7-ын бүх хичээлийн template covera
     expect([...MATH7, ...MATH7_MORE].every((template) => template.ref.startsWith('math-7:'))).toBe(true);
   });
 
-  it('ерөнхий загвар хадгалсан 25 асуултыг орлохгүй, асуулт хүрэхгүй үед нөхнө', () => {
+  it('Суурь DB, Дунд ба Ахисан template ашиглана', () => {
     expect(MATH6_MORE.every((template) => template.preferStored)).toBe(true);
     expect(MATH7_MORE.every((template) => template.preferStored)).toBe(true);
-    expect(shouldGenerateTemplates([MATH7_MORE[0]], 25, 5)).toBe(false);
-    expect(shouldGenerateTemplates([MATH7_MORE[0]], 4, 5)).toBe(true);
-    expect(shouldGenerateTemplates([MATH7[0]], 25, 5)).toBe(true);
+    expect(shouldGenerateTemplates([MATH7_MORE[0]], 25, 5, 1)).toBe(false);
+    expect(shouldGenerateTemplates([MATH7_MORE[0]], 4, 5, 1)).toBe(true);
+    expect(shouldGenerateTemplates([MATH7_MORE[0]], 25, 5, 2)).toBe(true);
+    expect(shouldGenerateTemplates([MATH7_MORE[0]], 25, 5, 3)).toBe(true);
   });
 
   it('өмнө зөрсөн хичээлүүд өөрийн сэдвийн үүсгэгчтэй', () => {

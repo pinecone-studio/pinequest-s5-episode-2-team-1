@@ -67,6 +67,15 @@ describe('асуулт зөвхөн өөрийн ангийн номоос', () 
     expect(JSON.stringify(own)).not.toContain('idx_questions_pool');
   });
 
+  it('Суурь шатны сонголт template-ээр үүссэн асуултыг оруулахгүй', () => {
+    db.prepare("UPDATE questions SET source = 'template:test' WHERE book_ref = 'math-7:5-6'").run();
+    const all = db.prepare(pickSql(true)).all(...(pickArgs(2, 1, 'math', { slug: 'math-7', from: 5, to: 6 }, 5) as (string | number)[]));
+    const curated = db.prepare(pickSql(true, false, true)).all(...(pickArgs(2, 1, 'math', { slug: 'math-7', from: 5, to: 6 }, 5) as (string | number)[]));
+    expect(all).toHaveLength(1);
+    expect(curated).toHaveLength(0);
+    db.prepare("UPDATE questions SET source = 't' WHERE book_ref = 'math-7:5-6'").run();
+  });
+
   it('6-р анги Математик 7-ийн асуулт хэзээ ч авахгүй; номгүй асуулт нийтлэг', () => {
     const six = pick(db, 1, null, 100);
     expect(six.sort()).toEqual(['math-6:5-6', 'math-6:7-8', null, null].sort());

@@ -3,6 +3,7 @@ import type { Bindings } from '../env';
 import { generateQuestions, pickProvider } from '../llm';
 import type { QuestionDraft } from '../llm/types';
 import { promptKey } from '../llm/validate';
+import { generate, type Level, type Template } from '../templates';
 import { type Excerpt, type PageRange, pickExcerpts, type Scope } from './grounding';
 
 /**
@@ -69,6 +70,29 @@ export async function storeGenerated(
   return keys.flatMap((k) => results.filter((r) => r.prompt_key === k).map((r) => r.id).slice(0, 1));
 }
 
+/**
+ * Нэг template-ийн сан бараг дүүрсэн үед generate() шинэ багц дотроо ялгаатай 5 асуулт гаргасан ч зарим нь
+ * өмнө нь flagged болсон мөртэй давхцаж, storeGenerated() 5-аас цөөн id буцааж болно. Хэд хэдэн шинэ багцаар
+ * нөхөж байж хүссэн тооны яг template-ээс гарсан асуултын id-г авна; өөр сэдвийн DB асуултаар нөхөхгүй.
+ */
+export async function generateTemplateSet(
+  db: D1Database,
+  tier: number,
+  subject: string,
+  grade: number,
+  templates: readonly Template[],
+  count: number,
+  level: Level,
+  now = Date.now(),
+): Promise<number[]> {
+  const ids: number[] = [];
+  for (let attempt = 0; ids.length < count && attempt < 8; attempt++) {
+    const made = await storeGenerated(db, tier, subject, grade, generate(templates, count, level), now);
+    for (const id of made) if (!ids.includes(id)) ids.push(id);
+  }
+  return ids.slice(0, count);
+}
+
 export interface GenerateReport {
   source: string | null;
   requested: number;
@@ -121,16 +145,19 @@ const BY_LEVEL = 'ORDER BY ABS(COALESCE(q.difficulty, 2) - ?), (s.seen_at IS NOT
  * хуудсуудаас, шатны хүндэд ойрыг түрүүлж; үгүй бол ангийн бүх асуултаас; `exclude` бол JSON массив дахь id орохгүй (зөвхөн хэрэгтэй үед:
  * json_each мөр бүрт шалгагдаж уншилтыг нэмдэг).
  */
-export const pickSql = (lesson: boolean, exclude = false) =>
+export const pickSql = (lesson: boolean, exclude = false, curatedOnly = false) =>
   lesson
     ? `SELECT q.id FROM questions q LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
-       WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0 AND ${IN_RANGE} ${BY_LEVEL}`
+       WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0 AND ${IN_RANGE}
+         ${curatedOnly ? "AND q.source NOT LIKE 'template:%'" : ''} ${BY_LEVEL}`
     : `SELECT q.id FROM ${OWN_POOL} q LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
        ${exclude ? 'WHERE q.id NOT IN (SELECT value FROM json_each(?))' : ''} ${BY_SEEN}`;
 
 /** SQL: `range` хуудсанд үндэслэсэн (хэрэглэгчид гарч болох) асуултын тоо. Утгууд: tier, subject, ...rangeArgs. */
 export const LESSON_COUNT_SQL = `SELECT COUNT(*) AS n FROM questions q
        WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0 AND ${IN_RANGE}`;
+/** Суурь шатанд template-ээс өмнө хадгалагдсан curated асуултын тоо. */
+export const CURATED_LESSON_COUNT_SQL = `${LESSON_COUNT_SQL} AND q.source NOT LIKE 'template:%'`;
 /** pickSql(lesson !== null, exclude.length > 0)-ийн утгууд. `level` = шатны хүнд (1–3), null бол ялгахгүй. */
 export const pickArgs = (
   userId: number,
@@ -157,9 +184,15 @@ export async function pickQuestions(
   lesson: PageRange | null,
   limit: number,
   level: number | null = null,
+  curatedOnly = false,
 ) {
   const run = async (range: PageRange | null, n: number, exclude: number[]) =>
-    (await db.prepare(pickSql(range !== null, exclude.length > 0)).bind(...pickArgs(userId, tier, subject, range, n, exclude, level)).all<{ id: number }>()).results;
+    (
+      await db
+        .prepare(pickSql(range !== null, exclude.length > 0, curatedOnly && range !== null))
+        .bind(...pickArgs(userId, tier, subject, range, n, exclude, level))
+        .all<{ id: number }>()
+    ).results;
   const own = lesson ? await run(lesson, limit, []) : [];
   if (own.length >= limit) return own;
   return [...own, ...(await run(null, limit - own.length, own.map((r) => r.id)))];
