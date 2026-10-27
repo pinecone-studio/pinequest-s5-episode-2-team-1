@@ -6,6 +6,8 @@ export interface QuestionDraft {
   explanation: string;
   /** config/topics.ts-ийн id; загвар буруу/хоосон өгвөл байхгүй. */
   topic?: string;
+  /** Зангилааны шатны хүнд: 1 Суурь, 2 Дунд, 3 Ахисан (questions.difficulty). */
+  difficulty?: 1 | 2 | 3;
 }
 
 export type LlmProvider = 'gemini' | 'workers-ai';

@@ -145,8 +145,10 @@ export async function startTask(
             .first<{ n: number }>()
         )?.n ?? 0)
       : 0;
+  // Шатны хүнд (1 Суурь … 3 Ахисан): загвар тэр хүндээр үүсгэж, хадгалсан бодлогоос тэр хүндийг түрүүлж сонгоно.
+  const level = levelOf(stageNo ?? (boss === undefined ? null : (GATE_STAGE[boss] ?? null)));
   const made = shouldGenerateTemplates(templates, storedBefore, GAME.QUESTIONS_PER_TASK)
-    ? await storeGenerated(db, tier, subject, user.grade, generate(templates, GAME.QUESTIONS_PER_TASK, levelOf(stageNo ?? (boss === undefined ? null : (GATE_STAGE[boss] ?? null)))), now)
+    ? await storeGenerated(db, tier, subject, user.grade, generate(templates, GAME.QUESTIONS_PER_TASK, level), now)
     : [];
   if (lesson && (preferStored ? storedBefore < GAME.QUESTIONS_PER_TASK : made.length < GAME.QUESTIONS_PER_TASK)) {
     const refill = lessonRefill(lesson);
@@ -164,7 +166,7 @@ export async function startTask(
   const picked =
     made.length >= GAME.QUESTIONS_PER_TASK
       ? made.map((id) => ({ id }))
-      : await pickQuestions(db, userId, tier, subject, lesson, GAME.QUESTIONS_PER_TASK);
+      : await pickQuestions(db, userId, tier, subject, lesson, GAME.QUESTIONS_PER_TASK, level);
   if (picked.length < GAME.QUESTIONS_PER_TASK) {
     ctx.waitUntil(refillPool(env, tier, subject, { grade: user.grade }));
     throw new ApiError(503, 'NO_QUESTIONS', 'Асуулт хүрэлцэхгүй байна');

@@ -41,7 +41,7 @@ export type ErrorCode =
   | 'DUEL_EXISTS'
   | 'DUEL_TAKEN'
   | 'DUEL_NOT_OPEN'
-  | 'WRONG_TIER'
+  | 'WRONG_GRADE'
   | 'OWN_DUEL'
   | 'CODE_NOT_FOUND'
   | 'LLM_UNAVAILABLE'
