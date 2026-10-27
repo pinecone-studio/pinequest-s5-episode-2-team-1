@@ -44,7 +44,7 @@ export default function WelcomeScreen() {
         <Sprite id="icon_star_36x36" />
       </Motion>
       <Motion preset="twinkle" delay={700} style={[styles.abs, { right: 56, top: 560 }]}>
-        <Sprite id="icon_coin_36x36" />
+        <Sprite id="btn_honey_36x36" />
       </Motion>
 
       <View style={[styles.bear, { bottom: sheetHeight - 38 }]}>

@@ -86,7 +86,7 @@ const SOUL: SpriteKey = 'fx_soul_sheet_248x122';
 const SOUL_LOOP = [0, 1, 2, 3];
 const SOUL_RISE = 22;
 /** баавгайн шидэх зөгийн балны сав ба boss-д тусаж хагарах эффект (scripts/bear-sprites.ts: PixelLab VFX) */
-const HONEY_JAR: SpriteKey = 'btn_honey_30x30';
+const HONEY_JAR: SpriteKey = 'btn_honey_jar_30x30';
 const SHATTER: SpriteKey = 'fx_honey_shatter_414x456';
 const SHATTER_MS = 80; // эх нь 63ms: нүдээр дагахуйц удаан
 type Spark = { id: SpriteKey; at: Point; frame: number; frames: number; cols: number; pivot: Point };

@@ -18,7 +18,7 @@ import type { SpriteKey } from '@/sprites';
 const SUBJECTS = PATH_SUBJECTS;
 
 /**
- * Сурах замын дээд хэсэг (Duolingo шиг, хүрээгүй): самбар дээр аватар · XP · гал · coin жигд зайтай; түүнээс тусдаа,
+ * Сурах замын дээд хэсэг (Duolingo шиг, хүрээгүй): самбар дээр аватар · XP · гал · зөгийн бал жигд зайтай; түүнээс тусдаа,
  * газрын зураг дээр хөвөх харагдаж буй бүлгийн тод баннер (дарахад хичээл солих цэс). Өнгө бүлгийн theme-ийг дагана.
  * Нарийн дэлгэц, том текстэд stat-ууд доош шилжинэ. Тохиргооны цэс байхгүй.
  */
@@ -41,7 +41,7 @@ export function MapHeader({
   onHeight: (panel: number, total: number) => void;
 }) {
   const { me, refreshMe } = useAuth();
-  const { coins } = usePixelBear();
+  const { honey } = usePixelBear();
   const refill = useCallback(() => void refreshMe(), [refreshMe]);
   // хуучин хадгалсан Me-д амь байхгүй байж болно (офлайн кэш)
   const lives = me?.lives ?? 5;
@@ -78,7 +78,7 @@ export function MapHeader({
                 </View>
               </View>
               <Stat icon="icon_flame_24x24" value={me.streak} label={S.path.streak} text={fade.text} />
-              <Stat icon="icon_coin_24x24" value={coins} label="Coin" text={fade.text} />
+              <Stat icon="btn_honey_24x24" value={honey} label="Зөгийн бал" text={fade.text} />
             </View>
           </Animated.View>
         </View>

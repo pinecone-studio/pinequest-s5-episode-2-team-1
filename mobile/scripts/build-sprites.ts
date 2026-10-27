@@ -123,7 +123,8 @@ for (const n of ['home', 'tasks', 'path', 'shop', 'crew', 'bag']) {
 M.btn_calendar = [[30, 30]];
 // баавгай бэлдэж байхад эргэх номын хуудас (scripts/book-sprites.ts), 8 frame 28×18 → 2×
 M.fx_book_flip_sheet = [2];
-M.btn_honey = [[30, 30]];
+M.btn_honey = [[12, 12], [24, 24], [30, 30], [36, 36]];
+M.btn_honey_jar = [[12, 12], [24, 24], [30, 30]];
 
 // баавгайтай sprite-ууд: сонгосон үсний өнгөөр (хар, цагаан) хувилбар `<нэр>_<өнгө>_<w>x<h>` үүснэ, components/pixel/Sprite
 // нь FurContext-оор сонгоно. Хөрөг (avatar_*) нь өнгө бүрээрээ тусдаа, item_* давхарга өнгөгүй.

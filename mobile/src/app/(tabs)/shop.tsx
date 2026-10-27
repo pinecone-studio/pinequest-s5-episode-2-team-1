@@ -40,13 +40,13 @@ function categoryOf(id: OutfitId): OutfitCategory {
 
 const chunk = <T,>(arr: T[], n: number): T[][] => Array.from({ length: Math.ceil(arr.length / n) }, (_, i) => arr.slice(i * n, i * n + n));
 
-function statusOf(opts: { equipped: boolean; owned: boolean; price: number; coins: number; lockedLevel?: number | null }): SwatchStatus {
-  const { equipped, owned, price, coins, lockedLevel } = opts;
-  if (equipped) return { text: S.shop.equipped, color: colors.okText, showCoin: false, locked: false };
-  if (owned) return { text: S.shop.owned, color: colors.okText, showCoin: false, locked: false };
-  if (lockedLevel) return { text: S.shop.levelNeeded(lockedLevel), color: colors.dangerText, showCoin: false, locked: true };
-  if (price > coins) return { text: formatNumber(price), a11y: S.shop.shortBy(formatNumber(price)), color: colors.dangerText, showCoin: true, locked: true };
-  return { text: formatNumber(price), color: colors.ink, showCoin: true, locked: false };
+function statusOf(opts: { equipped: boolean; owned: boolean; price: number; honey: number; lockedLevel?: number | null }): SwatchStatus {
+  const { equipped, owned, price, honey, lockedLevel } = opts;
+  if (equipped) return { text: S.shop.equipped, color: colors.okText, showHoney: false, locked: false };
+  if (owned) return { text: S.shop.owned, color: colors.okText, showHoney: false, locked: false };
+  if (lockedLevel) return { text: S.shop.levelNeeded(lockedLevel), color: colors.dangerText, showHoney: false, locked: true };
+  if (price > honey) return { text: formatNumber(price), a11y: S.shop.shortBy(formatNumber(price)), color: colors.dangerText, showHoney: true, locked: true };
+  return { text: formatNumber(price), color: colors.ink, showHoney: true, locked: false };
 }
 
 /** 07 · Дэлгүүр: дэвсгэр өнгө (MVP) ба хувцас. Офлайн үед үзэж, авсан зүйлсээ сонгоно; худалдаж авахгүй. */
@@ -85,7 +85,7 @@ export default function ShopScreen() {
       price: outfitView.price,
       lockedLevel: outfitView.lockedLevel,
     };
-  const cantAfford = !cur.owned && cur.price > bear.coins;
+  const cantAfford = !cur.owned && cur.price > bear.honey;
   const action = !outfits.loaded
     ? { title: '…', bg: colors.stoneAlt, fg: colors.muted, disabled: true }
     : cur.equipped
@@ -97,7 +97,7 @@ export default function ShopScreen() {
           : cur.lockedLevel
             ? { title: S.shop.levelNeeded(cur.lockedLevel), bg: colors.stoneAlt, fg: colors.muted, disabled: true }
             : cantAfford
-              ? { title: S.shop.noCoins, bg: colors.stoneAlt, fg: colors.muted, disabled: true }
+              ? { title: S.shop.noHoney, bg: colors.stoneAlt, fg: colors.muted, disabled: true }
               : { title: S.shop.buyFor(formatNumber(cur.price)), bg: colors.indigo, fg: colors.white, disabled: false };
 
   async function onAction() {
@@ -143,7 +143,7 @@ export default function ShopScreen() {
         <PressScale accessibilityRole="button" accessibilityLabel={S.bag.title} onPress={() => router.push('/bag')} style={styles.bagBtn}>
           <Sprite id="nav2_bag_on_30x30" />
         </PressScale>
-        <CountPill icon="icon_coin_24x24" value={bear.coins} label="Coin" />
+        <CountPill icon="btn_honey_24x24" value={bear.honey} label="Зөгийн бал" />
       </View>
 
       <View>
@@ -229,7 +229,7 @@ export default function ShopScreen() {
                   label={S.shop.bgLabel(b.name)}
                   selected={b.id === selBg}
                   equipped={b.id === bear.bgId}
-                  status={statusOf({ equipped: b.id === bear.bgId, owned: bear.ownedBgs.includes(b.id), price: bear.priceOf('bg', b.id), coins: bear.coins })}
+                  status={statusOf({ equipped: b.id === bear.bgId, owned: bear.ownedBgs.includes(b.id), price: bear.priceOf('bg', b.id), honey: bear.honey })}
                   onPress={() => setSelBg(b.id)}
                 />
               ))}
@@ -250,7 +250,7 @@ export default function ShopScreen() {
                     equipped: v.def.id === bear.outfitId,
                     owned: v.owned,
                     price: v.price,
-                    coins: bear.coins,
+                    honey: bear.honey,
                     lockedLevel: v.lockedLevel,
                   })}
                   onPress={() => {

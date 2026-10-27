@@ -55,10 +55,10 @@ export function RewardView({ result, onAgain, onRecovery }: { result: TaskResult
         </Pressable>
 
         <Score correct={result.correctCount} total={result.total} />
-        <Cheer happy={happy} bubble={result.me.streakDoneToday ? S.reward.goalHit : null} coin />
+        <Cheer happy={happy} bubble={result.me.streakDoneToday ? S.reward.goalHit : null} honey />
 
         <View style={styles.tiles}>
-          <RewardTile icon="icon_coin_24x24" value={result.pointsGained} prefix="+" label={`${S.reward.coin} · ×${result.multiplier.toFixed(1)}`} index={0} />
+          <RewardTile icon="btn_honey_24x24" value={result.pointsGained} prefix="+" label={`${S.reward.honey} · ×${result.multiplier.toFixed(1)}`} index={0} />
           <RewardTile icon="icon_star_24x24" value={result.xpGained} prefix="+" label={S.reward.xp} index={1} />
           <RewardTile icon="icon_flame_24x24" value={result.streak} label={S.reward.daysStreak} index={2} />
         </View>
@@ -107,7 +107,7 @@ export function RewardView({ result, onAgain, onRecovery }: { result: TaskResult
 }
 
 /**
- * Офлайн дасгалын дүн: XP, оноо, дараалал тоологдохгүй тул зөвхөн зөв хариултын тоо (сервертэй тааруулахгүй).
+ * Офлайн дасгалын дүн: XP, зөгийн бал, дараалал тоологдохгүй тул зөвхөн зөв хариултын тоо (сервертэй тааруулахгүй).
  */
 export function PracticeResultView({ correct, total, onAgain }: { correct: number; total: number; onAgain: () => void }) {
   const insets = useSafeAreaInsets();
@@ -156,8 +156,8 @@ function Score({ correct, total }: { correct: number; total: number }) {
   );
 }
 
-/** Баярласан (эсвэл зогсож буй) баавгай, хөвөх зүрх, од. `coin` = шагнал авсан (онлайн даалгавар). */
-function Cheer({ happy, bubble, coin }: { happy: boolean; bubble: string | null; coin?: boolean }) {
+/** Баярласан (эсвэл зогсож буй) баавгай, хөвөх зүрх, од. `honey` = шагнал авсан (онлайн даалгавар). */
+function Cheer({ happy, bubble, honey }: { happy: boolean; bubble: string | null; honey?: boolean }) {
   return (
     <View style={styles.stage}>
       <View style={styles.circle} />
@@ -168,7 +168,7 @@ function Cheer({ happy, bubble, coin }: { happy: boolean; bubble: string | null;
       ) : null}
       <Rising sprite="icon_heart_36x36" left="76%" bottom={190} />
       <Rising sprite="icon_heart_24x24" left="82%" bottom={150} delay={900} />
-      {coin ? <Rising sprite="icon_coin_36x36" left="12%" bottom={90} delay={500} /> : null}
+      {honey ? <Rising sprite="btn_honey_36x36" left="12%" bottom={90} delay={500} /> : null}
       <Rising sprite="icon_star_24x24" left="20%" bottom={160} delay={1500} />
       <View style={styles.bear}>
         <Motion preset="float">

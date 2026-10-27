@@ -39,7 +39,7 @@ export default function DuelRoomScreen() {
   const ended = view.phase === 'finished' || view.phase === 'cancelled';
   const connectionNote = ended ? undefined : CONNECTION_NOTE[view.connection];
 
-  // Үр дүн ирмэгц хоёр утсан дээр оноог шинэчилнэ; haptic.
+  // Үр дүн ирмэгц хоёр утсан дээр зөгийн балын үлдэгдлийг шинэчилнэ; haptic.
   const notified = useRef(false);
   useEffect(() => {
     if (view.outcome && !notified.current) {
@@ -74,7 +74,7 @@ export default function DuelRoomScreen() {
           </View>
         ) : null}
         <View style={styles.stakeRow}>
-          <Sprite id="icon_coin_24x24" />
+          <Sprite id="btn_honey_24x24" />
           <Text style={styles.stake}>{view.stake}</Text>
         </View>
       </View>
@@ -256,7 +256,7 @@ function ResultView({ view, myId }: { view: ReturnType<typeof useDuelSocket>['vi
         {note ? <Muted center>{note}</Muted> : null}
         {points !== undefined ? (
           <View style={styles.stakeRow}>
-            <Sprite id="icon_coin_24x24" />
+            <Sprite id="btn_honey_24x24" />
             <Text style={styles.pointsNow}>{S.duel.pointsNow(points)}</Text>
           </View>
         ) : null}

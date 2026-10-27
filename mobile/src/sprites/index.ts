@@ -589,7 +589,13 @@ export const sprites = {
   nav2_bag_off_30x30: { source: require('../../assets/sprites/nav2_bag_off_30x30.png'), width: 30, height: 30 },
   btn_calendar_30x30: { source: require('../../assets/sprites/btn_calendar_30x30.png'), width: 30, height: 30 },
   fx_book_flip_sheet_448x36: { source: require('../../assets/sprites/fx_book_flip_sheet_448x36.png'), width: 448, height: 36 },
+  btn_honey_12x12: { source: require('../../assets/sprites/btn_honey_12x12.png'), width: 12, height: 12 },
+  btn_honey_24x24: { source: require('../../assets/sprites/btn_honey_24x24.png'), width: 24, height: 24 },
   btn_honey_30x30: { source: require('../../assets/sprites/btn_honey_30x30.png'), width: 30, height: 30 },
+  btn_honey_36x36: { source: require('../../assets/sprites/btn_honey_36x36.png'), width: 36, height: 36 },
+  btn_honey_jar_12x12: { source: require('../../assets/sprites/btn_honey_jar_12x12.png'), width: 12, height: 12 },
+  btn_honey_jar_24x24: { source: require('../../assets/sprites/btn_honey_jar_24x24.png'), width: 24, height: 24 },
+  btn_honey_jar_30x30: { source: require('../../assets/sprites/btn_honey_jar_30x30.png'), width: 30, height: 30 },
 } as const satisfies Record<string, SpriteAsset>;
 
 export type SpriteKey = keyof typeof sprites;

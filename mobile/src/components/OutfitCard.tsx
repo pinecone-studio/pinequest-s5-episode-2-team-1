@@ -32,7 +32,7 @@ export function OutfitCard({
           {def.name}
         </Text>
         <View style={styles.statusRow}>
-          {status.showCoin ? <Sprite id="icon_coin_12x12" /> : null}
+          {status.showHoney ? <Sprite id="btn_honey_12x12" /> : null}
           <Text style={[styles.status, { color: status.color }]} numberOfLines={1}>
             {status.text}
           </Text>
