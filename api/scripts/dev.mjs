@@ -15,12 +15,14 @@ if (!extra.includes('--ip')) args.push('--ip', '0.0.0.0');
 if (!extra.includes('--port')) args.push('--port', '8787');
 for (const f of envFiles) args.push('--env-file', f);
 
-const wrangler = join(apiDir, 'node_modules', '.bin', process.platform === 'win32' ? 'wrangler.cmd' : 'wrangler');
+// .bin/wrangler.cmd-г Windows-д shell-гүйгээр spawn хийж болохгүй (Node ≥ 20: EINVAL), shell-ээр бол зайтай замыг
+// задална. Тиймээс wrangler-ийн JS entry-г одоогийн node-оор шууд ажиллуулна: бүх үйлдлийн системд ижил.
+const wrangler = join(apiDir, 'node_modules', 'wrangler', 'bin', 'wrangler.js');
 if (!existsSync(wrangler)) {
   console.error('wrangler олдсонгүй: api/ дотор `npm install` хийнэ үү.');
   process.exit(1);
 }
-const child = spawn(wrangler, args, { cwd: apiDir, stdio: 'inherit' });
+const child = spawn(process.execPath, [wrangler, ...args], { cwd: apiDir, stdio: 'inherit' });
 child.on('error', (e) => {
   console.error(e.message);
   process.exit(1);
