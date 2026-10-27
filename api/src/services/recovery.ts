@@ -2,10 +2,12 @@
 // өөр асуултууд бодуулж, бүгдийг зөв хариулсны дараа л тухайн хичээлийн дараагийн даалгавар нээгдэнэ.
 import type { RecoveryAnswerResponse, RecoveryDto, Subject } from '../../../shared/types';
 import { GAME, type Tier } from '../config/game';
+import { mathRoadmapNodes } from '../config/mathRoadmap';
 import { TOPICS } from '../config/topics';
+import { lessonIndex } from '../domain/path';
 import { ApiError } from '../lib/errors';
 import { generate, levelOf, shouldGenerateTemplates, type Template, templateById, templatesFor } from '../templates';
-import { IN_RANGE, OWN_GRADE, parseLessonRef, rangeArgs, storeGenerated } from './pool';
+import { generateTemplateSet, IN_RANGE, OWN_GRADE, parseLessonRef, rangeArgs, storeGenerated } from './pool';
 
 interface Missed {
   id: number;
@@ -60,11 +62,11 @@ export async function recoveryStatements(db: D1Database, userId: number, taskId:
   // Admin-д, өнөөдрийн хичээлд (давтах дасгал) нөхөх давтлага үүсэхгүй.
   const task = await db
     .prepare(
-      `SELECT t.subject, t.lesson_ref, t.stage, u.grade FROM tasks t JOIN users u ON u.id = t.user_id
+      `SELECT t.subject, t.lesson_ref, t.path_lessons, t.node, t.stage, u.grade FROM tasks t JOIN users u ON u.id = t.user_id
        WHERE t.id = ? AND t.user_id = ? AND u.is_admin = 0 AND t.kind = 'path'`,
     )
     .bind(taskId, userId)
-    .first<{ subject: Subject; lesson_ref: string | null; stage: number | null; grade: number }>();
+    .first<{ subject: Subject; lesson_ref: string | null; path_lessons: number | null; node: number | null; stage: number | null; grade: number }>();
   if (!task) return [];
   // Flag (-1) бол жинхэнэ алдаа биш.
   const { results: missed } = await db
@@ -82,13 +84,22 @@ export async function recoveryStatements(db: D1Database, userId: number, taskId:
   const group = mainGroup(missed);
   // Хамгийн олон алдсан хичээлийн тусгай загвараар шинэ бодлого үүсгэнэ. Ерөнхий загвар нь хадгалсан бодлого
   // хүрэлцэхгүй үед л нөөц болно.
-  const templates = lesson ? lessonTemplates(lesson, group[0].book_ref) : [];
+  const roadmap = task.subject === 'math' ? mathRoadmapNodes(task.grade) : [];
+  const mappedIndex = task.path_lessons === roadmap.length && task.node !== null ? lessonIndex(roadmap.length, task.node) : null;
+  const mapped = mappedIndex === null ? null : (roadmap[mappedIndex] ?? null);
+  const mappedTemplates = mapped?.templateIds.flatMap((id) => {
+    const template = templateById(id);
+    return template ? [template] : [];
+  }) ?? [];
+  const templates = mapped ? mappedTemplates : lesson ? lessonTemplates(lesson, group[0].book_ref) : [];
+  const basic = task.stage === 1;
   const same = lesson ? IN_RANGE : SAME_LESSON;
   const { results } = await db
     .prepare(
       `SELECT q.id FROM questions q
        LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
        WHERE q.tier = ? AND q.subject = ? AND ${same} AND q.flagged = 0 AND ${OWN_GRADE}
+         ${basic ? "AND q.source NOT LIKE 'template:%'" : ''}
          AND q.id NOT IN (SELECT question_id FROM task_questions WHERE task_id = ?)
        ORDER BY ${SAME_LESSON} DESC, (s.seen_at IS NOT NULL), s.seen_at, RANDOM() LIMIT ?`,
     )
@@ -103,9 +114,10 @@ export async function recoveryStatements(db: D1Database, userId: number, taskId:
       GAME.RECOVERY_PRACTICE,
     )
     .all<{ id: number }>();
-  const made = shouldGenerateTemplates(templates, results.length, GAME.RECOVERY_PRACTICE)
-    ? await storeGenerated(db, group[0].tier, task.subject, task.grade, generate(templates, GAME.RECOVERY_PRACTICE, levelOf(task.stage)), now)
+  const made = shouldGenerateTemplates(templates, results.length, GAME.RECOVERY_PRACTICE, task.stage)
+    ? await generateTemplateSet(db, group[0].tier, task.subject, task.grade, templates, GAME.RECOVERY_PRACTICE, levelOf(task.stage), now)
     : [];
+  // Загвараар үүссэнийг түрүүлж, дутвал хадгалсан бодлогоор нөхнө (Дунд, Ахисан шат ч).
   const picked = [...made, ...results.map((r) => r.id).filter((id) => !made.includes(id))];
   const ids = practiceIds(picked, (lesson ? missed : group).map((q) => q.id));
 

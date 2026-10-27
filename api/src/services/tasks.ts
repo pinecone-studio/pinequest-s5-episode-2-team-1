@@ -1,8 +1,9 @@
 import type { AnswerResponse, FlagResponse, Me, TaskDto, TaskResult } from '../../../shared/types';
 import { GAME, type Subject, type Tier } from '../config/game';
+import { mathRoadmapNodes } from '../config/mathRoadmap';
 import { bossBlock, bossWon } from '../domain/boss';
 import { levelFromXp } from '../domain/level';
-import { currentNode, gateNodes, gateOf, nodesAfter, pathLessons, taskPathLessons } from '../domain/path';
+import { currentNode, gateNodes, gateOf, lessonIndex, nodesAfter, pathLessons, taskPathLessons } from '../domain/path';
 import { ADVANCE_STAGE, GATE_BONUS, GATE_STAGE, STAGES, stageDone } from '../../../shared/path';
 import { taskReward } from '../domain/rewards';
 import { shieldBlock } from '../domain/shield';
@@ -13,8 +14,18 @@ import { isConstraintError, newTx } from '../lib/db';
 import { ApiError } from '../lib/errors';
 import type { PageRange } from './grounding';
 import { bookLessons, lessonPages } from './lessons';
-import { generate, levelOf, shouldGenerateTemplates, templatesFor } from '../templates';
-import { LESSON_COUNT_SQL, lessonRef, maybeRefill, pickQuestions, rangeArgs, refillLesson, refillPool, storeGenerated } from './pool';
+import { levelOf, shouldGenerateTemplates, templateById, templateRange, templatesFor } from '../templates';
+import {
+  CURATED_LESSON_COUNT_SQL,
+  generateTemplateSet,
+  LESSON_COUNT_SQL,
+  lessonRef,
+  maybeRefill,
+  pickQuestions,
+  rangeArgs,
+  refillLesson,
+  refillPool,
+} from './pool';
 import { hasPendingRecovery, recoveryCertain, recoveryStatements } from './recovery';
 import { spendLife } from '../domain/lives';
 import { countTasksToday, getUserRow, livesArgs, loadMe, loadSubjectPaths, requireLife, streakStateOf, syncStreak } from './users';
@@ -92,9 +103,10 @@ export async function startTask(
     throw new ApiError(409, 'RECOVERY_REQUIRED', 'Эхлээд давтлагаа дуусгаарай');
   }
   const path = (await loadSubjectPaths(db, userId))[subject];
-  // Замын урт = номын хичээлийн тоо (+ boss): зангилаа бүр нэг хичээл.
-  const book = await bookLessons(env, subject, user.grade).catch(() => null);
-  const pathLen = pathLessons(book?.lessons.length ?? 0);
+  // Математик 6, 7 нь анги тус бүрийн тогтмол roadmap; бусад нь номын хичээл бүр нэг зангилаа.
+  const roadmap = subject === 'math' ? mathRoadmapNodes(user.grade) : [];
+  const book = roadmap.length > 0 ? null : await bookLessons(env, subject, user.grade).catch(() => null);
+  const pathLen = roadmap.length || pathLessons(book?.lessons.length ?? 0);
   if (boss !== undefined && !admin) {
     // Boss хаалт хичээл бүрийн сурах замаар: математикийн boss-ыг ялсан нь физикийн бүлгийг нээхгүй.
     const block = bossBlock(pathLen, path.level, path.bossesBeaten, boss);
@@ -129,28 +141,36 @@ export async function startTask(
   // Асуулт зөвхөн хэрэглэгчийн ангийн номынх (эсвэл номгүй), өөр ангийн номоос хэзээ ч биш. Апп-ын харуулж буй
   // зангилааны хичээлийн хуудсаас (харсан ч) түрүүлж; хараагүй нь дутвал тэр хуудсаар үүсгэнэ. Хичээлд асуулт огт
   // хүрэлцэхгүй үед л хүлээж (удвал хүлээхгүй), дутууг ангийн бусад асуултаар. Ном, хичээл байхгүй (boss) бол ангийн бүх асуултаас.
-  const lesson = book && lessonPages(book, node);
+  const mappedIndex = lessonIndex(pathLen, node);
+  const mapped = mappedIndex === null ? null : (roadmap[mappedIndex] ?? null);
+  const mappedTemplates = mapped?.templateIds.flatMap((id) => {
+    const template = templateById(id);
+    return template ? [template] : [];
+  }) ?? [];
+  const lesson = mappedTemplates[0] ? templateRange(mappedTemplates[0].ref) : book ? lessonPages(book, node) : null;
   const lessonRefill = (range: PageRange) =>
     refillLesson(env, tier, subject, { grade: user.grade, range }, userId).catch((e) => console.error('[pool] lesson refill failed', e));
-  // Тусгай загвар байвал шатны хүндээр шинэ хувилбар үүсгэнэ. Ерөнхий загвар хадгалсан асуулт хүрэлцэхгүй үед
-  // л нөөц болно; тулаан Дунд түвшинд.
-  const templates = lesson ? templatesFor(lesson) : [];
-  const preferStored = templates.length > 0 && templates.every((template) => template.preferStored);
+  // Суурь шат curated DB асуултаас; Дунд, Ахисан шат тухайн түвшний template-ээс. Суурийн асуулт дутвал
+  // template нөөц болно. Шатгүй урсгалд ерөнхий template хадгалсан асуулт хүрэлцэхгүй үед л ашиглагдана.
+  const templates = mapped ? mappedTemplates : lesson ? templatesFor(lesson) : [];
+  const basic = stageNo === 1;
+  const preferStored = stageNo === null && templates.length > 0 && templates.every((template) => template.preferStored);
+  const storedFirst = basic || preferStored;
   const storedBefore =
-    lesson && preferStored
+    lesson && storedFirst
       ? ((
           await db
-            .prepare(LESSON_COUNT_SQL)
+            .prepare(basic ? CURATED_LESSON_COUNT_SQL : LESSON_COUNT_SQL)
             .bind(tier, subject, ...rangeArgs(lesson))
             .first<{ n: number }>()
         )?.n ?? 0)
       : 0;
   // Шатны хүнд (1 Суурь … 3 Ахисан): загвар тэр хүндээр үүсгэж, хадгалсан бодлогоос тэр хүндийг түрүүлж сонгоно.
   const level = levelOf(stageNo ?? (boss === undefined ? null : (GATE_STAGE[boss] ?? null)));
-  const made = shouldGenerateTemplates(templates, storedBefore, GAME.QUESTIONS_PER_TASK)
-    ? await storeGenerated(db, tier, subject, user.grade, generate(templates, GAME.QUESTIONS_PER_TASK, level), now)
+  const made = shouldGenerateTemplates(templates, storedBefore, GAME.QUESTIONS_PER_TASK, stageNo)
+    ? await generateTemplateSet(db, tier, subject, user.grade, templates, GAME.QUESTIONS_PER_TASK, level, now)
     : [];
-  if (lesson && (preferStored ? storedBefore < GAME.QUESTIONS_PER_TASK : made.length < GAME.QUESTIONS_PER_TASK)) {
+  if (lesson && (storedFirst ? storedBefore < GAME.QUESTIONS_PER_TASK : made.length < GAME.QUESTIONS_PER_TASK)) {
     const refill = lessonRefill(lesson);
     ctx.waitUntil(refill);
     // Хичээлд нэг даалгаварт хүрэлцэх асуулт байвал (хүүхэд харсан ч) хүлээхгүй: тэднийг давтана, шинэ нь background-д.
@@ -163,10 +183,12 @@ export async function startTask(
     }
   }
 
+  // Загвар хүрэлцээгүй бол (Дунд, Ахисан шат ч) хадгалсан бодлогоос шатны хүндээр нөхнө; Суурь шат загвараас
+  // үүссэн мөрийг сонгохгүй.
   const picked =
     made.length >= GAME.QUESTIONS_PER_TASK
       ? made.map((id) => ({ id }))
-      : await pickQuestions(db, userId, tier, subject, lesson, GAME.QUESTIONS_PER_TASK, level);
+      : await pickQuestions(db, userId, tier, subject, lesson, GAME.QUESTIONS_PER_TASK, level, basic);
   if (picked.length < GAME.QUESTIONS_PER_TASK) {
     ctx.waitUntil(refillPool(env, tier, subject, { grade: user.grade }));
     throw new ApiError(503, 'NO_QUESTIONS', 'Асуулт хүрэлцэхгүй байна');
@@ -443,7 +465,7 @@ export async function completeTask(
   };
 }
 
-/** Streak хамгаалалт: 50 оноо, гартаа нэгээс илүүгүй, 7 хоногт нэг. */
+/** Streak хамгаалалт: 50 зөгийн бал, гартаа нэгээс илүүгүй, 7 хоногт нэг. */
 export async function buyShield(db: D1Database, userId: number, now = Date.now()): Promise<Me> {
   const today = ubDay(now);
   const user = await syncStreak(db, await getUserRow(db, userId), today);
@@ -469,7 +491,7 @@ export async function buyShield(db: D1Database, userId: number, now = Date.now()
     ]);
     if (!res[0].meta.changes) throw new ApiError(409, 'SHIELD_HELD', 'Хамгаалалт авах боломжгүй');
   } catch (e) {
-    if (isConstraintError(e, 'CHECK')) throw new ApiError(409, 'INSUFFICIENT_POINTS', 'Оноо хүрэлцэхгүй');
+    if (isConstraintError(e, 'CHECK')) throw new ApiError(409, 'INSUFFICIENT_POINTS', 'Зөгийн бал хүрэлцэхгүй');
     throw e;
   }
   return loadMe(db, userId, now);
