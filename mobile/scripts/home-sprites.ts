@@ -33,6 +33,9 @@ const ITEMS: Record<string, { loose: boolean; layer?: string; at?: [number, numb
   // Batman: маск, хувцас (нөмрөг, бүс, гутал) тусдаа давхарга; хувцас нь толгойг наалттай дагана
   batman_suit: { loose: false, layer: 'item_batman_suit', at: [-2, 52] },
   batman_mask: { loose: false, layer: 'item_batman_mask', at: [3, 0] },
+  ny_cap: { loose: true, layer: 'item_ny_cap', at: [7, -13] },
+  hiphop_chain: { loose: false, layer: 'item_hiphop_chain', at: [17, 57] },
+  mickey_mask: { loose: false, layer: 'item_mickey_mask', at: [-4, -8] },
   pirate_hat: { loose: false, layer: 'item_pirate_hat', at: [-6, -18] },
   cowboy_hat: { loose: false, layer: 'item_cowboy_hat', at: [-3, -18] },
   white_headscarf: { loose: false, layer: 'item_white_headscarf', at: [-6, -14] },
