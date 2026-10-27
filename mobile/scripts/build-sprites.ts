@@ -36,10 +36,17 @@ for (const n of ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch']) M[
 M.bear_headscarf_base_welcome = [3];
 for (const n of ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch']) M[`bear_boot_base_${n}`] = [2];
 M.bear_boot_base_welcome = [3];
+for (const n of ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch']) M[`bear_batman_base_${n}`] = [2];
+M.bear_batman_base_welcome = [3];
 // өмсөх item-ийн давхарга (home-sprites.ts): амьд баавгайн frame бүрийн толгойд тааруулж зурна
 for (const n of ['glasses', 'gradcap', 'headphones']) M[`item_${n}`] = [2];
 M.item_warrior_helmet = [2];
 M.outfit_warrior_helmet = [1];
+for (const n of ['batman_mask', 'batman_suit']) {
+  M[`item_${n}`] = [2];
+  M[`outfit_${n}`] = [1];
+}
+M.outfit_batman = [1];
 for (const id of ['pirate_hat', 'cowboy_hat', 'white_headscarf', 'brown_boots']) {
   M[`item_${id}`] = [2];
   M[`outfit_${id}`] = [1];
@@ -130,12 +137,22 @@ function resize(img: Img, w: number, h: number): Img {
   return out;
 }
 
+/** Batman хувцасны саарал/хар pixel-ийг (бараг өнгөгүй) үсний өнгөөр будахгүй: зөвхөн толгой, чих өнгөө солино */
+function keepSuit(base: Img, furred: Img): Img {
+  for (let i = 0; i < base.d.length; i += 4) {
+    const [r, g, b] = [base.d[i], base.d[i + 1], base.d[i + 2]];
+    const [hi, lo] = [Math.max(r, g, b), Math.min(r, g, b)];
+    if (base.d[i + 3] && hi < 130 && hi - lo <= 0.25 * (hi + lo)) furred.d.set(base.d.subarray(i, i + 4), i);
+  }
+  return furred;
+}
+
 const keep = new Set<string>();
 const entries: [string, number, number][] = [];
 for (const [name, variants] of Object.entries(M)) {
   const base = readPng(new URL(`${name}.png`, SRC));
   const furs = FUR_SPRITES.has(name) ? (['black', 'white'] as const) : [];
-  const images: [string, Img][] = [[name, base], ...furs.map((f): [string, Img] => [`${name}_${f}`, recolorFur(base, f)])];
+  const images: [string, Img][] = [[name, base], ...furs.map((f): [string, Img] => [`${name}_${f}`, name.startsWith('bear_batman_base_') ? keepSuit(base, recolorFur(base, f)) : recolorFur(base, f)])];
   for (const [id, img] of images) {
     for (const v of variants) {
       const [w, h] = typeof v === 'number' ? [img.w * v, img.h * v] : v;

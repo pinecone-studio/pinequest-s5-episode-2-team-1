@@ -36,7 +36,20 @@ const STAFF_OUTFITS = [
   { id: 'bronze_shield', name: 'Одтой бамбай', tile: '#EBCF9B', imgTop: -52, card: 'outfit_bronze_shield_82x140', item: 'bronze_shield' },
 ] as const;
 
-export type OutfitId = 'scarf' | 'glasses' | 'gradcap' | 'headphones' | 'warrior_helmet' | 'pirate_hat' | 'cowboy_hat' | 'white_headscarf' | 'brown_boots' | (typeof STAFF_OUTFITS)[number]['id'];
+export type OutfitId =
+  | 'scarf'
+  | 'glasses'
+  | 'gradcap'
+  | 'headphones'
+  | 'warrior_helmet'
+  | 'batman_mask'
+  | 'batman_suit'
+  | 'batman'
+  | 'pirate_hat'
+  | 'cowboy_hat'
+  | 'white_headscarf'
+  | 'brown_boots'
+  | (typeof STAFF_OUTFITS)[number]['id'];
 
 export interface OutfitDef {
   id: OutfitId;
@@ -47,6 +60,8 @@ export interface OutfitDef {
   card: SpriteKey;
   /** амьд баавгайн толгойд өмсгөх давхарга (scripts/home-sprites.ts); ороолт нь баавгайн хөдөлгөөнд шингэсэн */
   item?: ItemId;
+  /** хэд хэдэн item-ийг хамт өмсөх бол (доороос дээш дарааллаар); `item`-ийн оронд */
+  items?: ItemId[];
   /** backend-д бодитоор байдаг эд зүйл (items хүснэгт): худалдан авалт сервер дээр хийгдэнэ */
   serverItemId?: string;
 }
@@ -77,6 +92,9 @@ export const OUTFITS: OutfitDef[] = [
     card: 'outfit_headphones_82x140',
     serverItemId: 'acc_headphones',
   },
+  { id: 'batman_mask', name: 'Batman маск', tile: '#9FD0F2', imgTop: 0, card: 'outfit_batman_mask_82x140', item: 'batman_mask' },
+  { id: 'batman_suit', name: 'Batman хувцас', tile: '#9FD0F2', imgTop: -40, card: 'outfit_batman_suit_82x140', item: 'batman_suit' },
+  { id: 'batman', name: 'Batman', tile: '#22106E', imgTop: -26, card: 'outfit_batman_82x140', items: ['batman_suit', 'batman_mask'] },
   ...STAFF_OUTFITS,
 ];
 
@@ -84,3 +102,5 @@ export const DEFAULT_OUTFIT_ID: OutfitId = 'scarf';
 
 export const bgById = (id: string): BgDef => BACKGROUNDS.find((b) => b.id === id) ?? BACKGROUNDS[0];
 export const outfitById = (id: string): OutfitDef => OUTFITS.find((o) => o.id === id) ?? OUTFITS[0];
+/** амьд баавгайд өмсгөх item-үүд */
+export const outfitItems = (o: OutfitDef): ItemId[] => o.items ?? (o.item ? [o.item] : []);

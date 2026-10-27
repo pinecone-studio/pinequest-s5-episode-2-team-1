@@ -26,6 +26,8 @@ const ITEM_SPRITES: Record<ItemId, SpriteKey> = {
   gradcap: 'item_gradcap_78x44',
   headphones: 'item_headphones_142x70',
   warrior_helmet: 'item_warrior_helmet_164x160',
+  batman_suit: 'item_batman_suit_148x148',
+  batman_mask: 'item_batman_mask_126x104',
   pirate_hat: 'item_pirate_hat_164x84',
   cowboy_hat: 'item_cowboy_hat_152x84',
   white_headscarf: 'item_white_headscarf_164x280',
@@ -48,6 +50,16 @@ const HELMET_BASES: Record<BearAnim, SpriteKey> = {
   sleep: 'bear_helmet_base_sleep_970x260',
   ouch: 'bear_helmet_base_ouch_1092x272',
   welcome: 'bear_helmet_base_welcome_1320x1260',
+};
+/** Batman хувцас биед (гар, хөл) frame бүрт өмсөгдсөн sheet (scripts/home-sprites.ts batmanBase) */
+const BATMAN_BASES: Record<BearAnim, SpriteKey> = {
+  thriving: 'bear_batman_base_thriving_940x280',
+  happy: 'bear_batman_base_happy_1260x260',
+  tired: 'bear_batman_base_tired_1092x260',
+  neglected: 'bear_batman_base_neglected_1092x260',
+  sleep: 'bear_batman_base_sleep_970x260',
+  ouch: 'bear_batman_base_ouch_1092x272',
+  welcome: 'bear_batman_base_welcome_1320x1260',
 };
 const HEADSCARF_BASES: Record<BearAnim, SpriteKey> = {
   thriving: 'bear_headscarf_base_thriving_940x280',
@@ -96,11 +108,19 @@ export function LiveBear({
     prev.current = head;
   }, [head]);
   const shift = meta.offset[0] * px + (meta.frameSize.w * px) / 2 - w / 2; // frame-ийн төв анхны sprite-ийн төвөөс
-  const sheet = worn.includes('warrior_helmet') ? HELMET_BASES[anim] : worn.includes('white_headscarf') ? HEADSCARF_BASES[anim] : worn.includes('brown_boots') ? BOOT_BASES[anim] : SHEETS[anim];
+  const sheet = worn.includes('warrior_helmet')
+    ? HELMET_BASES[anim]
+    : worn.includes('batman_suit')
+      ? BATMAN_BASES[anim]
+      : worn.includes('white_headscarf')
+        ? HEADSCARF_BASES[anim]
+        : worn.includes('brown_boots')
+          ? BOOT_BASES[anim]
+          : SHEETS[anim];
   return (
     <View style={{ marginTop: meta.offset[1] * px, transform: [{ translateX: shift }] }}>
       <SheetFrame id={sheet} frames={meta.frames.length} cols={meta.columns} frame={frame} label={label} />
-      {worn.map((id) => {
+      {worn.filter((id) => id !== 'batman_suit').map((id) => {
         const it = items[id];
         if ('fitted' in it) return (
           <View key={id} pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0 }}>
