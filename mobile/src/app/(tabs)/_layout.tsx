@@ -13,13 +13,15 @@ export default function TabsLayout() {
   const online = useOnline();
   // хуучин кэшэлсэн профайлд profileSet байхгүй (undefined): /me шинэчлэгдтэл чиглүүлэхгүй
   const needsProfile = me?.profileSet === false && online;
+  // анх орохдоо асуудаг асуултаа бөглөөгүй (хуучин кэшэд onboarded байхгүй = бөглөсөн гэж үзнэ)
+  const needsQuiz = me?.onboarded === false && online;
 
-  // Анх орсон хэрэглэгч эхлээд профайлаа үүсгээд (нэр, баавгай), дараа нь хичээлээ сонгоно (02 · Хичээл сонгох).
+  // Анх орсон хэрэглэгч эхлээд профайлаа үүсгээд (нэр, баавгай), дараа нь асуултад хариулж, хичээлээ сонгоно.
   // Профайлыг офлайн хадгалж чадахгүй тул сүлжээгүй үед алгасна.
   useEffect(() => {
     if (needsProfile) router.replace('/avatar');
-    else if (ready && subject === null) router.replace('/onboarding');
-  }, [needsProfile, ready, subject]);
+    else if (needsQuiz || (ready && subject === null)) router.replace('/onboarding');
+  }, [needsProfile, needsQuiz, ready, subject]);
 
   return (
     <Tabs

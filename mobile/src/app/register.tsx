@@ -5,18 +5,16 @@ import { errorText } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { Enter, Sprite } from '@/components/pixel';
-import { BackButton, Card, Chip, ErrorText, Muted, Screen, TextField } from '@/components/ui';
+import { BackButton, Card, ErrorText, Muted, Screen, TextField } from '@/components/ui';
 import { colors, fonts } from '@/constants/theme';
 import { type } from '@/constants/type';
 import { S } from '@/i18n/strings';
 
-const GRADES = [6, 7, 8, 9, 10];
 
 export default function RegisterScreen() {
   const { signUp } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [grade, setGrade] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -25,14 +23,10 @@ export default function RegisterScreen() {
       setError(S.auth.fillAll);
       return;
     }
-    if (!grade) {
-      setError(S.auth.pickGrade);
-      return;
-    }
     setBusy(true);
     setError('');
     try {
-      await signUp(username, password, grade);
+      await signUp(username, password);
     } catch (e) {
       setError(errorText(e));
       setBusy(false);
@@ -59,14 +53,6 @@ export default function RegisterScreen() {
         <Card>
           <TextField label={S.auth.username} hint={S.auth.usernameHint} value={username} onChangeText={setUsername} maxLength={20} />
           <TextField label={S.auth.password} hint={S.auth.passwordHint} value={password} onChangeText={setPassword} secureTextEntry />
-          <View style={{ gap: 8 }}>
-            <Text style={styles.label}>{S.auth.grade}</Text>
-            <View style={styles.chips}>
-              {GRADES.map((g) => (
-                <Chip key={g} label={S.auth.gradeChip(g)} selected={grade === g} onPress={() => setGrade(g)} />
-              ))}
-            </View>
-          </View>
           <ErrorText>{error}</ErrorText>
           <Button title={S.auth.register} onPress={submit} loading={busy} />
           <Muted center>{S.auth.privacy}</Muted>
@@ -97,8 +83,6 @@ const styles = StyleSheet.create({
     marginBottom: 40,
   },
   bubbleText: { ...type.h3 },
-  label: { fontFamily: fonts.bold, fontSize: 13, color: colors.ink },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   linkWrap: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
   link: { fontFamily: fonts.semibold, fontSize: 16, color: colors.indigo },
 });
