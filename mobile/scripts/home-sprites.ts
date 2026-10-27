@@ -25,7 +25,7 @@ const ITEMS_META = new URL('../src/lib/pixelBear/bear-items.json', import.meta.u
  */
 const STAFF_IDS = ['staff00', 'staff03', 'staff04', 'staff05', 'holly_staff', 'pestilence_staff', 'w_staff_256'] as const;
 const HELD_IDS = [...STAFF_IDS, 'black_sword', 'bronze_shield'] as const;
-const ITEMS: Record<string, { loose: boolean; layer?: string; at?: [number, number]; anchor?: 'hand' | 'feet' }> = {
+const ITEMS: Record<string, { loose: boolean; layer?: string; at?: [number, number]; anchor?: 'hand' | 'feet'; behind?: boolean }> = {
   glasses: { loose: false },
   gradcap: { loose: true },
   headphones: { loose: true },
@@ -40,9 +40,19 @@ const ITEMS: Record<string, { loose: boolean; layer?: string; at?: [number, numb
   cowboy_hat: { loose: false, layer: 'item_cowboy_hat', at: [-3, -18] },
   white_headscarf: { loose: false, layer: 'item_white_headscarf', at: [-6, -14] },
   brown_boots: { loose: false, layer: 'item_brown_boots', at: [-6, -14], anchor: 'feet' },
+  hard_hat: { loose: true, layer: 'item_hard_hat', at: [3, -19] },
+  snorkel: { loose: false, layer: 'item_snorkel', at: [11, -4] },
+  ribbon: { loose: false, layer: 'item_ribbon', at: [40, -4] },
+  mongol_hat: { loose: true, layer: 'item_mongol_hat', at: [11, -11] },
+  puss_hat: { loose: true, layer: 'item_puss_hat', at: [-6, -14] },
+  puss_belt: { loose: false, layer: 'item_puss_belt', at: [15, 82] },
+  // the cape hangs behind the bear: drawn only where the bear is not, and under it in the app
+  puss_cape: { loose: false, layer: 'item_puss_cape', at: [-6, 54], behind: true },
+  // deel layer is regenerated from deelBase on the idle bear
+  mongol_deel: { loose: false, layer: 'item_mongol_deel', at: [-6, -14] },
 };
 /** хэд хэдэн item-ийг хамт өмсөх хувцасны карт (доороос дээш дарааллаар) */
-const COMBOS: Record<string, string[]> = { batman: ['batman_suit', 'batman_mask'] };
+const COMBOS: Record<string, string[]> = { batman: ['batman_suit', 'batman_mask'], mongol: ['mongol_deel', 'mongol_hat'], puss: ['puss_cape', 'brown_boots', 'puss_belt', 'puss_hat'] };
 for (const id of STAFF_IDS) ITEMS[id] = { loose: false, layer: `item_${id}`, at: [-16, -54], anchor: 'hand' };
 ITEMS.black_sword = { loose: false, layer: 'item_black_sword', at: [-12, -54], anchor: 'hand' };
 ITEMS.bronze_shield = { loose: false, layer: 'item_bronze_shield', at: [-14, -19], anchor: 'hand' };
@@ -250,9 +260,9 @@ const items = Object.fromEntries(Object.keys(ITEMS).map((id) => [id, itemLayer(i
 // cannot drift due to separate runtime transforms, scaling or animation clocks.
 const GRIP = source('staff_grip'); // PixelLab edited closed fingers, pivot [8, 8]
 const HELD = { w: 64, h: 112, pivot: [32, 60] as const };
-function heldPatch(base: Img, hand: [number, number], id: string, angle = 0, closed = false): Img {
+function heldPatch(base: Img, hand: [number, number], id: string, angle = 0, closed = false, pawOnly = false): Img {
   const out = blank(HELD.w, HELD.h);
-  const item = items[id];
+  const item = pawOnly ? { at: [0, 0], img: blank(0, 0) } : items[id];
   const theta = angle * Math.PI / 180;
   const cos = Math.cos(theta), sin = Math.sin(theta);
   for (let y = 0; y < out.h; y++) for (let x = 0; x < out.w; x++) {
@@ -277,10 +287,10 @@ function heldPatch(base: Img, hand: [number, number], id: string, angle = 0, clo
   }
   return out;
 }
-function heldFrame(name: string, frame: number, base: Img, id: string): Img {
+function heldFrame(name: string, frame: number, base: Img, id: string, pawOnly = false): Img {
   const hand = handAt(base, (id === 'bronze_shield' ? SHIELD_HANDS : HANDS)[name][frame]);
   const angle = name === 'happy' ? Math.min(10, Math.max(0, Math.round((94 - hand[1]) / 3))) : 0;
-  return heldPatch(base, hand, id, angle, name === 'happy' && frame >= 3);
+  return heldPatch(base, hand, id, angle, name === 'happy' && frame >= 3, pawOnly);
 }
 function overlay(base: Img, layer: Img, ox: number, oy: number) {
   for (let y = 0; y < layer.h; y++) for (let x = 0; x < layer.w; x++) {
@@ -306,29 +316,60 @@ function footAt(img: Img, left: boolean): [number, number] {
   return [Math.round((min + max) / 2), bottom];
 }
 
-function fittedBootFrame(base: Img): Img {
+// Boots are the bear's own legs dressed in leather: in every frame the lower leg and foot keep their exact outline and
+// shading but take the boots' leather ramp, under a turned-down cuff with a red trim. So they move as the legs move.
+const BOOT_LEATHER = [[44, 22, 14], [84, 44, 28], [112, 62, 38], [140, 84, 52], [168, 110, 72]] as const;
+const BOOT_RED = [[196, 52, 38], [138, 32, 24]] as const;
+const BOOT = { height: 19, cuff: 6 } as const; // rows from the sole up; the cuff's rows from the boot top
+function bootPixels(base: Img): Img {
   const out = blank(base.w, base.h);
-  const boots = items.brown_boots.img;
-  const left = crop(boots, 9, 108, 33, 32);
-  const right = crop(boots, 42, 108, 35, 32);
-  const [lx, ly] = footAt(base, true), [rx, ry] = footAt(base, false);
-  overlay(out, left, lx - 19, ly - 31);
-  overlay(out, right, rx - 16, ry - 31);
-  return out;
-}
-
-function bootsBase(img: Img): Img {
-  const out = clone(img);
-  const boots = fittedBootFrame(img);
-  for (const left of [true, false]) {
-    const [cx, bottom] = footAt(img, left);
-    // Зөвхөн тавхайн доод хэсгийн ил гарсан үсийг далдална; түрийн дээд талд шулуун тайралт үүсгэхгүй.
-    for (let y = Math.max(0, bottom - 10); y <= bottom; y++) for (let x = Math.max(0, cx - 22); x <= Math.min(img.w - 1, cx + 22); x++) {
-      const p = at(out, x, y);
-      if (!boots.d[p + 3]) out.d.fill(0, p, p + 4);
+  const [l, r] = [footAt(base, true), footAt(base, false)];
+  const mid = Math.round((l[0] + r[0]) / 2);
+  const solid = (x: number, y: number) => x >= 0 && y >= 0 && x < base.w && y < base.h && base.d[at(base, x, y) + 3] > 128;
+  const lum = (i: number) => 0.3 * base.d[i] + 0.59 * base.d[i + 1] + 0.11 * base.d[i + 2];
+  for (const [[cx, bottom], x0, x1, outer] of [[l, 0, mid, -1], [r, mid, base.w, 1]] as const) {
+    const top = bottom - BOOT.height + 1;
+    for (let y = top; y <= bottom; y++) {
+      const k = y - top;
+      const cuff = k < BOOT.cuff;
+      let edgeX = -1;
+      for (let x = x0; x < x1; x++) {
+        if (!solid(x, y)) continue;
+        const i = at(base, x, y);
+        const rim = !solid(x - 1, y) || !solid(x + 1, y) || !solid(x, y + 1) || (k === 0);
+        let c: readonly number[];
+        if (cuff) c = k === 0 ? BOOT_LEATHER[0] : k === BOOT.cuff - 2 ? BOOT_RED[0] : k === BOOT.cuff - 1 ? BOOT_RED[1] : k === 1 ? BOOT_LEATHER[4] : (x - cx) % 5 === 0 ? BOOT_LEATHER[2] : BOOT_LEATHER[3];
+        else if (rim || y === bottom) c = BOOT_LEATHER[0];
+        else if (k === BOOT.cuff) c = BOOT_LEATHER[1]; // shadow under the cuff
+        else {
+          // the fur's shading, flattened: no toe pads show through, only a highlight across the top of the foot
+          const step = [60, 100, 140, 185].findIndex((t) => lum(i) < t);
+          const tone = Math.min(bottom - y < 6 ? 2 : 3, Math.max(1, step < 0 ? 3 : step));
+          c = BOOT_LEATHER[bottom - y === 7 && Math.abs(x - cx - 3 * outer) < 4 ? 4 : tone];
+          // slouchy wrinkles across the shaft, like the original boots
+          if ((k === BOOT.cuff + 2 && (x + y) % 4 < 2) || (k === BOOT.cuff + 4 && (x + y) % 5 === 0)) c = BOOT_LEATHER[1];
+        }
+        if (cuff && rim && k > 0 && k < BOOT.cuff - 2) c = BOOT_LEATHER[0];
+        out.d.set([...c, 255], at(out, x, y));
+        if (outer < 0 ? edgeX < 0 : true) edgeX = outer < 0 ? (edgeX < 0 ? x : edgeX) : x;
+      }
+      // the folded cuff stands one pixel proud of the leg on the outer side
+      if (cuff && edgeX >= 0) {
+        const x = edgeX + outer;
+        if (x >= 0 && x < base.w) out.d.set([...BOOT_LEATHER[0], 255], at(out, x, y));
+        if (k > 0) out.d.set([...(k === BOOT.cuff - 2 ? BOOT_RED[0] : k === BOOT.cuff - 1 ? BOOT_RED[1] : BOOT_LEATHER[3]), 255], at(out, edgeX, y));
+      }
     }
   }
   return out;
+}
+/** the boots as an overlay (fitted sheet): drawn over any base, helmet or headscarf included */
+function fittedBootFrame(base: Img): Img {
+  return bootPixels(base);
+}
+/** the base under the boots is the bear itself: the overlay covers its legs exactly */
+function bootsBase(img: Img): Img {
+  return clone(img);
 }
 
 /** Алчууртай үед ногоон ороолтын өнгийг энгийн баавгайн үс/гэдсээр нөхнө. */
@@ -410,10 +451,12 @@ const meta: Record<string, unknown> = {};
  * тавина. Хувцасны зургийн гарыг ашиглахгүй (баавгайн гартай давхцаж 4 гартай харагдана); нөмрөгийг баавгайн ард зурна.
  */
 const IDLE_BODY = (x: number, y: number) => x >= 0 && y >= 0 && x < REF.w && y < REF.h && REF.d[at(REF, x, y) + 3] > 0;
-const CAPE = [20, 21, 25, 255] as const;
+const CAPE = [30, 31, 37, 255] as const;
 /** хувцасны зургийн (item_batman_suit) дотор: сарьсан тэмдэг, бүс (мөр), голын багана, гутал эхлэх мөр */
 /** batman_bear зургийн костюмны өнгө (бараанаас), үсний гэрэлтэлтийн босго */
-const SUIT_RAMP = [[0, 0, 0], [8, 8, 11], [20, 21, 25], [34, 35, 40], [50, 52, 57]] as const;
+const SUIT_RAMP = [[10, 10, 13], [24, 25, 30], [40, 42, 48], [58, 60, 66], [78, 80, 87]] as const; // dark grey, not pitch black
+/** the suit starts this many rows below the item's top: the collar sits on the neck, not the chin */
+const NECK_DROP = 3;
 const SUIT_RAMP_AT = [90, 145, 195, 235]; // бараан тал руу: костюм илүү хар
 /** баавгайн ногоон ороолт, түүний алтан хээ/залаа (үс бор: r > g > b, цэнхэр нь их) */
 const isScarf = (d: Uint8Array | Uint8ClampedArray, i: number) =>
@@ -426,7 +469,7 @@ function batmanBase(img: Img, head: [number, number]): Img {
   const suitPx = (u: number, v: number) =>
     u >= 0 && v >= 0 && u < suit.img.w && v < suit.img.h && suit.img.d[at(suit.img, u, v) + 3] > 0 ? at(suit.img, u, v) : -1;
   const lum = (d: Uint8Array | Uint8ClampedArray, i: number) => 0.3 * d[i] + 0.59 * d[i + 1] + 0.11 * d[i + 2];
-  const inHead = (x: number, y: number) => x >= head[0] && x < head[0] + HEAD[2] - HEAD[0] && y >= head[1] && y < sy;
+  const inHead = (x: number, y: number) => x >= head[0] && x < head[0] + HEAD[2] - HEAD[0] && y >= head[1] && y < sy + NECK_DROP;
   for (let y = 0; y < img.h; y++)
     for (let x = 0; x < img.w; x++) {
       const i = at(img, x, y);
@@ -435,15 +478,18 @@ function batmanBase(img: Img, head: [number, number]): Img {
       if (img.d[i + 3] === 0) {
         // нөмрөг: хувцасны зургийн бараан, баавгайн дүрсээс гадуурх хэсэг; гараа өргөхөд үлдсэн зай нөмрөгийн өнгөөр
         const [rx, ry] = [x - head[0] + HEAD[0], y - head[1] + HEAD[1]];
-        if (s >= 0 && (IDLE_BODY(rx, ry) || lum(suit.img.d, s) < 50)) out.d.set(IDLE_BODY(rx, ry) ? CAPE : suit.img.d.subarray(s, s + 4), i);
+        if (s >= 0 && v >= NECK_DROP && (IDLE_BODY(rx, ry) || lum(suit.img.d, s) < 50)) out.d.set(IDLE_BODY(rx, ry) ? CAPE : suit.img.d.subarray(s, s + 4), i);
         continue;
       }
       if (inHead(x, y)) {
-        out.d.set(img.d.subarray(i, i + 4), i);
+        // the neck above the collar: the scarf there turns into the fur right above it
+        let j = i;
+        if (y >= sy) for (let yy = y; yy >= sy - 4 && isScarf(img.d, j); yy--) j = at(img, x, yy - 1);
+        out.d.set(img.d.subarray(isScarf(img.d, j) ? i : j, (isScarf(img.d, j) ? i : j) + 4), i);
         continue;
       }
       const detail = s >= 0 && u >= SUIT_DETAIL.cols[0] && u < SUIT_DETAIL.cols[1] && SUIT_DETAIL.rows.some(([r0, r1]) => v >= r0 && v < r1);
-      if (detail) out.d.set([...[0, 1, 2].map((k) => Math.round(suit.img.d[s + k] * 0.7)), suit.img.d[s + 3]], i); // тэмдэг, бүс ч бараан
+      if (detail) out.d.set([...[0, 1, 2].map((k) => Math.round(suit.img.d[s + k] * 0.85)), suit.img.d[s + 3]], i); // тэмдэг, бүс ч бараан
       else if (isScarf(img.d, i)) out.d.set([...SUIT_RAMP[1], img.d[i + 3]], i); // ороолт (ногоон, алтан хээ) харагдахгүй, хар захтай
       else {
         // зургийн костюмны өнгөнүүдээр (бараанаас цайвар): гар, хөл зурган дээрх шиг сүүдэртэй харагдана
@@ -452,6 +498,86 @@ function batmanBase(img: Img, head: [number, number]): Img {
         out.d.set([...SUIT_RAMP[Math.max(0, Math.min(SUIT_RAMP.length - 1, tone))], img.d[i + 3]], i);
       }
     }
+  return out;
+}
+
+/** the idle bear's body (REF rows/cols): collar rows, torso columns; and where its paws hang */
+const BODY = { collar: [66, 72], torso: [22, 61] } as const;
+const IDLE_HANDS: [number, number][] = [[68, 104], [14, 104]];
+
+/** Mongolian deel: navy silk with cloud motifs, gold lapel/cuffs/sash; the scarf, paws and feet stay the bear's own */
+const DEEL_BLUE = [[12, 16, 44], [22, 32, 84], [34, 50, 122], [50, 70, 156]] as const;
+const DEEL_GOLD = [[150, 104, 30], [206, 156, 48], [240, 200, 92]] as const;
+const DEEL = { sash: [95, 101], tails: [101, 119], hem: 129, flare: 4, skirt: [24, 59, 112], lapel: [[42, 71], [28, 85]], slit: 27 } as const;
+/** small cloud swirls (REF), drawn one shade lighter */
+const DEEL_CLOUDS: [number, number][] = [[30, 78], [50, 84], [26, 106], [48, 110], [36, 120], [54, 122], [12, 92], [68, 92]];
+const CLOUD = ['.##.', '#..#', '.#.#'];
+function deelBase(img: Img, head: [number, number], hands: [number, number][]): Img {
+  const out = blank(img.w, img.h);
+  const lum = (i: number) => 0.3 * img.d[i] + 0.59 * img.d[i + 1] + 0.11 * img.d[i + 2];
+  const neck = head[1] + BODY.collar[0] - HEAD[1];
+  const toRef = (x: number, y: number) => [x - head[0] + HEAD[0], y - head[1] + HEAD[1]];
+  const cloud = (rx: number, ry: number) => DEEL_CLOUDS.some(([cx, cy]) => CLOUD[ry - cy]?.[rx - cx] === '#');
+  const [[lx0, ly0], [lx1, ly1]] = DEEL.lapel;
+  const onLapel = (rx: number, ry: number) => ry >= ly0 && ry <= ly1 && Math.abs(rx - (lx0 + ((lx1 - lx0) * (ry - ly0)) / (ly1 - ly0))) < 1;
+  const sash = (rx: number, ry: number) =>
+    (rx >= BODY.torso[0] && rx < BODY.torso[1] && ry >= DEEL.sash[0] && ry < DEEL.sash[1]) ||
+    (ry >= DEEL.tails[0] && ((rx >= 27 && rx < 30 && ry < DEEL.tails[1]) || (rx >= 30 && rx < 33 && ry < DEEL.tails[1] - 4))); // two hanging tails
+  // the deel starts below the scarf: per column its top scarf row, elsewhere the scarf's top
+  const scarfTop: number[] = Array(img.w).fill(Infinity);
+  for (let y = neck - 2; y < img.h; y++) for (let x = 0; x < img.w; x++) if (isScarf(img.d, at(img, x, y))) scarfTop[x] = Math.min(scarfTop[x], y);
+  const gap = (rx: number, ry: number) => rx >= DEEL.skirt[0] && rx < DEEL.skirt[1] && ry >= DEEL.skirt[2] && ry < DEEL.hem;
+  const edge = (x: number, y: number) =>
+    [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => !img.d[at(img, x + dx, y + dy) + 3] && !gap(...(toRef(x + dx, y + dy) as [number, number])));
+  const topRow = Math.min(...scarfTop);
+  for (let y = 0; y < img.h; y++)
+    for (let x = 0; x < img.w; x++) {
+      const i = at(img, x, y);
+      const [rx, ry] = toRef(x, y);
+      if (!img.d[i + 3]) {
+        // the skirt closes the gap between the legs
+        if (gap(rx, ry)) out.d.set([...DEEL_BLUE[ry === DEEL.hem - 1 || rx === DEEL.skirt[0] || rx === DEEL.skirt[1] - 1 ? 0 : 2], 255], i);
+        continue;
+      }
+      const inHeadBox = x >= head[0] && x < head[0] + HEAD[2] - HEAD[0] && y < neck;
+      const d2 = Math.min(...hands.map(([hx, hy]) => (x - hx) ** 2 + (y - hy) ** 2));
+      if (inHeadBox || y < Math.min(scarfTop[x], topRow + 2) || d2 <= 20 || ry >= DEEL.hem || isScarf(img.d, i)) { out.d.set(img.d.subarray(i, i + 4), i); continue; }
+      const dark = lum(i) < 55;
+      const step = [55, 95, 140].findIndex((t) => lum(i) < t);
+      // the fur's belly and leg lines must not show through: flat cloth inside, outline only at the silhouette
+      const skirt = ry >= DEEL.sash[1] && rx >= DEEL.skirt[0] && rx < DEEL.skirt[1];
+      const shade = edge(x, y) ? 0 : skirt ? 2 : Math.max(1, Math.min(2, step < 0 ? 3 : step));
+      let c: readonly number[];
+      if (d2 <= 36) c = DEEL_GOLD[dark ? 0 : 2]; // cuff trim
+      else if (sash(rx, ry)) c = DEEL_GOLD[dark ? 0 : Math.min(2, shade)];
+      else if (onLapel(rx, ry) || (rx === DEEL.slit && ry >= DEEL.sash[1] && ry < DEEL.hem)) c = DEEL_GOLD[dark ? 0 : 1];
+      else c = DEEL_BLUE[Math.min(3, shade + (cloud(rx, ry) ? 1 : 0))];
+      out.d.set([...c, img.d[i + 3]], i);
+    }
+  // a loose deel: below the sash the skirt flares out past the body, widest at the hem
+  const isDeel = (x: number, y: number) => {
+    const j = at(out, x, y);
+    return out.d[j + 3] > 0 && [...DEEL_BLUE, ...DEEL_GOLD].some((c) => c[0] === out.d[j] && c[1] === out.d[j + 1] && c[2] === out.d[j + 2]);
+  };
+  const mid = Math.round((DEEL.skirt[0] + DEEL.skirt[1]) / 2);
+  for (let ry = DEEL.sash[1]; ry < DEEL.hem; ry++) {
+    const y = ry - HEAD[1] + head[1];
+    const toX = (rx: number) => rx - HEAD[0] + head[0];
+    if (y < 0 || y >= out.h || !isDeel(toX(mid), y)) continue;
+    const flare = Math.round((DEEL.flare * (ry - DEEL.sash[1] + 1)) / (DEEL.hem - DEEL.sash[1]));
+    const hemRow = ry === DEEL.hem - 1;
+    for (const [dir, side] of [[-1, BODY.torso[0]], [1, BODY.torso[1] - 1]]) {
+      const line = toX(side + dir * flare);
+      for (let x = toX(mid); dir < 0 ? x >= line : x <= line; x += dir) {
+        if (x < 0 || x >= out.w) break;
+        const j = at(out, x, y);
+        if (out.d[j + 3] && !isDeel(x, y)) continue; // a paw in front of the skirt
+        const old = out.d.subarray(j, j + 3);
+        if (out.d[j + 3] && !(old[0] === DEEL_BLUE[0][0] && old[1] === DEEL_BLUE[0][1] && old[2] === DEEL_BLUE[0][2])) continue;
+        out.d.set([...DEEL_BLUE[x === line || hemRow ? 0 : 2], 255], j);
+      }
+    }
+  }
   return out;
 }
 
@@ -512,6 +638,7 @@ function overlayItem(card: Img, id: string) {
       const alpha = layer.img.d[i + 3] / 255;
       if (!alpha) continue;
       const j = at(card, px, py);
+      if (ITEMS[id].behind && card.d[j + 3]) continue;
       for (let c = 0; c < 3; c++) card.d[j + c] = Math.round(layer.img.d[i + c] * alpha + card.d[j + c] * (1 - alpha));
       card.d[j + 3] = Math.max(card.d[j + 3], layer.img.d[i + 3]);
     }
@@ -522,6 +649,10 @@ if (preview < 0) {
   // Direct PixelLab overlays also produce the Shop card on the unchanged reference bear.
   for (const [id, def] of Object.entries(ITEMS)) {
     if (!def.layer) continue;
+    if (id === 'mongol_deel') {
+      writePng(new URL(`outfit_${id}.png`, SPRITES), deelBase(REF, [HEAD[0], HEAD[1]], IDLE_HANDS));
+      continue;
+    }
     const card = id === 'warrior_helmet' ? helmetBase(REF, [HEAD[0], HEAD[1]]) : id === 'white_headscarf' ? clone(PLAIN) : id === 'brown_boots' ? bootsBase(REF) : clone(REF);
     if (id === 'brown_boots') {
       overlay(card, fittedBootFrame(REF), 0, 0);
@@ -538,8 +669,10 @@ if (preview < 0) {
     writePng(new URL(`outfit_${id}.png`, SPRITES), card);
   }
   for (const [id, worn] of Object.entries(COMBOS)) {
-    const card = clone(REF);
-    for (const w of worn) overlayItem(card, w);
+    const card = worn.includes('mongol_deel') ? deelBase(REF, [HEAD[0], HEAD[1]], IDLE_HANDS) : worn.includes('brown_boots') ? bootsBase(REF) : clone(REF);
+    for (const w of worn)
+      if (w === 'brown_boots') overlay(card, fittedBootFrame(REF), 0, 0);
+      else if (w !== 'mongol_deel') overlayItem(card, w);
     writePng(new URL(`outfit_${id}.png`, SPRITES), card);
   }
   for (const [name, { frames }] of Object.entries(sheets)) writePng(new URL(`bear_home_${name}.png`, SPRITES), toSheet(frames, STATES[name].cols ?? frames.length));
@@ -548,11 +681,17 @@ if (preview < 0) {
     writePng(new URL(`bear_helmet_base_${name}.png`, SPRITES), toSheet(fitted, STATES[name].cols ?? frames.length));
     const suited = frames.map((f, i) => ({ ...f, img: batmanBase(f.img, heads[i]) }));
     writePng(new URL(`bear_batman_base_${name}.png`, SPRITES), toSheet(suited, STATES[name].cols ?? frames.length));
+    const deel = frames.map((f, i) => ({ ...f, img: deelBase(f.img, heads[i], [handAt(f.img, HANDS[name][i]), handAt(f.img, SHIELD_HANDS[name][i])]) }));
+    writePng(new URL(`bear_deel_base_${name}.png`, SPRITES), toSheet(deel, STATES[name].cols ?? frames.length));
     const scarfFree = frames.map((f, i) => ({ ...f, img: headscarfBase(f.img, heads[i]) }));
     writePng(new URL(`bear_headscarf_base_${name}.png`, SPRITES), toSheet(scarfFree, STATES[name].cols ?? frames.length));
     const shod = frames.map((f) => ({ ...f, img: bootsBase(f.img) }));
     writePng(new URL(`bear_boot_base_${name}.png`, SPRITES), toSheet(shod, STATES[name].cols ?? frames.length));
   }
+  // deel layer = deel pixels of deelBase on the idle bear (head and paws stay the bear's own)
+  const deelCard = deelBase(REF, [HEAD[0], HEAD[1]], IDLE_HANDS);
+  items.mongol_deel.img = blank(REF.w, REF.h);
+  for (let p = 0; p < REF.w * REF.h * 4; p += 4) if (!sameAt(deelCard, REF, p)) items.mongol_deel.img.d.set(deelCard.d.subarray(p, p + 4), p);
   for (const [id, { img }] of Object.entries(items)) writePng(new URL(`item_${id}.png`, SPRITES), img);
   const heldSheets: Record<string, Record<string, string>> = {};
   for (const id of HELD_IDS) {
@@ -566,6 +705,9 @@ if (preview < 0) {
       heldSheets[id][name] = `${stem}_${strip.w * scale}x${strip.h * scale}`;
     }
   }
+  // just the paw of every held frame: build-sprites recolours only these pixels for black/white fur, not the staff
+  for (const [name, { frames }] of Object.entries(sheets))
+    writePng(new URL(`held_paw_${name}.png`, SPRITES), toSheet(frames.map((f, i) => ({ ...f, img: heldFrame(name, i, f.img, 'staff00', true) })), STATES[name].cols ?? frames.length));
   const fittedSheets: Record<string, string> = {};
   for (const [name, { frames }] of Object.entries(sheets)) {
     const cols = STATES[name].cols ?? frames.length;
@@ -581,6 +723,7 @@ if (preview < 0) {
     at: a, loose: ITEMS[id].loose,
     ...(ITEMS[id].anchor === 'hand' ? { anchor: 'hand', held: { at: HELD.pivot.map(v => -v), sheets: heldSheets[id] } } : {}),
     ...(ITEMS[id].anchor === 'feet' ? { anchor: 'feet', fitted: { sheets: fittedSheets } } : {}),
+    ...(ITEMS[id].behind ? { behind: true } : {}),
   }]));
   writeFileSync(ITEMS_META, `${JSON.stringify(itemMeta, null, 2)}\n`);
   console.log(`bear_home: ${Object.entries(sheets).map(([n, { frames }]) => `${n} ${frames.length}`).join(', ')}`);

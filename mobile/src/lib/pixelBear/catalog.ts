@@ -52,6 +52,16 @@ export type OutfitId =
   | 'cowboy_hat'
   | 'white_headscarf'
   | 'brown_boots'
+  | 'hard_hat'
+  | 'snorkel'
+  | 'ribbon'
+  | 'mongol_hat'
+  | 'mongol_deel'
+  | 'mongol'
+  | 'puss_hat'
+  | 'puss_belt'
+  | 'puss_cape'
+  | 'puss'
   | (typeof STAFF_OUTFITS)[number]['id'];
 
 export interface OutfitDef {
@@ -88,6 +98,9 @@ export const OUTFITS: OutfitDef[] = [
   { id: 'ny_cap', name: 'NY малгай', tile: '#AEDDF3', imgTop: 0, card: 'outfit_ny_cap_82x140', item: 'ny_cap' },
   { id: 'hiphop_chain', name: 'Hip Hop гинж', tile: '#F7A97E', imgTop: -40, card: 'outfit_hiphop_chain_82x140', item: 'hiphop_chain' },
   { id: 'mickey_mask', name: 'Микки маск', tile: '#F2C6D8', imgTop: 0, card: 'outfit_mickey_mask_82x140', item: 'mickey_mask' },
+  { id: 'hard_hat', name: 'Барилгын малгай', tile: '#F9D97A', imgTop: 0, card: 'outfit_hard_hat_82x140', item: 'hard_hat' },
+  { id: 'snorkel', name: 'Шумбагчийн маск', tile: '#9FE3D6', imgTop: 0, card: 'outfit_snorkel_82x140', item: 'snorkel' },
+  { id: 'ribbon', name: 'Улаан тууз', tile: '#F7B6C2', imgTop: 0, card: 'outfit_ribbon_82x140', item: 'ribbon' },
   { id: 'gradcap', name: 'Төгсөгчийн малгай', tile: '#F3F66C', imgTop: 0, card: 'outfit_gradcap_82x140', item: 'gradcap' },
   {
     id: 'headphones',
@@ -100,6 +113,13 @@ export const OUTFITS: OutfitDef[] = [
   },
   { id: 'batman_mask', name: 'Batman маск', tile: '#9FD0F2', imgTop: 0, card: 'outfit_batman_mask_82x140', item: 'batman_mask' },
   { id: 'batman_suit', name: 'Batman хувцас', tile: '#9FD0F2', imgTop: -40, card: 'outfit_batman_suit_82x140', item: 'batman_suit' },
+  { id: 'mongol_hat', name: 'Монгол малгай', tile: '#D4F55E', imgTop: 0, card: 'outfit_mongol_hat_82x140', item: 'mongol_hat' },
+  { id: 'mongol_deel', name: 'Монгол дээл', tile: '#D4F55E', imgTop: -40, card: 'outfit_mongol_deel_82x140', item: 'mongol_deel' },
+  { id: 'mongol', name: 'Монгол хувцас', tile: '#9FD0F2', imgTop: -26, card: 'outfit_mongol_82x140', items: ['mongol_deel', 'mongol_hat'] },
+  { id: 'puss_hat', name: 'Муурын малгай', tile: '#F9D97A', imgTop: 0, card: 'outfit_puss_hat_82x140', item: 'puss_hat' },
+  { id: 'puss_belt', name: 'Муурын бүс', tile: '#DDBB8E', imgTop: -52, card: 'outfit_puss_belt_82x140', item: 'puss_belt' },
+  { id: 'puss_cape', name: 'Нөмрөг', tile: '#C9B8E8', imgTop: -40, card: 'outfit_puss_cape_82x140', item: 'puss_cape' },
+  { id: 'puss', name: 'Гуталтай муур', tile: '#F9D97A', imgTop: -26, card: 'outfit_puss_82x140', items: ['puss_cape', 'brown_boots', 'puss_belt', 'puss_hat'] },
   { id: 'batman', name: 'Batman', tile: '#22106E', imgTop: -26, card: 'outfit_batman_82x140', items: ['batman_suit', 'batman_mask'] },
   ...STAFF_OUTFITS,
 ];

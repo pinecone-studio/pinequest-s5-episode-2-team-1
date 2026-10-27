@@ -31,9 +31,9 @@ const CATEGORIES: { value: OutfitCategory; label: string }[] = [
   { value: 'staff', label: 'Таяг' },
 ];
 function categoryOf(id: OutfitId): OutfitCategory {
-  if (['glasses', 'mickey_mask', 'batman_mask'].includes(id)) return 'mask';
+  if (['glasses', 'mickey_mask', 'batman_mask', 'snorkel'].includes(id)) return 'mask';
   if (id === 'brown_boots') return 'boots';
-  if (['warrior_helmet', 'pirate_hat', 'cowboy_hat', 'white_headscarf', 'ny_cap', 'gradcap', 'headphones'].includes(id)) return 'hat';
+  if (['warrior_helmet', 'pirate_hat', 'cowboy_hat', 'white_headscarf', 'ny_cap', 'gradcap', 'headphones', 'hard_hat', 'mongol_hat', 'ribbon', 'puss_hat'].includes(id)) return 'hat';
   if (id.includes('staff') || id === 'black_sword' || id === 'bronze_shield') return 'staff';
   return 'clothes';
 }

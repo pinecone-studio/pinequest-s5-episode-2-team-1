@@ -38,15 +38,19 @@ for (const n of ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch']) M[
 M.bear_boot_base_welcome = [3];
 for (const n of ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch']) M[`bear_batman_base_${n}`] = [2];
 M.bear_batman_base_welcome = [3];
+for (const n of ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch']) M[`bear_deel_base_${n}`] = [2];
+M.bear_deel_base_welcome = [3];
 // өмсөх item-ийн давхарга (home-sprites.ts): амьд баавгайн frame бүрийн толгойд тааруулж зурна
 for (const n of ['glasses', 'gradcap', 'headphones']) M[`item_${n}`] = [2];
 M.item_warrior_helmet = [2];
 M.outfit_warrior_helmet = [1];
-for (const n of ['batman_mask', 'batman_suit', 'ny_cap', 'hiphop_chain', 'mickey_mask']) {
+for (const n of ['batman_mask', 'batman_suit', 'ny_cap', 'hiphop_chain', 'mickey_mask', 'hard_hat', 'snorkel', 'ribbon', 'mongol_hat', 'mongol_deel', 'puss_hat', 'puss_belt', 'puss_cape']) {
   M[`item_${n}`] = [2];
   M[`outfit_${n}`] = [1];
 }
 M.outfit_batman = [1];
+M.outfit_mongol = [1];
+M.outfit_puss = [1];
 for (const id of ['pirate_hat', 'cowboy_hat', 'white_headscarf', 'brown_boots']) {
   M[`item_${id}`] = [2];
   M[`outfit_${id}`] = [1];
@@ -128,7 +132,7 @@ M.btn_honey_jar = [[12, 12], [24, 24], [30, 30]];
 
 // баавгайтай sprite-ууд: сонгосон үсний өнгөөр (хар, цагаан) хувилбар `<нэр>_<өнгө>_<w>x<h>` үүснэ, components/pixel/Sprite
 // нь FurContext-оор сонгоно. Хөрөг (avatar_*) нь өнгө бүрээрээ тусдаа, item_* давхарга өнгөгүй.
-const FUR_SPRITES = new Set(Object.keys(M).filter((n) => /^(bear_|head_|outfit_|map_bear_small)/.test(n)));
+const FUR_SPRITES = new Set(Object.keys(M).filter((n) => /^(bear_|head_|outfit_|map_bear_small)/.test(n) || (n.startsWith('held_') && !n.startsWith('held_bronze_shield_'))));
 
 /** Nearest-neighbor: Pillow-ийн `resize(NEAREST)`-тэй яг ижил (pixel төв, давхардсан алхмаар нэмэгдэх координат). */
 function resize(img: Img, w: number, h: number): Img {
@@ -152,12 +156,48 @@ function keepSuit(base: Img, furred: Img): Img {
   return furred;
 }
 
+/** Deel navy/gold palette (scripts/home-sprites.ts DEEL_BLUE, DEEL_GOLD) keeps its colour in fur variants */
+const DEEL_COLORS = new Set(['12,16,44', '22,32,84', '34,50,122', '50,70,156', '150,104,30', '206,156,48', '240,200,92']);
+function keepDeel(base: Img, furred: Img): Img {
+  for (let i = 0; i < base.d.length; i += 4)
+    if (base.d[i + 3] && DEEL_COLORS.has(`${base.d[i]},${base.d[i + 1]},${base.d[i + 2]}`)) furred.d.set(base.d.subarray(i, i + 4), i);
+  return furred;
+}
+
+/** Only the bear changes fur: an outfit card's item (staff, hat, shield) keeps its colours wherever it differs from the plain bear */
+const REF = readPng(new URL('bear_idle_scarf.png', SRC));
+/** the plain bear's scarf (green, gold pattern): cards without the scarf show fur here, which must take the new fur colour */
+const scarfAt = (i: number) =>
+  REF.d[i + 3] > 0 && ((REF.d[i + 1] > REF.d[i] && REF.d[i + 1] > REF.d[i + 2]) || (REF.d[i] > 170 && REF.d[i + 1] > 140 && REF.d[i + 2] < 0.45 * REF.d[i + 1]));
+// with its dark outline and fringe: one pixel around the scarf
+const onScarf = (i: number) => [-1, 0, 1].some((dy) => [-1, 0, 1].some((dx) => scarfAt(i + (dy * REF.w + dx) * 4)));
+function keepItem(base: Img, furred: Img): Img {
+  if (base.w !== REF.w || base.h !== REF.h) return furred;
+  for (let i = 0; i < base.d.length; i += 4)
+    if (base.d[i + 3] && !onScarf(i) && [0, 1, 2, 3].some((k) => base.d[i + k] !== REF.d[i + k])) furred.d.set(base.d.subarray(i, i + 4), i);
+  return furred;
+}
+/** A held sheet recolours just its paw (scripts/home-sprites.ts held_paw_*), never the staff or sword */
+function keepHeld(name: string, base: Img, furred: Img): Img {
+  const paw = readPng(new URL(`held_paw_${name.slice(name.lastIndexOf('_') + 1)}.png`, SRC));
+  for (let i = 0; i < base.d.length; i += 4) if (!paw.d[i + 3]) furred.d.set(base.d.subarray(i, i + 4), i);
+  return furred;
+}
+function furred(name: string, base: Img, f: 'black' | 'white'): Img {
+  const img = recolorFur(base, f);
+  if (name.startsWith('bear_batman_base_')) return keepSuit(base, img);
+  if (/^(bear_deel_base_|outfit_mongol)/.test(name)) return keepDeel(base, img);
+  if (name.startsWith('held_')) return keepHeld(name, base, img);
+  if (name.startsWith('outfit_')) return keepItem(base, img);
+  return img;
+}
+
 const keep = new Set<string>();
 const entries: [string, number, number][] = [];
 for (const [name, variants] of Object.entries(M)) {
   const base = readPng(new URL(`${name}.png`, SRC));
   const furs = FUR_SPRITES.has(name) ? (['black', 'white'] as const) : [];
-  const images: [string, Img][] = [[name, base], ...furs.map((f): [string, Img] => [`${name}_${f}`, name.startsWith('bear_batman_base_') ? keepSuit(base, recolorFur(base, f)) : recolorFur(base, f)])];
+  const images: [string, Img][] = [[name, base], ...furs.map((f): [string, Img] => [`${name}_${f}`, furred(name, base, f)])];
   for (const [id, img] of images) {
     for (const v of variants) {
       const [w, h] = typeof v === 'number' ? [img.w * v, img.h * v] : v;

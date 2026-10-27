@@ -35,6 +35,14 @@ const ITEM_SPRITES: Record<ItemId, SpriteKey> = {
   cowboy_hat: 'item_cowboy_hat_152x84',
   white_headscarf: 'item_white_headscarf_164x280',
   brown_boots: 'item_brown_boots_164x280',
+  hard_hat: 'item_hard_hat_128x100',
+  snorkel: 'item_snorkel_96x128',
+  ribbon: 'item_ribbon_64x52',
+  mongol_hat: 'item_mongol_hat_98x60',
+  puss_hat: 'item_puss_hat_154x86',
+  puss_belt: 'item_puss_belt_80x26',
+  puss_cape: 'item_puss_cape_164x134',
+  mongol_deel: 'item_mongol_deel_164x280',
   staff00: 'item_staff00_64x192',
   staff03: 'item_staff03_64x192',
   staff04: 'item_staff04_64x192',
@@ -63,6 +71,16 @@ const BATMAN_BASES: Record<BearAnim, SpriteKey> = {
   sleep: 'bear_batman_base_sleep_970x260',
   ouch: 'bear_batman_base_ouch_1092x272',
   welcome: 'bear_batman_base_welcome_1320x1260',
+};
+/** Mongolian deel worn on the body per frame (scripts/home-sprites.ts deelBase) */
+const DEEL_BASES: Record<BearAnim, SpriteKey> = {
+  thriving: 'bear_deel_base_thriving_940x280',
+  happy: 'bear_deel_base_happy_1260x260',
+  tired: 'bear_deel_base_tired_1092x260',
+  neglected: 'bear_deel_base_neglected_1092x260',
+  sleep: 'bear_deel_base_sleep_970x260',
+  ouch: 'bear_deel_base_ouch_1092x272',
+  welcome: 'bear_deel_base_welcome_1320x1260',
 };
 const HEADSCARF_BASES: Record<BearAnim, SpriteKey> = {
   thriving: 'bear_headscarf_base_thriving_940x280',
@@ -115,15 +133,29 @@ export function LiveBear({
     ? HELMET_BASES[anim]
     : worn.includes('batman_suit')
       ? BATMAN_BASES[anim]
-      : worn.includes('white_headscarf')
-        ? HEADSCARF_BASES[anim]
-        : worn.includes('brown_boots')
-          ? BOOT_BASES[anim]
-          : SHEETS[anim];
+        : worn.includes('mongol_deel')
+          ? DEEL_BASES[anim]
+          : worn.includes('white_headscarf')
+            ? HEADSCARF_BASES[anim]
+            : worn.includes('brown_boots')
+              ? BOOT_BASES[anim]
+              : SHEETS[anim];
+  /** an item pinned to the head (loose ones follow it with a frame of lag) */
+  const pinned = (id: ItemId) => {
+    const it = items[id];
+    const [x, y] = it.loose ? [0, 1].map((k) => Math.round((head[k] + prev.current[k]) / 2)) : head;
+    return (
+      <View key={id} pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0 }}>
+        <Sprite id={ITEM_SPRITES[id]} style={{ position: 'absolute', left: (x + it.at[0]) * px, top: (y + it.at[1]) * px }} />
+      </View>
+    );
+  };
   return (
     <View style={{ marginTop: meta.offset[1] * px, transform: [{ translateX: shift }] }}>
+      {/* a cape hangs behind the bear */}
+      {worn.filter((id) => 'behind' in items[id]).map(pinned)}
       <SheetFrame id={sheet} frames={meta.frames.length} cols={meta.columns} frame={frame} label={label} />
-      {worn.filter((id) => id !== 'batman_suit').map((id) => {
+      {worn.filter((id) => id !== 'batman_suit' && id !== 'mongol_deel' && !('behind' in items[id])).map((id) => {
         const it = items[id];
         if ('fitted' in it) return (
           <View key={id} pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0 }}>
@@ -139,12 +171,7 @@ export function LiveBear({
             </View>
           );
         }
-        const [x, y] = it.loose ? [0, 1].map((k) => Math.round((head[k] + prev.current[k]) / 2)) : head;
-        return (
-          <View key={id} pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0 }}>
-            <Sprite id={ITEM_SPRITES[id]} style={{ position: 'absolute', left: (x + it.at[0]) * px, top: (y + it.at[1]) * px }} />
-          </View>
-        );
+        return pinned(id);
       })}
     </View>
   );
