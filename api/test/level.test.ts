@@ -27,12 +27,14 @@ describe('анги → түвшин', () => {
     [8, 2],
     [9, 2],
     [10, 3],
+    [11, 3],
+    [12, 3],
   ])('%i-р анги → түвшин %i', (grade, tier) => {
     expect(tierForGrade(grade)).toBe(tier);
   });
 
-  it('6–10-аас гадуур бол null', () => {
+  it('6–12-оос гадуур бол null', () => {
     expect(tierForGrade(5)).toBeNull();
-    expect(tierForGrade(11)).toBeNull();
+    expect(tierForGrade(13)).toBeNull();
   });
 });

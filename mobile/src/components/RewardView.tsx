@@ -1,3 +1,4 @@
+import { GATE_ITEM } from '@shared/loot';
 import { UNIT_GATE } from '@shared/path';
 import type { TaskResult } from '@shared/types';
 import { router } from 'expo-router';
@@ -9,6 +10,7 @@ import { CountUp, Enter, Motion, Pop, Rising, Sprite } from '@/components/pixel'
 import { colors, fonts, radius } from '@/constants/theme';
 import { S } from '@/i18n/strings';
 import type { SpriteKey } from '@/sprites';
+import { LOOT_ICON } from '@/lib/items';
 import { goBack } from '@/lib/nav';
 import { BOSSES } from '@/lib/pixelBear/path';
 import { useOnline } from '@/lib/online';
@@ -38,6 +40,7 @@ export function RewardView({ result, onAgain, onRecovery }: { result: TaskResult
   const online = useOnline();
   const leveledUp = result.levelAfter > result.levelBefore;
   const happy = result.correctCount >= 2;
+  const gateItem = result.gateBeaten && result.gate !== null ? GATE_ITEM[result.gate] : undefined;
 
   return (
     <View style={styles.root}>
@@ -61,6 +64,13 @@ export function RewardView({ result, onAgain, onRecovery }: { result: TaskResult
         </View>
 
         <Text style={styles.recoveryNote}>{pathNote(result)}</Text>
+
+        {gateItem ? (
+          <Enter index={3} style={styles.lemon}>
+            <Sprite id={LOOT_ICON[gateItem]} />
+            <Text style={[styles.lemonTitle, { flex: 1 }]}>{S.reward.itemReceived(S.items[gateItem].name)}</Text>
+          </Enter>
+        ) : null}
 
         {leveledUp || result.shieldUsed ? (
           <Enter index={3} style={styles.lemon}>

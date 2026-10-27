@@ -349,6 +349,9 @@ export const S = {
     soldier: (name: string) => `Цэрэг · ${name}`,
     soldierTag: 'ЦЭРЭГ',
     soldierFight: 'Цэрэгтэй тулаан',
+    helper: (name: string) => `Туслах · ${name}`,
+    helperTag: 'ТУСЛАХ',
+    helperFight: 'Туслахтай тулаан',
     chest: 'Нууц хайрцаг',
     chestReady: 'Нууц хайрцаг: нээх боломжтой',
     chestLocked: 'Нууц хайрцаг: хичээлээ давбал нээгдэнэ',
@@ -435,6 +438,7 @@ export const S = {
     stageTop: 'Ахисан шатыг давлаа! ★★★',
     reviewDone: 'Өнөөдрийн хичээлээ давтлаа!',
     gateWon: (name: string) => `${name} ялагдаж, зам нээгдлээ!`,
+    itemReceived: (name: string) => `${name} авлаа!`,
     chapterWon: (name: string, n: number) => `${name} ялагдлаа! ${n}-р бүлгийг давлаа.`,
     gateLost: (needed: number) => `${needed} зөв хариулбал ялна. Дахиад оролдоорой!`,
     stageStay: (n: number) => `${n}-ээс доошгүй зөв хариулбал дараагийн шат нээгдэнэ.`,
@@ -569,6 +573,7 @@ export const S = {
   items: {
     amber: { name: 'Хувын болор', desc: 'Тулаанд нэг асуултын 2 буруу хариултыг арилгана.' },
     honey: { name: 'Зөгийн балны сав', desc: 'Нэг зүрх (амь) нөхнө.' },
+    bell: { name: 'Мөсөн хонх', desc: 'Бүх зүрхийг дүүргэнэ. Хар Цасан өвгөнийг ялсны шагнал.' },
     coins: { name: 'Алтан зоос', desc: 'Зөгийн балд чинь шууд нэмэгдлээ.' },
     section: 'Хэрэглэгдэхүүн',
     none: 'Нууц хайрцаг нээвэл энд хэрэглэгдэхүүн орж ирнэ.',
@@ -577,6 +582,7 @@ export const S = {
     useAmber: (n: number) => `Хувын болор ×${n}`,
     amberHint: 'Болор 2 буруу хариултыг арилгалаа',
     honeyUsed: 'Нэг зүрх нөхөгдлөө',
+    bellUsed: 'Бүх зүрх нөхөгдлөө',
   },
   bag: {
     title: 'Цүнх',

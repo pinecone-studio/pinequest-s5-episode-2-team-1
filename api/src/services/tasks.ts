@@ -1,3 +1,4 @@
+import { GATE_ITEM } from '../../../shared/loot';
 import type { AnswerResponse, FlagResponse, Me, TaskDto, TaskResult } from '../../../shared/types';
 import { GAME, type Subject, type Tier } from '../config/game';
 import { bossBlock, bossWon } from '../domain/boss';
@@ -342,6 +343,7 @@ export async function completeTask(
   // Тухайн хичээлийн дараагийн boss-ыг ялбал тэр хичээлийн дараагийн бүлэг нээгдэнэ (bosses_beaten = boss нөхцөл
   // давхар тоолохоос сэргийлнэ).
   const beatBoss = cc.boss != null && cc.boss === path.bossesBeaten && bossWon(correctCount);
+  const gateItem = beatBoss && cc.boss != null ? GATE_ITEM[cc.boss] : undefined;
   // Хаалгыг анх давахад нэг удаагийн шагнал (давсан хаалгатай дахин тулалдах боломжгүй тул давхардахгүй)
   const reward = { ...base, points: base.points + (beatBoss && cc.boss != null ? (GATE_BONUS[cc.boss] ?? 0) : 0) };
   const nodes = path.level - 1;
@@ -358,7 +360,16 @@ export async function completeTask(
 
   const tx = newTx();
   const guard = 'EXISTS (SELECT 1 FROM tasks WHERE id = ? AND tx = ?)';
-  const results = await db.batch([
+  // Зангилаа ба boss: уншсан утгаараа шалгаж (зэрэг дууссан даалгавар давхар ахиулахгүй).
+  const progress = nodesNext !== nodes || beatBoss
+    ? db
+        .prepare(
+          `UPDATE subject_progress SET nodes = ?, bosses_beaten = ?
+           WHERE user_id = ? AND subject = ? AND nodes = ? AND bosses_beaten = ? AND ${guard}`,
+        )
+        .bind(nodesNext, path.bossesBeaten + (beatBoss ? 1 : 0), userId, cc.subject, nodes, path.bossesBeaten, taskId, tx)
+    : null;
+  const statements = [
     db
       .prepare(
         `UPDATE tasks SET status = 'completed', correct_count = ?, points_awarded = ?, xp_awarded = ?, multiplier = ?,
@@ -397,15 +408,16 @@ export async function completeTask(
          ON CONFLICT (user_id, subject) DO UPDATE SET xp = xp + excluded.xp`,
       )
       .bind(userId, cc.subject, reward.xp, taskId, tx),
-    // Зангилаа ба boss: уншсан утгаараа шалгаж (зэрэг дууссан даалгавар давхар ахиулахгүй).
-    ...(nodesNext !== nodes || beatBoss
+    ...(progress ? [progress] : []),
+    // Хаалгыг үнэхээр ахиулсан хүсэлтэд л шагнал: changes() нь яг өмнөх UPDATE-ийн үр дүн.
+    ...(gateItem
       ? [
           db
             .prepare(
-              `UPDATE subject_progress SET nodes = ?, bosses_beaten = ?
-               WHERE user_id = ? AND subject = ? AND nodes = ? AND bosses_beaten = ? AND ${guard}`,
+              `INSERT INTO inventory (user_id, item, qty) SELECT ?, ?, 1 WHERE changes() > 0 AND ${guard}
+               ON CONFLICT (user_id, item) DO UPDATE SET qty = qty + 1`,
             )
-            .bind(nodesNext, path.bossesBeaten + (beatBoss ? 1 : 0), userId, cc.subject, nodes, path.bossesBeaten, taskId, tx),
+            .bind(userId, gateItem, taskId, tx),
         ]
       : []),
     ...(stagePassed
@@ -419,7 +431,8 @@ export async function completeTask(
         ]
       : []),
     ...extra,
-  ]);
+  ];
+  const results = await db.batch(statements);
   if (!results[0].meta.changes) throw new ApiError(409, 'TASK_CLOSED', 'Даалгавар аль хэдийн дууссан');
 
   const me = await loadMe(db, userId, now);
@@ -435,7 +448,7 @@ export async function completeTask(
     levelAfter: me.level,
     nodeUp: me.paths[cc.subject].level > path.level,
     gate: cc.boss,
-    gateBeaten: beatBoss,
+    gateBeaten: Boolean(beatBoss && progress && results[statements.indexOf(progress)].meta.changes),
     stage: cc.stage,
     stagePassed,
     review,

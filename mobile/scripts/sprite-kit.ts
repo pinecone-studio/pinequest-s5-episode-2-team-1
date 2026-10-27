@@ -212,3 +212,59 @@ export function depixelize(img: Img, w: number, h: number, top = 0): Img {
     }
   return o;
 }
+
+/** цагаан дэвсгэрийг захаас нь үерлэж арилгана (дүрийн доторх цагаан гэрэл үлдэнэ) */
+export function cutout(img: Img): Img {
+  const out = { w: img.w, h: img.h, d: img.d.slice() };
+  const bg = (x: number, y: number) => {
+    const i = at(img, x, y);
+    return img.d[i + 3] < 128 || (img.d[i] > 228 && img.d[i + 1] > 228 && img.d[i + 2] > 228);
+  };
+  const seen = new Uint8Array(img.w * img.h);
+  const stack: number[] = [];
+  for (let x = 0; x < img.w; x++) stack.push(x, (img.h - 1) * img.w + x);
+  for (let y = 0; y < img.h; y++) stack.push(y * img.w, y * img.w + img.w - 1);
+  while (stack.length) {
+    const p = stack.pop() as number;
+    if (seen[p]) continue;
+    const [x, y] = [p % img.w, Math.floor(p / img.w)];
+    if (!bg(x, y)) continue;
+    seen[p] = 1;
+    out.d[p * 4 + 3] = 0;
+    if (x > 0) stack.push(p - 1);
+    if (x < img.w - 1) stack.push(p + 1);
+    if (y > 0) stack.push(p - img.w);
+    if (y < img.h - 1) stack.push(p + img.w);
+  }
+  return out;
+}
+
+/** Тунгалаг дэвсгэртэй дүрсийг `h` pixel өндөр болгоно: нүдний талаас бага нь тунгалаг, бараан тойм давуу. */
+export function shrink(img: Img, h: number, bounds?: [number, number, number, number]): Img {
+  // Нэг sheet-ийн бүх frame-д ижил bounds өгнө; бусад дүрсний бүдэг (alpha < 128) хүрээг тооцохгүй
+  const [x0, y0, x1, y1] = bounds ?? bbox([{ ...img, d: img.d.map((v, i) => (i % 4 === 3 && v < 128 ? 0 : v)) }]);
+  const src = crop(img, x0, y0, x1 - x0, y1 - y0);
+  const w = Math.round((src.w * h) / src.h);
+  const o = blank(w, h);
+  const [sx, sy] = [src.w / w, src.h / h];
+  for (let y = 0; y < h; y++)
+    for (let x = 0; x < w; x++) {
+      const sum = [0, 0, 0];
+      const dark = [0, 0, 0];
+      let [n, op, dk] = [0, 0, 0];
+      for (let yy = Math.floor(y * sy); yy < Math.floor((y + 1) * sy); yy++)
+        for (let xx = Math.floor(x * sx); xx < Math.floor((x + 1) * sx); xx++) {
+          n++;
+          const i = at(src, xx, yy);
+          if (src.d[i + 3] < 128) continue;
+          op++;
+          const isDark = src.d[i] + src.d[i + 1] + src.d[i + 2] < 150;
+          if (isDark) dk++;
+          for (let c = 0; c < 3; c++) (isDark ? dark : sum)[c] += src.d[i + c];
+        }
+      if (op < n / 2) continue;
+      const [s, k] = dk > n * 0.22 || op === dk ? [dark, dk] : [sum, op - dk];
+      put(o, x, y, [Math.round(s[0] / k), Math.round(s[1] / k), Math.round(s[2] / k)]);
+    }
+  return o;
+}

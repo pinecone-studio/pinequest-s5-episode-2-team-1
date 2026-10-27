@@ -33,6 +33,8 @@ export const THEMES = {
   halloween: { panel: '#2B1457', border: '#55318F', text: '#FFFFFF', muted: '#D2C3F2', icon: '#B7A4E4', banner: '#7C4DDB', ...accent },
   moonstone: { panel: '#10285C', border: '#2D539F', text: '#FFFFFF', muted: '#B9CCF3', icon: '#98B2E6', banner: '#2F6FE0', ...accent },
   // Нарны элсэн хаант улс: хүрэл самбар, элсэн бичвэр
+  // Мөнх цаст оргил: шөнийн хөх самбар, мөсөн цэнхэр баннер
+  eversnow: { panel: '#0F2546', border: '#2E5A8C', text: '#F4FBFF', muted: '#B8D6EE', icon: '#9CC3E4', banner: '#2C7FC4', ...accent },
   sunsands: { panel: '#5C2F12', border: '#9A5A22', text: '#FFF6E5', muted: '#F0D2A2', icon: '#E2BC80', banner: '#C06A17', ...accent },
 } as const satisfies Record<string, ChapterTheme>;
 

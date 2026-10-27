@@ -419,7 +419,7 @@ export function BossArena({
         : honey
         ? { id: SHATTER, frames: bear.honey.frames, cols: bear.honey.columns, pivot: bear.honey.pivot, ms: SHATTER_MS }
         : !strike.correct && boss.impact
-          ? { ...boss.impact, pivot: [0.5, 0.5], ms: 70 }
+          ? { ...boss.impact, pivot: boss.impact.pivot ?? [0.5, 0.5], ms: boss.impact.ms ?? 70 }
           : { id: melee ? ('fx_slash_144x48' as const) : strike.correct ? ('fx_spark_90x30' as const) : ('fx_spark_magic_90x30' as const), frames: 3, cols: 3, pivot: [0.5, 0.5], ms: 70 };
     const { width: fw, height: fh } = frameSize(fx.id, fx.frames, fx.cols);
     const pivot = { x: fw * fx.pivot[0], y: fh * fx.pivot[1] };
