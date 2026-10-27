@@ -15,6 +15,7 @@ import { setChapterTheme, themeOf } from '@/constants/chapterTheme';
 import { S, subjectNames } from '@/i18n/strings';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 import {
+  BOSSES,
   bossAhead,
   chapterAtY,
   currentNode,
@@ -222,7 +223,7 @@ export default function PathScreen() {
       >
         {/* хоосон газар дарахад түр карт хураагдана; зангилаа өөрийн дарилтыг авна */}
         <Pressable accessible={false} onPress={closeCard}>
-          <PathMap layout={layout} current={current} stages={path?.stages ?? {}} ring={ring} beaten={path?.bossesBeaten ?? 0} subject={subject} lessons={lessons} selected={sel} onNodePress={onNode} />
+          <PathMap layout={layout} current={current} stages={path?.stages ?? {}} ring={ring} beaten={path?.bossesBeaten ?? 0} subject={subject} lessons={lessons} selected={sel} onNodePress={onNode} chests={path?.chests ?? []} onChest={(i) => router.push(`/chest?subject=${subject}&node=${i}`)} />
         </Pressable>
 
         {sel !== null && selNode && selUnit && selStatus ? (
@@ -236,7 +237,9 @@ export default function PathScreen() {
               selStatus === 'lock' && !me.admin
                 ? S.path.locked
                 : selGate >= 0
-                  ? S.path.bossFight
+                  ? BOSSES[selGate].soldier
+                    ? S.path.soldierFight
+                    : S.path.bossFight
                   : `${S.path.lessonOf(sel - selUnit.start + 1, selUnit.boss - selUnit.start)} · ${S.path.stars(doneAt(sel), STAGES)}`
             }
             action={action}
@@ -261,7 +264,7 @@ export default function PathScreen() {
 }
 
 const styles = StyleSheet.create({
-  // газрын зургийн доод захын (цасан бүлэг) өнгө: сүүлийн popover-ын доорх зай газрын зурагтай нийлнэ
-  root: { flex: 1, backgroundColor: '#EEF3EF' },
+  // газрын зургийн доод захын (Нарны ордны хаалга) өнгө: сүүлийн popover-ын доорх зай газрын зурагтай нийлнэ
+  root: { flex: 1, backgroundColor: '#8A5424' },
   scrollContent: { alignItems: 'center' },
 });

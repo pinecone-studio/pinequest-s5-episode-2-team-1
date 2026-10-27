@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
+import { MapChests } from '@/components/MapChests';
 import { frameSize, Motion, SheetFrame, SheetLoop, Sprite } from '@/components/pixel';
 import { THEMES } from '@/constants/chapterTheme';
 import { colors, fonts } from '@/constants/theme';
@@ -84,6 +85,8 @@ export function PathMap({
   lessons,
   selected,
   onNodePress,
+  chests,
+  onChest,
 }: {
   /** хичээлийн тооноос хамаарсан зам (pathLayout) */
   layout: PathLayout;
@@ -100,6 +103,9 @@ export function PathMap({
   /** сонгосон зангилаа (түр карт нээлттэй үед) */
   selected: number | null;
   onNodePress: (i: number, status: NodeStatus) => void;
+  /** нээсэн нууц хайрцгийн зангилаанууд ба хайрцаг дарахад */
+  chests: readonly number[];
+  onChest: (node: number) => void;
 }) {
   const curTrail = trailIndex(layout, current);
   /** Хичээлийн зангилааны од = давсан шат (хаалга, түгжээтэй зангилаанд байхгүй) */
@@ -189,6 +195,7 @@ export function PathMap({
         {layout.units.map((u, k) => (
           <UnitProps key={k} unit={u} layout={layout} current={current} />
         ))}
+        <MapChests layout={layout} current={current} opened={chests} onOpen={onChest} />
         {layout.gates.map((_, g) => (
           <GateFigure key={g} g={g} layout={layout} beaten={g < beaten} />
         ))}
@@ -244,6 +251,7 @@ function MapBackground() {
               <Sprite id={c.bg} style={{ width, marginTop: -(c.cropTop ?? 0), marginLeft: shift }} />
             </View>
           ))}
+          {c.foot ? <Sprite id={c.foot} style={{ width }} /> : null}
           {c.extend === undefined ? null : (
             // `extend` мөрөөс доошхи хэсгийг л харуулна
             <View style={{ height: sprites[c.bg].height - c.extend, overflow: 'hidden' }}>
@@ -262,6 +270,8 @@ function UnitProps({ unit, layout, current }: { unit: PathUnit; layout: PathLayo
   const sapling = nodes[unit.sapling];
   const gift = nodes[unit.gift];
   const myst = nodes[unit.myst];
+  // нууц хайрцагтай бүлэгт бэлэг, хэцүү сорилын тэмдэг хэрэггүй
+  if (unit.chests.length) return null;
 
   return (
     <>
@@ -297,18 +307,20 @@ function GateFigure({ g, layout, beaten }: { g: number; layout: PathLayout; beat
   const bs = frameSize(b.map, b.frames, b.cols);
   // тулаанд дайснууд баруун тийш (баавгай руу) хардаг; газрын зураг дээр баруун гар замын баруун талд тул зам руу
   // (зүүн тийш) харуулахаар толин тусгална
-  const flip = b.role === 'right';
+  // 3-р бүлгийн цэрэг зангилааныхаа эсрэг захад (замыг халхлахгүй), зам руу харж зогсоно
+  const side = b.role ?? (b.soldier ? (n.x < MAP_W / 2 ? 'right' : 'left') : undefined);
+  const flip = side === 'right';
   // биеийн гол: PixelLab дайсны frame-д довтолгооны эффект нэг тал руу сунадаг
   const cx = golem ? (flip ? bs.width - golem.cx : golem.cx) : bs.width / 2;
   // зүүн гар газрын зургийн зүүн захад, баруун гар баруун захад; тэдний зангилаа голдоо ойр тул давхцахгүй
-  const x = boss || !b.role ? n.x : b.role === 'left' ? GUARD_EDGE : MAP_W - GUARD_EDGE;
+  const x = boss || !side ? n.x : side === 'left' ? GUARD_EDGE : MAP_W - GUARD_EDGE;
   const scale = boss ? BOSS_SCALE : b.role ? GUARD_SCALE[b.role] : 1;
   const half = ((golem ? golem.bw : bs.width) / 2) * scale;
   // шошго: boss-ынх голд, гарынх биеийн гадна зах руу тэгшилнэ (дэлгэцийн захаас гарахгүй)
   const tagBox =
-    boss || !b.role
+    boss || !side
       ? { left: cx - 60, right: bs.width - cx - 60 }
-      : b.role === 'left'
+      : side === 'left'
         ? { left: cx - half, right: bs.width - cx - 120, alignItems: 'flex-start' as const }
         : { left: cx - 120, right: bs.width - cx - half, alignItems: 'flex-end' as const };
   const feet = boss ? n.y + 4 : n.y + 10;
@@ -334,7 +346,7 @@ function GateFigure({ g, layout, beaten }: { g: number; layout: PathLayout; beat
   const tagTop = boss ? n.y + 38 - top : bs.height - (bs.height - head) * scale - 22;
   return (
     <View style={[styles.abs, { left: x - cx, top }]} pointerEvents="none">
-      {b.role ? (
+      {side ? (
         // хамгаалагчийн хөл доор ягаан анивчих цагираг: харанхуй дэвсгэр дээр ялгарна
         <Motion preset="ring" style={[styles.abs, { left: cx - 44, top: bs.height - 30 }]}>
           <Sprite id="map_ring_88x44" style={styles.guardRing} />
@@ -362,7 +374,7 @@ function GateFigure({ g, layout, beaten }: { g: number; layout: PathLayout; beat
           </View>
         ) : (
           <View style={[styles.bossTag, styles.guardTag]}>
-            <Text style={styles.bossTagText}>{S.path.guardTag(b.role === 'left')}</Text>
+            <Text style={styles.bossTagText}>{b.soldier ? S.path.soldierTag : S.path.guardTag(b.role === 'left')}</Text>
           </View>
         )}
       </View>

@@ -32,6 +32,8 @@ export const THEMES = {
   forest: { panel: '#123A2A', border: '#2F6A4E', text: '#F3FBF5', muted: '#B3D3BF', icon: '#9CC4AB', banner: '#1A7F55', ...accent },
   halloween: { panel: '#2B1457', border: '#55318F', text: '#FFFFFF', muted: '#D2C3F2', icon: '#B7A4E4', banner: '#7C4DDB', ...accent },
   moonstone: { panel: '#10285C', border: '#2D539F', text: '#FFFFFF', muted: '#B9CCF3', icon: '#98B2E6', banner: '#2F6FE0', ...accent },
+  // Нарны элсэн хаант улс: хүрэл самбар, элсэн бичвэр
+  sunsands: { panel: '#5C2F12', border: '#9A5A22', text: '#FFF6E5', muted: '#F0D2A2', icon: '#E2BC80', banner: '#C06A17', ...accent },
 } as const satisfies Record<string, ChapterTheme>;
 
 export type ThemeId = keyof typeof THEMES;

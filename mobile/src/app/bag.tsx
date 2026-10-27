@@ -1,5 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import { StyleSheet, Text, View } from 'react-native';
+import { BagItems } from '@/components/BagItems';
 import { BgSwatch } from '@/components/BgSwatch';
 import { OutfitCard } from '@/components/OutfitCard';
 import { Enter } from '@/components/pixel';
@@ -42,6 +43,11 @@ export default function BagScreen() {
 
       <Enter index={0}>
         <PreviewStage bg={bg} outfit={outfit} name={outfit.name} alt={S.shop.previewAlt(outfit.name, bg.name)} />
+      </Enter>
+
+      <Enter index={1} style={{ gap: 12 }}>
+        <SectionTitle>{S.items.section}</SectionTitle>
+        <BagItems />
       </Enter>
 
       <Enter index={1} style={{ gap: 12 }}>
