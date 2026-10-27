@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   type SharedValue,
@@ -22,6 +22,7 @@ import golems from '@/lib/pixelBear/golems.json';
 import { BOSS_FRAME, type Boss, HOVER } from '@/lib/pixelBear/path';
 import { SKILL_HIT, skillOf } from '@/lib/pixelBear/skills';
 import type { SpriteKey } from '@/sprites';
+import { useColumnWidth } from '@/hooks/useColumnWidth';
 
 // Баавгайн frame бүр өөрийн хугацаатай, tag-аар бүлэглэгдсэн (mobile/scripts/bear-sprites.ts → bear.json).
 type Tag = keyof typeof bear.tags;
@@ -155,7 +156,8 @@ export function BossArena({
   insetTop: number;
 }) {
   const reduce = useReducedMotion();
-  const width = useWindowDimensions().width;
+  // баавгайн байрлал, довтолгооны зай, сумны чиглэл баганын өргөнөөр (өргөн цонхонд баганаас гарахгүй)
+  const width = useColumnWidth();
   const won = hits >= needed;
   const lost = misses >= hearts;
   const size = bossSize(boss);
