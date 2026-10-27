@@ -26,8 +26,8 @@ interface SeedQuestion {
 }
 
 const read = (name: string) => JSON.parse(readFileSync(new URL(name, SEED), 'utf8')) as SeedQuestion[];
-/** Апп-ын ангиуд (api/src/config/game.ts-ийн GRADE_MIN..GRADE_MAX): бусад ангийн номын асуулт (жишээ нь math-12) апп-д гарахгүй. */
-const APP_GRADES = new Set([6, 7, 8, 9, 10]);
+/** Апп-ын ангиуд (api/src/config/game.ts-ийн GRADE_MIN..GRADE_MAX): бусад ангийн номын асуулт апп-д гарахгүй. */
+const APP_GRADES = new Set([6, 7, 8, 9, 10, 11, 12]);
 const seen = new Set<string>();
 const out: object[] = [];
 

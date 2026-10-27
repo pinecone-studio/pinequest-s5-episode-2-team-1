@@ -1,8 +1,10 @@
 // Нууц хайрцгийн шагнал (API ба апп нэг эх). Боломж, жин, тоо хэмжээг зөвхөн энд өөрчилнө.
 
 /** Цүнхэнд хадгалагдаж, ашиглахад зарцуулагдах хэрэглэгдэхүүн. */
-export const BAG_ITEMS = ['amber', 'honey'] as const;
+export const BAG_ITEMS = ['amber', 'honey', 'bell'] as const;
 export type BagItem = (typeof BAG_ITEMS)[number];
+/** Хар Цасан өвгөнийг (10-р хаалга) анх ялахад олгох хэрэглэгдэхүүн. */
+export const GATE_ITEM: Partial<Record<number, BagItem>> = { 10: 'bell' };
 /** Хайрцгаас гарах шагнал: цүнхний хэрэглэгдэхүүн эсвэл шууд оноо (coin). */
 export type LootKind = BagItem | 'coins';
 

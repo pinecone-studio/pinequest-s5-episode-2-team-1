@@ -9,7 +9,7 @@ import { Emoji, LevelBars, QuizOption } from './QuizOption';
 
 const HEARD_ICON: Record<HeardFrom, string> = { friends: '👫', teacher: '🧑‍🏫', family: '🏠', social: '📱', tiktok: '🎵', youtube: '▶️', other: '💬' };
 const REASON_ICON: Record<Reason, string> = { grades: '📈', exam: '📝', catchup: '🏃', fun: '🎮', compete: '⚔️', other: '💬' };
-export const GRADES = [6, 7, 8, 9, 10] as const;
+export const GRADES = [6, 7, 8, 9, 10, 11, 12] as const;
 const BENEFIT_ICON: SpriteKey[] = ['icon_star_36x36', 'hud_skull_34x30', 'icon_flame_36x36'];
 
 export function HeardStep({ value, onChange }: { value: HeardFrom | null; onChange: (v: HeardFrom) => void }) {

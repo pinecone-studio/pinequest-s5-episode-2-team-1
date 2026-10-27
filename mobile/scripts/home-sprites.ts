@@ -30,11 +30,19 @@ const ITEMS: Record<string, { loose: boolean; layer?: string; at?: [number, numb
   gradcap: { loose: true },
   headphones: { loose: true },
   warrior_helmet: { loose: false, layer: 'item_warrior_helmet', at: [-6, -14] },
+  // Batman: маск, хувцас (нөмрөг, бүс, гутал) тусдаа давхарга; хувцас нь толгойг наалттай дагана
+  batman_suit: { loose: false, layer: 'item_batman_suit', at: [-2, 52] },
+  batman_mask: { loose: false, layer: 'item_batman_mask', at: [3, 0] },
+  ny_cap: { loose: true, layer: 'item_ny_cap', at: [7, -13] },
+  hiphop_chain: { loose: false, layer: 'item_hiphop_chain', at: [17, 57] },
+  mickey_mask: { loose: false, layer: 'item_mickey_mask', at: [-4, -8] },
   pirate_hat: { loose: false, layer: 'item_pirate_hat', at: [-6, -18] },
   cowboy_hat: { loose: false, layer: 'item_cowboy_hat', at: [-3, -18] },
   white_headscarf: { loose: false, layer: 'item_white_headscarf', at: [-6, -14] },
   brown_boots: { loose: false, layer: 'item_brown_boots', at: [-6, -14], anchor: 'feet' },
 };
+/** хэд хэдэн item-ийг хамт өмсөх хувцасны карт (доороос дээш дарааллаар) */
+const COMBOS: Record<string, string[]> = { batman: ['batman_suit', 'batman_mask'] };
 for (const id of STAFF_IDS) ITEMS[id] = { loose: false, layer: `item_${id}`, at: [-16, -54], anchor: 'hand' };
 ITEMS.black_sword = { loose: false, layer: 'item_black_sword', at: [-12, -54], anchor: 'hand' };
 ITEMS.bronze_shield = { loose: false, layer: 'item_bronze_shield', at: [-14, -19], anchor: 'hand' };
@@ -396,6 +404,57 @@ function helmetBase(img: Img, head: [number, number]): Img {
   return out;
 }
 const meta: Record<string, unknown> = {};
+/**
+ * Batman хувцсыг frame бүрийн биед өмсгөнө: толгойноос (HEAD) доош баавгайн pixel бүрийг үсний гэрэлтэлтээр нь бараан
+ * костюм болгож (гар, хөл хаашаа ч хөдөлсөн хувцастайгаа), цээжний сарьсан тэмдэг, бүсийг хувцасны зургаас биен дээр нь
+ * тавина. Хувцасны зургийн гарыг ашиглахгүй (баавгайн гартай давхцаж 4 гартай харагдана); нөмрөгийг баавгайн ард зурна.
+ */
+const IDLE_BODY = (x: number, y: number) => x >= 0 && y >= 0 && x < REF.w && y < REF.h && REF.d[at(REF, x, y) + 3] > 0;
+const CAPE = [20, 21, 25, 255] as const;
+/** хувцасны зургийн (item_batman_suit) дотор: сарьсан тэмдэг, бүс (мөр), голын багана, гутал эхлэх мөр */
+/** batman_bear зургийн костюмны өнгө (бараанаас), үсний гэрэлтэлтийн босго */
+const SUIT_RAMP = [[0, 0, 0], [8, 8, 11], [20, 21, 25], [34, 35, 40], [50, 52, 57]] as const;
+const SUIT_RAMP_AT = [90, 145, 195, 235]; // бараан тал руу: костюм илүү хар
+/** баавгайн ногоон ороолт, түүний алтан хээ/залаа (үс бор: r > g > b, цэнхэр нь их) */
+const isScarf = (d: Uint8Array | Uint8ClampedArray, i: number) =>
+  (d[i + 1] > d[i] && d[i + 1] > d[i + 2]) || (d[i] > 170 && d[i + 1] > 140 && d[i + 2] < 0.45 * d[i + 1]);
+const SUIT_DETAIL = { rows: [[12, 29], [30, 39]], cols: [17, 57], boots: 58 } as const;
+function batmanBase(img: Img, head: [number, number]): Img {
+  const out = blank(img.w, img.h);
+  const suit = items.batman_suit;
+  const [sx, sy] = [head[0] + suit.at[0], head[1] + suit.at[1]];
+  const suitPx = (u: number, v: number) =>
+    u >= 0 && v >= 0 && u < suit.img.w && v < suit.img.h && suit.img.d[at(suit.img, u, v) + 3] > 0 ? at(suit.img, u, v) : -1;
+  const lum = (d: Uint8Array | Uint8ClampedArray, i: number) => 0.3 * d[i] + 0.59 * d[i + 1] + 0.11 * d[i + 2];
+  const inHead = (x: number, y: number) => x >= head[0] && x < head[0] + HEAD[2] - HEAD[0] && y >= head[1] && y < sy;
+  for (let y = 0; y < img.h; y++)
+    for (let x = 0; x < img.w; x++) {
+      const i = at(img, x, y);
+      const [u, v] = [x - sx, y - sy];
+      const s = suitPx(u, v);
+      if (img.d[i + 3] === 0) {
+        // нөмрөг: хувцасны зургийн бараан, баавгайн дүрсээс гадуурх хэсэг; гараа өргөхөд үлдсэн зай нөмрөгийн өнгөөр
+        const [rx, ry] = [x - head[0] + HEAD[0], y - head[1] + HEAD[1]];
+        if (s >= 0 && (IDLE_BODY(rx, ry) || lum(suit.img.d, s) < 50)) out.d.set(IDLE_BODY(rx, ry) ? CAPE : suit.img.d.subarray(s, s + 4), i);
+        continue;
+      }
+      if (inHead(x, y)) {
+        out.d.set(img.d.subarray(i, i + 4), i);
+        continue;
+      }
+      const detail = s >= 0 && u >= SUIT_DETAIL.cols[0] && u < SUIT_DETAIL.cols[1] && SUIT_DETAIL.rows.some(([r0, r1]) => v >= r0 && v < r1);
+      if (detail) out.d.set([...[0, 1, 2].map((k) => Math.round(suit.img.d[s + k] * 0.7)), suit.img.d[s + 3]], i); // тэмдэг, бүс ч бараан
+      else if (isScarf(img.d, i)) out.d.set([...SUIT_RAMP[1], img.d[i + 3]], i); // ороолт (ногоон, алтан хээ) харагдахгүй, хар захтай
+      else {
+        // зургийн костюмны өнгөнүүдээр (бараанаас цайвар): гар, хөл зурган дээрх шиг сүүдэртэй харагдана
+        const step = SUIT_RAMP_AT.findIndex((t) => lum(img.d, i) < t);
+        const tone = (step < 0 ? SUIT_RAMP.length : step) - (v >= SUIT_DETAIL.boots ? 1 : 0); // гутал нэг шат бараан
+        out.d.set([...SUIT_RAMP[Math.max(0, Math.min(SUIT_RAMP.length - 1, tone))], img.d[i + 3]], i);
+      }
+    }
+  return out;
+}
+
 const sheets: Record<string, { frames: Frame[]; heads: [number, number][]; seq: number[] }> = {};
 for (const [name, s] of Object.entries(STATES)) {
   const [x0, y0] = bbox([source(s.src)]);
@@ -439,6 +498,25 @@ for (const [name, s] of Object.entries(STATES)) {
   sheets[name] = { frames, heads, seq: [...span(s.in), ...span(s.loop), ...span(s.loop)] };
 }
 
+/** item-ийн давхаргыг картын баавгайн толгойд тааруулж хольно */
+function overlayItem(card: Img, id: string) {
+  const layer = items[id];
+  const pivot = [HEAD[0], HEAD[1]];
+  const ox = pivot[0] + layer.at[0];
+  const oy = pivot[1] + layer.at[1];
+  for (let y = 0; y < layer.img.h; y++)
+    for (let x = 0; x < layer.img.w; x++) {
+      const [px, py] = [ox + x, oy + y];
+      if (px < 0 || py < 0 || px >= card.w || py >= card.h) continue;
+      const i = at(layer.img, x, y);
+      const alpha = layer.img.d[i + 3] / 255;
+      if (!alpha) continue;
+      const j = at(card, px, py);
+      for (let c = 0; c < 3; c++) card.d[j + c] = Math.round(layer.img.d[i + c] * alpha + card.d[j + c] * (1 - alpha));
+      card.d[j + 3] = Math.max(card.d[j + 3], layer.img.d[i + 3]);
+    }
+}
+
 const preview = process.argv.indexOf('--preview');
 if (preview < 0) {
   // Direct PixelLab overlays also produce the Shop card on the unchanged reference bear.
@@ -456,27 +534,20 @@ if (preview < 0) {
       writePng(new URL(`outfit_${id}.png`, SPRITES), card);
       continue;
     }
-    const layer = items[id];
-    const pivot = [HEAD[0], HEAD[1]];
-    const ox = pivot[0] + layer.at[0];
-    const oy = pivot[1] + layer.at[1];
-    for (let y = 0; y < layer.img.h; y++)
-      for (let x = 0; x < layer.img.w; x++) {
-        const [px, py] = [ox + x, oy + y];
-        if (px < 0 || py < 0 || px >= card.w || py >= card.h) continue;
-        const i = at(layer.img, x, y);
-        const alpha = layer.img.d[i + 3] / 255;
-        if (!alpha) continue;
-        const j = at(card, px, py);
-        for (let c = 0; c < 3; c++) card.d[j + c] = Math.round(layer.img.d[i + c] * alpha + card.d[j + c] * (1 - alpha));
-        card.d[j + 3] = Math.max(card.d[j + 3], layer.img.d[i + 3]);
-      }
+    overlayItem(card, id);
+    writePng(new URL(`outfit_${id}.png`, SPRITES), card);
+  }
+  for (const [id, worn] of Object.entries(COMBOS)) {
+    const card = clone(REF);
+    for (const w of worn) overlayItem(card, w);
     writePng(new URL(`outfit_${id}.png`, SPRITES), card);
   }
   for (const [name, { frames }] of Object.entries(sheets)) writePng(new URL(`bear_home_${name}.png`, SPRITES), toSheet(frames, STATES[name].cols ?? frames.length));
   for (const [name, { frames, heads }] of Object.entries(sheets)) {
     const fitted = frames.map((f, i) => ({ ...f, img: helmetBase(f.img, heads[i]) }));
     writePng(new URL(`bear_helmet_base_${name}.png`, SPRITES), toSheet(fitted, STATES[name].cols ?? frames.length));
+    const suited = frames.map((f, i) => ({ ...f, img: batmanBase(f.img, heads[i]) }));
+    writePng(new URL(`bear_batman_base_${name}.png`, SPRITES), toSheet(suited, STATES[name].cols ?? frames.length));
     const scarfFree = frames.map((f, i) => ({ ...f, img: headscarfBase(f.img, heads[i]) }));
     writePng(new URL(`bear_headscarf_base_${name}.png`, SPRITES), toSheet(scarfFree, STATES[name].cols ?? frames.length));
     const shod = frames.map((f) => ({ ...f, img: bootsBase(f.img) }));

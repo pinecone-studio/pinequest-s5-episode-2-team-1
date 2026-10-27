@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CHEST_LOOT, rollLoot } from '../../shared/loot';
+import { BAG_ITEMS, CHEST_LOOT, GATE_ITEM, rollLoot } from '../../shared/loot';
 import { hintHide } from '../src/services/bag';
 
 describe('нууц хайрцаг', () => {
@@ -9,6 +9,14 @@ describe('нууц хайрцаг', () => {
 
   it('сангаас л гарна', () => {
     for (let k = 0; k < 200; k++) expect(CHEST_LOOT).toContain(rollLoot(k / 200));
+  });
+});
+
+describe('Мөсөн хонх', () => {
+  it('10-р хаалганы шагнал цүнхэнд орно, нууц хайрцгаас гарахгүй', () => {
+    expect(GATE_ITEM[10]).toBe('bell');
+    expect(BAG_ITEMS).toContain('bell');
+    expect(CHEST_LOOT.some((loot) => loot.kind === 'bell')).toBe(false);
   });
 });
 

@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { LiveBear } from '@/components/LiveBear';
 import { ColorFade } from '@/components/pixel';
 import { colors, fonts, halo, radius } from '@/constants/theme';
-import type { BgDef, OutfitDef } from '@/lib/pixelBear/catalog';
+import { type BgDef, type OutfitDef, outfitItems } from '@/lib/pixelBear/catalog';
 
 /** баавгайн анхны sprite-ийн өргөн (bear_idle_scarf 2×): амьд frame-ууд түүний байранд таарна */
 const STAGE_W = 164;
@@ -17,7 +17,7 @@ export function PreviewStage({ bg, outfit, name, alt, action }: { bg: BgDef; out
       <View style={styles.shadow} />
       <View style={[styles.bear, outfit.item === 'warrior_helmet' && { top: 6 }]}>
         {/* дэлгүүрт орж ирсэн хүнтэй мэндэлж даллана; item солиход баавгай тасралтгүй хөдөлсөөр, зөвхөн item солигдоно */}
-        <LiveBear anim="happy" w={STAGE_W} items={outfit.item ? [outfit.item] : []} label={alt} />
+        <LiveBear anim="happy" w={STAGE_W} items={outfitItems(outfit)} label={alt} />
       </View>
       <View style={styles.chip}>
         <Text style={styles.chipText}>{name}</Text>
