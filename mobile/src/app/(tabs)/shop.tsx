@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { BgSwatch, type SwatchStatus } from '@/components/BgSwatch';
 import { MagicBurst } from '@/components/MagicBurst';
@@ -22,6 +22,21 @@ import { BACKGROUNDS, bgById, outfitById, type OutfitId } from '@/lib/pixelBear/
 import { type OutfitView, useOutfits } from '@/lib/pixelBear/useOutfits';
 
 type Tab = 'bg' | 'outfit';
+type OutfitCategory = 'hat' | 'mask' | 'clothes' | 'boots' | 'staff';
+const CATEGORIES: { value: OutfitCategory; label: string }[] = [
+  { value: 'hat', label: 'Малгай' },
+  { value: 'mask', label: 'Маск' },
+  { value: 'clothes', label: 'Хувцас' },
+  { value: 'boots', label: 'Гутал' },
+  { value: 'staff', label: 'Таяг' },
+];
+function categoryOf(id: OutfitId): OutfitCategory {
+  if (['glasses', 'mickey_mask', 'batman_mask'].includes(id)) return 'mask';
+  if (id === 'brown_boots') return 'boots';
+  if (['warrior_helmet', 'pirate_hat', 'cowboy_hat', 'white_headscarf', 'ny_cap', 'gradcap', 'headphones'].includes(id)) return 'hat';
+  if (id.includes('staff') || id === 'black_sword' || id === 'bronze_shield') return 'staff';
+  return 'clothes';
+}
 
 const chunk = <T,>(arr: T[], n: number): T[][] => Array.from({ length: Math.ceil(arr.length / n) }, (_, i) => arr.slice(i * n, i * n + n));
 
@@ -40,6 +55,7 @@ export default function ShopScreen() {
   const outfits = useOutfits();
   const online = useOnline();
   const [tab, setTab] = useState<Tab>('bg');
+  const [outfitCategory, setOutfitCategory] = useState<OutfitCategory>('hat');
   const [selBg, setSelBg] = useState(bear.bgId);
   const [selOutfit, setSelOutfit] = useState<OutfitId>(bear.outfitId);
   const [busy, setBusy] = useState(false);
@@ -48,6 +64,7 @@ export default function ShopScreen() {
   const [castKey, setCastKey] = useState(0);
 
   const isBg = tab === 'bg';
+  const visibleOutfits = outfits.views.filter((v) => categoryOf(v.def.id) === outfitCategory);
   const bgDef = bgById(isBg ? selBg : bear.bgId);
   const outfitView = outfits.views.find((v) => v.def.id === (isBg ? bear.outfitId : selOutfit)) ?? outfits.views[0];
   const outfitDef = outfitById(outfitView.def.id);
@@ -161,12 +178,43 @@ export default function ShopScreen() {
       <SegmentedTabs<Tab>
         label={S.shop.tabs}
         value={tab}
-        onChange={setTab}
+        onChange={(next) => {
+          setTab(next);
+          if (next === 'outfit' && !visibleOutfits.some((v) => v.def.id === selOutfit)) {
+            const first = visibleOutfits[0];
+            if (first) setSelOutfit(first.def.id);
+          }
+        }}
         options={[
           { value: 'bg', label: S.shop.tabBg },
           { value: 'outfit', label: S.shop.tabOutfit },
         ]}
       />
+
+      {!isBg && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categories}>
+          <View accessibilityRole="tablist" accessibilityLabel="Хувцасны төрөл" style={styles.categoryRow}>
+            {CATEGORIES.map((category) => {
+              const selected = outfitCategory === category.value;
+              return (
+                <PressScale
+                  key={category.value}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected }}
+                  onPress={() => {
+                    setOutfitCategory(category.value);
+                    const first = outfits.views.find((v) => categoryOf(v.def.id) === category.value);
+                    if (first) setSelOutfit(first.def.id);
+                  }}
+                  style={[styles.category, selected && styles.categoryOn]}
+                >
+                  <Text style={[styles.categoryText, selected && styles.categoryTextOn]}>{category.label}</Text>
+                </PressScale>
+              );
+            })}
+          </View>
+        </ScrollView>
+      )}
 
       {isBg ? (
         <Animated.View key="bg" entering={FadeInDown.duration(260)} style={{ gap: 12 }}>
@@ -191,7 +239,7 @@ export default function ShopScreen() {
       ) : (
         <Animated.View key="outfit" entering={FadeInDown.duration(260)} style={{ gap: 10 }}>
           {!outfits.loaded ? <ActivityIndicator color={colors.violet} /> : null}
-          {chunk(outfits.views, 2).map((row, r) => (
+          {chunk(visibleOutfits, 2).map((row, r) => (
             <View key={r} style={styles.row}>
               {row.map((v) => (
                 <OutfitCard
@@ -225,6 +273,12 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   bagBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', gap: 10 },
+  categories: { paddingVertical: 4 },
+  categoryRow: { flexDirection: 'row', gap: 8 },
+  category: { backgroundColor: colors.stoneAlt, borderRadius: radius.pill, paddingHorizontal: 16, paddingVertical: 9 },
+  categoryOn: { backgroundColor: colors.indigo },
+  categoryText: { color: colors.ink, fontFamily: fonts.semibold, fontSize: 13 },
+  categoryTextOn: { color: colors.white },
   action: { height: 44, paddingHorizontal: 16, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', minWidth: 96 },
   actionText: { fontFamily: fonts.bold, fontSize: 14 },
   message: { fontFamily: fonts.semibold, fontSize: 14, color: colors.okText, textAlign: 'center' },
