@@ -1,4 +1,5 @@
 import type { BEAR_FACES, BEAR_FURS } from './bear';
+import type { BagItem, LootKind } from './loot';
 // API ба WebSocket-ийн гэрээ. api/ болон mobile/ хоёулаа зөвхөн `import type`-аар ашиглана
 // (runtime код энд байхгүй тул Metro энэ файлыг bundle хийх шаардлагагүй).
 
@@ -47,6 +48,9 @@ export type ErrorCode =
   | 'BOSS_LOCKED'
   | 'NODE_LOCKED'
   | 'NO_LIVES'
+  | 'CHEST_LOCKED'
+  | 'NO_ITEM'
+  | 'LIVES_FULL'
   | 'NO_REVIEW'
   | 'REVIEW_DONE'
   | 'STAGE_LOCKED'
@@ -123,6 +127,8 @@ export interface Me {
   maxLives: number;
   /** Дараагийн амь нөхөгдөх мөч (ms); дүүрэн бол null. */
   nextLifeAt: number | null;
+  /** Цүнхний хэрэглэгдэхүүн (нууц хайрцгаас): Хувын болор, Зөгийн балны сав */
+  bag: Record<BagItem, number>;
 }
 
 export type BearFur = (typeof BEAR_FURS)[number];
@@ -149,6 +155,8 @@ export interface SubjectPath {
   bossesBeaten: number;
   /** Зангилаа → давсан шат (1 Суурь, 2 Дунд, 3 Ахисан); байхгүй бол 0 (shared/path.ts stageDone). */
   stages: Record<number, number>;
+  /** Нээсэн нууц хайрцгийн зангилаанууд (shared/path.ts chestNodes) */
+  chests: number[];
 }
 
 /** Сурах бичгийн гарчгаас гаргасан нэг хичээл (сэдэв). */
@@ -305,6 +313,9 @@ export interface TaskResult {
   levelAfter: number;
   /** Энэ даалгавраар сурах замын дараагийн зангилаа нээгдсэн (4/5+ зөв эсвэл boss ялсан). */
   nodeUp: boolean;
+  /** Тулааны хаалганы даалгавар бол тэр хаалга (boss, гар, цэрэг), бусад нь null; энэ удаа анх давсан эсэх. */
+  gate: number | null;
+  gateBeaten: boolean;
   /** Зангилааны шатны даалгавар бол тэр шат (тулаан бол null), давсан эсэх. */
   stage: number | null;
   stagePassed: boolean;
@@ -329,6 +340,23 @@ export interface FlagResponse {
   finished: boolean;
   result?: TaskResult;
   recovery?: boolean;
+}
+
+// ---------- Нууц хайрцаг, цүнх ----------
+
+/** POST /me/chests: нээсэн хайрцгийн шагнал (дахин нээхэд ижил, fresh = false). */
+export interface ChestOpenResponse {
+  node: number;
+  kind: LootKind;
+  qty: number;
+  fresh: boolean;
+  me: Me;
+}
+
+/** POST /tasks/:id/hint: Хувын болор нуусан 2 буруу хариулт. */
+export interface HintResponse {
+  hide: number[];
+  bag: Record<BagItem, number>;
 }
 
 // ---------- Нөхөх салаа зам ----------

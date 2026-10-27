@@ -1,3 +1,4 @@
+import { UNIT_GATE } from '@shared/path';
 import type { TaskResult } from '@shared/types';
 import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -9,6 +10,7 @@ import { colors, fonts, radius } from '@/constants/theme';
 import { S } from '@/i18n/strings';
 import type { SpriteKey } from '@/sprites';
 import { goBack } from '@/lib/nav';
+import { BOSSES } from '@/lib/pixelBear/path';
 import { useOnline } from '@/lib/online';
 
 const TILE = '#33208F';
@@ -18,6 +20,11 @@ const PATH_PASS_CORRECT = 4;
 /** Сурах замын тэмдэглэл: зангилаа нээгдсэн, дараагийн шат нээгдсэн эсвэл хэдэн зөв хэрэгтэй. */
 function pathNote(r: TaskResult): string {
   if (r.review) return S.reward.reviewDone;
+  if (r.gate !== null && r.gate !== undefined) {
+    const k = UNIT_GATE.indexOf(r.gate as (typeof UNIT_GATE)[number]);
+    if (!r.gateBeaten) return S.reward.gateLost(Math.floor(r.total / 2) + 1);
+    return k >= 0 ? S.reward.chapterWon(BOSSES[r.gate].name, k + 1) : S.reward.gateWon(BOSSES[r.gate].name);
+  }
   if (r.nodeUp) return S.reward.nodeUp;
   if (r.stage === null) return S.reward.nodeStay(PATH_PASS_CORRECT);
   if (!r.stagePassed) return S.reward.stageStay(PATH_PASS_CORRECT);
@@ -76,7 +83,8 @@ export function RewardView({ result, onAgain, onRecovery }: { result: TaskResult
           ) : (
             <>
               <Button title={S.reward.cont} variant="lime" onPress={() => goBack()} />
-              <Button title={S.reward.again} variant="white" small onPress={onAgain} />
+              {/* давсан хаалгатай дахин тулалдах боломжгүй */}
+              {result.gateBeaten ? null : <Button title={S.reward.again} variant="white" small onPress={onAgain} />}
               {result.correctCount < result.total && online ? (
                 <Button title={S.reward.talk} variant="white" small onPress={() => router.push('/tutor')} />
               ) : null}

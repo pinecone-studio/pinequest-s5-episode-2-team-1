@@ -1,3 +1,4 @@
+import { BAG_ITEMS, type BagItem } from '../../../shared/loot';
 import type { Me, SubjectPath } from '../../../shared/types';
 import { GAME, SUBJECTS, type Subject } from '../config/game';
 import { levelProgress } from '../domain/level';
@@ -100,12 +101,13 @@ export async function countFriendRequests(db: D1Database, userId: number): Promi
 
 /** Хичээл бүрийн сурах замын ахиц (subject_progress); тухайн хичээлд даалгавар хийгээгүй бол 0. */
 export async function loadSubjectPaths(db: D1Database, userId: number): Promise<Record<Subject, SubjectPath>> {
-  const [{ results }, { results: stages }] = await Promise.all([
+  const [{ results }, { results: stages }, { results: chests }] = await Promise.all([
     db
       .prepare('SELECT subject, xp, nodes, bosses_beaten FROM subject_progress WHERE user_id = ?')
       .bind(userId)
       .all<{ subject: Subject; xp: number; nodes: number; bosses_beaten: number }>(),
     db.prepare('SELECT subject, node, stage FROM node_stages WHERE user_id = ?').bind(userId).all<{ subject: Subject; node: number; stage: number }>(),
+    db.prepare('SELECT subject, node FROM chests WHERE user_id = ?').bind(userId).all<{ subject: Subject; node: number }>(),
   ]);
   const paths = {} as Record<Subject, SubjectPath>;
   for (const subject of SUBJECTS) {
@@ -115,6 +117,7 @@ export async function loadSubjectPaths(db: D1Database, userId: number): Promise<
       level: (row?.nodes ?? 0) + 1,
       bossesBeaten: row?.bosses_beaten ?? 0,
       stages: Object.fromEntries(stages.filter((s) => s.subject === subject).map((s) => [s.node, s.stage])),
+      chests: chests.filter((c) => c.subject === subject).map((c) => c.node),
     };
   }
   return paths;
@@ -127,6 +130,7 @@ export function buildMe(
   catalog: Map<string, CatalogItem>,
   paths: Record<Subject, SubjectPath>,
   friendRequests: number,
+  bag: Record<BagItem, number>,
   now = Date.now(),
 ): Me {
   const lives = livesNow(livesOf(user), now);
@@ -172,7 +176,14 @@ export function buildMe(
     lives: lives.lives,
     maxLives: GAME.LIVES.MAX,
     nextLifeAt: nextLifeAt(lives),
+    bag,
   };
+}
+
+/** Цүнхний хэрэглэгдэхүүний тоо (нууц хайрцгаас, shared/loot.ts). */
+export async function loadBag(db: D1Database, userId: number): Promise<Record<BagItem, number>> {
+  const { results } = await db.prepare('SELECT item, qty FROM inventory WHERE user_id = ?').bind(userId).all<{ item: string; qty: number }>();
+  return Object.fromEntries(BAG_ITEMS.map((i) => [i, results.find((r) => r.item === i)?.qty ?? 0])) as Record<BagItem, number>;
 }
 
 export const livesOf = (u: Pick<UserRow, 'lives' | 'lives_at'>): Lives => ({ lives: u.lives, at: u.lives_at });
@@ -191,11 +202,12 @@ export function requireLife(user: UserRow, now = Date.now()): Lives {
 export async function loadMe(db: D1Database, userId: number, now = Date.now()): Promise<Me> {
   const today = ubDay(now);
   const user = await syncStreak(db, await getUserRow(db, userId), today);
-  const [todayTasks, catalog, paths, friendRequests] = await Promise.all([
+  const [todayTasks, catalog, paths, friendRequests, bag] = await Promise.all([
     countTasksToday(db, userId, today),
     getCatalog(db),
     loadSubjectPaths(db, userId),
     countFriendRequests(db, userId),
+    loadBag(db, userId),
   ]);
-  return buildMe(user, today, todayTasks, catalog, paths, friendRequests, now);
+  return buildMe(user, today, todayTasks, catalog, paths, friendRequests, bag, now);
 }

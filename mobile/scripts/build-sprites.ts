@@ -23,6 +23,8 @@ const REG = new URL('../src/sprites/index.ts', import.meta.url);
 // name -> [scale | [w, h]]   scale = бүхэл тоо, [w, h] = тодорхой хэмжээ (dp)
 const M: Record<string, (number | [number, number])[]> = {};
 for (const n of ['icon_coin', 'icon_flame', 'icon_star', 'icon_heart']) M[n] = [1, 2, 3];
+// нууц хайрцгаас гарсан зоос (app/chest.tsx)
+M.icon_coin.push(8);
 M.icon_mystery_box = [2, 4];
 for (const n of ['bear_idle_scarf', 'bear_tired_scarf', 'bear_neglected_scarf', 'bear_sleep']) M[n] = [2];
 // нүүрний баавгайн амьд хөдөлгөөн (scripts/home-sprites.ts, PixelLab)
@@ -62,6 +64,10 @@ for (const n of ['tile_stone_done', 'tile_pedestal_end', 'tile_pedestal_sapling'
 for (const n of ['tile_step_lock', 'tile_step_cur']) M[n] = [2];
 for (const n of ['map_bear_small', 'map_bear_small_blink']) M[n] = [1];
 // адал явдлын газрын зураг (docs/design/pixel-bear/tools/mapgen_world.py), тулааны баавгай (scripts/bear-sprites.ts)
+// 3-р бүлэг «Нарны элсэн хаант улс» (scripts/sunsands-sprites.ts): газрын зураг, тулааны дэвсгэр 2×; хайрцаг, хэрэглэгдэхүүн
+// газрын зураг ба цүнхэнд 1×, нээх дэлгэцэнд 4×
+for (const n of ['map_world_sun', 'map_world_sun_foot', 'lair_sun', 'lair_sun_scarab', 'lair_sun_captain']) M[n] = [2];
+for (const n of ['map_chest', 'map_chest_open', 'item_amber', 'item_honey']) M[n] = [1, 4];
 for (const n of ['map_world_0', 'map_world_1', 'map_world_2', 'map_flag', 'fx_magic', 'lair_0', 'lair_1', 'lair_1_left', 'lair_1_right', 'lair_2', 'bear_battle', 'fx_honey_shatter', 'fx_spark', 'fx_spark_magic', 'fx_slash']) M[n] = [2];
 // boss: тулаанд 4× (boss_pumpkin.py, mapgen_world.py); газрын зураг дээр ~70 dp өндөр (хулуу 1.5×, бусад 2.5×)
 M.boss_pumpkin_sheet = [[376, 71], 4];
@@ -72,9 +78,17 @@ M.fx_scythe = [4];
 for (const n of ['hud_cap', 'hud_skull', 'fx_dizzy_sheet', 'fx_soul_sheet']) M[n] = [2];
 // 2-р бүлгийн дайснууд (scripts/golem-sprites.ts, PixelLab): газрын зураг дээр 1×, тулаанд гарууд 2×, boss 2.5× (frame тэгш
 // хэмжээтэй тул бүхэл dp); довтолгооны эффект 1×
-for (const n of ['golem_left_sheet', 'golem_right_sheet']) M[n] = [1, 2];
-M.golem_boss_sheet = [1, 2.5];
+for (const n of ['golem_left_sheet', 'golem_right_sheet', 'golem_scarab_sheet', 'golem_captain_sheet']) M[n] = [1, 2];
+for (const n of ['golem_boss_sheet', 'golem_lion_sheet']) M[n] = [1, 2.5];
+// ялагдах анимаци (scripts/defeat-sprites.ts): тулааны frame-тэй ижил томрол
+for (const n of ['left', 'right', 'scarab', 'captain']) M[`defeat_${n}`] = [2];
+for (const n of ['boss', 'lion']) M[`defeat_${n}`] = [2.5];
+M.defeat_pumpkin = [4];
 for (const n of ['fx_crystal_bolt', 'fx_golem_orb', 'fx_moon_crescent', 'fx_golem_impact']) M[n] = [1];
+for (const n of ['sun_fireball', 'sun_blast', 'sun_disc', 'gold_hit', 'sand_ball', 'sand_dust', 'ghost_flame', 'ghost_hit', 'moon_hit', 'crystal_strike', 'crystal_blast']) M[`fx_${n}`] = [1];
+// эцсийн цохилтын KO: 2× (тулаанд томруулсан дайснаас жижиг харагдахгүй)
+M.fx_ko_burst = [2];
+for (const n of ['claw', 'cross', 'boom', 'cracks', 'dust', 'aura']) M[`fx_bear_${n}`] = [1];
 // хичээлийн дэлгэц (scripts/lesson-sprites.ts): дэвсгэр ба баавгай 3×
 for (const n of ['bear_lesson', 'lesson_bg', 'lesson_shadow']) M[n] = [3];
 // баавгайтай ярилцах дэлгэц (scripts/tutor-sprites.ts, classroom-sprites.ts): анги, баавгай, амны хэлбэр, хөшигний мөчир 3×

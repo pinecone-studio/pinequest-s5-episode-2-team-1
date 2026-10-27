@@ -90,9 +90,10 @@ describe('currentNode', () => {
     expect(currentNode(45, 5, 0)).toBe(4);
     expect(currentNode(45, 40, 0)).toBe(15);
     expect(currentNode(45, 40, 1)).toBe(29); // 2-р бүлгийн зүүн гар
-    expect(currentNode(45, 40, 4)).toBe(39);
-    expect(currentNode(45, 100, 4)).toBe(47);
-    expect(currentNode(45, 100, 5)).toBe(47);
+    expect(currentNode(45, 40, 4)).toBe(38); // 3-р бүлгийн цэрэг
+    expect(currentNode(45, 100, 5)).toBe(43); // ахлагч
+    expect(currentNode(45, 100, 6)).toBe(47);
+    expect(currentNode(45, 100, 7)).toBe(47);
   });
 });
 

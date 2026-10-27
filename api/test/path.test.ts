@@ -17,14 +17,18 @@ describe('сурах замын зангилаа даалгавраар ахин
     expect(nodesAfter(63, 20, 0, 4, false)).toBe(21);
     expect(nodesAfter(63, 21, 0, 5, false)).toBe(21);
     expect(nodesAfter(63, 21, 0, 3, true)).toBe(22);
-    expect(nodesAfter(63, 65, 4, 3, true)).toBe(65);
+    expect(nodesAfter(63, 52, 4, 3, true)).toBe(53); // 3-р бүлгийн 1-р цэрэг
+    expect(nodesAfter(63, 65, 6, 3, true)).toBe(65);
   });
 
-  it('хаалгыг давбал дараагийн зангилаанд: зүүн гар → баруун гар → boss → 3-р бүлэг, сүүлийн boss-ын дараа төгсгөлд', () => {
+  it('хаалгыг давбал дараагийн зангилаанд: зүүн гар → баруун гар → boss → 3-р бүлгийн цэргүүд → boss, сүүлийн boss-ын дараа төгсгөлд', () => {
     expect(nodesAfter(45, 15, 0, 3, true)).toBe(16);
     expect([1, 2, 3].map((g) => nodesAfter(45, 28 + g, g, 3, true))).toEqual([30, 31, 32]);
-    expect(nodesAfter(45, 47, 4, 3, true)).toBe(47);
-    expect(nodesAfter(45, 47, 5, 5, false)).toBe(47);
+    // 3-р бүлэг: цэрэг (38) → ахлагч (43) → boss (47)
+    expect([4, 5].map((g) => nodesAfter(45, 47, g, 3, true))).toEqual([39, 44]);
+    expect(nodesAfter(45, 40, 4, 5, false)).toBe(38); // давж амжаагүй цэрэг рүү буцна
+    expect(nodesAfter(45, 47, 6, 3, true)).toBe(47);
+    expect(nodesAfter(45, 47, 7, 5, false)).toBe(47);
   });
 });
 
