@@ -21,7 +21,7 @@ const PIXELLAB = new URL('../../docs/design/pixel-bear/pixellab/', import.meta.u
 const META = new URL('../src/lib/pixelBear/golems.json', import.meta.url);
 const CELL = 88;
 /** дүрийн өндөр (pixel): boss хамгийн том */
-const GOLEMS = { boss: 64, left: 54, right: 66, lion: 72, captain: 58, scarab: 44 } as const;
+const GOLEMS = { boss: 64, left: 54, right: 66, lion: 72, captain: 58, scarab: 44, yak: 74, leopard: 56, owl: 64, santa: 78 } as const;
 type Name = keyof typeof GOLEMS;
 
 /** цагаан дэвсгэрийг захаас нь үерлэж арилгана (дүрийн доторх цагаан гэрэл үлдэнэ) */
@@ -100,7 +100,7 @@ function base(name: Name): Img {
 
 const NAMES = Object.keys(GOLEMS) as Name[];
 /** эх зураг нь зүүн тийш (баавгайгаас холдож) харсан дүр */
-const MIRROR: Name[] = ['right'];
+const MIRROR: Name[] = ['right', 'owl'];
 for (const n of NAMES) {
   writePng(new URL(`golem-${n}-base.png`, PIXELLAB), base(n));
   const corrected = new URL(`golem-${n}-corrected.png`, PIXELLAB);
@@ -114,9 +114,9 @@ console.log(`golem bases: ${NAMES.join(', ')}`);
 // ---------- 2) PixelLab strip-үүдээс sheet ----------
 const ANIMS = ['idle', 'attack', 'hurt'] as const;
 /** амьсгалын давталтад авах нүд (0 = суурь): PixelLab-ийн сүүлийн frame-үүд дүрээсээ холдож (болор алга болох г.м.) эхэлдэг */
-const IDLE: Record<Name, number[]> = { boss: [0, 1, 2], left: [1, 2, 3, 4], right: [0, 1, 2], lion: [0, 1, 2, 3], captain: [0, 1, 2, 3], scarab: [0, 1, 2, 3] };
+const IDLE: Record<Name, number[]> = { boss: [0, 1, 2], left: [1, 2, 3, 4], right: [0, 1, 2], lion: [0, 1, 2, 3], captain: [0, 1, 2, 3], scarab: [0, 1, 2, 3], yak: [0, 1], leopard: [0, 1, 2, 3], owl: [0, 1, 2, 3], santa: [0, 1, 2, 3] };
 /** цочих нүд: шидтэний 3–4-р frame-д таяг нөгөө гар руу шилждэг (буцах агшинд үсрэлт гарна); ахлагч бамбайгаа өргөөд буулгана; цохын 1–3 нь эргэлттэй, очтой */
-const HURT: Record<Name, number[]> = { boss: [1, 2, 3, 4], left: [1, 2, 3, 4], right: [1, 2], lion: [1, 2, 3, 4], captain: [1, 2, 1], scarab: [4] };
+const HURT: Record<Name, number[]> = { boss: [1, 2, 3, 4], left: [1, 2, 3, 4], right: [1, 2], lion: [1, 2, 3, 4], captain: [1, 2, 1], scarab: [4], yak: [1, 2, 3, 4], leopard: [3, 4], owl: [1, 2, 3], santa: [1, 2, 3, 4] };
 /**
  * довтолгооны нүд (1–8; impact = 6-р байр): ахлагчийн 7–8-р frame-д бамбай алга болдог тул өргөх → урагш цохих → буцах;
  * цох 4-өөс хойш эргэж, утаа гаргадаг тул 1–3-аар бөхийх → дайрах
@@ -194,6 +194,16 @@ for (const [from, to] of [
   ['ghost-hit', 'fx_ghost_hit'],
   // 2-р бүлэг: сарны оч (зүүн гар), болор аянга (баруун гар), болор дэлбэрэлт (boss); эцсийн цохилтын алтан KO
   ['moon-hit', 'fx_moon_hit'],
+  // 4-р бүлэг: мөсөн сум/оч (ирвэс), хүйтэн бөмбөг/аянга (шар шувуу), мөсөн бөмбөг/хагарал (сарлаг хаан)
+  ['ice-shard', 'fx_ice_shard'],
+  ['ice-hit', 'fx_ice_hit'],
+  ['frost-orb', 'fx_frost_orb'],
+  ['frost-strike', 'fx_frost_strike'],
+  ['glacier-orb', 'fx_glacier_orb'],
+  ['glacier-blast', 'fx_glacier_blast'],
+  // Santa: улаан хараалын бөмбөг, тэсрэлт
+  ['santa-orb', 'fx_santa_orb'],
+  ['santa-boom', 'fx_santa_boom'],
   ['crystal-bolt-strike', 'fx_crystal_strike'],
   ['crystal-blast', 'fx_crystal_blast'],
   ['ko-burst', 'fx_ko_burst'],
