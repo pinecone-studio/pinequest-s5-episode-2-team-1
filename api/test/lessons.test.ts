@@ -81,19 +81,22 @@ describe('parseToc', () => {
 
 describe('currentNode', () => {
   it('ялсан boss-ын өмнө буцахгүй (хичээлийн тоо өөрчлөгдсөн замд)', () => {
-    expect(currentNode(63, 17, 1)).toBe(22);
-    expect(currentNode(24, 30, 1)).toBe(15); // номгүй замын 2-р бүлгийн зүүн гар
+    expect(currentNode(63, 17, 1)).toBe(16);
+    expect(currentNode(24, 30, 1)).toBe(11); // номгүй замын 2-р бүлгийн зүүн гар
   });
 
   it('шат − 1, ялаагүй boss-ын дэргэд зогсоно', () => {
     expect(currentNode(45, 1, 0)).toBe(0);
     expect(currentNode(45, 5, 0)).toBe(4);
-    expect(currentNode(45, 40, 0)).toBe(15);
-    expect(currentNode(45, 40, 1)).toBe(29); // 2-р бүлгийн зүүн гар
-    expect(currentNode(45, 40, 4)).toBe(38); // 3-р бүлгийн цэрэг
-    expect(currentNode(45, 100, 5)).toBe(43); // ахлагч
-    expect(currentNode(45, 100, 6)).toBe(47);
-    expect(currentNode(45, 100, 7)).toBe(47);
+    expect(currentNode(45, 40, 0)).toBe(11);
+    expect(currentNode(45, 40, 1)).toBe(21); // 2-р бүлгийн зүүн гар
+    expect(currentNode(45, 40, 4)).toBe(28); // 3-р бүлгийн цэрэг
+    expect(currentNode(45, 100, 5)).toBe(32); // ахлагч
+    expect(currentNode(45, 100, 6)).toBe(35); // Нарны арслан
+    expect(currentNode(45, 100, 7)).toBe(45); // 4-р бүлгийн зүүн гар
+    expect(currentNode(45, 100, 9)).toBe(47); // Santa-ийн туслах
+    expect(currentNode(45, 100, 10)).toBe(48); // Santa
+    expect(currentNode(45, 100, 11)).toBe(48);
   });
 });
 
@@ -101,9 +104,9 @@ describe('lessonAt', () => {
   const lessons = (n: number) => Array.from({ length: n }, (_, i) => i);
 
   it('зангилаа бүр нэг хичээл, дарааллаар; boss зангилаанд хичээл байхгүй', () => {
-    expect([0, 14, 15, 16, 46].map((i) => lessonAt(lessons(45), i))).toEqual([0, 14, null, 15, 44]);
-    // 63 хичээл: бүлэг бүрт 21, boss нь 21, 43, 65-р зангилаа
-    expect([20, 21, 22, 43, 64, 65].map((i) => lessonAt(lessons(63), i))).toEqual([20, null, 21, null, 62, null]);
+    expect([0, 10, 11, 12, 47].map((i) => lessonAt(lessons(45), i))).toEqual([0, 10, null, 11, 44]);
+    // 63 хичээл: 4 бүлэг, boss нь 15, 32, 49, 66-р зангилаа
+    expect([14, 15, 16, 32, 65, 66].map((i) => lessonAt(lessons(63), i))).toEqual([14, null, 15, null, 62, null]);
   });
 
   it('ном байхгүй эсвэл бүлэг бүрт хичээл хүрэхгүй бол null', () => {
@@ -129,7 +132,7 @@ describe('lessonPages', () => {
   });
 
   it('сүүлийн хичээл номын төгсгөл хүртэл; сан дахь хуудас = хэвлэмэл + offset', () => {
-    expect(lessonPages(book(pages), 46)).toEqual({ slug: 'math-7', from: 93, to: 120 });
+    expect(lessonPages(book(pages), 47)).toEqual({ slug: 'math-7', from: 93, to: 120 });
     expect(lessonPages(book(pages, 2), 0)).toEqual({ slug: 'math-7', from: 7, to: 8 });
   });
 
@@ -138,7 +141,7 @@ describe('lessonPages', () => {
     gap[1] = null;
     expect(lessonPages(book(gap), 0)).toEqual({ slug: 'math-7', from: 5, to: 8 });
     expect(lessonPages(book(gap), 1)).toBeNull();
-    expect(lessonPages(book(pages), 15)).toBeNull();
+    expect(lessonPages(book(pages), 11)).toBeNull();
     expect(lessonPages(book([]), 0)).toBeNull();
   });
 
