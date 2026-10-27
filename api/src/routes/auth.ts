@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
-import type { AuthResponse, LessonsResponse, MeResponse, MyProfileResponse } from '../../../shared/types';
+import type { AuthResponse, LessonsResponse, MeResponse, MyProfileResponse, OnboardingBody } from '../../../shared/types';
+import { HEARD_FROM, REASONS, SELF_LEVELS } from '../../../shared/onboarding';
 import { BEAR_FACES, BEAR_FURS } from '../config/cosmetics';
 import { DEFAULT_EQUIPPED, GAME, SUBJECTS } from '../config/game';
 import { tierForGrade } from '../domain/level';
@@ -10,13 +11,15 @@ import { hashPassword, newSessionToken, normalizeUsername, sha256Hex, usernameEr
 import { ApiError, readBody } from '../lib/errors';
 import { bearerToken, createSession, requireAuth, trackActive } from '../lib/session';
 import { loadLessons } from '../services/lessons';
-import { myProfile, rotateProfileCode, setAvatar, setBearLook } from '../services/profiles';
+import { myProfile, rotateProfileCode, setAvatar, setBearLook, setOnboarding } from '../services/profiles';
 import { loadMe } from '../services/users';
 
 const registerSchema = z.object({
   username: z.string(),
   password: z.string().min(GAME.AUTH.PASSWORD_MIN).max(GAME.AUTH.PASSWORD_MAX),
-  grade: z.number().int().min(GAME.GRADE_MIN).max(GAME.GRADE_MAX),
+  // шинэ апп ангийг onboarding-д асуудаг (тэр хүртэл GRADE_MIN); хуучин апп бүртгэлдээ илгээнэ
+  grade: z.number().int().min(GAME.GRADE_MIN).max(GAME.GRADE_MAX).default(GAME.GRADE_MIN),
+  onboarded: z.boolean().default(true),
 });
 
 const loginSchema = z.object({
@@ -45,8 +48,8 @@ authRoutes.post('/register', async (c) => {
   try {
     await db.batch([
       db
-        .prepare('INSERT INTO users (username, password_hash, grade, tier, points, equipped, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')
-        .bind(username, passwordHash, body.grade, tier, GAME.START_POINTS, JSON.stringify(DEFAULT_EQUIPPED), now),
+        .prepare('INSERT INTO users (username, password_hash, grade, tier, points, equipped, created_at, onboarding) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
+        .bind(username, passwordHash, body.grade, tier, GAME.START_POINTS, JSON.stringify(DEFAULT_EQUIPPED), now, body.onboarded ? '{}' : null),
       db
         .prepare(
           `INSERT INTO point_ledger (user_id, delta, reason, ref_type, ref_id, created_at)
@@ -118,6 +121,23 @@ meRoutes.post('/profile/code', requireAuth, async (c) => c.json<MyProfileRespons
 meRoutes.put('/look', requireAuth, async (c) => {
   const body = await readBody(c, z.object({ bg: z.string().min(1).max(40), outfit: z.string().min(1).max(40) }));
   return c.json<MeResponse>({ me: await setBearLook(c.env.DB, c.get('userId'), body) });
+});
+
+/** Анх орохдоо асуудаг асуултын хариулт (анги нь зөвхөн анх удаа хэрэгжинэ). */
+meRoutes.put('/onboarding', requireAuth, async (c) => {
+  const body = await readBody(
+    c,
+    z.object({
+      heardFrom: z.enum(HEARD_FROM),
+      grade: z.number().int().min(GAME.GRADE_MIN).max(GAME.GRADE_MAX),
+      reason: z.enum(REASONS),
+      subject: z.enum(SUBJECTS),
+      level: z.number().int().refine((v) => (SELF_LEVELS as readonly number[]).includes(v)),
+    }),
+  );
+  const tier = tierForGrade(body.grade);
+  if (!tier) throw new ApiError(400, 'BAD_REQUEST', 'Анги буруу');
+  return c.json<MeResponse>({ me: await setOnboarding(c.env.DB, c.get('userId'), body as OnboardingBody, tier) });
 });
 
 /** Профайлын нэр (хоч) ба баавгайн үс, царай, цээжний толбо. */

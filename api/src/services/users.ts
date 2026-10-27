@@ -30,10 +30,11 @@ export interface UserRow {
   is_admin: number;
   lives: number;
   lives_at: number | null;
+  onboarding: string | null;
 }
 
 const USER_COLUMNS =
-  'id, username, display_name, grade, tier, xp, points, streak, last_streak_day, shield_held, shield_bought_day, shield_used_day, equipped, bear_look, created_at, is_admin, lives, lives_at';
+  'id, username, display_name, grade, tier, xp, points, streak, last_streak_day, shield_held, shield_bought_day, shield_used_day, equipped, bear_look, created_at, is_admin, lives, lives_at, onboarding';
 
 export async function getUserRow(db: D1Database, id: number): Promise<UserRow> {
   const row = await db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE id = ?`).bind(id).first<UserRow>();
@@ -143,6 +144,7 @@ export function buildMe(
     username: user.username,
     name: user.display_name ?? user.username,
     profileSet: user.display_name !== null,
+    onboarded: user.onboarding !== null,
     grade: user.grade,
     tier: user.tier,
     xp: user.xp,

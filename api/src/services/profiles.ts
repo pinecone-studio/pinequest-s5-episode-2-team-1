@@ -1,4 +1,4 @@
-import type { AvatarBody, LookBody, Me, MyProfileResponse, ProfileResponse, PublicProfile, SubjectSkill } from '../../../shared/types';
+import type { AvatarBody, LookBody, Me, OnboardingBody, MyProfileResponse, ProfileResponse, PublicProfile, SubjectSkill } from '../../../shared/types';
 import { COSMETICS, type Cosmetic, OUTFIT_ITEMS } from '../config/cosmetics';
 import { SUBJECTS, type Subject } from '../config/game';
 import { bossesIn } from '../domain/boss';
@@ -121,6 +121,22 @@ export async function setBearLook(db: D1Database, userId: number, look: LookBody
 const LOOK_JSON = "CASE WHEN json_valid(bear_look) THEN bear_look ELSE '{}' END";
 
 /** Профайлын нэр ба баавгайн үс, царай, цээжний толбо (бүртгүүлсний дараа, дараа нь профайлаас солино). */
+/**
+ * Анх орохдоо асуудаг асуултын хариулт. Анги (түвшин) нь зөвхөн анх бөглөхөд солигдоно: дараа нь солих нь
+ * хичээлийн зам, асуултын санг эвдэнэ. Дахин илгээвэл зөвхөн хариулт шинэчлэгдэнэ.
+ */
+export async function setOnboarding(db: D1Database, userId: number, body: OnboardingBody, tier: number): Promise<Me> {
+  const { grade, ...answers } = body;
+  await db
+    .prepare(
+      `UPDATE users SET grade = CASE WHEN onboarding IS NULL THEN ? ELSE grade END,
+         tier = CASE WHEN onboarding IS NULL THEN ? ELSE tier END, onboarding = ? WHERE id = ?`,
+    )
+    .bind(grade, tier, JSON.stringify(answers), userId)
+    .run();
+  return loadMe(db, userId);
+}
+
 export async function setAvatar(db: D1Database, userId: number, body: AvatarBody): Promise<Me> {
   await db
     .prepare(`UPDATE users SET display_name = ?, bear_look = json_set(${LOOK_JSON}, '$.fur', ?, '$.face', ?, '$.chest', json(?)) WHERE id = ?`)

@@ -1,5 +1,6 @@
 import type { BEAR_FACES, BEAR_FURS } from './bear';
 import type { BagItem, LootKind } from './loot';
+import type { HeardFrom, Reason, SelfLevel } from './onboarding';
 // API ба WebSocket-ийн гэрээ. api/ болон mobile/ хоёулаа зөвхөн `import type`-аар ашиглана
 // (runtime код энд байхгүй тул Metro энэ файлыг bundle хийх шаардлагагүй).
 
@@ -91,6 +92,8 @@ export interface Me {
   name: string;
   /** Профайлаа (нэр, баавгай) тохируулсан эсэх: бүртгүүлсний дараах алхмыг нэг л удаа харуулна */
   profileSet: boolean;
+  /** Анх орохдоо асуудаг асуултаа (хаанаас сонссон, анги, зорилго, түвшин) бөглөсөн эсэх */
+  onboarded: boolean;
   grade: number;
   /** Ангийн түвшин 1–3 */
   tier: number;
@@ -277,6 +280,15 @@ export interface FriendActionResponse {
 
 /** PUT /me/look */
 export type LookBody = Pick<BearLook, 'bg' | 'outfit'>;
+
+/** PUT /me/onboarding: анги нь зөвхөн анх бөглөхөд хэрэгжинэ (дараа нь өөрчлөгдвөл зам эвдэрнэ) */
+export interface OnboardingBody {
+  heardFrom: HeardFrom;
+  grade: number;
+  reason: Reason;
+  subject: Subject;
+  level: SelfLevel;
+}
 
 /** PUT /me/avatar: профайлын нэр ба баавгайн төрх */
 export type AvatarBody = { name: string } & Pick<BearLook, 'fur' | 'face' | 'chest'>;

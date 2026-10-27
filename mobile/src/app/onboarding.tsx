@@ -1,116 +1,93 @@
-import type { Subject } from '@shared/types';
+import type { HeardFrom, Reason, SelfLevel } from '@shared/onboarding';
+import type { MeResponse, OnboardingBody, Subject } from '@shared/types';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Button } from '@/components/Button';
-import { Sprite } from '@/components/pixel';
-import { Screen } from '@/components/ui';
-import { colors, fonts, subjectTheme } from '@/constants/theme';
-import { S, subjectGlyphs, subjectNames } from '@/i18n/strings';
+import { api, errorText } from '@/api/client';
+import { useAuth } from '@/auth/AuthContext';
+import { BenefitsStep, GradeStep, HeardStep, LevelStep, ReasonStep, ResultStep } from '@/components/onboarding/QuizSteps';
+import { QuizShell } from '@/components/onboarding/QuizShell';
+import { SubjectPick, SUGGESTED } from '@/components/onboarding/SubjectPick';
+import { ErrorText } from '@/components/ui';
+import { S, subjectNames } from '@/i18n/strings';
 import { usePixelBear } from '@/lib/mock/pixelBear';
-import { PATH_SUBJECTS } from '@/lib/pixelBear/path';
+import { isOnline } from '@/lib/online';
 
-const SUBJECTS = PATH_SUBJECTS;
-const SUGGESTED: Subject = 'math';
+type Step = 'heard' | 'grade' | 'reason' | 'subject' | 'level' | 'benefits' | 'result';
+const STEPS: Step[] = ['heard', 'grade', 'reason', 'subject', 'level', 'benefits', 'result'];
 
-/** 02 · Хичээл сонгох (onboarding). Сонголт нь төхөөрөмж дээр хадгалагдаж, Сурах замын анхны хичээл болно. */
+/**
+ * 03 · Анх орохдоо асуух асуултууд (Duolingo маягийн): хаанаас сонссон → анги → яагаад → хичээл → түвшин → юу өгөх →
+ * дүгнэлт. Хариултыг серверт нэг дор хадгална (анги нь зөвхөн анх удаа хэрэгжинэ); хичээл нь төхөөрөмж дээр Сурах
+ * замын хичээл болно. Сүлжээгүй бол хичээлийг л хадгалж, сүлжээ сэргэхэд дахин асууна.
+ */
 export default function OnboardingScreen() {
+  const { me, setMe } = useAuth();
   const { setSubject } = usePixelBear();
-  const [selected, setSelected] = useState<Subject>(SUGGESTED);
+  const [i, setI] = useState(0);
+  const [heard, setHeard] = useState<HeardFrom | null>(null);
+  const [grade, setGrade] = useState<number | null>(me?.onboarded ? me.grade : null);
+  const [reason, setReason] = useState<Reason | null>(null);
+  const [subject, setPick] = useState<Subject>(SUGGESTED);
+  const [level, setLevel] = useState<SelfLevel | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const step = STEPS[i];
 
-  function next() {
-    setSubject(selected);
-    router.replace('/');
+  async function finish() {
+    if (busy || heard === null || grade === null || reason === null || level === null) return;
+    setBusy(true);
+    setError('');
+    try {
+      if (me && isOnline()) {
+        const body: OnboardingBody = { heardFrom: heard, grade, reason, subject, level };
+        setMe((await api<MeResponse>('/me/onboarding', { method: 'PUT', body })).me);
+      }
+      setSubject(subject);
+      router.replace('/');
+    } catch (e) {
+      setError(`${S.onboarding.saveError} ${errorText(e)}`);
+      setBusy(false);
+    }
   }
 
+  const answered: Record<Step, boolean> = {
+    heard: heard !== null,
+    grade: grade !== null,
+    reason: reason !== null,
+    subject: true,
+    level: level !== null,
+    benefits: true,
+    result: true,
+  };
+  const question: Record<Step, string> = {
+    heard: S.onboarding.heardQ,
+    grade: S.onboarding.gradeQ,
+    reason: S.onboarding.reasonQ,
+    subject: S.onboarding.subjectQ,
+    level: S.onboarding.levelQ(subjectNames[subject]),
+    benefits: S.onboarding.benefitsQ,
+    result: S.onboarding.readyQ,
+  };
+
   return (
-    <Screen contentStyle={styles.content}>
-      <View style={styles.progress} accessible accessibilityLabel={S.onboarding.step}>
-        <View style={[styles.seg, { backgroundColor: colors.violet }]} />
-        <View style={[styles.seg, { backgroundColor: colors.violet }]} />
-        <View style={[styles.seg, { backgroundColor: colors.violet }]} />
-      </View>
-
-      <View style={styles.bubbleRow}>
-        <Sprite id="head_idle_112x96" label="Pixel баавгайн толгой" />
-        <View style={styles.bubble}>
-          <Text style={styles.bubbleText}>{S.onboarding.bubble}</Text>
-        </View>
-      </View>
-
-      <View style={{ gap: 10 }}>
-        {SUBJECTS.map((subject) => {
-          const t = subjectTheme[subject];
-          const active = subject === selected;
-          return (
-            <Pressable
-              key={subject}
-              accessibilityRole="radio"
-              accessibilityState={{ selected: active }}
-              accessibilityLabel={subjectNames[subject]}
-              onPress={() => setSelected(subject)}
-              style={[styles.card, { backgroundColor: t.bg, height: active ? 112 : 88 }, active && styles.cardActive]}
-            >
-              <View style={styles.cardTop}>
-                <Text style={[styles.cardLabel, { color: t.fg }]} numberOfLines={1}>
-                  {S.onboarding.hint}
-                </Text>
-                {subject === SUGGESTED ? (
-                  <Text style={[styles.badge, { backgroundColor: colors.ink, color: t.bg === colors.lemon ? colors.lemon : colors.white }]}>
-                    {S.onboarding.suggest}
-                  </Text>
-                ) : null}
-              </View>
-              <Text style={[styles.cardTitle, { color: t.fg, fontSize: active ? 26 : 24 }]}>{subjectNames[subject]}</Text>
-              <Text
-                style={[styles.glyph, { color: t.fg, opacity: subject === 'math' ? 0.12 : 0.18, fontSize: subject === 'physics' ? 62 : subject === 'math' ? 92 : 80 }]}
-                accessibilityElementsHidden
-                importantForAccessibility="no"
-              >
-                {subjectGlyphs[subject]}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-
-      <View style={{ flex: 1, minHeight: 12 }} />
-      <Button title={S.onboarding.continue} onPress={next} />
-    </Screen>
+    <QuizShell
+      step={i}
+      total={STEPS.length}
+      question={question[step]}
+      onBack={i > 0 ? () => setI(i - 1) : undefined}
+      canNext={answered[step]}
+      busy={busy}
+      nextTitle={step === 'result' ? S.onboarding.start : S.onboarding.continue}
+      onNext={step === 'result' ? finish : () => setI(i + 1)}
+    >
+      {step === 'heard' ? <HeardStep value={heard} onChange={setHeard} /> : null}
+      {step === 'grade' ? <GradeStep value={grade} onChange={setGrade} /> : null}
+      {step === 'reason' ? <ReasonStep value={reason} onChange={setReason} /> : null}
+      {step === 'subject' ? <SubjectPick value={subject} onChange={setPick} /> : null}
+      {step === 'level' ? <LevelStep value={level} onChange={setLevel} /> : null}
+      {step === 'benefits' ? <BenefitsStep /> : null}
+      {step === 'result' && level !== null ? <ResultStep level={level} subject={subject} /> : null}
+      {error ? <ErrorText>{error}</ErrorText> : null}
+    </QuizShell>
   );
 }
-
-const styles = StyleSheet.create({
-  content: { flexGrow: 1, paddingTop: 20, gap: 18 },
-  progress: { flexDirection: 'row', gap: 6 },
-  seg: { flex: 1, height: 8, borderRadius: 4 },
-  bubbleRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 6 },
-  bubble: {
-    flex: 1,
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
-    borderBottomRightRadius: 22,
-    borderBottomLeftRadius: 6,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginBottom: 40,
-  },
-  bubbleText: { fontFamily: fonts.semibold, fontSize: 16, lineHeight: 21, color: colors.ink },
-  card: { borderRadius: 26, paddingVertical: 14, paddingHorizontal: 18, justifyContent: 'space-between', overflow: 'hidden' },
-  cardActive: { borderWidth: 3, borderColor: colors.ink, paddingVertical: 13, paddingHorizontal: 15 },
-  cardTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  cardLabel: { flexShrink: 1, fontFamily: fonts.bold, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase' },
-  badge: {
-    flexShrink: 0,
-    fontFamily: fonts.bold,
-    fontSize: 11,
-    letterSpacing: 0.7,
-    paddingVertical: 3,
-    paddingHorizontal: 8,
-    borderRadius: 999,
-    overflow: 'hidden',
-  },
-  cardTitle: { fontFamily: fonts.semibold, letterSpacing: -0.5 },
-  glyph: { position: 'absolute', right: 10, bottom: -6, fontFamily: fonts.extrabold },
-});
