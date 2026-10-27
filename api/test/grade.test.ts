@@ -88,6 +88,35 @@ describe('асуулт зөвхөн өөрийн ангийн номоос', () 
     expect(seven).toHaveLength(5);
   });
 
+  it('зангилааны шатны хүндтэй бодлого түрүүлнэ (харсан ч); хүндгүй нь дунд', () => {
+    const q = db.prepare(
+      "INSERT INTO questions (tier, subject, prompt, options, correct_index, explanation, prompt_key, source, book_ref, book_page, grade, difficulty, created_at) VALUES (1, 'math', ?, '[]', 0, '', ?, 't', 'math-7:40-41', 40, 7, ?, 0)",
+    );
+    [1, 1, 2, 3, 3, null].forEach((d, i) => q.run(`d${i}`, `d${i}`, d));
+    const level = (l: number | null) =>
+      db
+        .prepare(pickSql(true))
+        .all(...(pickArgs(2, 1, 'math', { slug: 'math-7', from: 40, to: 41 }, 6, [], l) as (string | number | null)[]))
+        .map((r) => (db.prepare('SELECT difficulty FROM questions WHERE id = ?').get((r as { id: number }).id) as { difficulty: number | null }).difficulty);
+    expect(level(1).slice(0, 2)).toEqual([1, 1]);
+    expect(level(3).slice(0, 2)).toEqual([3, 3]);
+    // Дунд шат: 2 ба хүндгүй (дунд гэж тооцно) эхэнд
+    expect(level(2).slice(0, 2).sort()).toEqual([2, null].sort());
+    // Ахисан шатны хүнд бодлогыг бүгдийг харсан ч хараагүй хялбараас түрүүлнэ
+    db.prepare("INSERT INTO seen_questions (user_id, question_id, seen_at) SELECT 2, id, 1 FROM questions WHERE book_ref = 'math-7:40-41' AND difficulty = 3").run();
+    expect(level(3).slice(0, 2)).toEqual([3, 3]);
+    // Шатгүй (null) бол хүндээр ялгахгүй: бүх 6 гарна
+    expect(level(null)).toHaveLength(6);
+  });
+
+  it('migration 0029 хүндийг 1–3-аар хязгаарлана', () => {
+    expect(() =>
+      db
+        .prepare("INSERT INTO questions (tier, subject, prompt, options, correct_index, explanation, prompt_key, source, difficulty, created_at) VALUES (1, 'math', 'x', '[]', 0, '', 'bad', 't', 4, 0)")
+        .run(),
+    ).toThrow();
+  });
+
   it('анги нь тодорхойгүй номын асуулт хэнд ч гарахгүй', () => {
     db.prepare("UPDATE questions SET grade = NULL WHERE book_ref = 'math-6:7-8'").run();
     expect(pick(db, 1, null, 100)).not.toContain('math-6:7-8');

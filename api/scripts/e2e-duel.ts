@@ -20,8 +20,8 @@ async function connectBoth(duelId: number, a: AuthResponse, b: AuthResponse) {
 async function limitsAndEscrow() {
   console.log('\n— Тулаан: лобби, бооцооны хязгаар, escrow');
   const a = await register('duel_a', 7);
-  const b = await register('duel_b', 6);
-  const x = await register('duel_x', 10);
+  const b = await register('duel_b', 7);
+  const x = await register('duel_x', 6);
 
   await expectError(
     call('POST', '/duels', { token: a.token, body: { subject: 'math', stake: 11 } }),
@@ -34,10 +34,10 @@ async function limitsAndEscrow() {
   await expectError(call('POST', '/duels', { token: a.token, body: { subject: 'physics', stake: 5 } }), 'DUEL_EXISTS', 'Хоёр дахь нээлттэй сорилт үүсгэхгүй');
 
   const lobbyB = await call<LobbyResponse>('GET', '/duels', { token: b.token });
-  check(lobbyB.open.some((d) => d.id === duel.id) && lobbyB.maxStake === 10, 'Түвшин 1-ийн Б лобби дээр харна, дээд бооцоо 10');
+  check(lobbyB.open.some((d) => d.id === duel.id) && lobbyB.maxStake === 10, 'Ижил ангийн Б лобби дээр харна, дээд бооцоо 10');
   const lobbyX = await call<LobbyResponse>('GET', '/duels', { token: x.token });
-  check(!lobbyX.open.some((d) => d.id === duel.id), 'Түвшин 3-ын хэрэглэгч харахгүй');
-  await expectError(call('POST', `/duels/${duel.id}/accept`, { token: x.token }), 'WRONG_TIER', 'Өөр түвшний сорилтыг хүлээн авахгүй');
+  check(!lobbyX.open.some((d) => d.id === duel.id), 'Өөр ангийн (6-р) хэрэглэгч харахгүй');
+  await expectError(call('POST', `/duels/${duel.id}/accept`, { token: x.token }), 'WRONG_GRADE', 'Өөр ангийн сорилтыг хүлээн авахгүй');
   await expectError(call('POST', `/duels/${duel.id}/accept`, { token: a.token }), 'OWN_DUEL', 'Өөрийн сорилтыг хүлээн авахгүй');
 
   await call('POST', `/duels/${duel.id}/accept`, { token: b.token });
@@ -62,8 +62,8 @@ async function limitsAndEscrow() {
 async function inviteCode() {
   console.log('\n— Тулаан: урилгын код, найзын (private) сорилт');
   const a = await register('code_a', 7);
-  const b = await register('code_b', 6);
-  const x = await register('code_x', 10);
+  const b = await register('code_b', 7);
+  const x = await register('code_x', 6);
 
   const { duel } = await call<DuelResponse>('POST', '/duels', { token: a.token, body: { subject: 'math', stake: 3, visibility: 'private' } });
   check(duel.visibility === 'private' && /^\d{6}$/.test(duel.code ?? ''), 'Найзын сорилт 6 оронтой кодтой үүслээ', duel.code);
@@ -74,7 +74,7 @@ async function inviteCode() {
   check(seen.duel.code === null, 'Кодыг зөвхөн үүсгэгч харна');
   await expectError(call('POST', `/duels/${duel.id}/accept`, { token: b.token }), 'NOT_FOUND', 'Найзын сорилтыг id-аар хүлээн авахгүй');
   await expectError(call('POST', '/duels/join', { token: b.token, body: { code: '12' } }), 'BAD_REQUEST', 'Буруу урттай код');
-  await expectError(call('POST', '/duels/join', { token: x.token, body: { code } }), 'WRONG_TIER', 'Өөр түвшний хүүхэд кодоор ч орохгүй');
+  await expectError(call('POST', '/duels/join', { token: x.token, body: { code } }), 'WRONG_GRADE', 'Өөр ангийн хүүхэд кодоор ч орохгүй');
   await expectError(call('POST', '/duels/join', { token: a.token, body: { code } }), 'OWN_DUEL', 'Өөрийн кодоор орохгүй');
 
   // Б өөрийн нээлттэй сорилттой байсан ч кодоор орж болно: Б-гийн сорилт хаагдана.
@@ -92,7 +92,7 @@ async function inviteCode() {
 
   // Лобби дээрх (public) сорилт ч кодтой: найзаа кодоор урьж болно.
   const { duel: pub } = await call<DuelResponse>('POST', '/duels', { token: c.token, body: { subject: 'mongolian', stake: 2 } });
-  const d = await register('code_d', 6);
+  const d = await register('code_d', 7);
   const lobbyD = await call<LobbyResponse>('GET', '/duels', { token: d.token });
   const listed = lobbyD.open.find((o) => o.id === pub.id);
   check(pub.visibility === 'public' && !!listed && listed.code === null, 'Нээлттэй сорилт лобби дээр кодгүйгээр харагдана');
@@ -174,7 +174,7 @@ async function fullDuel(a: AuthResponse, b: AuthResponse, duelId: number) {
 
 async function drawDuel() {
   console.log('\n— Тулаан: тэнцээ');
-  const a = await register('draw_a', 6);
+  const a = await register('draw_a', 7);
   const b = await register('draw_b', 7);
   const duelId = await createAndAccept(a, b, 5);
   const { pa, pb } = await connectBoth(duelId, a, b);

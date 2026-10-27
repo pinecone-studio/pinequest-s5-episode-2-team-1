@@ -30,16 +30,18 @@ export async function insertDrafts(
 ): Promise<{ inserted: number; duplicates: number }> {
   if (drafts.length === 0) return { inserted: 0, duplicates: 0 };
   const stmt = db.prepare(
-    `INSERT OR IGNORE INTO questions (tier, subject, prompt, options, correct_index, explanation, prompt_key, source, book_ref, book_page, grade, topic, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT OR IGNORE INTO questions (tier, subject, prompt, options, correct_index, explanation, prompt_key, source, book_ref, book_page, grade, topic, difficulty, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
-  // Өмнө сэдэвгүй хадгалагдсан ижил асуултад (жишээ нь seed-ийг дахин import хийхэд) сэдвийг нөхнө.
+  // Өмнө сэдэвгүй, хүндгүй хадгалагдсан ижил асуултад (жишээ нь seed-ийг дахин import хийхэд) тэдгээрийг нөхнө.
   const fill = db.prepare('UPDATE questions SET topic = ? WHERE tier = ? AND subject = ? AND prompt_key = ? AND topic IS NULL');
+  const fillDifficulty = db.prepare('UPDATE questions SET difficulty = ? WHERE tier = ? AND subject = ? AND prompt_key = ? AND difficulty IS NULL');
   const results = await db.batch([
     ...drafts.map((d) =>
-      stmt.bind(tier, subject, d.prompt, JSON.stringify(d.options), d.correctIndex, d.explanation, promptKey(d.prompt), source, book?.ref ?? null, bookPage(book?.ref ?? null), book?.grade ?? null, d.topic ?? null, now),
+      stmt.bind(tier, subject, d.prompt, JSON.stringify(d.options), d.correctIndex, d.explanation, promptKey(d.prompt), source, book?.ref ?? null, bookPage(book?.ref ?? null), book?.grade ?? null, d.topic ?? null, d.difficulty ?? null, now),
     ),
     ...drafts.flatMap((d) => (d.topic ? [fill.bind(d.topic, tier, subject, promptKey(d.prompt))] : [])),
+    ...drafts.flatMap((d) => (d.difficulty ? [fillDifficulty.bind(d.difficulty, tier, subject, promptKey(d.prompt))] : [])),
   ]);
   const inserted = results.slice(0, drafts.length).reduce((n, r) => n + (r.meta.changes ?? 0), 0);
   return { inserted, duplicates: drafts.length - inserted };
@@ -111,35 +113,53 @@ export const OWN_GRADE = '((q.grade IS NULL AND q.book_ref IS NULL) OR q.grade =
 const OWN_POOL = `(SELECT id FROM questions WHERE tier = ? AND subject = ? AND flagged = 0 AND grade = (SELECT grade FROM users WHERE id = ?)
          UNION ALL SELECT id FROM questions WHERE tier = ? AND subject = ? AND flagged = 0 AND grade IS NULL AND book_ref IS NULL)`;
 const BY_SEEN = 'ORDER BY (s.seen_at IS NOT NULL), s.seen_at, RANDOM() LIMIT ?';
+/** Шатны хүнд (?) -д ойрыг түрүүлж (харсан ч), дараа нь BY_SEEN. Хүндгүй асуулт = дунд; шат null бол бүгд ижил. */
+const BY_LEVEL = 'ORDER BY ABS(COALESCE(q.difficulty, 2) - ?), (s.seen_at IS NOT NULL), s.seen_at, RANDOM() LIMIT ?';
 
 /**
  * Даалгаврын асуулт: хараагүйг санамсаргүйгээр, дутвал хамгийн эрт харсныг нь. `lesson` бол зөвхөн тэр хичээлийн
- * хуудсуудаас, үгүй бол ангийн бүх асуултаас; `exclude` бол JSON массив дахь id орохгүй (зөвхөн хэрэгтэй үед:
+ * хуудсуудаас, шатны хүндэд ойрыг түрүүлж; үгүй бол ангийн бүх асуултаас; `exclude` бол JSON массив дахь id орохгүй (зөвхөн хэрэгтэй үед:
  * json_each мөр бүрт шалгагдаж уншилтыг нэмдэг).
  */
 export const pickSql = (lesson: boolean, exclude = false) =>
   lesson
     ? `SELECT q.id FROM questions q LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
-       WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0 AND ${IN_RANGE} ${BY_SEEN}`
+       WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0 AND ${IN_RANGE} ${BY_LEVEL}`
     : `SELECT q.id FROM ${OWN_POOL} q LEFT JOIN seen_questions s ON s.question_id = q.id AND s.user_id = ?
        ${exclude ? 'WHERE q.id NOT IN (SELECT value FROM json_each(?))' : ''} ${BY_SEEN}`;
 
 /** SQL: `range` хуудсанд үндэслэсэн (хэрэглэгчид гарч болох) асуултын тоо. Утгууд: tier, subject, ...rangeArgs. */
 export const LESSON_COUNT_SQL = `SELECT COUNT(*) AS n FROM questions q
        WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0 AND ${IN_RANGE}`;
-/** pickSql(lesson !== null, exclude.length > 0)-ийн утгууд. */
-export const pickArgs = (userId: number, tier: Tier, subject: Subject, lesson: PageRange | null, limit: number, exclude: number[] = []) =>
+/** pickSql(lesson !== null, exclude.length > 0)-ийн утгууд. `level` = шатны хүнд (1–3), null бол ялгахгүй. */
+export const pickArgs = (
+  userId: number,
+  tier: Tier,
+  subject: Subject,
+  lesson: PageRange | null,
+  limit: number,
+  exclude: number[] = [],
+  level: number | null = null,
+) =>
   lesson
-    ? [userId, tier, subject, ...rangeArgs(lesson), limit]
+    ? [userId, tier, subject, ...rangeArgs(lesson), level, limit]
     : [tier, subject, userId, tier, subject, userId, ...(exclude.length ? [JSON.stringify(exclude)] : []), limit];
 
 /**
  * Шатны хичээлийнх (харсан ч) үргэлж түрүүлнэ: өөр сэдвийн асуулт зөвхөн хичээлд нэг даалгаварт хүрэлцэх асуулт
  * байхгүй үед л орно. Хоёр алхмаар: хичээлийнх индексээр цөөн мөр уншина, ангийн бүх сан зөвхөн дутвал.
  */
-export async function pickQuestions(db: D1Database, userId: number, tier: Tier, subject: Subject, lesson: PageRange | null, limit: number) {
+export async function pickQuestions(
+  db: D1Database,
+  userId: number,
+  tier: Tier,
+  subject: Subject,
+  lesson: PageRange | null,
+  limit: number,
+  level: number | null = null,
+) {
   const run = async (range: PageRange | null, n: number, exclude: number[]) =>
-    (await db.prepare(pickSql(range !== null, exclude.length > 0)).bind(...pickArgs(userId, tier, subject, range, n, exclude)).all<{ id: number }>()).results;
+    (await db.prepare(pickSql(range !== null, exclude.length > 0)).bind(...pickArgs(userId, tier, subject, range, n, exclude, level)).all<{ id: number }>()).results;
   const own = lesson ? await run(lesson, limit, []) : [];
   if (own.length >= limit) return own;
   return [...own, ...(await run(null, limit - own.length, own.map((r) => r.id)))];
