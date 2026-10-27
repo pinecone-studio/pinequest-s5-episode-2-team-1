@@ -42,7 +42,7 @@ M.bear_batman_base_welcome = [3];
 for (const n of ['glasses', 'gradcap', 'headphones']) M[`item_${n}`] = [2];
 M.item_warrior_helmet = [2];
 M.outfit_warrior_helmet = [1];
-for (const n of ['batman_mask', 'batman_suit']) {
+for (const n of ['batman_mask', 'batman_suit', 'ny_cap', 'hiphop_chain', 'mickey_mask']) {
   M[`item_${n}`] = [2];
   M[`outfit_${n}`] = [1];
 }

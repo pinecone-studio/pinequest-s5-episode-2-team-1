@@ -45,6 +45,9 @@ export type OutfitId =
   | 'batman_mask'
   | 'batman_suit'
   | 'batman'
+  | 'ny_cap'
+  | 'hiphop_chain'
+  | 'mickey_mask'
   | 'pirate_hat'
   | 'cowboy_hat'
   | 'white_headscarf'
@@ -82,6 +85,9 @@ export const OUTFITS: OutfitDef[] = [
     card: 'outfit_glasses_82x140',
     serverItemId: 'acc_glasses',
   },
+  { id: 'ny_cap', name: 'NY малгай', tile: '#AEDDF3', imgTop: 0, card: 'outfit_ny_cap_82x140', item: 'ny_cap' },
+  { id: 'hiphop_chain', name: 'Hip Hop гинж', tile: '#F7A97E', imgTop: -40, card: 'outfit_hiphop_chain_82x140', item: 'hiphop_chain' },
+  { id: 'mickey_mask', name: 'Микки маск', tile: '#F2C6D8', imgTop: 0, card: 'outfit_mickey_mask_82x140', item: 'mickey_mask' },
   { id: 'gradcap', name: 'Төгсөгчийн малгай', tile: '#F3F66C', imgTop: 0, card: 'outfit_gradcap_82x140', item: 'gradcap' },
   {
     id: 'headphones',
