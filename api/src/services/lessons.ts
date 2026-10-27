@@ -10,6 +10,8 @@ import type { PageRange } from './grounding';
 const TOC_SCAN_PAGES = 8;
 const TOC_HEAD = /ГАРЧИГ|АГУУЛГА/i;
 const DOTS = /\.{4,}|…{2,}/;
+/** Бүлэг доторх хэсгийн дугаар: '2.1. ', '4.1 ' */
+const SECTION = /^\d+\.\d+\.?\s+/;
 /** Хичээл биш мөр: өөрийгөө сорих, давтлага, бүлгийн нэмэлт даалгавар (Математик 12), хариу. */
 const NOT_LESSON = /^(Өөрийгөө сори|Давтах|Давтлага|Бүлгийн нэмэлт даалгавар|ХАРИУ)/i;
 
@@ -30,7 +32,9 @@ function pageEntries(text: string): Entry[] {
       continue;
     }
     const chapter = /БҮЛЭГ/.test(line);
-    if (!chapter && !DOTS.test(line)) continue; // толгой бичиг ('МАТЕМАТИК VIII') гэх мэт
+    // Математик 10: '2.1. Бүхэл тоон илтгэгчтэй зэрэг 9' — цэгэн шугамгүй, дугаартай хэсэг
+    const section = SECTION.test(line) && /\s\d{1,3}$/.test(line);
+    if (!chapter && !DOTS.test(line) && !section) continue; // толгой бичиг ('МАТЕМАТИК VIII') гэх мэт
     const m = /^(.*?)[\s.…]*(\d{1,3})?$/.exec(line);
     const body = (m?.[1] ?? line).trim();
     if (body) entries.push({ chapter, text: body, page: m?.[2] ? Number(m[2]) : null });
