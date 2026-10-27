@@ -9,7 +9,7 @@ describe('gradesOfTier', () => {
   it('түвшин → ангиуд', () => {
     expect(gradesOfTier(1)).toEqual([6, 7]);
     expect(gradesOfTier(2)).toEqual([8, 9]);
-    expect(gradesOfTier(3)).toEqual([10]);
+    expect(gradesOfTier(3)).toEqual([10, 11, 12]);
   });
 });
 
