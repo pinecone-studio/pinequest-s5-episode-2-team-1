@@ -239,7 +239,9 @@ export default function PathScreen() {
                 : selGate >= 0
                   ? BOSSES[selGate].soldier
                     ? S.path.soldierFight
-                    : S.path.bossFight
+                    : BOSSES[selGate].helper
+                      ? S.path.helperFight
+                      : S.path.bossFight
                   : `${S.path.lessonOf(sel - selUnit.start + 1, selUnit.boss - selUnit.start)} · ${S.path.stars(doneAt(sel), STAGES)}`
             }
             action={action}
@@ -264,7 +266,7 @@ export default function PathScreen() {
 }
 
 const styles = StyleSheet.create({
-  // газрын зургийн доод захын (Нарны ордны хаалга) өнгө: сүүлийн popover-ын доорх зай газрын зурагтай нийлнэ
-  root: { flex: 1, backgroundColor: '#8A5424' },
+  // газрын зургийн доод захын (Мөнх цаст оргилын цас) өнгө: сүүлийн popover-ын доорх зай газрын зурагтай нийлнэ
+  root: { flex: 1, backgroundColor: '#D5E4FB' },
   scrollContent: { alignItems: 'center' },
 });
