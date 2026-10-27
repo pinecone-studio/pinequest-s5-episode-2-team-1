@@ -308,7 +308,7 @@ function GateFigure({ g, layout, beaten }: { g: number; layout: PathLayout; beat
   // тулаанд дайснууд баруун тийш (баавгай руу) хардаг; газрын зураг дээр баруун гар замын баруун талд тул зам руу
   // (зүүн тийш) харуулахаар толин тусгална
   // 3-р бүлгийн цэрэг зангилааныхаа эсрэг захад (замыг халхлахгүй), зам руу харж зогсоно
-  const side = b.role ?? (b.soldier ? (n.x < MAP_W / 2 ? 'right' : 'left') : undefined);
+  const side = b.role ?? (b.soldier || b.helper ? (n.x < MAP_W / 2 ? 'right' : 'left') : undefined);
   const flip = side === 'right';
   // биеийн гол: PixelLab дайсны frame-д довтолгооны эффект нэг тал руу сунадаг
   const cx = golem ? (flip ? bs.width - golem.cx : golem.cx) : bs.width / 2;
@@ -374,7 +374,7 @@ function GateFigure({ g, layout, beaten }: { g: number; layout: PathLayout; beat
           </View>
         ) : (
           <View style={[styles.bossTag, styles.guardTag]}>
-            <Text style={styles.bossTagText}>{b.soldier ? S.path.soldierTag : S.path.guardTag(b.role === 'left')}</Text>
+            <Text style={styles.bossTagText}>{b.soldier ? S.path.soldierTag : b.helper ? S.path.helperTag : S.path.guardTag(b.role === 'left')}</Text>
           </View>
         )}
       </View>

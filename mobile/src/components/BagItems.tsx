@@ -10,7 +10,7 @@ import { colors, fonts, radius } from '@/constants/theme';
 import { S } from '@/i18n/strings';
 import { LOOT_ICON } from '@/lib/items';
 
-/** Цүнхний хэрэглэгдэхүүн (нууц хайрцгаас): тоо, зориулалт; Зөгийн балыг эндээс ашиглаж зүрх нөхнө. */
+/** Цүнхний хэрэглэгдэхүүн: тоо, зориулалт; зөгийн бал, мөсөн хонхоор зүрх нөхнө. */
 export function BagItems() {
   const { me, setMe } = useAuth();
   const [busy, setBusy] = useState(false);
@@ -19,14 +19,14 @@ export function BagItems() {
   const owned = BAG_ITEMS.filter((i) => me.bag[i] > 0);
   const full = me.lives >= me.maxLives;
 
-  async function honey() {
+  async function useItem(item: 'honey' | 'bell') {
     if (busy) return;
     setBusy(true);
     setNote('');
     try {
-      const r = await api<MeResponse>('/bag/honey', { method: 'POST' });
+      const r = await api<MeResponse>(`/bag/${item}`, { method: 'POST' });
       setMe(r.me);
-      setNote(S.items.honeyUsed);
+      setNote(item === 'bell' ? S.items.bellUsed : S.items.honeyUsed);
     } catch (e) {
       setNote(errorText(e));
     } finally {
@@ -38,7 +38,7 @@ export function BagItems() {
   return (
     <View style={{ gap: 10 }}>
       {owned.map((i) => (
-        <View key={i} style={styles.row} accessible={i !== 'honey'} accessibilityLabel={`${S.items[i].name} ×${me.bag[i]}. ${S.items[i].desc}`}>
+        <View key={i} style={styles.row} accessible={i !== 'honey' && i !== 'bell'} accessibilityLabel={`${S.items[i].name} ×${me.bag[i]}. ${S.items[i].desc}`}>
           <View style={styles.icon}>
             <Sprite id={LOOT_ICON[i]} />
           </View>
@@ -48,7 +48,9 @@ export function BagItems() {
             </Text>
             <Text style={styles.desc}>{S.items[i].desc}</Text>
           </View>
-          {i === 'honey' ? <Button title={full ? S.items.full : S.items.use} small style={{ minHeight: 56 }} disabled={full} loading={busy} onPress={honey} /> : null}
+          {i === 'honey' || i === 'bell' ? (
+            <Button title={full ? S.items.full : S.items.use} accessibilityLabel={`${S.items[i].name}. ${full ? S.items.full : S.items.use}`} small style={{ minHeight: 56 }} disabled={full} loading={busy} onPress={() => useItem(i)} />
+          ) : null}
         </View>
       ))}
       {note ? <Text style={styles.note}>{note}</Text> : null}
