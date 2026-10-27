@@ -42,9 +42,9 @@ export const GAME = {
   TZ_OFFSET_MINUTES: 8 * 60,
 
   GRADE_MIN: 6,
-  GRADE_MAX: 10,
+  GRADE_MAX: 12,
   /** Анги → түвшин */
-  GRADE_TO_TIER: { 6: 1, 7: 1, 8: 2, 9: 2, 10: 3 } as Record<number, Tier>,
+  GRADE_TO_TIER: { 6: 1, 7: 1, 8: 2, 9: 2, 10: 3, 11: 3, 12: 3 } as Record<number, Tier>,
 
   SHIELD: {
     PRICE: 50,

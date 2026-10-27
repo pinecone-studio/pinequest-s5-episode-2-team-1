@@ -36,10 +36,17 @@ for (const n of ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch']) M[
 M.bear_headscarf_base_welcome = [3];
 for (const n of ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch']) M[`bear_boot_base_${n}`] = [2];
 M.bear_boot_base_welcome = [3];
+for (const n of ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch']) M[`bear_batman_base_${n}`] = [2];
+M.bear_batman_base_welcome = [3];
 // өмсөх item-ийн давхарга (home-sprites.ts): амьд баавгайн frame бүрийн толгойд тааруулж зурна
 for (const n of ['glasses', 'gradcap', 'headphones']) M[`item_${n}`] = [2];
 M.item_warrior_helmet = [2];
 M.outfit_warrior_helmet = [1];
+for (const n of ['batman_mask', 'batman_suit', 'ny_cap', 'hiphop_chain', 'mickey_mask']) {
+  M[`item_${n}`] = [2];
+  M[`outfit_${n}`] = [1];
+}
+M.outfit_batman = [1];
 for (const id of ['pirate_hat', 'cowboy_hat', 'white_headscarf', 'brown_boots']) {
   M[`item_${id}`] = [2];
   M[`outfit_${id}`] = [1];
@@ -77,7 +84,9 @@ for (const n of ['map_bear_small', 'map_bear_small_blink']) M[n] = [1];
 // 3-р бүлэг «Нарны элсэн хаант улс» (scripts/sunsands-sprites.ts): газрын зураг, тулааны дэвсгэр 2×; хайрцаг, хэрэглэгдэхүүн
 // газрын зураг ба цүнхэнд 1×, нээх дэлгэцэнд 4×
 for (const n of ['map_world_sun', 'map_world_sun_foot', 'lair_sun', 'lair_sun_scarab', 'lair_sun_captain']) M[n] = [2];
-for (const n of ['map_chest', 'map_chest_open', 'item_amber', 'item_honey']) M[n] = [1, 4];
+// 4-р бүлэг «Мөнх цаст оргил» (scripts/snow-sprites.ts)
+for (const n of ['map_world_snow', 'lair_snow', 'lair_snow_leopard', 'lair_snow_owl', 'lair_snow_yak']) M[n] = [2];
+for (const n of ['map_chest', 'map_chest_open', 'item_amber', 'item_honey', 'item_bell']) M[n] = [1, 4];
 for (const n of ['map_world_0', 'map_world_1', 'map_world_2', 'map_flag', 'fx_magic', 'lair_0', 'lair_1', 'lair_1_left', 'lair_1_right', 'lair_2', 'bear_battle', 'fx_honey_shatter', 'fx_spark', 'fx_spark_magic', 'fx_slash']) M[n] = [2];
 // boss: тулаанд 4× (boss_pumpkin.py, mapgen_world.py); газрын зураг дээр ~70 dp өндөр (хулуу 1.5×, бусад 2.5×)
 M.boss_pumpkin_sheet = [[376, 71], 4];
@@ -88,14 +97,16 @@ M.fx_scythe = [4];
 for (const n of ['hud_cap', 'hud_skull', 'fx_dizzy_sheet', 'fx_soul_sheet']) M[n] = [2];
 // 2-р бүлгийн дайснууд (scripts/golem-sprites.ts, PixelLab): газрын зураг дээр 1×, тулаанд гарууд 2×, boss 2.5× (frame тэгш
 // хэмжээтэй тул бүхэл dp); довтолгооны эффект 1×
-for (const n of ['golem_left_sheet', 'golem_right_sheet', 'golem_scarab_sheet', 'golem_captain_sheet']) M[n] = [1, 2];
-for (const n of ['golem_boss_sheet', 'golem_lion_sheet']) M[n] = [1, 2.5];
+for (const n of ['golem_left_sheet', 'golem_right_sheet', 'golem_scarab_sheet', 'golem_captain_sheet', 'golem_leopard_sheet', 'golem_owl_sheet']) M[n] = [1, 2];
+for (const n of ['golem_boss_sheet', 'golem_lion_sheet', 'golem_yak_sheet', 'golem_santa_sheet']) M[n] = [1, 2.5];
 // ялагдах анимаци (scripts/defeat-sprites.ts): тулааны frame-тэй ижил томрол
-for (const n of ['left', 'right', 'scarab', 'captain']) M[`defeat_${n}`] = [2];
-for (const n of ['boss', 'lion']) M[`defeat_${n}`] = [2.5];
+for (const n of ['left', 'right', 'scarab', 'captain', 'leopard', 'owl']) M[`defeat_${n}`] = [2];
+for (const n of ['boss', 'lion', 'yak', 'santa']) M[`defeat_${n}`] = [2.5];
 M.defeat_pumpkin = [4];
 for (const n of ['fx_crystal_bolt', 'fx_golem_orb', 'fx_moon_crescent', 'fx_golem_impact']) M[n] = [1];
 for (const n of ['sun_fireball', 'sun_blast', 'sun_disc', 'gold_hit', 'sand_ball', 'sand_dust', 'ghost_flame', 'ghost_hit', 'moon_hit', 'crystal_strike', 'crystal_blast']) M[`fx_${n}`] = [1];
+for (const n of ['ice_shard', 'ice_hit', 'frost_orb', 'frost_strike', 'glacier_orb', 'glacier_blast', 'santa_orb', 'santa_boom']) M[`fx_${n}`] = [1];
+M.fx_santa_ice_burst = [1];
 // эцсийн цохилтын KO: 2× (тулаанд томруулсан дайснаас жижиг харагдахгүй)
 M.fx_ko_burst = [2];
 for (const n of ['claw', 'cross', 'boom', 'cracks', 'dust', 'aura']) M[`fx_bear_${n}`] = [1];
@@ -130,12 +141,22 @@ function resize(img: Img, w: number, h: number): Img {
   return out;
 }
 
+/** Batman хувцасны саарал/хар pixel-ийг (бараг өнгөгүй) үсний өнгөөр будахгүй: зөвхөн толгой, чих өнгөө солино */
+function keepSuit(base: Img, furred: Img): Img {
+  for (let i = 0; i < base.d.length; i += 4) {
+    const [r, g, b] = [base.d[i], base.d[i + 1], base.d[i + 2]];
+    const [hi, lo] = [Math.max(r, g, b), Math.min(r, g, b)];
+    if (base.d[i + 3] && hi < 130 && hi - lo <= 0.25 * (hi + lo)) furred.d.set(base.d.subarray(i, i + 4), i);
+  }
+  return furred;
+}
+
 const keep = new Set<string>();
 const entries: [string, number, number][] = [];
 for (const [name, variants] of Object.entries(M)) {
   const base = readPng(new URL(`${name}.png`, SRC));
   const furs = FUR_SPRITES.has(name) ? (['black', 'white'] as const) : [];
-  const images: [string, Img][] = [[name, base], ...furs.map((f): [string, Img] => [`${name}_${f}`, recolorFur(base, f)])];
+  const images: [string, Img][] = [[name, base], ...furs.map((f): [string, Img] => [`${name}_${f}`, name.startsWith('bear_batman_base_') ? keepSuit(base, recolorFur(base, f)) : recolorFur(base, f)])];
   for (const [id, img] of images) {
     for (const v of variants) {
       const [w, h] = typeof v === 'number' ? [img.w * v, img.h * v] : v;

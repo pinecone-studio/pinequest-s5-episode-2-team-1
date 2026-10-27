@@ -55,6 +55,8 @@ export const MAP_CHAPTERS: readonly MapChapter[] = [
   { bg: 'map_world_1_390x760', themeId: 'moonstone', cropTop: 112, edgeFix: 6 },
   // 3-р бүлэг: Нарны элсэн хаант улс (цэргүүд, нууц хайрцаг), доор нь Нарны арсланы тавцан
   { bg: 'map_world_sun_390x780', themeId: 'sunsands', foot: 'map_world_sun_foot_390x430' },
+  // 4-р бүлэг: Мөнх цаст оргил (Мөсөн эвэрт хааны зүүн, баруун гар ба өөрөө)
+  { bg: 'map_world_snow_390x780', themeId: 'eversnow' },
 ];
 export const chapterHeight = (c: MapChapter) =>
   sprites[c.bg].height * (c.extend === undefined ? 1 : 2) - (c.extend ?? 0) - (c.cropTop ?? 0) + (c.foot ? sprites[c.foot].height : 0);
@@ -73,9 +75,11 @@ export interface Boss {
   role?: 'left' | 'right';
   /** 3-р бүлгийн цэрэг: зангилааныхаа хажууд, замаас холдсон талд зогсоно */
   soldier?: boolean;
+  /** 4-р бүлгийн Santa-ийн туслах: цэрэг шиг зангилааныхаа хажууд */
+  helper?: boolean;
   /** холоос довтлох сум ба баавгайд онох оч (PixelLab vfx) */
   shot?: { id: SpriteKey; frames: number; cols: number };
-  impact?: { id: SpriteKey; frames: number; cols: number };
+  impact?: { id: SpriteKey; frames: number; cols: number; pivot?: [number, number]; ms?: number };
   /** агаарт хөвдөг (сүүдэртэй) эсвэл газар зогсдог */
   floats: boolean;
   /** дан зурагтай (frames = 1) boss-ын онох агшинд дээр нь анивчих цагаан дүрс */
@@ -122,6 +126,17 @@ export const BOSSES: Boss[] = [
     shot: { id: 'fx_sun_disc_144x144', frames: 8, cols: 3 }, impact: { id: 'fx_gold_hit_192x192', frames: 7, cols: 3 } },
   { name: 'Нарны арслан', ...golem('lion', 'golem_lion_sheet_480x246', 'golem_lion_sheet_1200x615', 'lair_sun_430x464', 'defeat_lion_1500x690'),
     shot: { id: 'fx_sun_fireball_144x144', frames: 8, cols: 3 }, impact: { id: 'fx_sun_blast_384x288', frames: 12, cols: 4 } },
+  // 4-р бүлэг: ирвэс мөсөн сум, шар шувуу хүйтэн бөмбөгөөр аянга буулгана, Santa-ийн туслах сарлаг мөсөн бөмбөгөөр
+  // бутлана, Santa улаан бөмбөг шидэж, баавгайн хөл доороос мөсөн болор ургуулна
+  { name: 'Мөсөн бамбайт ирвэс', role: 'left', ...golem('leopard', 'golem_leopard_sheet_420x228', 'golem_leopard_sheet_840x456', 'lair_snow_leopard_430x464', 'defeat_leopard_1080x516'),
+    shot: { id: 'fx_ice_shard_144x144', frames: 8, cols: 3 }, impact: { id: 'fx_ice_hit_192x192', frames: 7, cols: 3 } },
+  { name: 'Шар шувуун шидтэн', role: 'right', ...golem('owl', 'golem_owl_sheet_420x216', 'golem_owl_sheet_840x432', 'lair_snow_owl_430x464', 'defeat_owl_1080x492'),
+    shot: { id: 'fx_frost_orb_162x75', frames: 8, cols: 3 }, impact: { id: 'fx_frost_strike_384x384', frames: 10, cols: 4 } },
+  { name: 'Мөсөн эвэрт хаан', helper: true, ...golem('yak', 'golem_yak_sheet_444x192', 'golem_yak_sheet_1110x480', 'lair_snow_yak_430x464', 'defeat_yak_1410x555'),
+    shot: { id: 'fx_glacier_orb_144x144', frames: 8, cols: 3 }, impact: { id: 'fx_glacier_blast_416x408', frames: 10, cols: 4 } },
+  { name: 'Хар Цасан өвгөн', ...golem('santa', 'golem_santa_sheet_480x234', 'golem_santa_sheet_1200x585', 'lair_snow_430x464', 'defeat_santa_1500x660'),
+    // Онох цэг нь сарвуу: цагирагийн төвийг баруун тийш 65dp, доош 78dp буюу хөлд тааруулна.
+    shot: { id: 'fx_santa_orb_144x144', frames: 8, cols: 3 }, impact: { id: 'fx_santa_ice_burst_309x192', frames: 6, cols: 3, pivot: [-13 / 103, 1 / 24], ms: 90 } },
 ];
 /** Boss sheet-ийн frame-ууд (boss_pumpkin.py): хөвөх 0–2, ид шид, цочих, цагаан, давхих, цохих */
 export const BOSS_FRAME = { cast: 3, hurt: 4, flash: 5, dash: 6, strike: 7 } as const;
@@ -235,8 +250,8 @@ export function pathLayout(n: number, lessons: readonly BookLesson[] = []): Path
       const x =
         k === m
           ? MAP_W / 2
-          : g === 1 || g === 2
-            ? MAP_W / 2 + (g === 1 ? GUARD_NODE_DX : -GUARD_NODE_DX)
+          : g >= 0 && BOSSES[g].role
+            ? MAP_W / 2 + (BOSSES[g].role === 'left' ? GUARD_NODE_DX : -GUARD_NODE_DX)
             : Math.round(Math.max(X_MIN, Math.min(X_MAX, MAP_W / 2 + ZIG * Math.sin((k * Math.PI) / 4))));
       const i = start + k;
       const chapterOffset = breaks.filter((chapterStart) => chapterStart <= i).length * BOOK_CHAPTER_GAP;
@@ -324,7 +339,7 @@ export function lessonTitle(subject: Subject, i: number, lessons: readonly BookL
   const g = gateOf(n, i);
   if (g >= 0) {
     const b = BOSSES[g];
-    return isBossNode(n, i) ? S.path.boss(b.name) : b.soldier ? S.path.soldier(b.name) : S.path.guard(b.role === 'left', b.name);
+    return isBossNode(n, i) ? S.path.boss(b.name) : b.soldier ? S.path.soldier(b.name) : b.helper ? S.path.helper(b.name) : S.path.guard(b.role === 'left', b.name);
   }
   return lessonAt(lessons, i)?.title ?? TITLES[subject][i - unitOf(n, i)];
 }

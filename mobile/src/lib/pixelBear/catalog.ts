@@ -36,7 +36,23 @@ const STAFF_OUTFITS = [
   { id: 'bronze_shield', name: 'Одтой бамбай', tile: '#EBCF9B', imgTop: -52, card: 'outfit_bronze_shield_82x140', item: 'bronze_shield' },
 ] as const;
 
-export type OutfitId = 'scarf' | 'glasses' | 'gradcap' | 'headphones' | 'warrior_helmet' | 'pirate_hat' | 'cowboy_hat' | 'white_headscarf' | 'brown_boots' | (typeof STAFF_OUTFITS)[number]['id'];
+export type OutfitId =
+  | 'scarf'
+  | 'glasses'
+  | 'gradcap'
+  | 'headphones'
+  | 'warrior_helmet'
+  | 'batman_mask'
+  | 'batman_suit'
+  | 'batman'
+  | 'ny_cap'
+  | 'hiphop_chain'
+  | 'mickey_mask'
+  | 'pirate_hat'
+  | 'cowboy_hat'
+  | 'white_headscarf'
+  | 'brown_boots'
+  | (typeof STAFF_OUTFITS)[number]['id'];
 
 export interface OutfitDef {
   id: OutfitId;
@@ -47,6 +63,8 @@ export interface OutfitDef {
   card: SpriteKey;
   /** амьд баавгайн толгойд өмсгөх давхарга (scripts/home-sprites.ts); ороолт нь баавгайн хөдөлгөөнд шингэсэн */
   item?: ItemId;
+  /** хэд хэдэн item-ийг хамт өмсөх бол (доороос дээш дарааллаар); `item`-ийн оронд */
+  items?: ItemId[];
   /** backend-д бодитоор байдаг эд зүйл (items хүснэгт): худалдан авалт сервер дээр хийгдэнэ */
   serverItemId?: string;
 }
@@ -67,6 +85,9 @@ export const OUTFITS: OutfitDef[] = [
     card: 'outfit_glasses_82x140',
     serverItemId: 'acc_glasses',
   },
+  { id: 'ny_cap', name: 'NY малгай', tile: '#AEDDF3', imgTop: 0, card: 'outfit_ny_cap_82x140', item: 'ny_cap' },
+  { id: 'hiphop_chain', name: 'Hip Hop гинж', tile: '#F7A97E', imgTop: -40, card: 'outfit_hiphop_chain_82x140', item: 'hiphop_chain' },
+  { id: 'mickey_mask', name: 'Микки маск', tile: '#F2C6D8', imgTop: 0, card: 'outfit_mickey_mask_82x140', item: 'mickey_mask' },
   { id: 'gradcap', name: 'Төгсөгчийн малгай', tile: '#F3F66C', imgTop: 0, card: 'outfit_gradcap_82x140', item: 'gradcap' },
   {
     id: 'headphones',
@@ -77,6 +98,9 @@ export const OUTFITS: OutfitDef[] = [
     card: 'outfit_headphones_82x140',
     serverItemId: 'acc_headphones',
   },
+  { id: 'batman_mask', name: 'Batman маск', tile: '#9FD0F2', imgTop: 0, card: 'outfit_batman_mask_82x140', item: 'batman_mask' },
+  { id: 'batman_suit', name: 'Batman хувцас', tile: '#9FD0F2', imgTop: -40, card: 'outfit_batman_suit_82x140', item: 'batman_suit' },
+  { id: 'batman', name: 'Batman', tile: '#22106E', imgTop: -26, card: 'outfit_batman_82x140', items: ['batman_suit', 'batman_mask'] },
   ...STAFF_OUTFITS,
 ];
 
@@ -84,3 +108,5 @@ export const DEFAULT_OUTFIT_ID: OutfitId = 'scarf';
 
 export const bgById = (id: string): BgDef => BACKGROUNDS.find((b) => b.id === id) ?? BACKGROUNDS[0];
 export const outfitById = (id: string): OutfitDef => OUTFITS.find((o) => o.id === id) ?? OUTFITS[0];
+/** амьд баавгайд өмсгөх item-үүд */
+export const outfitItems = (o: OutfitDef): ItemId[] => o.items ?? (o.item ? [o.item] : []);

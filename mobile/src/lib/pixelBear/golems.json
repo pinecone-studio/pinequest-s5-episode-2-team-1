@@ -572,5 +572,389 @@
         "direction": "forward"
       }
     }
+  },
+  "yak": {
+    "sheet": "golem_yak_sheet",
+    "frameSize": {
+      "w": 74,
+      "h": 64
+    },
+    "columns": 6,
+    "feet": 61,
+    "dx": 7,
+    "dy": 14,
+    "cx": 41,
+    "bw": 54,
+    "head": 3,
+    "frames": [
+      {
+        "name": "idle0",
+        "duration": 220
+      },
+      {
+        "name": "idle1",
+        "duration": 220
+      },
+      {
+        "name": "attack0",
+        "duration": 110
+      },
+      {
+        "name": "attack1",
+        "duration": 110
+      },
+      {
+        "name": "attack2",
+        "duration": 130
+      },
+      {
+        "name": "attack3",
+        "duration": 140
+      },
+      {
+        "name": "attack4",
+        "duration": 70
+      },
+      {
+        "name": "impact",
+        "duration": 160
+      },
+      {
+        "name": "attack6",
+        "duration": 110
+      },
+      {
+        "name": "attack7",
+        "duration": 110
+      },
+      {
+        "name": "flash",
+        "duration": 80
+      },
+      {
+        "name": "hurt0",
+        "duration": 100
+      },
+      {
+        "name": "hurt1",
+        "duration": 100
+      },
+      {
+        "name": "hurt2",
+        "duration": 100
+      },
+      {
+        "name": "hurt3",
+        "duration": 100
+      }
+    ],
+    "tags": {
+      "idle": {
+        "from": 0,
+        "to": 1,
+        "direction": "pingpong"
+      },
+      "attack": {
+        "from": 2,
+        "to": 9,
+        "direction": "forward"
+      },
+      "hurt": {
+        "from": 10,
+        "to": 14,
+        "direction": "forward"
+      }
+    }
+  },
+  "leopard": {
+    "sheet": "golem_leopard_sheet",
+    "frameSize": {
+      "w": 70,
+      "h": 76
+    },
+    "columns": 6,
+    "feet": 73,
+    "dx": 3,
+    "dy": 7,
+    "cx": 41,
+    "bw": 46,
+    "head": 29,
+    "frames": [
+      {
+        "name": "idle0",
+        "duration": 220
+      },
+      {
+        "name": "idle1",
+        "duration": 220
+      },
+      {
+        "name": "idle2",
+        "duration": 220
+      },
+      {
+        "name": "idle3",
+        "duration": 220
+      },
+      {
+        "name": "attack0",
+        "duration": 110
+      },
+      {
+        "name": "attack1",
+        "duration": 110
+      },
+      {
+        "name": "attack2",
+        "duration": 130
+      },
+      {
+        "name": "attack3",
+        "duration": 140
+      },
+      {
+        "name": "attack4",
+        "duration": 70
+      },
+      {
+        "name": "impact",
+        "duration": 160
+      },
+      {
+        "name": "attack6",
+        "duration": 110
+      },
+      {
+        "name": "attack7",
+        "duration": 110
+      },
+      {
+        "name": "flash",
+        "duration": 80
+      },
+      {
+        "name": "hurt0",
+        "duration": 100
+      },
+      {
+        "name": "hurt1",
+        "duration": 100
+      }
+    ],
+    "tags": {
+      "idle": {
+        "from": 0,
+        "to": 3,
+        "direction": "pingpong"
+      },
+      "attack": {
+        "from": 4,
+        "to": 11,
+        "direction": "forward"
+      },
+      "hurt": {
+        "from": 12,
+        "to": 14,
+        "direction": "forward"
+      }
+    }
+  },
+  "owl": {
+    "sheet": "golem_owl_sheet",
+    "frameSize": {
+      "w": 70,
+      "h": 72
+    },
+    "columns": 6,
+    "feet": 69,
+    "dx": 11,
+    "dy": 8,
+    "cx": 30,
+    "bw": 41,
+    "head": 20,
+    "frames": [
+      {
+        "name": "idle0",
+        "duration": 220
+      },
+      {
+        "name": "idle1",
+        "duration": 220
+      },
+      {
+        "name": "idle2",
+        "duration": 220
+      },
+      {
+        "name": "idle3",
+        "duration": 220
+      },
+      {
+        "name": "attack0",
+        "duration": 110
+      },
+      {
+        "name": "attack1",
+        "duration": 110
+      },
+      {
+        "name": "attack2",
+        "duration": 130
+      },
+      {
+        "name": "attack3",
+        "duration": 140
+      },
+      {
+        "name": "attack4",
+        "duration": 70
+      },
+      {
+        "name": "impact",
+        "duration": 160
+      },
+      {
+        "name": "attack6",
+        "duration": 110
+      },
+      {
+        "name": "attack7",
+        "duration": 110
+      },
+      {
+        "name": "flash",
+        "duration": 80
+      },
+      {
+        "name": "hurt0",
+        "duration": 100
+      },
+      {
+        "name": "hurt1",
+        "duration": 100
+      },
+      {
+        "name": "hurt2",
+        "duration": 100
+      }
+    ],
+    "tags": {
+      "idle": {
+        "from": 0,
+        "to": 3,
+        "direction": "pingpong"
+      },
+      "attack": {
+        "from": 4,
+        "to": 11,
+        "direction": "forward"
+      },
+      "hurt": {
+        "from": 12,
+        "to": 15,
+        "direction": "forward"
+      }
+    }
+  },
+  "santa": {
+    "sheet": "golem_santa_sheet",
+    "frameSize": {
+      "w": 80,
+      "h": 78
+    },
+    "columns": 6,
+    "feet": 75,
+    "dx": 4,
+    "dy": 5,
+    "cx": 42,
+    "bw": 65,
+    "head": 6,
+    "frames": [
+      {
+        "name": "idle0",
+        "duration": 220
+      },
+      {
+        "name": "idle1",
+        "duration": 220
+      },
+      {
+        "name": "idle2",
+        "duration": 220
+      },
+      {
+        "name": "idle3",
+        "duration": 220
+      },
+      {
+        "name": "attack0",
+        "duration": 110
+      },
+      {
+        "name": "attack1",
+        "duration": 110
+      },
+      {
+        "name": "attack2",
+        "duration": 130
+      },
+      {
+        "name": "attack3",
+        "duration": 140
+      },
+      {
+        "name": "attack4",
+        "duration": 70
+      },
+      {
+        "name": "impact",
+        "duration": 160
+      },
+      {
+        "name": "attack6",
+        "duration": 110
+      },
+      {
+        "name": "attack7",
+        "duration": 110
+      },
+      {
+        "name": "flash",
+        "duration": 80
+      },
+      {
+        "name": "hurt0",
+        "duration": 100
+      },
+      {
+        "name": "hurt1",
+        "duration": 100
+      },
+      {
+        "name": "hurt2",
+        "duration": 100
+      },
+      {
+        "name": "hurt3",
+        "duration": 100
+      }
+    ],
+    "tags": {
+      "idle": {
+        "from": 0,
+        "to": 3,
+        "direction": "pingpong"
+      },
+      "attack": {
+        "from": 4,
+        "to": 11,
+        "direction": "forward"
+      },
+      "hurt": {
+        "from": 12,
+        "to": 16,
+        "direction": "forward"
+      }
+    }
   }
 }

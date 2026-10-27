@@ -32,7 +32,7 @@ export interface PageCandidate {
   seq: number;
 }
 
-/** Түвшингийн ангиуд: 1 → [6, 7], 2 → [8, 9], 3 → [10]. */
+/** Түвшингийн ангиуд: 1 → [6, 7], 2 → [8, 9], 3 → [10, 11, 12]. */
 export function gradesOfTier(tier: Tier): number[] {
   return Object.entries(GAME.GRADE_TO_TIER)
     .filter(([, t]) => t === tier)
