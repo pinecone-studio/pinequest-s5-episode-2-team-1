@@ -9,7 +9,7 @@ import { S } from '@/i18n/strings';
 import { BEAR_CONFIG, type BearView } from '@/lib/pixelBear/bear';
 import { tagFrames } from '@/lib/pixelBear/anim';
 import home from '@/lib/pixelBear/bear-home.json';
-import { bgById, outfitById, type OutfitId } from '@/lib/pixelBear/catalog';
+import { bgById, outfitById, outfitItems, type OutfitId } from '@/lib/pixelBear/catalog';
 
 const NIGHT_MOON = '#F3F66C';
 
@@ -29,7 +29,7 @@ export function BearStage({
   const cfg = BEAR_CONFIG[view.state];
   const ink = bg.dark ? colors.white : colors.ink;
   // сонгосон item-ээ бүх төлөвт өмсөнө
-  const item = outfitById(outfitId).item;
+  const items = outfitItems(outfitById(outfitId));
   const ouch = useOuch();
 
   return (
@@ -55,7 +55,7 @@ export function BearStage({
         )}
         <View style={[styles.bearWrap, { top: cfg.top }]}>
           <Pop trigger={view.state} from={0.6}>
-            <LiveBear key={ouch.at ? `ouch${ouch.at.n}` : view.state} anim={ouch.at ? 'ouch' : view.state} w={cfg.w} items={item ? [item] : []} />
+            <LiveBear key={ouch.at ? `ouch${ouch.at.n}` : view.state} anim={ouch.at ? 'ouch' : view.state} w={cfg.w} items={items} />
           </Pop>
         </View>
 

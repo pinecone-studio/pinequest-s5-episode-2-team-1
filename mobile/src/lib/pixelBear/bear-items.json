@@ -27,6 +27,20 @@
     ],
     "loose": false
   },
+  "batman_suit": {
+    "at": [
+      -2,
+      52
+    ],
+    "loose": false
+  },
+  "batman_mask": {
+    "at": [
+      3,
+      0
+    ],
+    "loose": false
+  },
   "pirate_hat": {
     "at": [
       -6,
