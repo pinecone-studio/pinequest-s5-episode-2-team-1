@@ -14,8 +14,8 @@ function seeded(seed: number) {
   };
 }
 
-/** "−12" → −12, "3,25" → 3.25 */
-const num = (s: string) => Number(s.replace('−', '-').replace(',', '.'));
+/** "−12" → −12, "3.25" → 3.25 */
+const num = (s: string) => Number(s.replace('−', '-'));
 const gcd = (a: number, b: number): number => (b === 0 ? Math.abs(a) : gcd(b, a % b));
 const frac = (a: number, b: number) => {
   const d = gcd(a, b);
@@ -25,7 +25,7 @@ const frac = (a: number, b: number) => {
 const value = (s: string) => {
   const f = s.match(/^(−?\d+)\/(\d+)$/);
   if (f) return num(f[1]) / Number(f[2]);
-  return /^−?\d+(,\d+)?$/.test(s) ? num(s) : null;
+  return /^−?\d+(\.\d+)?$/.test(s) ? num(s) : null;
 };
 /** "−3x + 5" → [−3, 5] */
 function linear(s: string): [number, number] {
@@ -53,6 +53,8 @@ function solve(kind: Kind, body: string, options: string[]): string {
   const m = (re: RegExp) => need(body.match(re), kind, body);
   switch (kind) {
     case 'statement': {
+      const [, p, q] = m(/^(\d+) ба (\d+) тооны/);
+      expect(p, body).not.toBe(q);
       const truth = (s: string) => {
         const [x, y, z] = ints(s);
         if (s.includes('·')) return x * y === z;
@@ -80,16 +82,16 @@ function solve(kind: Kind, body: string, options: string[]): string {
       return String(Math.round(Number(v) / p) * p);
     }
     case 'decimal-add': {
-      const [, a, op, b] = m(/^([\d,]+) ([+−]) ([\d,]+) үйлдлийг/);
-      const places = a.split(',')[1].length;
+      const [, a, op, b] = m(/^([\d.]+) ([+−]) ([\d.]+) үйлдлийг/);
+      const places = a.split('.')[1].length;
       const r = op === '+' ? num(a) + num(b) : num(a) - num(b);
-      return r.toFixed(places).replace('.', ',');
+      return r.toFixed(places);
     }
     case 'decimal-scale':
     case 'decimal-mul': {
-      const [, a, b] = m(/^([\d,]+) · ([\d,]+) үржвэрийг/);
-      const places = (a.split(',')[1] ?? '').length + (b.split(',')[1] ?? '').length;
-      return (num(a) * num(b)).toFixed(places).replace('.', ',');
+      const [, a, b] = m(/^([\d.]+) · ([\d.]+) үржвэрийг/);
+      const places = (a.split('.')[1] ?? '').length + (b.split('.')[1] ?? '').length;
+      return (num(a) * num(b)).toFixed(places);
     }
     case 'mental': {
       const [a, b, , c] = ints(m(/^(.+) илэрхийллийг/)[1]);
@@ -355,18 +357,18 @@ describe('Математик 6, 7-ын хичээлийн бодлогын ха�
   for (const [grade, specs, templates] of cases)
     for (const [i, spec] of specs.entries()) {
       it(`Математик ${grade} х.${spec.page} ${spec.title} (${spec.kind})`, () => {
-        const prefix = `Математик ${grade} · ${spec.title}. `;
         for (const level of [1, 2, 3] as Level[])
           for (let seed = 1; seed <= 300; seed++) {
             const draft = templates[i].make(seeded(seed * 7 + level), level);
-            expect(draft.prompt.startsWith(prefix)).toBe(true);
-            const body = draft.prompt.slice(prefix.length);
+            // хичээлийн нэрийг асуулт бүрт давтахгүй (баавгай ч чангаар уншихгүй)
+            expect(draft.prompt.startsWith('Математик')).toBe(false);
+            const body = draft.prompt;
             const text = [body, ...draft.options, draft.explanation].join(' | ');
             // дүрэм: том үсгээр эхэлнэ, мэдэгдсэн буруу залгавар, ASCII хасах, дүүргэгч сонголтгүй
             expect(body, body).not.toMatch(/^[а-яөү]/);
             expect(text, text).not.toMatch(/(?:утга|далайц|моод|периметр|зуут)-(?:ийг|ыг|г|аар)/i);
             expect(text, text).not.toMatch(/(^|[\s(;:=|])-\d/);
-            expect(text, text).not.toMatch(/−\d+°|\d\.\d|Эх үүсвэр \d|Ангилал \d|\b1\/1\b|8 нэгжийг|undefined|NaN/);
+            expect(text, text).not.toMatch(/−\d+°|\d,\d|Эх үүсвэр \d|Ангилал \d|\b1\/1\b|8 нэгжийг|undefined|NaN/);
             expect(draft.options).toHaveLength(4);
             expect(new Set(draft.options).size, text).toBe(4);
             const values = draft.options.map(value);

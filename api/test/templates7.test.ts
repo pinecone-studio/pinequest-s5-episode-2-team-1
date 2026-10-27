@@ -71,7 +71,7 @@ describe('Математик 7-ын бодлогын загвар', () => {
       expect(validateDrafts(drafts, topicIds(1, 'math')).rejected).toEqual([]);
       for (const draft of drafts) expectCorrect(template.id, draft.prompt, draft.options[0]);
       if (template.id === 'math7-compare-decimals') {
-        expect(drafts.flatMap((draft) => [draft.prompt, ...draft.options, draft.explanation]).join(' ')).not.toMatch(/\d\.\d/);
+        expect(drafts.flatMap((draft) => [draft.prompt, ...draft.options, draft.explanation]).join(' ')).not.toMatch(/\d,\d/);
       }
 
       const generated = generate([template], 5, level, seeded(level * 101));
