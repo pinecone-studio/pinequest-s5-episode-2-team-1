@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { View } from 'react-native';
-import { SheetFrame, SheetLoop, Sprite } from '@/components/pixel';
+import { SheetFrame, Sprite } from '@/components/pixel';
 import { useTagPlayer } from '@/hooks/useTagPlayer';
 import home from '@/lib/pixelBear/bear-home.json';
 import items from '@/lib/pixelBear/bear-items.json';
@@ -26,6 +26,15 @@ const ITEM_SPRITES: Record<ItemId, SpriteKey> = {
   gradcap: 'item_gradcap_78x44',
   headphones: 'item_headphones_142x70',
   warrior_helmet: 'item_warrior_helmet_164x160',
+  batman_suit: 'item_batman_suit_148x148',
+  batman_mask: 'item_batman_mask_126x104',
+  ny_cap: 'item_ny_cap_112x74',
+  hiphop_chain: 'item_hiphop_chain_72x86',
+  mickey_mask: 'item_mickey_mask_156x130',
+  pirate_hat: 'item_pirate_hat_164x84',
+  cowboy_hat: 'item_cowboy_hat_152x84',
+  white_headscarf: 'item_white_headscarf_164x280',
+  brown_boots: 'item_brown_boots_164x280',
   staff00: 'item_staff00_64x192',
   staff03: 'item_staff03_64x192',
   staff04: 'item_staff04_64x192',
@@ -33,6 +42,8 @@ const ITEM_SPRITES: Record<ItemId, SpriteKey> = {
   holly_staff: 'item_holly_staff_64x192',
   pestilence_staff: 'item_pestilence_staff_64x192',
   w_staff_256: 'item_w_staff_256_64x192',
+  black_sword: 'item_black_sword_48x128',
+  bronze_shield: 'item_bronze_shield_72x76',
 };
 const HELMET_BASES: Record<BearAnim, SpriteKey> = {
   thriving: 'bear_helmet_base_thriving_940x280',
@@ -43,7 +54,34 @@ const HELMET_BASES: Record<BearAnim, SpriteKey> = {
   ouch: 'bear_helmet_base_ouch_1092x272',
   welcome: 'bear_helmet_base_welcome_1320x1260',
 };
-const MAGIC_FRAMES = Array.from({ length: 24 }, (_, i) => i);
+/** Batman хувцас биед (гар, хөл) frame бүрт өмсөгдсөн sheet (scripts/home-sprites.ts batmanBase) */
+const BATMAN_BASES: Record<BearAnim, SpriteKey> = {
+  thriving: 'bear_batman_base_thriving_940x280',
+  happy: 'bear_batman_base_happy_1260x260',
+  tired: 'bear_batman_base_tired_1092x260',
+  neglected: 'bear_batman_base_neglected_1092x260',
+  sleep: 'bear_batman_base_sleep_970x260',
+  ouch: 'bear_batman_base_ouch_1092x272',
+  welcome: 'bear_batman_base_welcome_1320x1260',
+};
+const HEADSCARF_BASES: Record<BearAnim, SpriteKey> = {
+  thriving: 'bear_headscarf_base_thriving_940x280',
+  happy: 'bear_headscarf_base_happy_1260x260',
+  tired: 'bear_headscarf_base_tired_1092x260',
+  neglected: 'bear_headscarf_base_neglected_1092x260',
+  sleep: 'bear_headscarf_base_sleep_970x260',
+  ouch: 'bear_headscarf_base_ouch_1092x272',
+  welcome: 'bear_headscarf_base_welcome_1320x1260',
+};
+const BOOT_BASES: Record<BearAnim, SpriteKey> = {
+  thriving: 'bear_boot_base_thriving_940x280',
+  happy: 'bear_boot_base_happy_1260x260',
+  tired: 'bear_boot_base_tired_1092x260',
+  neglected: 'bear_boot_base_neglected_1092x260',
+  sleep: 'bear_boot_base_sleep_970x260',
+  ouch: 'bear_boot_base_ouch_1092x272',
+  welcome: 'bear_boot_base_welcome_1320x1260',
+};
 
 /**
  * PixelLab-ийн frame-уудаар амьд хөдөлдөг баавгай: `in` нэг удаа (жишээ нь гомдож гараа зөрүүлэх), дараа нь `loop`
@@ -73,35 +111,39 @@ export function LiveBear({
     prev.current = head;
   }, [head]);
   const shift = meta.offset[0] * px + (meta.frameSize.w * px) / 2 - w / 2; // frame-ийн төв анхны sprite-ийн төвөөс
-  const sheet = worn.includes('warrior_helmet') ? HELMET_BASES[anim] : SHEETS[anim];
+  const sheet = worn.includes('warrior_helmet')
+    ? HELMET_BASES[anim]
+    : worn.includes('batman_suit')
+      ? BATMAN_BASES[anim]
+      : worn.includes('white_headscarf')
+        ? HEADSCARF_BASES[anim]
+        : worn.includes('brown_boots')
+          ? BOOT_BASES[anim]
+          : SHEETS[anim];
   return (
     <View style={{ marginTop: meta.offset[1] * px, transform: [{ translateX: shift }] }}>
       <SheetFrame id={sheet} frames={meta.frames.length} cols={meta.columns} frame={frame} label={label} />
-      {worn.map((id) => {
+      {worn.filter((id) => id !== 'batman_suit').map((id) => {
         const it = items[id];
+        if ('fitted' in it) return (
+          <View key={id} pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0 }}>
+            <SheetFrame id={it.fitted.sheets[anim] as SpriteKey} frames={meta.frames.length} cols={meta.columns} frame={frame} />
+          </View>
+        );
         if ('held' in it) {
-          const [x, y] = meta.frames[frame].hand;
-          const magic = 'magicTip' in it ? (() => {
-            const angle = anim === 'happy' ? Math.min(10, Math.max(0, Math.round((94 - y) / 3))) : 0;
-            const rad = angle * Math.PI / 180;
-            const [dx, dy] = it.magicTip;
-            return [dx * Math.cos(rad) - dy * Math.sin(rad), dx * Math.sin(rad) + dy * Math.cos(rad)];
-          })() : null;
+          const [x, y] = id === 'bronze_shield' ? meta.frames[frame].shieldHand : meta.frames[frame].hand;
           // Fingers and staff are baked into one frame at this exact hand pivot.
           return (
             <View key={id} pointerEvents="none" style={{ position: 'absolute', left: (x + it.held.at[0]) * px, top: (y + it.held.at[1]) * px }}>
               <SheetFrame id={it.held.sheets[anim] as SpriteKey} frames={meta.frames.length} cols={meta.columns} frame={frame} />
-              {magic ? (
-                <View style={{ position: 'absolute', left: (-it.held.at[0] + magic[0] - 11) * px, top: (-it.held.at[1] + magic[1] - 10) * px }}>
-                  <SheetLoop id="magic_pestilence_staff_1056x44" frames={24} loop={MAGIC_FRAMES} ms={83} />
-                </View>
-              ) : null}
             </View>
           );
         }
         const [x, y] = it.loose ? [0, 1].map((k) => Math.round((head[k] + prev.current[k]) / 2)) : head;
         return (
-          <Sprite key={id} id={ITEM_SPRITES[id]} style={{ position: 'absolute', left: (x + it.at[0]) * px, top: (y + it.at[1]) * px }} />
+          <View key={id} pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0 }}>
+            <Sprite id={ITEM_SPRITES[id]} style={{ position: 'absolute', left: (x + it.at[0]) * px, top: (y + it.at[1]) * px }} />
+          </View>
         );
       })}
     </View>

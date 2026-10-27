@@ -620,7 +620,7 @@ export const errorMessages: Record<ErrorCode | 'NETWORK' | 'TIMEOUT' | 'OFFLINE'
   DUEL_EXISTS: 'Танд аль хэдийн нээлттэй тулаан байна',
   DUEL_TAKEN: 'Энэ сорилтыг өөр хүн авчихлаа',
   DUEL_NOT_OPEN: 'Сорилт хаагдсан байна',
-  WRONG_TIER: 'Энэ сорилт өөр түвшнийх байна',
+  WRONG_GRADE: 'Энэ сорилт өөр ангийнх байна',
   OWN_DUEL: 'Өөрийнхөө сорилтыг хүлээн авах боломжгүй',
   CODE_NOT_FOUND: 'Ийм кодтой тулаан олдсонгүй. Кодоо шалгаад дахин оролдоорой.',
   BOSS_LOCKED: 'Энэ boss-той одоохондоо тулалдах боломжгүй',

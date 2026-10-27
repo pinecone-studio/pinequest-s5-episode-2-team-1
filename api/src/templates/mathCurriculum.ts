@@ -96,8 +96,8 @@ const atLevel = <T>(level: Level, xs: readonly [T, T, T]): T => xs[level - 1];
 const gcd = (a: number, b: number): number => (b === 0 ? Math.abs(a) : gcd(b, a % b));
 /** Сурах бичгийн хасах тэмдэг (U+2212). */
 const n = (v: number) => (v < 0 ? `−${-v}` : String(v));
-/** Аравтын бутархай сурах бичиг шиг таслалтай: 16,81. */
-const dec = (v: number, places: number) => `${v < 0 ? '−' : ''}${Math.abs(v).toFixed(places).replace('.', ',')}`;
+/** Аравтын бутархай сурах бичиг шиг цэгтэй: 16.81 (seed-ийн бодлоготой ижил). */
+const dec = (v: number, places: number) => `${v < 0 ? '−' : ''}${Math.abs(v).toFixed(places)}`;
 /** Хураасан энгийн бутархай; хуваарь 1 бол бүхэл тоо. */
 const fraction = (a: number, b: number) => {
   const d = gcd(a, b);
@@ -137,7 +137,9 @@ function make(kind: Kind, rng: Rng, level: Level): Draft {
     case 'statement': {
       // Хэллэг: дөрвөн тоон хэллэгээс нэг нь үнэн.
       const a = int(rng, 2, max);
-      const b = int(rng, 2, 9);
+      // "5 ба 5 тооны" гэх мэт ижил хоёр тоо гаргахгүй
+      const drawn = int(rng, 2, 9);
+      const b = drawn === a ? (drawn === 9 ? 2 : drawn + 1) : drawn;
       const product = a * b;
       const right = `${a} · ${b} = ${product}`;
       const wrongs = [`${a} · ${b} = ${product + b}`, `${product} : ${b} = ${a + 1}`, `${a + b} < ${a}`];
@@ -927,14 +929,13 @@ function make(kind: Kind, rng: Rng, level: Level): Draft {
 }
 
 function templates(grade: 6 | 7, specs: readonly Spec[]): readonly Template[] {
-  return specs.map(({ page, title, kind, topic }) => ({
+  return specs.map(({ page, kind, topic }) => ({
     ref: `math-${grade}:${page}`,
     id: `math${grade}-page-${page}`,
     preferStored: true,
     ...(topic ? { topic } : {}),
     make(rng: Rng, level: Level) {
-      const draft = make(kind, rng, level);
-      return { ...draft, prompt: `Математик ${grade} · ${title}. ${draft.prompt}` };
+      return make(kind, rng, level);
     },
   }));
 }

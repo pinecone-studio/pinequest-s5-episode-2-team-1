@@ -66,6 +66,7 @@ export function generate(
           ...q,
           correctIndex: 0,
           ...(template.topic ? { topic: template.topic } : {}),
+          difficulty: level,
         },
         rng,
       ),

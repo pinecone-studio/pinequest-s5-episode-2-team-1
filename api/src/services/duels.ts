@@ -167,10 +167,10 @@ export async function lobby(db: D1Database, userId: number, now = Date.now()): P
   const { results: open } = await db
     .prepare(
       `${SUMMARY_SELECT}
-       WHERE d.status = 'open' AND d.visibility = 'public' AND d.tier = ? AND d.creator_id != ? AND d.creator_seen_at >= ?
+       WHERE d.status = 'open' AND d.visibility = 'public' AND c.grade = ? AND d.creator_id != ? AND d.creator_seen_at >= ?
        ORDER BY d.created_at DESC LIMIT 30`,
     )
-    .bind(user.tier, userId, now - GAME.DUEL.LOBBY_PRESENCE_MS)
+    .bind(user.grade, userId, now - GAME.DUEL.LOBBY_PRESENCE_MS)
     .all<SummaryRow>();
   const mine = await db
     .prepare(`${SUMMARY_SELECT} WHERE (d.creator_id = ? OR d.opponent_id = ?) AND d.status IN ('open', 'accepted') ORDER BY d.id DESC LIMIT 1`)
@@ -254,14 +254,15 @@ async function startDuel(env: Bindings, userId: number, duel: DuelRow, now: numb
   if (duel.status !== 'open') throw new ApiError(409, duel.status === 'accepted' ? 'DUEL_TAKEN' : 'DUEL_NOT_OPEN', 'Сорилт хаагдсан');
 
   const acceptor = await getUserRow(db, userId);
-  if (acceptor.tier !== duel.tier) throw new ApiError(403, 'WRONG_TIER', 'Өөр түвшний сорилт');
+  const creator = await getUserRow(db, duel.creator_id);
+  // Ижил ангийнхан л тулална (асуулт хоёулангийнх нь ангийн номынх).
+  if (acceptor.grade !== creator.grade) throw new ApiError(403, 'WRONG_GRADE', 'Өөр ангийн сорилт');
   const active = await db
     .prepare(`SELECT id FROM duels WHERE status = 'accepted' AND (creator_id = ? OR opponent_id = ?) LIMIT 1`)
     .bind(userId, userId)
     .first();
   if (active) throw new ApiError(409, 'DUEL_EXISTS', 'Явагдаж буй тулаан байна');
 
-  const creator = await getUserRow(db, duel.creator_id);
   if (stakeError(duel.stake, creator.points)) {
     // Үүсгэгчийн оноо буурч 20%-ийн хязгаар зөрчигдсөн → сорилт хүчингүй.
     await cancelChallenge(db, creator.id, duelId, now).catch(() => undefined);
@@ -270,7 +271,7 @@ async function startDuel(env: Bindings, userId: number, duel: DuelRow, now: numb
   if (stakeError(duel.stake, acceptor.points)) throw new ApiError(400, 'STAKE_TOO_HIGH', 'Таны онооны 20%-иас их бооцоо');
 
   // Хоёулаа хараагүй асуултыг илүүд үзнэ. Хурдны тулд LLM дуудахгүй, pool-оос. Номын асуулт зөвхөн хоёулангийнх нь
-  // ангийн номынх (өөр ангийнхан бол зөвхөн номгүй асуулт).
+  // ангийн номынх.
   const { results: picked } = await db
     .prepare(
       `SELECT q.id, q.prompt, q.options, q.correct_index, q.explanation FROM questions q

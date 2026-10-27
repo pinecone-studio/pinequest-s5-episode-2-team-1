@@ -23,6 +23,16 @@ export const COSMETICS: readonly Cosmetic[] = [
   { id: 'outfit_scarf', kind: 'outfit', key: 'scarf', price: 0 },
   { id: 'outfit_gradcap', kind: 'outfit', key: 'gradcap', price: 300 },
   { id: 'outfit_warrior_helmet', kind: 'outfit', key: 'warrior_helmet', price: 600 },
+  { id: 'outfit_ny_cap', kind: 'outfit', key: 'ny_cap', price: 350 },
+  { id: 'outfit_hiphop_chain', kind: 'outfit', key: 'hiphop_chain', price: 450 },
+  { id: 'outfit_mickey_mask', kind: 'outfit', key: 'mickey_mask', price: 600 },
+  { id: 'outfit_batman_mask', kind: 'outfit', key: 'batman_mask', price: 500 },
+  { id: 'outfit_batman_suit', kind: 'outfit', key: 'batman_suit', price: 800 },
+  { id: 'outfit_batman', kind: 'outfit', key: 'batman', price: 1200 },
+  { id: 'outfit_pirate_hat', kind: 'outfit', key: 'pirate_hat', price: 500 },
+  { id: 'outfit_cowboy_hat', kind: 'outfit', key: 'cowboy_hat', price: 500 },
+  { id: 'outfit_white_headscarf', kind: 'outfit', key: 'white_headscarf', price: 500 },
+  { id: 'outfit_brown_boots', kind: 'outfit', key: 'brown_boots', price: 600 },
   { id: 'outfit_staff00', kind: 'outfit', key: 'staff00', price: 400 },
   { id: 'outfit_staff03', kind: 'outfit', key: 'staff03', price: 500 },
   { id: 'outfit_staff04', kind: 'outfit', key: 'staff04', price: 600 },
@@ -30,6 +40,8 @@ export const COSMETICS: readonly Cosmetic[] = [
   { id: 'outfit_holly_staff', kind: 'outfit', key: 'holly_staff', price: 800 },
   { id: 'outfit_pestilence_staff', kind: 'outfit', key: 'pestilence_staff', price: 900 },
   { id: 'outfit_w_staff_256', kind: 'outfit', key: 'w_staff_256', price: 1000 },
+  { id: 'outfit_black_sword', kind: 'outfit', key: 'black_sword', price: 1000 },
+  { id: 'outfit_bronze_shield', kind: 'outfit', key: 'bronze_shield', price: 1000 },
 ];
 
 export const cosmeticById = (id: string): Cosmetic | undefined => COSMETICS.find((c) => c.id === id);
