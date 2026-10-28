@@ -107,7 +107,7 @@ export function RewardView({ result, onAgain, onRecovery }: { result: TaskResult
 }
 
 /**
- * Офлайн дасгалын дүн: XP, зөгийн бал, дараалал тоологдохгүй тул зөвхөн зөв хариултын тоо (сервертэй тааруулахгүй).
+ * Офлайн дасгалын дүн: XP, боргоцой, дараалал тоологдохгүй тул зөвхөн зөв хариултын тоо (сервертэй тааруулахгүй).
  */
 export function PracticeResultView({ correct, total, onAgain }: { correct: number; total: number; onAgain: () => void }) {
   const insets = useSafeAreaInsets();

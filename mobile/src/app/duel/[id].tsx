@@ -39,7 +39,7 @@ export default function DuelRoomScreen() {
   const ended = view.phase === 'finished' || view.phase === 'cancelled';
   const connectionNote = ended ? undefined : CONNECTION_NOTE[view.connection];
 
-  // Үр дүн ирмэгц хоёр утсан дээр зөгийн балын үлдэгдлийг шинэчилнэ; haptic.
+  // Үр дүн ирмэгц хоёр утсан дээр боргоцойн үлдэгдлийг шинэчилнэ; haptic.
   const notified = useRef(false);
   useEffect(() => {
     if (view.outcome && !notified.current) {

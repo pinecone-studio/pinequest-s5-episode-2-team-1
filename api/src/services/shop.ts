@@ -30,7 +30,7 @@ export async function shopView(db: D1Database, userId: number): Promise<ShopResp
 /** `equipped` JSON-ийн нэг slot-ыг SQL дотор өөрчилнө: зэрэг ирсэн өөр өмсгөлийг дарж бичихгүй. */
 const SET_SLOT = `equipped = json_set(CASE WHEN json_valid(equipped) THEN equipped ELSE '{}' END, '$.' || ?, ?)`;
 
-/** Зөгийн балаар авч шууд өмсгөнө (нэг batch: эзэмшил, балны үлдэгдэл, өмсгөл, ledger). */
+/** Боргоцойгоор авч шууд өмсгөнө (нэг batch: эзэмшил, үлдэгдэл, өмсгөл, ledger). */
 export async function buyItem(db: D1Database, userId: number, itemId: string, now = Date.now()): Promise<ShopResponse> {
   const item = (await getCatalog(db)).get(itemId);
   if (!item) throw new ApiError(404, 'NOT_FOUND', 'Эд зүйл олдсонгүй');
@@ -48,7 +48,7 @@ export async function buyItem(db: D1Database, userId: number, itemId: string, no
     ]);
   } catch (e) {
     if (isConstraintError(e, 'UNIQUE')) throw new ApiError(409, 'ALREADY_OWNED', 'Аль хэдийн авсан');
-    if (isConstraintError(e, 'CHECK')) throw new ApiError(409, 'INSUFFICIENT_POINTS', 'Зөгийн бал хүрэлцэхгүй');
+    if (isConstraintError(e, 'CHECK')) throw new ApiError(409, 'INSUFFICIENT_POINTS', 'Боргоцой хүрэлцэхгүй');
     throw e;
   }
   return shopView(db, userId);
@@ -88,7 +88,7 @@ export async function cosmeticsView(db: D1Database, userId: number): Promise<Cos
   };
 }
 
-/** Дэвсгэр / хувцас авна (нэг batch: эзэмшил, балны үлдэгдэл, ledger). Өмсөх сонголт нь төхөөрөмж дээр. */
+/** Дэвсгэр / хувцас авна (нэг batch: эзэмшил, боргоцойн үлдэгдэл, ledger). Өмсөх сонголт нь төхөөрөмж дээр. */
 export async function buyCosmetic(db: D1Database, userId: number, cosmeticId: string, now = Date.now()): Promise<CosmeticsResponse> {
   const c = cosmeticById(cosmeticId);
   if (!c) throw new ApiError(404, 'NOT_FOUND', 'Олдсонгүй');
@@ -104,7 +104,7 @@ export async function buyCosmetic(db: D1Database, userId: number, cosmeticId: st
     ]);
   } catch (e) {
     if (isConstraintError(e, 'UNIQUE')) throw new ApiError(409, 'ALREADY_OWNED', 'Аль хэдийн авсан');
-    if (isConstraintError(e, 'CHECK')) throw new ApiError(409, 'INSUFFICIENT_POINTS', 'Зөгийн бал хүрэлцэхгүй');
+    if (isConstraintError(e, 'CHECK')) throw new ApiError(409, 'INSUFFICIENT_POINTS', 'Боргоцой хүрэлцэхгүй');
     throw e;
   }
   return cosmeticsView(db, userId);

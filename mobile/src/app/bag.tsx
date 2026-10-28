@@ -38,7 +38,7 @@ export default function BagScreen() {
           </Text>
           <Text style={type.small}>{S.bag.subtitle}</Text>
         </View>
-        <CountPill icon="btn_honey_24x24" value={bear.honey} label="Зөгийн бал" />
+        <CountPill icon="btn_honey_24x24" value={bear.honey} label="Боргоцой" />
       </View>
 
       <Enter index={0}>
