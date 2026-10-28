@@ -551,7 +551,7 @@ function sportPixels(id: SportId, img: Img, head: [number, number], hands: [numb
       if (ry >= top + 3 && ry <= top + 12 && d === [2, 1, 0, 1][(ry - top) % 4]) return PIRATE_VEST[0]; // the lacing
       return PIRATE_SHIRT[d === shirt - 1 ? 1 : 2];
     }
-    if (d <= 1 && CAPT.buttons.some((b) => ry === b || ry === b + 1)) return PIRATE_GOLD[CAPT.buttons.includes(ry) ? (d ? 1 : 2) : 0];
+    if (d <= 1 && CAPT.buttons.some((b) => ry === b || ry === b + 1)) return PIRATE_GOLD[CAPT.buttons.some((button) => button === ry) ? (d ? 1 : 2) : 0];
     if ((d === shirt && shirt > 0) || ry === vest || edge) return PIRATE_VEST[0];
     return PIRATE_VEST[2];
   };
@@ -615,7 +615,7 @@ function sportPixels(id: SportId, img: Img, head: [number, number], hands: [numb
     }
     if (d < STRAW.open) return null;
     if (d === STRAW.open) return STRAW_RED[0];
-    if (rx < 41 && d === STRAW.open + 2 && STRAW.buttons.includes(ry)) return STRAW_YELLOW[2];
+    if (rx < 41 && d === STRAW.open + 2 && STRAW.buttons.some((button) => button === ry)) return STRAW_YELLOW[2];
     return edge ? STRAW_RED[0] : cloth(x, y, STRAW_RED, true);
   };
   const onHead = (rx: number, ry: number) => {
@@ -747,7 +747,7 @@ function sportPixels(id: SportId, img: Img, head: [number, number], hands: [numb
         const [h0, h1] = SPORT.hips;
         if (ry < SPORT.waist || ry > SPORT.shorts || paw(x, y, 30) || (ry < SPORT.arms && (rx < h0 || rx > h1))) continue;
         const side = ry < SPORT.arms && (rx === h0 || rx === h1);
-        let c = rim(x, y) || side ? SPORT_BLACK[0] : ry >= SPORT.crotch && lum(at(img, x, y)) < 70 ? SPORT_BLACK[1] : SPORT_BLACK[2];
+        let c: readonly number[] = rim(x, y) || side ? SPORT_BLACK[0] : ry >= SPORT.crotch && lum(at(img, x, y)) < 70 ? SPORT_BLACK[1] : SPORT_BLACK[2];
         if (ry <= SPORT.waist + 1 && !rim(x, y) && !side) c = SPORT_BLUE[ry - SPORT.waist]; // blue waistband
         else if (ry === SPORT.shorts) c = SPORT_BLACK[0];
         else if (!rim(x, y) && ry > SPORT.waist + 1 && (ry < SPORT.arms ? rx === h0 + 1 : !solid(x - 2, y) && solid(x - 1, y))) c = SPORT_PINK[0]; // purple side stripe
@@ -857,7 +857,7 @@ function sportPixels(id: SportId, img: Img, head: [number, number], hands: [numb
   if (id === 'pirate_shirt' && !sleeping) {
     // the coat hangs open past the hips down to the knees, flaring a little; the trousers show between its halves
     const toX = (rx: number) => rx - HEAD[0] + head[0];
-    for (let ry = CAPT.flare[0]; ry <= CAPT.hem; ry++) {
+    for (let ry: number = CAPT.flare[0]; ry <= CAPT.hem; ry++) {
       const y = ry - HEAD[1] + head[1];
       if (y < 0 || y >= img.h) continue;
       const flare = Math.round((CAPT.flare[1] * (ry - CAPT.flare[0])) / (CAPT.hem - CAPT.flare[0]));
@@ -873,7 +873,7 @@ function sportPixels(id: SportId, img: Img, head: [number, number], hands: [numb
     // a loose robe: from the chest down it hangs straight past the body and flares to the hem, hiding the legs; open at
     // the front (red lining, dark trousers between), the paws stay in front of it
     const toX = (rx: number) => rx - HEAD[0] + head[0];
-    for (let ry = WIZ.flare[0]; ry <= WIZ.hem; ry++) {
+    for (let ry: number = WIZ.flare[0]; ry <= WIZ.hem; ry++) {
       const y = ry - HEAD[1] + head[1];
       if (y < 0 || y >= img.h) continue;
       const flare = Math.round((WIZ.flare[1] * (ry - WIZ.flare[0])) / (WIZ.hem - WIZ.flare[0]));
@@ -957,7 +957,7 @@ function headbandPixels(img: Img, head: [number, number], ninja = false): Img {
   const solid = (x: number, y: number) => x >= 0 && y >= 0 && x < img.w && y < img.h && img.d[at(img, x, y) + 3] > 128;
   const lum = (x: number, y: number) => 0.3 * img.d[at(img, x, y)] + 0.59 * img.d[at(img, x, y) + 1] + 0.11 * img.d[at(img, x, y) + 2];
   // the animations' faces sit a little lower in the head than the idle bear's: line the band up by the nose's top row
-  let nose = BAND.nose;
+  let nose: number = BAND.nose;
   for (let ry = BAND.nose - 8; ry < BAND.nose + 14 && nose === BAND.nose; ry++) {
     const y = ry - HEAD[1] + head[1];
     let dark = 0;
