@@ -191,7 +191,7 @@ export const outfitItems = (o: OutfitDef): ItemId[] => o.items ?? (o.item ? [o.i
  * Хувцсыг хослуулж өмсөх: item бүр биеийн нэг байрлалтай. Шинэ хувцас өмсөхөд ижил байрлалтай (жишээ нь хоёр малгай)
  * хувцас тайлагдана, бусад нь үлдэнэ: малгай + нүдний шил + таяг зэрэг өмсөгдөнө.
  */
-type Slot = 'head' | 'face' | 'neck' | 'body' | 'back' | 'waist' | 'legs' | 'feet' | 'hand' | 'offhand';
+export type Slot = 'head' | 'face' | 'neck' | 'body' | 'back' | 'waist' | 'legs' | 'feet' | 'hand' | 'offhand';
 const ITEM_SLOT: Record<ItemId, Slot> = {
   gradcap: 'head', warrior_helmet: 'head', ny_cap: 'head', pirate_hat: 'head', cowboy_hat: 'head', white_headscarf: 'head',
   hard_hat: 'head', ribbon: 'head', mongol_hat: 'head', puss_hat: 'head', headphones: 'head',
@@ -211,6 +211,12 @@ const ITEM_SLOT: Record<ItemId, Slot> = {
 };
 /** Баавгайн суурь зургийг бүхэлд нь солидог item-ууд (LiveBear): нэг дор зөвхөн нэг нь. */
 const BASE_ITEMS: readonly ItemId[] = ['warrior_helmet', 'batman_suit', 'mongol_deel', 'white_headscarf', 'brown_boots'];
+
+/** Нэг item-тэй хувцасны байрлал (дэлгүүрийн ангилалд); иж бүрдэл, анхдагч ороолтод null. */
+export function outfitSlot(id: OutfitId): Slot | null {
+  const items = outfitItems(outfitById(id));
+  return items.length === 1 ? ITEM_SLOT[items[0]] : null;
+}
 
 const slotsOf = (id: OutfitId): string[] =>
   outfitItems(outfitById(id)).flatMap((it) => [ITEM_SLOT[it], ...(BASE_ITEMS.includes(it) ? ['base'] : [])]);

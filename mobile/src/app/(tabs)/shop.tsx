@@ -19,23 +19,25 @@ import { S } from '@/i18n/strings';
 import { confirm } from '@/lib/confirm';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 import { useOnline } from '@/lib/online';
-import { BACKGROUNDS, bgById, DEFAULT_OUTFIT_ID, isWorn, outfitById, type OutfitId, toggleWorn, wornItems } from '@/lib/pixelBear/catalog';
+import { BACKGROUNDS, bgById, DEFAULT_OUTFIT_ID, isWorn, outfitById, type OutfitId, outfitSlot, toggleWorn, wornItems } from '@/lib/pixelBear/catalog';
 import { type OutfitView, useOutfits } from '@/lib/pixelBear/useOutfits';
 
 type Tab = 'bg' | 'outfit' | 'concept';
-type OutfitCategory = 'hat' | 'mask' | 'clothes' | 'boots' | 'staff';
+type OutfitCategory = 'hat' | 'mask' | 'clothes' | 'boots' | 'hand';
 const CATEGORIES: { value: OutfitCategory; label: string }[] = [
   { value: 'hat', label: 'Малгай' },
   { value: 'mask', label: 'Маск' },
   { value: 'clothes', label: 'Хувцас' },
   { value: 'boots', label: 'Гутал' },
-  { value: 'staff', label: 'Таяг' },
+  { value: 'hand', label: 'Зэвсэг' },
 ];
 function categoryOf(id: OutfitId): OutfitCategory {
-  if (['glasses', 'mickey_mask', 'batman_mask', 'snorkel'].includes(id)) return 'mask';
-  if (['brown_boots', 'mongol_boots', 'pirate_boots', 'sport_sneakers', 'demon_boots', 'ninja_sandals', 'straw_sandals'].includes(id)) return 'boots';
-  if (['warrior_helmet', 'pirate_hat', 'cowboy_hat', 'white_headscarf', 'ny_cap', 'gradcap', 'headphones', 'hard_hat', 'mongol_hat', 'ribbon', 'headband', 'puss_hat', 'demon_horns', 'ninja_headband', 'straw_hat'].includes(id)) return 'hat';
-  if (id.includes('staff') || id === 'black_sword' || id === 'bronze_shield' || id === 'wizard_wand' || id === 'pirate_sword') return 'staff';
+  const slot = outfitSlot(id);
+  // бүтэн нүүрний маск толгойн байрлал эзэлдэг ч Маск ангилалд харагдана
+  if (slot === 'face' || id.endsWith('_mask')) return 'mask';
+  if (slot === 'head') return 'hat';
+  if (slot === 'feet') return 'boots';
+  if (slot === 'hand' || slot === 'offhand') return 'hand';
   return 'clothes';
 }
 
