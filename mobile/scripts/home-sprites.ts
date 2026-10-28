@@ -24,8 +24,8 @@ const ITEMS_META = new URL('../src/lib/pixelBear/bear-items.json', import.meta.u
  * наалттай (нүдний шил).
  */
 const STAFF_IDS = ['staff00', 'staff03', 'staff04', 'staff05', 'holly_staff', 'pestilence_staff', 'w_staff_256'] as const;
-const HELD_IDS = [...STAFF_IDS, 'black_sword', 'bronze_shield'] as const;
-const ITEMS: Record<string, { loose: boolean; layer?: string; at?: [number, number]; anchor?: 'hand' | 'feet'; behind?: boolean }> = {
+const HELD_IDS = [...STAFF_IDS, 'black_sword', 'bronze_shield', 'wizard_wand', 'pirate_sword'] as const;
+const ITEMS: Record<string, { loose: boolean; layer?: string; at?: [number, number]; anchor?: 'hand' | 'feet' | 'body'; behind?: boolean }> = {
   glasses: { loose: false },
   gradcap: { loose: true },
   headphones: { loose: true },
@@ -50,11 +50,27 @@ const ITEMS: Record<string, { loose: boolean; layer?: string; at?: [number, numb
   puss_cape: { loose: false, layer: 'item_puss_cape', at: [-6, 54], behind: true },
   // deel layer is regenerated from deelBase on the idle bear
   mongol_deel: { loose: false, layer: 'item_mongol_deel', at: [-6, -14] },
+  // sports wear: fitted overlays of the bear's own body (sportPixels), the layer is the idle bear's
+  sport_hoodie: { loose: false, layer: 'item_sport_hoodie', at: [-6, -14], anchor: 'body' },
+  pirate_shirt: { loose: false, layer: 'item_pirate_shirt', at: [-6, -14], anchor: 'body' },
+  wizard_robe: { loose: false, layer: 'item_wizard_robe', at: [-6, -14], anchor: 'body' },
+  pirate_boots: { loose: false, layer: 'item_pirate_boots', at: [-6, -14], anchor: 'body' },
+  // Mongolian boots: like the sports wear, a fitted overlay of the bear's feet (mongolBootPixels)
+  mongol_boots: { loose: false, layer: 'item_mongol_boots', at: [-6, -14], anchor: 'body' },
+  sport_shorts: { loose: false, layer: 'item_sport_shorts', at: [-6, -14], anchor: 'body' },
+  sport_sneakers: { loose: false, layer: 'item_sport_sneakers', at: [-6, -14], anchor: 'body' },
 };
 /** хэд хэдэн item-ийг хамт өмсөх хувцасны карт (доороос дээш дарааллаар) */
-const COMBOS: Record<string, string[]> = { batman: ['batman_suit', 'batman_mask'], mongol: ['mongol_deel', 'mongol_hat'], puss: ['puss_cape', 'brown_boots', 'puss_belt', 'puss_hat'] };
+const COMBOS: Record<string, string[]> = { batman: ['batman_suit', 'batman_mask'], mongol: ['mongol_deel', 'mongol_boots', 'mongol_hat'], puss: ['puss_cape', 'brown_boots', 'puss_belt', 'puss_hat'],
+  sport: ['sport_sneakers', 'sport_shorts', 'sport_hoodie'],
+  pirate: ['pirate_shirt', 'pirate_boots', 'pirate_hat', 'pirate_sword'], // the boots go over the trousers
+  wizard: ['wizard_robe', 'glasses', 'wizard_wand'] };
 for (const id of STAFF_IDS) ITEMS[id] = { loose: false, layer: `item_${id}`, at: [-16, -54], anchor: 'hand' };
 ITEMS.black_sword = { loose: false, layer: 'item_black_sword', at: [-12, -54], anchor: 'hand' };
+// a wizard's wand with a sparkling tip, held like the sword (grip 12, 54)
+ITEMS.wizard_wand = { loose: false, layer: 'item_wizard_wand', at: [-12, -54], anchor: 'hand' };
+// a pirate's cutlass: a broad curved blade, a skull on the guard, a wooden knuckle bow (grip 12, 54)
+ITEMS.pirate_sword = { loose: false, layer: 'item_pirate_sword', at: [-12, -54], anchor: 'hand' };
 ITEMS.bronze_shield = { loose: false, layer: 'item_bronze_shield', at: [-14, -19], anchor: 'hand' };
 
 /** Staff grip points for each animation frame. In happy, use the paw that actually waves. */
@@ -154,6 +170,7 @@ for (let i = 0; i < plain.d.length; i += 4) if (!sameAt(plain, capped, i) && sam
 /** item = outfit sprite-ийн ороолтгүй (эсвэл ороолттой) баавгайгаас ялгарах pixel-ууд + доор нь контакт сүүдэр */
 function itemLayer(id: string): { img: Img; at: [number, number] } {
   const direct = ITEMS[id];
+  if (direct.anchor === 'body') return { img: blank(REF.w, REF.h), at: [-6, -14] }; // drawn once the poses are known
   if (direct.layer && direct.at) return { img: source(direct.layer), at: direct.at };
   const o = source(`outfit_${id}`);
   const differs = (base: Img) => Array.from({ length: o.w * o.h }, (_, p) => !sameAt(o, base, p * 4));
@@ -372,6 +389,344 @@ function bootsBase(img: Img): Img {
   return clone(img);
 }
 
+/**
+ * Sports wear (black hoodie with neon stripes, shorts, sneakers): like the boots, each piece is the bear's own
+ * body recoloured per frame and drawn as a fitted overlay, so the pieces stack and move with the arms and legs.
+ * Rows are the idle bear's (REF): the hoodie runs from the scarf to its ribbed hem, the shorts below it, the
+ * sneakers are measured up from each sole. Paws and head keep the fur.
+ */
+const SPORT_BLACK = [[12, 12, 16], [24, 25, 30], [38, 40, 46], [54, 56, 64]] as const;
+const SPORT_GREEN = [[22, 150, 110], [44, 214, 156]] as const;
+const SPORT_BLUE = [[34, 52, 168], [64, 96, 240]] as const;
+const SPORT_PINK = [[150, 60, 170], [206, 96, 220]] as const;
+const SPORT_WHITE = [[176, 178, 188], [236, 238, 244]] as const;
+const SPORT = { neck: 66, collar: 2, hem: 108, waist: 104, arms: 110, crotch: 116, hips: [21, 62], shorts: 121, sneakers: 8, sleeve: 78 } as const;
+const SPORT_IDS = ['sport_sneakers', 'sport_shorts', 'sport_hoodie'] as const;
+/**
+ * A pirate captain's clothes, cut the same way: a long black coat with gold braid and gold-edged cuffs, open on a laced
+ * cream shirt and a buttoned brown vest, dark trousers to the ankle; tall black-brown boots with a buttoned cuff.
+ */
+const PIRATE_IDS = ['pirate_boots', 'pirate_shirt'] as const;
+const PIRATE_SHIRT = [[120, 100, 78], [196, 180, 148], [226, 214, 186], [244, 236, 214]] as const;
+const PIRATE_VEST = [[38, 24, 18], [70, 46, 32], [96, 64, 44], [120, 84, 58]] as const;
+const PIRATE_GOLD = [[150, 108, 30], [214, 170, 60], [246, 214, 120]] as const;
+const PIRATE_BOOT = [[20, 14, 12], [36, 26, 22], [52, 38, 30], [86, 60, 44], [156, 116, 82]] as const;
+const PIRATE_PANTS = [[12, 12, 16], [36, 36, 44], [50, 50, 60], [68, 68, 80]] as const;
+const COAT = [[6, 6, 8], [16, 15, 19], [26, 25, 31], [44, 42, 50]] as const;
+/** the coat's front opening (half width), the vest's bottom, pocket flaps (rows, half widths), vest buttons, its hem */
+const CAPT = { open: 10, vest: 107, pocket: [107, 110, 12, 18], buttons: [88, 93, 98, 103], flare: [100, 4], hem: 124 } as const;
+const PIRATE = { boots: 15, cuff: 4, ankle: 9 } as const;
+/**
+ * A wizard's school robe: long and black with a red lining, open over a grey jumper, a red-and-gold crest; the bear
+ * keeps its own scarf over it. It hangs loose down to the ankles.
+ */
+const WIZARD_IDS = ['wizard_robe'] as const;
+const ROBE = [[8, 8, 12], [24, 24, 32], [38, 38, 48], [54, 54, 66]] as const;
+const ROBE_RED = [[110, 18, 24], [156, 30, 36], [190, 48, 48]] as const;
+const ROBE_GOLD = [[170, 120, 30], [226, 172, 44], [246, 206, 96]] as const;
+const JUMPER = [[70, 72, 82], [104, 106, 116], [128, 130, 142]] as const;
+const WIZ = { hem: 131, panel: 7, crest: [56, 84], flare: [92, 6] } as const; // the crest sits beside the scarf's hanging end
+type SportId = (typeof SPORT_IDS)[number] | (typeof PIRATE_IDS)[number] | (typeof WIZARD_IDS)[number];
+function sportPixels(id: SportId, img: Img, head: [number, number], hands: [number, number][], sleeping: boolean): Img {
+  const out = blank(img.w, img.h);
+  // asleep, the bear is under its green blanket from the first row that is mostly blanket: only the hoodie shows, above it
+  let blanket = img.h;
+  if (sleeping) {
+    for (let y = head[1] + SPORT.neck - HEAD[1] + 10; y < img.h && blanket === img.h; y++) {
+      let green = 0;
+      for (let x = 0; x < img.w; x++) if (img.d[at(img, x, y) + 3] && img.d[at(img, x, y) + 1] > img.d[at(img, x, y)]) green++;
+      if (green >= 12) blanket = y;
+    }
+    if (id !== 'sport_hoodie' && id !== 'pirate_shirt' && id !== 'wizard_robe') return out;
+  }
+  const solid = (x: number, y: number) => x >= 0 && y >= 0 && x < img.w && y < Math.min(img.h, blanket) && img.d[at(img, x, y) + 3] > 128;
+  const lum = (i: number) => 0.3 * img.d[i] + 0.59 * img.d[i + 1] + 0.11 * img.d[i + 2];
+  const toRef = (x: number, y: number): [number, number] => [x - head[0] + HEAD[0], y - head[1] + HEAD[1]];
+  const rim = (x: number, y: number) => !solid(x - 1, y) || !solid(x + 1, y) || !solid(x, y - 1) || !solid(x, y + 1);
+  // cloth over the fur: the fur's light and shade, flattened to three tones and outlined at the silhouette; `flat` cloth
+  // keeps only the lines where an arm meets the body (no belly or scarf showing through)
+  const cloth = (x: number, y: number, ramp: readonly (readonly number[])[], flat = false) => {
+    if (rim(x, y)) return ramp[0];
+    const step = [70, 120].findIndex((t) => lum(at(img, x, y)) < t);
+    if (!flat) return ramp[step < 0 ? 3 : step + 1];
+    const rx = x - head[0] + HEAD[0];
+    return ramp[step === 0 && (rx < BODY.torso[0] + 4 || rx > BODY.torso[1] - 4) ? 1 : 2];
+  };
+  const put = (x: number, y: number, c: readonly number[]) => out.d.set([...c, 255], at(out, x, y));
+  const paw = (x: number, y: number, r2: number) => hands.some(([hx, hy]) => (x - hx) ** 2 + (y - hy) ** 2 <= r2);
+  // the idle bear's head (dilated) above the neck: everything else up there is a raised arm
+  // per column, the idle bear's first scarf row (none: no collar to lower there)
+  const scarfTop = Array.from({ length: REF.w }, (_, x) => {
+    for (let y = SPORT.neck - 2; y < SPORT.neck + 12; y++) if (REF.d[at(REF, x, y) + 3] && isScarf(REF.d, at(REF, x, y))) return y;
+    return -Infinity;
+  });
+  // the wizard's robe at one pixel: a grey jumper down the open front, the red lining, the crest
+  const wizardRobe = (x: number, y: number, rx: number, ry: number): readonly number[] => {
+    const i = at(img, x, y);
+    const edge = rim(x, y);
+    if (edge || ry === WIZ.hem) return ROBE[0];
+    if (paw(x, y, 52)) return ROBE[(x + y) % 3 ? 1 : 0]; // the wide sleeve's cuff
+    const d = Math.abs(rx - 41);
+    if (ry >= SPORT.neck + 8 && ry < SPORT.hem && d < WIZ.panel) return JUMPER[ry === SPORT.hem - 1 ? 0 : lum(i) < 70 ? 1 : 2];
+    if (ry >= SPORT.neck + 8 && d === WIZ.panel) return ROBE_RED[1]; // the red lining at the opening
+    const [cx, cy] = WIZ.crest;
+    const [u, v] = [rx - cx, ry - cy];
+    const crest = v >= 0 && v <= 5 && u >= Math.max(0, v - 3) && u <= 4 - Math.max(0, v - 3);
+    if (crest) {
+      const rimC = v === 0 || u === Math.max(0, v - 3) || u === 4 - Math.max(0, v - 3);
+      return rimC ? ROBE_GOLD[1] : u === 2 && v === 2 ? ROBE_GOLD[2] : ROBE_RED[1];
+    }
+    return cloth(x, y, ROBE, true);
+  };
+  // the captain's coat at one pixel: black sleeves with gold-edged cuffs and the shirt's ruffle at the wrist; the coat
+  // open down the front on a laced cream shirt and a buttoned brown vest, dark trousers below it
+  const pirateShirt = (x: number, y: number, rx: number, ry: number, collarTop: number): readonly number[] => {
+    const edge = rim(x, y);
+    const d = Math.abs(rx - 41);
+    const sleeve = rx < BODY.torso[0] + 1 || rx > BODY.torso[1] - 2 || ry < SPORT.neck;
+    if (sleeve) {
+      if (paw(x, y, 52)) return edge ? PIRATE_SHIRT[0] : PIRATE_SHIRT[(x + y) % 2 ? 2 : 3];
+      if (paw(x, y, 104)) return edge ? COAT[0] : paw(x, y, 64) || !paw(x, y, 88) ? PIRATE_GOLD[1] : COAT[3];
+      return cloth(x, y, COAT);
+    }
+    const top = SPORT.neck + SPORT.collar;
+    if (ry <= collarTop + 1 && d <= CAPT.open + 2) return PIRATE_SHIRT[ry === collarTop || edge ? 1 : 3]; // the shirt's collar
+    if (d === CAPT.open) return PIRATE_GOLD[edge ? 0 : 1]; // gold braid down the coat's front edges
+    if (d > CAPT.open) {
+      const [p0, p1, q0, q1] = CAPT.pocket;
+      if (ry >= p0 && ry <= p1 && d >= q0 && d <= q1) return ry === p0 || ry === p1 || d === q0 || d === q1 ? PIRATE_GOLD[1] : COAT[2];
+      return cloth(x, y, COAT, true);
+    }
+    const vest = CAPT.vest + (d < 3 ? 1 : 0); // the vest's pointed bottom
+    if (ry > vest) return cloth(x, y, PIRATE_PANTS, true);
+    const shirt = Math.max(0, 8 - Math.floor((ry - top) / 3)); // the shirt shows in a V that closes on the chest
+    if (d < shirt) {
+      if (d === 0) return PIRATE_SHIRT[0];
+      if (ry >= top + 3 && ry <= top + 12 && d === [2, 1, 0, 1][(ry - top) % 4]) return PIRATE_VEST[0]; // the lacing
+      return PIRATE_SHIRT[d === shirt - 1 ? 1 : 2];
+    }
+    if (d <= 1 && CAPT.buttons.some((b) => ry === b || ry === b + 1)) return PIRATE_GOLD[CAPT.buttons.includes(ry) ? (d ? 1 : 2) : 0];
+    if ((d === shirt && shirt > 0) || ry === vest || edge) return PIRATE_VEST[0];
+    return PIRATE_VEST[2];
+  };
+  const onHead = (rx: number, ry: number) => {
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+      const [u, v] = [rx + dx, ry + dy];
+      if (v < SPORT.neck && u >= 0 && v >= 0 && u < REF.w && REF.d[at(REF, u, v) + 3]) return true;
+    }
+    return false;
+  };
+  if (id === 'pirate_boots') {
+    const [l, r] = [footAt(img, true), footAt(img, false)];
+    const mid = Math.round((l[0] + r[0]) / 2);
+    for (const [[cx, bottom], x0, x1, outer] of [[l, 0, mid, -1], [r, mid, img.w, 1]] as const)
+      for (let y = bottom - PIRATE.boots + 1; y <= bottom; y++) {
+        const k = y - (bottom - PIRATE.boots + 1); // rows down from the boot's top
+        const cuff = k < PIRATE.cuff;
+        let edge = -1;
+        for (let x = x0; x < x1; x++) {
+          if (!solid(x, y)) continue;
+          let c: readonly number[];
+          // the turned-down cuff: outlined, a pale top edge, its fold creases, a dark line where it folds over
+          if (cuff) c = rim(x, y) || k === 0 || k === PIRATE.cuff - 1 ? PIRATE_BOOT[0] : k === 2 && (x - cx + 9) % 3 === 0 ? PIRATE_GOLD[1] : PIRATE_BOOT[k === 1 ? 3 : 2]; // gold buttons round the cuff
+          else if (rim(x, y) || y === bottom) c = PIRATE_BOOT[0];
+          else if (Math.abs(x - cx - 2 * outer) <= 1 && k < PIRATE.boots - 3) c = PIRATE_BOOT[3]; // the leather's shine down the shin
+          else c = PIRATE_BOOT[k === PIRATE.cuff ? 1 : 2];
+          put(x, y, c);
+          if (outer < 0 ? edge < 0 : true) edge = x;
+        }
+        // the cuff stands a pixel proud of the shaft on the outer side
+        if (cuff && edge >= 0 && edge + outer >= 0 && edge + outer < img.w) put(edge + outer, y, PIRATE_BOOT[0]);
+      }
+    return out;
+  }
+  if (id === 'sport_sneakers') {
+    const [l, r] = [footAt(img, true), footAt(img, false)];
+    const mid = Math.round((l[0] + r[0]) / 2);
+    for (const [[cx, bottom], x0, x1] of [[l, 0, mid], [r, mid, img.w]] as const)
+      for (let y = bottom - SPORT.sneakers + 1; y <= bottom; y++) {
+        const k = bottom - y; // rows up from the sole
+        for (let x = x0; x < x1; x++) {
+          if (!solid(x, y)) continue;
+          let c: readonly number[];
+          if (k <= 1) c = k === 0 || rim(x, y) ? SPORT_WHITE[0] : SPORT_WHITE[1]; // white sole
+          else if (rim(x, y) || k === SPORT.sneakers - 1) c = SPORT_BLACK[0];
+          else if (k === 2) c = SPORT_PINK[1]; // a pink stripe above the sole
+          else if (k === 5 && Math.abs(x - cx) <= 2 && (x + y) % 2 === 0) c = SPORT_WHITE[1]; // laces
+          else c = SPORT_BLACK[k >= 5 ? 3 : 2]; // the leather upper
+          put(x, y, c);
+        }
+      }
+    return out;
+  }
+  // the trousers stop at the ankle, a few rows above each sole
+  const feet = [footAt(img, true), footAt(img, false)];
+  const ankle = (x: number) => feet[x < (feet[0][0] + feet[1][0]) / 2 ? 0 : 1][1] - PIRATE.ankle;
+  for (let y = 0; y < img.h; y++)
+    for (let x = 0; x < img.w; x++) {
+      if (!solid(x, y)) continue;
+      const [rx, ry] = toRef(x, y);
+      if (id === 'pirate_shirt' && ry > SPORT.hem + 3) {
+        // the trousers below the vest
+        if (y > ankle(x) || paw(x, y, 30)) continue;
+        put(x, y, y === ankle(x) ? PIRATE_PANTS[0] : cloth(x, y, PIRATE_PANTS, ry < SPORT.crotch));
+        continue;
+      }
+      if (id === 'sport_shorts') {
+        // up on the belly, between the arms while they hang beside it, then the full width of the hips below the paws;
+        // flat black, only the creases between the legs show
+        const [h0, h1] = SPORT.hips;
+        if (ry < SPORT.waist || ry > SPORT.shorts || paw(x, y, 30) || (ry < SPORT.arms && (rx < h0 || rx > h1))) continue;
+        const side = ry < SPORT.arms && (rx === h0 || rx === h1);
+        let c = rim(x, y) || side ? SPORT_BLACK[0] : ry >= SPORT.crotch && lum(at(img, x, y)) < 70 ? SPORT_BLACK[1] : SPORT_BLACK[2];
+        if (ry <= SPORT.waist + 1 && !rim(x, y) && !side) c = SPORT_BLUE[ry - SPORT.waist]; // blue waistband
+        else if (ry === SPORT.shorts) c = SPORT_BLACK[0];
+        else if (!rim(x, y) && ry > SPORT.waist + 1 && (ry < SPORT.arms ? rx === h0 + 1 : !solid(x - 2, y) && solid(x - 1, y))) c = SPORT_PINK[0]; // purple side stripe
+        put(x, y, c);
+        continue;
+      }
+      // hoodie
+      // a paw or the head keeps its fur, but the scarf beside them never shows (a tilted head is not where the idle one is)
+      const scarfPx = isScarf(img.d, at(img, x, y));
+      if (ry > (id === 'wizard_robe' ? WIZ.hem : SPORT.hem + 3) || (!scarfPx && (paw(x, y, 30) || (ry < SPORT.neck + 1 && onHead(rx, ry))))) continue;
+      // the chin dips below the neck line: the hoodie starts where the idle bear's scarf does, never on the face
+      if (!scarfPx && ry <= SPORT.neck + 4 && rx >= 0 && rx < REF.w && REF.d[at(REF, rx, ry) + 3] && !isScarf(REF.d, at(REF, rx, ry))) continue;
+      if (id === 'wizard_robe') {
+        // the bear keeps its own scarf over the robe, outline and all
+        const nearScarf = [[1, 0], [-1, 0], [0, 1], [0, -1]].some(([dx, dy]) => solid(x + dx, y + dy) && isScarf(img.d, at(img, x + dx, y + dy)));
+        if (!scarfPx && !(nearScarf && lum(at(img, x, y)) < 70)) put(x, y, wizardRobe(x, y, rx, ry));
+        continue;
+      }
+      // and the collar sits a little lower, on the neck: the scarf's top rows above it turn into the fur right above them
+      const collarTop = (rx >= 0 && rx < REF.w ? scarfTop[rx] : -Infinity) + SPORT.collar;
+      if (ry < collarTop) {
+        const i = at(img, x, y);
+        if (!isScarf(img.d, i) && lum(i) >= 60) continue;
+        const cloth = (j: number) => isScarf(img.d, j) || lum(j) < 60;
+        let yy = y;
+        while (yy > 0 && cloth(at(img, x, yy)) && y - yy < SPORT.collar + 3) yy--;
+        // a paw or a tilted head in the way: the hoodie takes the pixel after all
+        if (!cloth(at(img, x, yy))) {
+          out.d.set(img.d.subarray(at(img, x, yy), at(img, x, yy) + 4), at(out, x, y));
+          continue;
+        }
+      }
+      if (id === 'pirate_shirt') {
+        put(x, y, pirateShirt(x, y, rx, ry, collarTop));
+        continue;
+      }
+      const scarfRow = ry < SPORT.neck + 10 && !onHead(rx, ry - 3);
+      let c = cloth(x, y, SPORT_BLACK, true);
+      if (paw(x, y, 52)) c = rim(x, y) ? SPORT_BLACK[0] : SPORT_BLACK[(x + y) % 2 ? 1 : 2]; // ribbed cuff
+      else if (ry >= SPORT.hem) c = rim(x, y) || ry === SPORT.hem + 3 ? SPORT_BLACK[0] : SPORT_BLACK[x % 2 ? 1 : 2]; // ribbed hem
+      else if (rim(x, y)) c = SPORT_BLACK[0];
+      else if (!scarfRow && rx < BODY.torso[0] && ry >= SPORT.sleeve && !solid(x - 3, y) && solid(x - 2, y)) c = SPORT_GREEN[1]; // green down the left sleeve
+      else if (!scarfRow && rx < BODY.torso[0] && ry >= SPORT.sleeve && !solid(x - 2, y)) c = SPORT_GREEN[0];
+      else if (rx >= 49 && rx <= 50 && ry >= 76 && ry < SPORT.hem) c = SPORT_BLUE[rx === 49 ? 1 : 0]; // blue stripe down the front
+      else if (ry >= 87 && ry <= 88 && rx >= 26 && rx <= 50) c = SPORT_BLUE[ry === 87 ? 1 : 0]; // and across the chest
+      else if (rx >= 56 && rx + ry >= 137 && rx + ry <= 138 && ry >= 74 && ry <= 84) c = SPORT_PINK[1]; // pink on the right shoulder
+      else if (ry <= SPORT.neck + SPORT.collar + 9) {
+        // the hood lies round the neck: its blue-lined opening is a V, two white drawstrings hang from it
+        const n = SPORT.neck + SPORT.collar;
+        const v = Math.abs(rx - 41) - (n + 10 - ry);
+        c = v >= -1 && v <= 0 ? SPORT_BLUE[1] : SPORT_BLACK[ry === collarTop ? 0 : ry <= n + 1 ? 1 : 2];
+      } else if ((rx === 37 || rx === 45) && ry >= SPORT.neck + SPORT.collar + 10 && ry <= SPORT.neck + SPORT.collar + 16) c = SPORT_WHITE[ry === SPORT.neck + SPORT.collar + 16 ? 0 : 1];
+      else if (rx >= 57 && rx <= 59 && ry >= 79 && ry <= 81 && (rx === 58 || ry === 80)) c = SPORT_WHITE[1]; // a little logo
+      put(x, y, c);
+    }
+  if (id === 'pirate_shirt' && !sleeping) {
+    // the coat hangs open past the hips down to the knees, flaring a little; the trousers show between its halves
+    const toX = (rx: number) => rx - HEAD[0] + head[0];
+    for (let ry = CAPT.flare[0]; ry <= CAPT.hem; ry++) {
+      const y = ry - HEAD[1] + head[1];
+      if (y < 0 || y >= img.h) continue;
+      const flare = Math.round((CAPT.flare[1] * (ry - CAPT.flare[0])) / (CAPT.hem - CAPT.flare[0]));
+      const [l, r] = [toX(BODY.torso[0] - 1 - flare), toX(BODY.torso[1] + flare)];
+      for (let x = Math.max(0, l); x <= Math.min(img.w - 1, r); x++) {
+        const d = Math.abs(x - toX(41));
+        if (d < CAPT.open || (solid(x, y) && paw(x, y, 30)) || (ry <= SPORT.hem + 3 && out.d[at(out, x, y) + 3])) continue;
+        put(x, y, x === l || x === r || ry === CAPT.hem ? COAT[0] : d === CAPT.open ? PIRATE_GOLD[1] : COAT[2]);
+      }
+    }
+  }
+  if (id === 'wizard_robe' && !sleeping) {
+    // a loose robe: from the chest down it hangs straight past the body and flares to the hem, hiding the legs; open at
+    // the front (red lining, dark trousers between), the paws stay in front of it
+    const toX = (rx: number) => rx - HEAD[0] + head[0];
+    for (let ry = WIZ.flare[0]; ry <= WIZ.hem; ry++) {
+      const y = ry - HEAD[1] + head[1];
+      if (y < 0 || y >= img.h) continue;
+      const flare = Math.round((WIZ.flare[1] * (ry - WIZ.flare[0])) / (WIZ.hem - WIZ.flare[0]));
+      const [l, r] = [toX(BODY.torso[0] - 1 - flare), toX(BODY.torso[1] + flare)];
+      for (let x = Math.max(0, l); x <= Math.min(img.w - 1, r); x++) {
+        const j = at(out, x, y);
+        if (solid(x, y) && paw(x, y, 30)) continue;
+        if (ry < SPORT.crotch && out.d[j + 3]) continue; // the robe already drawn on the body and arms
+        const d = Math.abs(x - toX(41));
+        const c = x === l || x === r || ry === WIZ.hem ? ROBE[0] : ry >= SPORT.hem && d === WIZ.panel ? ROBE_RED[1] : ry >= SPORT.hem && d < WIZ.panel ? ROBE[1] : ry >= SPORT.hem && (x === l + 3 || x === r - 3) ? ROBE[1] : ROBE[2]; // a fold down each side
+        put(x, y, c);
+      }
+    }
+  }
+  return out;
+}
+
+/**
+ * Mongolian boots (гутал): a brown felt rim, a yellow shaft with a brown endless knot, a blue foot under a yellow cloud
+ * edge and a cream sole that curls up at the toe. Under the deel only the part below its hem shows (`clip`, the hem's row).
+ */
+const MBOOT_YELLOW = [[128, 88, 20], [204, 158, 40], [236, 194, 70]] as const;
+const MBOOT_BLUE = [[22, 34, 110], [40, 70, 190], [70, 104, 230]] as const;
+const MBOOT_BROWN = [[56, 26, 16], [158, 82, 56], [184, 106, 78]] as const;
+const MBOOT_CREAM = [[176, 150, 100], [236, 222, 176]] as const;
+const MBOOT = { height: 19, felt: 3, shaft: 10, sole: 17 } as const; // rows from the boot's top
+function mongolBootPixels(base: Img, clip = 0): Img {
+  const out = blank(base.w, base.h);
+  const [l, r] = [footAt(base, true), footAt(base, false)];
+  const mid = Math.round((l[0] + r[0]) / 2);
+  const solid = (x: number, y: number) => x >= 0 && y >= 0 && x < base.w && y < base.h && base.d[at(base, x, y) + 3] > 128;
+  for (const [[cx, bottom], x0, x1] of [[l, 0, mid], [r, mid, base.w]] as const) {
+    const top = bottom - MBOOT.height + 1;
+    for (let y = Math.max(top, clip); y <= bottom; y++) {
+      const k = y - top;
+      let [left, right] = [-1, -1];
+      for (let x = x0; x < x1; x++) {
+        if (!solid(x, y)) continue;
+        if (left < 0) left = x;
+        right = x;
+        const rim = !solid(x - 1, y) || !solid(x + 1, y) || y === bottom;
+        let c: readonly number[];
+        if (k < MBOOT.felt) c = MBOOT_BROWN[rim || k !== 1 ? 0 : (x + y) % 3 ? 1 : 2]; // felt rim, outlined above and below
+        else if (k < MBOOT.shaft) {
+          // an endless knot: two interlocked diamonds down the front of the shaft
+          const [dx, dy] = [Math.abs(x - cx), y - (top + MBOOT.felt + 4)];
+          const knot = dx + Math.abs(dy + 1) === 2 || dx + Math.abs(dy - 1) === 2;
+          c = rim ? MBOOT_YELLOW[0] : knot ? MBOOT_BROWN[1] : MBOOT_YELLOW[k === MBOOT.felt ? 2 : 1];
+        } else if (k <= MBOOT.shaft + 1) {
+          // the yellow comes down in cloud scallops over the blue foot
+          const scallop = (x - cx + 12) % 4;
+          c = rim ? MBOOT_BLUE[0] : k === MBOOT.shaft ? (scallop < 3 ? MBOOT_YELLOW[1] : MBOOT_BLUE[1]) : scallop === 1 ? MBOOT_YELLOW[1] : MBOOT_BLUE[2];
+        } else if (k < MBOOT.sole) {
+          const swirl = (k === MBOOT.shaft + 3 && Math.abs(x - cx) === 3) || (k === MBOOT.shaft + 4 && Math.abs(x - cx) === 2);
+          const toe = Math.abs(x - cx) <= (k === MBOOT.sole - 1 ? 1 : 0) && k >= MBOOT.sole - 2; // the sole curls up at the toe
+          c = rim ? MBOOT_BLUE[0] : toe ? MBOOT_CREAM[1] : swirl ? MBOOT_YELLOW[2] : MBOOT_BLUE[1];
+        } else c = y === bottom || rim ? MBOOT_CREAM[0] : MBOOT_CREAM[1];
+        out.d.set([...c, 255], at(out, x, y));
+      }
+      // the felt rim stands a pixel proud of the shaft
+      if (k < MBOOT.felt - 1 && left >= 0) for (const x of [left - 1, right + 1]) if (x >= 0 && x < base.w) out.d.set([...MBOOT_BROWN[0], 255], at(out, x, y));
+    }
+  }
+  return out;
+}
+
+/** a fitted item on a frame's own body: boots, Mongolian boots (`deel`: worn under it), sports wear */
+function fitOn(id: string, img: Img, head: [number, number], hands: [number, number][], sleeping: boolean, deel = false): Img {
+  if (id === 'brown_boots') return fittedBootFrame(img);
+  if (id === 'mongol_boots') return sleeping ? blank(img.w, img.h) : mongolBootPixels(img, deel ? head[1] + DEEL.hem - HEAD[1] : 0);
+  return sportPixels(id as SportId, img, head, hands, sleeping);
+}
+
 /** Алчууртай үед ногоон ороолтын өнгийг энгийн баавгайн үс/гэдсээр нөхнө. */
 function headscarfBase(img: Img, head: [number, number]): Img {
   const out = clone(img);
@@ -504,6 +859,14 @@ function batmanBase(img: Img, head: [number, number]): Img {
 /** the idle bear's body (REF rows/cols): collar rows, torso columns; and where its paws hang */
 const BODY = { collar: [66, 72], torso: [22, 61] } as const;
 const IDLE_HANDS: [number, number][] = [[68, 104], [14, 104]];
+/** the other paw where only one is known (HANDS): where the frame says, otherwise mirrored across the head */
+const OTHER_PAW: Record<string, Record<number, [number, number]>> = { tired: { 2: [68, 78], 3: [68, 60], 4: [66, 57], 5: [69, 66] } }; // the yawning paw
+function bothPaws(name: string, i: number, img: Img, head: [number, number]): [number, number][] {
+  const hand = handAt(img, HANDS[name][i]);
+  if (SHIELD_HANDS[name] !== HANDS[name]) return [hand, handAt(img, SHIELD_HANDS[name][i])];
+  const other = OTHER_PAW[name]?.[i] ?? [2 * (head[0] + 41 - HEAD[0]) - HANDS[name][i][0], HANDS[name][i][1]];
+  return [hand, handAt(img, other)];
+}
 
 /** Mongolian deel: navy silk with cloud motifs, gold lapel/cuffs/sash; the scarf, paws and feet stay the bear's own */
 const DEEL_BLUE = [[12, 16, 44], [22, 32, 84], [34, 50, 122], [50, 70, 156]] as const;
@@ -659,6 +1022,11 @@ if (preview < 0) {
       writePng(new URL(`outfit_${id}.png`, SPRITES), card);
       continue;
     }
+    if (def.anchor === 'body') {
+      overlay(card, fitOn(id, REF, [HEAD[0], HEAD[1]], IDLE_HANDS, false), 0, 0);
+      writePng(new URL(`outfit_${id}.png`, SPRITES), card);
+      continue;
+    }
     if (def.anchor === 'hand') {
       const hand: [number, number] = id === 'bronze_shield' ? [14, 92] : [68, 104];
       overlay(card, heldPatch(REF, hand, id), hand[0] - HELD.pivot[0], hand[1] - HELD.pivot[1]);
@@ -672,6 +1040,8 @@ if (preview < 0) {
     const card = worn.includes('mongol_deel') ? deelBase(REF, [HEAD[0], HEAD[1]], IDLE_HANDS) : worn.includes('brown_boots') ? bootsBase(REF) : clone(REF);
     for (const w of worn)
       if (w === 'brown_boots') overlay(card, fittedBootFrame(REF), 0, 0);
+      else if (ITEMS[w].anchor === 'body') overlay(card, fitOn(w, REF, [HEAD[0], HEAD[1]], IDLE_HANDS, false, worn.includes('mongol_deel')), 0, 0);
+      else if (ITEMS[w].anchor === 'hand') overlay(card, heldPatch(REF, [68, 104], w), 68 - HELD.pivot[0], 104 - HELD.pivot[1]);
       else if (w !== 'mongol_deel') overlayItem(card, w);
     writePng(new URL(`outfit_${id}.png`, SPRITES), card);
   }
@@ -692,6 +1062,7 @@ if (preview < 0) {
   const deelCard = deelBase(REF, [HEAD[0], HEAD[1]], IDLE_HANDS);
   items.mongol_deel.img = blank(REF.w, REF.h);
   for (let p = 0; p < REF.w * REF.h * 4; p += 4) if (!sameAt(deelCard, REF, p)) items.mongol_deel.img.d.set(deelCard.d.subarray(p, p + 4), p);
+  for (const id of [...SPORT_IDS, ...PIRATE_IDS, ...WIZARD_IDS, 'mongol_boots']) items[id].img = fitOn(id, REF, [HEAD[0], HEAD[1]], IDLE_HANDS, false);
   for (const [id, { img }] of Object.entries(items)) writePng(new URL(`item_${id}.png`, SPRITES), img);
   const heldSheets: Record<string, Record<string, string>> = {};
   for (const id of HELD_IDS) {
@@ -708,21 +1079,28 @@ if (preview < 0) {
   // just the paw of every held frame: build-sprites recolours only these pixels for black/white fur, not the staff
   for (const [name, { frames }] of Object.entries(sheets))
     writePng(new URL(`held_paw_${name}.png`, SPRITES), toSheet(frames.map((f, i) => ({ ...f, img: heldFrame(name, i, f.img, 'staff00', true) })), STATES[name].cols ?? frames.length));
-  const fittedSheets: Record<string, string> = {};
-  for (const [name, { frames }] of Object.entries(sheets)) {
-    const cols = STATES[name].cols ?? frames.length;
-    const factor = name === 'welcome' ? 3 : 2;
-    const stem = `fitted_brown_boots_${name}`;
-    const strip = toSheet(frames.map((f) => ({ ...f, img: fittedBootFrame(f.img) })), cols);
-    writePng(new URL(`${stem}.png`, SPRITES), strip);
-    fittedSheets[name] = `${stem}_${strip.w * factor}x${strip.h * factor}`;
-
+  // fitted overlays: one sheet per state, the item drawn on that frame's own body
+  const fittedSheets: Record<string, Record<string, string>> = {};
+  for (const id of ['brown_boots', 'mongol_boots', 'mongol_boots_deel', ...SPORT_IDS, ...PIRATE_IDS, ...WIZARD_IDS]) {
+    fittedSheets[id] = {};
+    for (const [name, { frames, heads }] of Object.entries(sheets)) {
+      const cols = STATES[name].cols ?? frames.length;
+      const factor = name === 'welcome' ? 3 : 2;
+      const stem = `fitted_${id}_${name}`;
+      const fit = (img: Img, i: number) =>
+        fitOn(id.replace(/_deel$/, ''), img, heads[i], bothPaws(name, i, img, heads[i]), name === 'sleep', id.endsWith('_deel'));
+      const strip = toSheet(frames.map((f, i) => ({ ...f, img: fit(f.img, i) })), cols);
+      writePng(new URL(`${stem}.png`, SPRITES), strip);
+      fittedSheets[id][name] = `${stem}_${strip.w * factor}x${strip.h * factor}`;
+    }
   }
   writeFileSync(META, `${JSON.stringify(meta, null, 2)}\n`);
   const itemMeta = Object.fromEntries(Object.entries(items).map(([id, { at: a }]) => [id, {
     at: a, loose: ITEMS[id].loose,
     ...(ITEMS[id].anchor === 'hand' ? { anchor: 'hand', held: { at: HELD.pivot.map(v => -v), sheets: heldSheets[id] } } : {}),
-    ...(ITEMS[id].anchor === 'feet' ? { anchor: 'feet', fitted: { sheets: fittedSheets } } : {}),
+    ...(ITEMS[id].anchor === 'feet' || ITEMS[id].anchor === 'body'
+      ? { anchor: ITEMS[id].anchor, fitted: { sheets: fittedSheets[id], ...(fittedSheets[`${id}_deel`] ? { deel: fittedSheets[`${id}_deel`] } : {}) } }
+      : {}),
     ...(ITEMS[id].behind ? { behind: true } : {}),
   }]));
   writeFileSync(ITEMS_META, `${JSON.stringify(itemMeta, null, 2)}\n`);
@@ -737,8 +1115,9 @@ if (preview < 0) {
         if (!id) return scale(img, 3);
         const head = heads[i];
         const prev = heads[seq[(n + seq.length - 1) % seq.length]];
-        if (ITEMS[id].anchor === 'feet') {
-          overlay(img, fittedBootFrame(frames[i].img), 0, 0);
+        if (ITEMS[id].anchor === 'feet' || ITEMS[id].anchor === 'body') {
+          const hands = bothPaws(name, i, frames[i].img, head);
+          overlay(img, fitOn(id, frames[i].img, head, hands, name === 'sleep'), 0, 0);
           return scale(img, 3);
         }
         const held = ITEMS[id].anchor === 'hand';

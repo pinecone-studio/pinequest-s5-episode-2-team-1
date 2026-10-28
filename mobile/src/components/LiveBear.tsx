@@ -32,6 +32,9 @@ const ITEM_SPRITES: Record<ItemId, SpriteKey> = {
   hiphop_chain: 'item_hiphop_chain_72x86',
   mickey_mask: 'item_mickey_mask_156x130',
   pirate_hat: 'item_pirate_hat_164x84',
+  pirate_shirt: 'item_pirate_shirt_164x280',
+  pirate_boots: 'item_pirate_boots_164x280',
+  wizard_robe: 'item_wizard_robe_164x280',
   cowboy_hat: 'item_cowboy_hat_152x84',
   white_headscarf: 'item_white_headscarf_164x280',
   brown_boots: 'item_brown_boots_164x280',
@@ -43,6 +46,10 @@ const ITEM_SPRITES: Record<ItemId, SpriteKey> = {
   puss_belt: 'item_puss_belt_80x26',
   puss_cape: 'item_puss_cape_164x134',
   mongol_deel: 'item_mongol_deel_164x280',
+  mongol_boots: 'item_mongol_boots_164x280',
+  sport_hoodie: 'item_sport_hoodie_164x280',
+  sport_shorts: 'item_sport_shorts_164x280',
+  sport_sneakers: 'item_sport_sneakers_164x280',
   staff00: 'item_staff00_64x192',
   staff03: 'item_staff03_64x192',
   staff04: 'item_staff04_64x192',
@@ -52,6 +59,8 @@ const ITEM_SPRITES: Record<ItemId, SpriteKey> = {
   w_staff_256: 'item_w_staff_256_64x192',
   black_sword: 'item_black_sword_48x128',
   bronze_shield: 'item_bronze_shield_72x76',
+  wizard_wand: 'item_wizard_wand_48x128',
+  pirate_sword: 'item_pirate_sword_48x128',
 };
 const HELMET_BASES: Record<BearAnim, SpriteKey> = {
   thriving: 'bear_helmet_base_thriving_940x280',
@@ -157,11 +166,15 @@ export function LiveBear({
       <SheetFrame id={sheet} frames={meta.frames.length} cols={meta.columns} frame={frame} label={label} />
       {worn.filter((id) => id !== 'batman_suit' && id !== 'mongol_deel' && !('behind' in items[id])).map((id) => {
         const it = items[id];
-        if ('fitted' in it) return (
-          <View key={id} pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0 }}>
-            <SheetFrame id={it.fitted.sheets[anim] as SpriteKey} frames={meta.frames.length} cols={meta.columns} frame={frame} />
-          </View>
-        );
+        if ('fitted' in it) {
+          // boots worn under the deel show only below its hem
+          const sheets = worn.includes('mongol_deel') && 'deel' in it.fitted ? it.fitted.deel : it.fitted.sheets;
+          return (
+            <View key={id} pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0 }}>
+              <SheetFrame id={sheets[anim] as SpriteKey} frames={meta.frames.length} cols={meta.columns} frame={frame} />
+            </View>
+          );
+        }
         if ('held' in it) {
           const [x, y] = id === 'bronze_shield' ? meta.frames[frame].shieldHand : meta.frames[frame].hand;
           // Fingers and staff are baked into one frame at this exact hand pivot.

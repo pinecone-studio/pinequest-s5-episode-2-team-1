@@ -49,6 +49,13 @@ export type OutfitId =
   | 'hiphop_chain'
   | 'mickey_mask'
   | 'pirate_hat'
+  | 'pirate_shirt'
+  | 'pirate_boots'
+  | 'pirate_sword'
+  | 'pirate'
+  | 'wizard_wand'
+  | 'wizard_robe'
+  | 'wizard'
   | 'cowboy_hat'
   | 'white_headscarf'
   | 'brown_boots'
@@ -58,10 +65,15 @@ export type OutfitId =
   | 'mongol_hat'
   | 'mongol_deel'
   | 'mongol'
+  | 'mongol_boots'
   | 'puss_hat'
   | 'puss_belt'
   | 'puss_cape'
   | 'puss'
+  | 'sport_hoodie'
+  | 'sport_shorts'
+  | 'sport_sneakers'
+  | 'sport'
   | (typeof STAFF_OUTFITS)[number]['id'];
 
 export interface OutfitDef {
@@ -83,6 +95,13 @@ export const OUTFITS: OutfitDef[] = [
   { id: 'scarf', name: 'Монгол ороолт', tile: '#D4F55E', imgTop: -26, card: 'outfit_scarf_82x140' },
   { id: 'warrior_helmet', name: 'Баатрын дуулга', tile: '#EBCF9B', imgTop: 0, card: 'outfit_warrior_helmet_82x140', item: 'warrior_helmet' },
   { id: 'pirate_hat', name: 'Далайн дээрэмчний малгай', tile: '#EBCF9B', imgTop: 0, card: 'outfit_pirate_hat_82x140', item: 'pirate_hat' },
+  { id: 'pirate_shirt', name: 'Далайн дээрэмчний хувцас', tile: '#EBCF9B', imgTop: -40, card: 'outfit_pirate_shirt_82x140', item: 'pirate_shirt' },
+  { id: 'pirate_boots', name: 'Далайн дээрэмчний гутал', tile: '#DDBB8E', imgTop: -52, card: 'outfit_pirate_boots_82x140', item: 'pirate_boots' },
+  { id: 'pirate_sword', name: 'Далайн дээрэмчний сэлэм', tile: '#B9C8E0', imgTop: -52, card: 'outfit_pirate_sword_82x140', item: 'pirate_sword' },
+  { id: 'wizard_robe', name: 'Шидтэний нөмрөг', tile: '#C9B8E8', imgTop: -40, card: 'outfit_wizard_robe_82x140', item: 'wizard_robe' },
+  { id: 'wizard_wand', name: 'Шидэт саваа', tile: '#D9D2F2', imgTop: -52, card: 'outfit_wizard_wand_82x140', item: 'wizard_wand' },
+  { id: 'wizard', name: 'Шидтэн', tile: '#F9D97A', imgTop: -26, card: 'outfit_wizard_82x140', items: ['wizard_robe', 'glasses', 'wizard_wand'] },
+  { id: 'pirate', name: 'Далайн дээрэмчин', tile: '#C9B8E8', imgTop: -26, card: 'outfit_pirate_82x140', items: ['pirate_shirt', 'pirate_boots', 'pirate_hat', 'pirate_sword'] },
   { id: 'cowboy_hat', name: 'Ковбой малгай', tile: '#EBCF9B', imgTop: 0, card: 'outfit_cowboy_hat_82x140', item: 'cowboy_hat' },
   { id: 'white_headscarf', name: 'Цагаан алчуур', tile: '#F2F2F7', imgTop: 0, card: 'outfit_white_headscarf_82x140', item: 'white_headscarf' },
   { id: 'brown_boots', name: 'Муурын гутал', tile: '#DDBB8E', imgTop: -52, card: 'outfit_brown_boots_82x140', item: 'brown_boots' },
@@ -115,11 +134,16 @@ export const OUTFITS: OutfitDef[] = [
   { id: 'batman_suit', name: 'Batman хувцас', tile: '#9FD0F2', imgTop: -40, card: 'outfit_batman_suit_82x140', item: 'batman_suit' },
   { id: 'mongol_hat', name: 'Монгол малгай', tile: '#D4F55E', imgTop: 0, card: 'outfit_mongol_hat_82x140', item: 'mongol_hat' },
   { id: 'mongol_deel', name: 'Монгол дээл', tile: '#D4F55E', imgTop: -40, card: 'outfit_mongol_deel_82x140', item: 'mongol_deel' },
-  { id: 'mongol', name: 'Монгол хувцас', tile: '#9FD0F2', imgTop: -26, card: 'outfit_mongol_82x140', items: ['mongol_deel', 'mongol_hat'] },
+  { id: 'mongol_boots', name: 'Монгол гутал', tile: '#F9D97A', imgTop: -52, card: 'outfit_mongol_boots_82x140', item: 'mongol_boots' },
+  { id: 'mongol', name: 'Монгол хувцас', tile: '#9FD0F2', imgTop: -26, card: 'outfit_mongol_82x140', items: ['mongol_deel', 'mongol_boots', 'mongol_hat'] },
   { id: 'puss_hat', name: 'Муурын малгай', tile: '#F9D97A', imgTop: 0, card: 'outfit_puss_hat_82x140', item: 'puss_hat' },
   { id: 'puss_belt', name: 'Муурын бүс', tile: '#DDBB8E', imgTop: -52, card: 'outfit_puss_belt_82x140', item: 'puss_belt' },
   { id: 'puss_cape', name: 'Нөмрөг', tile: '#C9B8E8', imgTop: -40, card: 'outfit_puss_cape_82x140', item: 'puss_cape' },
   { id: 'puss', name: 'Гуталтай муур', tile: '#F9D97A', imgTop: -26, card: 'outfit_puss_82x140', items: ['puss_cape', 'brown_boots', 'puss_belt', 'puss_hat'] },
+  { id: 'sport_hoodie', name: 'Спорт hoodie', tile: '#B8E6D2', imgTop: -40, card: 'outfit_sport_hoodie_82x140', item: 'sport_hoodie' },
+  { id: 'sport_shorts', name: 'Спорт шорт', tile: '#C9B8E8', imgTop: -52, card: 'outfit_sport_shorts_82x140', item: 'sport_shorts' },
+  { id: 'sport_sneakers', name: 'Пүүз', tile: '#F2B8D8', imgTop: -52, card: 'outfit_sport_sneakers_82x140', item: 'sport_sneakers' },
+  { id: 'sport', name: 'Спорт хувцас', tile: '#B8E6D2', imgTop: -26, card: 'outfit_sport_82x140', items: ['sport_sneakers', 'sport_shorts', 'sport_hoodie'] },
   { id: 'batman', name: 'Batman', tile: '#22106E', imgTop: -26, card: 'outfit_batman_82x140', items: ['batman_suit', 'batman_mask'] },
   ...STAFF_OUTFITS,
 ];
