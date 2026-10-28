@@ -50,7 +50,7 @@ export function useLifeClock(nextAt: number | null, onRefill: () => void): strin
   return left === null ? null : clock(left);
 }
 
-/** Streak / Coin гэх мэт: pixel icon + pixel тоо. */
+/** Дараалал / боргоцой гэх мэт: pixel icon + pixel тоо. */
 export function CountPill({ icon, value, label }: { icon: SpriteKey; value: number; label: string }) {
   return (
     <View style={[styles.pill, { gap: 6 }]} accessible accessibilityLabel={`${label}: ${fmt(value)}`}>
@@ -73,8 +73,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 7,
   },
-  num: { fontFamily: fonts.pixel, fontSize: 17, color: colors.ink },
-  xpNum: { fontFamily: fonts.pixel, fontSize: 16, lineHeight: 16, color: colors.ink },
+  num: { fontFamily: fonts.pixelNum, fontSize: 14, color: colors.ink },
+  xpNum: { fontFamily: fonts.pixelNum, fontSize: 14, lineHeight: 14, color: colors.ink },
   track: { width: 70, height: 4, borderRadius: 2, backgroundColor: colors.track },
   fill: { height: 4, borderRadius: 2, backgroundColor: colors.violet },
 });

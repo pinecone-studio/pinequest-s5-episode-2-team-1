@@ -5,6 +5,7 @@ import { shuffleOptions } from '../llm/validate';
 import type { PageRange } from '../services/grounding';
 import { MATH6 } from './math6';
 import { MATH7 } from './math7';
+import { MATH8, MATH9, MATH10 } from './mathAdvanced';
 import { MATH6_MORE, MATH7_MORE } from './mathCurriculum';
 
 export type Rng = () => number;
@@ -24,9 +25,15 @@ export interface Template {
   make(rng: Rng, level: Level): Omit<QuestionDraft, 'correctIndex' | 'topic'>;
 }
 
-const ALL: readonly Template[] = [...MATH6, ...MATH7, ...MATH6_MORE, ...MATH7_MORE];
+const ALL: readonly Template[] = [...MATH6, ...MATH7, ...MATH6_MORE, ...MATH7_MORE, ...MATH8, ...MATH9, ...MATH10];
 
 export const templateById = (id: string): Template | undefined => ALL.find((t) => t.id === id);
+
+/** Template bookRef ('math-7:5-6' эсвэл 'math-7:19') → асуулт сонгох хуудасны хүрээ. */
+export function templateRange(ref: string): PageRange | null {
+  const m = /^([a-z0-9-]+):(\d+)(?:-(\d+))?$/.exec(ref);
+  return m ? { slug: m[1], from: Number(m[2]), to: Number(m[3] ?? m[2]) } : null;
+}
 
 /** 'math-6:5-6' → { slug: 'math-6', from: 5 } */
 function refStart(ref: string): { slug: string; from: number } | null {
@@ -75,6 +82,13 @@ export function generate(
   return out;
 }
 
-/** Ерөнхий загвар нь хадгалсан асуултыг орлохгүй; тусгай загвар бол үргэлж шинэ хувилбар үүсгэнэ. */
-export const shouldGenerateTemplates = (templates: readonly Template[], storedCount: number, needed: number) =>
-  templates.length > 0 && (!templates.every((template) => template.preferStored) || storedCount < needed);
+/**
+ * Зангилааны шатны эх үүсвэр: Суурь хадгалсан асуултыг ашиглана (дутвал template), Дунд/Ахисан template.
+ * Шатгүй урсгалд хуучин дүрэм хэвээр: тусгай template үргэлж, ерөнхий template зөвхөн DB дутвал.
+ */
+export function shouldGenerateTemplates(templates: readonly Template[], storedCount: number, needed: number, stage: number | null = null) {
+  if (templates.length === 0) return false;
+  if (stage === 1) return storedCount < needed;
+  if (stage === 2 || stage === 3) return true;
+  return !templates.every((template) => template.preferStored) || storedCount < needed;
+}

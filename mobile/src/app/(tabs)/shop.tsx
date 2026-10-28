@@ -19,20 +19,35 @@ import { S } from '@/i18n/strings';
 import { confirm } from '@/lib/confirm';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 import { useOnline } from '@/lib/online';
-import { BACKGROUNDS, bgById, outfitById, type OutfitId } from '@/lib/pixelBear/catalog';
+import { BACKGROUNDS, bgById, DEFAULT_OUTFIT_ID, isWorn, outfitById, type OutfitId, toggleWorn, wornItems } from '@/lib/pixelBear/catalog';
 import { type OutfitView, useOutfits } from '@/lib/pixelBear/useOutfits';
 
 type Tab = 'bg' | 'outfit' | 'concept';
+type OutfitCategory = 'hat' | 'mask' | 'clothes' | 'boots' | 'staff';
+const CATEGORIES: { value: OutfitCategory; label: string }[] = [
+  { value: 'hat', label: 'Малгай' },
+  { value: 'mask', label: 'Маск' },
+  { value: 'clothes', label: 'Хувцас' },
+  { value: 'boots', label: 'Гутал' },
+  { value: 'staff', label: 'Таяг' },
+];
+function categoryOf(id: OutfitId): OutfitCategory {
+  if (['glasses', 'mickey_mask', 'batman_mask', 'snorkel'].includes(id)) return 'mask';
+  if (['brown_boots', 'mongol_boots', 'pirate_boots', 'sport_sneakers', 'demon_boots', 'ninja_sandals', 'straw_sandals'].includes(id)) return 'boots';
+  if (['warrior_helmet', 'pirate_hat', 'cowboy_hat', 'white_headscarf', 'ny_cap', 'gradcap', 'headphones', 'hard_hat', 'mongol_hat', 'ribbon', 'headband', 'puss_hat', 'demon_horns', 'ninja_headband', 'straw_hat'].includes(id)) return 'hat';
+  if (id.includes('staff') || id === 'black_sword' || id === 'bronze_shield' || id === 'wizard_wand' || id === 'pirate_sword') return 'staff';
+  return 'clothes';
+}
 
 const chunk = <T,>(arr: T[], n: number): T[][] => Array.from({ length: Math.ceil(arr.length / n) }, (_, i) => arr.slice(i * n, i * n + n));
 
-function statusOf(opts: { equipped: boolean; owned: boolean; price: number; coins: number; lockedLevel?: number | null }): SwatchStatus {
-  const { equipped, owned, price, coins, lockedLevel } = opts;
-  if (equipped) return { text: S.shop.equipped, color: colors.okText, showCoin: false, locked: false };
-  if (owned) return { text: S.shop.owned, color: colors.okText, showCoin: false, locked: false };
-  if (lockedLevel) return { text: S.shop.levelNeeded(lockedLevel), color: colors.dangerText, showCoin: false, locked: true };
-  if (price > coins) return { text: formatNumber(price), a11y: S.shop.shortBy(formatNumber(price)), color: colors.dangerText, showCoin: true, locked: true };
-  return { text: formatNumber(price), color: colors.ink, showCoin: true, locked: false };
+function statusOf(opts: { equipped: boolean; owned: boolean; price: number; honey: number; lockedLevel?: number | null }): SwatchStatus {
+  const { equipped, owned, price, honey, lockedLevel } = opts;
+  if (equipped) return { text: S.shop.equipped, color: colors.okText, showHoney: false, locked: false };
+  if (owned) return { text: S.shop.owned, color: colors.okText, showHoney: false, locked: false };
+  if (lockedLevel) return { text: S.shop.levelNeeded(lockedLevel), color: colors.dangerText, showHoney: false, locked: true };
+  if (price > honey) return { text: formatNumber(price), a11y: S.shop.shortBy(formatNumber(price)), color: colors.dangerText, showHoney: true, locked: true };
+  return { text: formatNumber(price), color: colors.ink, showHoney: true, locked: false };
 }
 
 /** 07 · Дэлгүүр: дэвсгэр өнгө (MVP) ба хувцас. Офлайн үед үзэж, авсан зүйлсээ сонгоно; худалдаж авахгүй. */
@@ -41,8 +56,9 @@ export default function ShopScreen() {
   const outfits = useOutfits();
   const online = useOnline();
   const [tab, setTab] = useState<Tab>('bg');
+  const [outfitCategory, setOutfitCategory] = useState<OutfitCategory>('hat');
   const [selBg, setSelBg] = useState(bear.bgId);
-  const [selOutfit, setSelOutfit] = useState<OutfitId>(bear.outfitId);
+  const [selOutfit, setSelOutfit] = useState<OutfitId>(bear.outfitIds.at(-1) ?? DEFAULT_OUTFIT_ID);
   const [selConcept, setSelConcept] = useState('witch');
   const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const [busy, setBusy] = useState(false);
@@ -52,9 +68,13 @@ export default function ShopScreen() {
 
   const isBg = tab === 'bg';
   const isConcept = tab === 'concept';
+  const visibleOutfits = outfits.views.filter((v) => categoryOf(v.def.id) === outfitCategory);
   const bgDef = bgById(isBg ? selBg : bear.bgId);
-  const outfitView = outfits.views.find((v) => v.def.id === (isBg ? bear.outfitId : selOutfit)) ?? outfits.views[0];
+  const outfitView = outfits.views.find((v) => v.def.id === selOutfit) ?? outfits.views[0];
   const outfitDef = outfitById(outfitView.def.id);
+  const selWorn = isWorn(bear.outfitIds, outfitDef.id);
+  // Дэвсгэр дээр өмссөнөөрөө; хувцас дээр сонгосноо өмссөнтэйгөө хамт (ижил байрлалтайг тайлаад) харуулна
+  const previewItems = wornItems(isBg || selWorn ? bear.outfitIds : toggleWorn(bear.outfitIds, outfitDef.id));
 
   // Одоо харж буй зүйлийн үйлдэл
   const cur = isBg
@@ -67,16 +87,19 @@ export default function ShopScreen() {
     }
     : {
       name: outfitDef.name,
-      equipped: outfitDef.id === bear.outfitId,
+      equipped: selWorn,
       owned: outfitView.owned,
       price: outfitView.price,
       lockedLevel: outfitView.lockedLevel,
     };
-  const cantAfford = !cur.owned && cur.price > bear.coins;
+  const cantAfford = !cur.owned && cur.price > bear.honey;
   const action = !outfits.loaded
     ? { title: '…', bg: colors.stoneAlt, fg: colors.muted, disabled: true }
     : cur.equipped
-      ? { title: S.shop.equipped, bg: colors.white, fg: colors.okText, disabled: true }
+      ? // өмссөн хувцсаа тайлж болно (анхдагч ороолт, дэвсгэрээс бусад)
+        !isBg && outfitDef.id !== DEFAULT_OUTFIT_ID
+        ? { title: S.shop.unequip, bg: colors.white, fg: colors.ink, disabled: false }
+        : { title: S.shop.equipped, bg: colors.white, fg: colors.okText, disabled: true }
       : cur.owned
         ? { title: S.shop.equip, bg: colors.indigo, fg: colors.white, disabled: false }
         : !online
@@ -84,7 +107,7 @@ export default function ShopScreen() {
           : cur.lockedLevel
             ? { title: S.shop.levelNeeded(cur.lockedLevel), bg: colors.stoneAlt, fg: colors.muted, disabled: true }
             : cantAfford
-              ? { title: S.shop.noCoins, bg: colors.stoneAlt, fg: colors.muted, disabled: true }
+              ? { title: S.shop.noHoney, bg: colors.stoneAlt, fg: colors.muted, disabled: true }
               : { title: S.shop.buyFor(formatNumber(cur.price)), bg: colors.indigo, fg: colors.white, disabled: false };
 
   async function onAction() {
@@ -130,13 +153,13 @@ export default function ShopScreen() {
         <PressScale accessibilityRole="button" accessibilityLabel={S.bag.title} onPress={() => router.push('/bag')} style={styles.bagBtn}>
           <Sprite id="nav2_bag_on_30x30" />
         </PressScale>
-        <CountPill icon="icon_coin_24x24" value={bear.coins} label="Coin" />
+        <CountPill icon="btn_honey_24x24" value={bear.honey} label="Боргоцой" />
       </View>
 
       <View>
         {isConcept ? <CostumePreview selectedId={selConcept} /> : <PreviewStage
           bg={bgDef}
-          outfit={outfitDef}
+          items={previewItems}
           name={isBg ? S.shop.bgPreview(bgDef.name) : outfitDef.name}
           alt={S.shop.previewAlt(outfitDef.name, bgDef.name)}
           action={
@@ -165,13 +188,45 @@ export default function ShopScreen() {
       <SegmentedTabs<Tab>
         label={S.shop.tabs}
         value={tab}
-        onChange={(value) => { setTab(value); scrollRef.current?.scrollTo({ y: 0, animated: true }); }}
+        onChange={(next) => {
+          setTab(next);
+          scrollRef.current?.scrollTo({ y: 0, animated: true });
+          if (next === 'outfit' && !visibleOutfits.some((v) => v.def.id === selOutfit)) {
+            const first = visibleOutfits[0];
+            if (first) setSelOutfit(first.def.id);
+          }
+        }}
         options={[
           { value: 'bg', label: S.shop.tabBg },
           { value: 'outfit', label: S.shop.tabOutfit },
           { value: 'concept', label: S.shop.tabConcept },
         ]}
       />
+
+      {tab === 'outfit' && (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categories}>
+          <View accessibilityRole="tablist" accessibilityLabel="Хувцасны төрөл" style={styles.categoryRow}>
+            {CATEGORIES.map((category) => {
+              const selected = outfitCategory === category.value;
+              return (
+                <PressScale
+                  key={category.value}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected }}
+                  onPress={() => {
+                    setOutfitCategory(category.value);
+                    const first = outfits.views.find((v) => categoryOf(v.def.id) === category.value);
+                    if (first) setSelOutfit(first.def.id);
+                  }}
+                  style={[styles.category, selected && styles.categoryOn]}
+                >
+                  <Text style={[styles.categoryText, selected && styles.categoryTextOn]}>{category.label}</Text>
+                </PressScale>
+              );
+            })}
+          </View>
+        </ScrollView>
+      )}
 
       {isBg ? (
         <Animated.View key="bg" entering={FadeInDown.duration(260)} style={{ gap: 12 }}>
@@ -186,7 +241,7 @@ export default function ShopScreen() {
                   label={S.shop.bgLabel(b.name)}
                   selected={b.id === selBg}
                   equipped={b.id === bear.bgId}
-                  status={statusOf({ equipped: b.id === bear.bgId, owned: bear.ownedBgs.includes(b.id), price: bear.priceOf('bg', b.id), coins: bear.coins })}
+                  status={statusOf({ equipped: b.id === bear.bgId, owned: bear.ownedBgs.includes(b.id), price: bear.priceOf('bg', b.id), honey: bear.honey })}
                   onPress={() => setSelBg(b.id)}
                 />
               ))}
@@ -198,7 +253,7 @@ export default function ShopScreen() {
       ) : (
         <Animated.View key="outfit" entering={FadeInDown.duration(260)} style={{ gap: 10 }}>
           {!outfits.loaded ? <ActivityIndicator color={colors.violet} /> : null}
-          {chunk(outfits.views, 2).map((row, r) => (
+          {chunk(visibleOutfits, 2).map((row, r) => (
             <View key={r} style={styles.row}>
               {row.map((v) => (
                 <OutfitCard
@@ -206,10 +261,10 @@ export default function ShopScreen() {
                   def={v.def}
                   selected={v.def.id === selOutfit}
                   status={statusOf({
-                    equipped: v.def.id === bear.outfitId,
+                    equipped: isWorn(bear.outfitIds, v.def.id),
                     owned: v.owned,
                     price: v.price,
-                    coins: bear.coins,
+                    honey: bear.honey,
                     lockedLevel: v.lockedLevel,
                   })}
                   onPress={() => {
@@ -232,6 +287,12 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
   bagBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', gap: 10 },
+  categories: { paddingVertical: 4 },
+  categoryRow: { flexDirection: 'row', gap: 8 },
+  category: { backgroundColor: colors.stoneAlt, borderRadius: radius.pill, paddingHorizontal: 16, paddingVertical: 9 },
+  categoryOn: { backgroundColor: colors.indigo },
+  categoryText: { color: colors.ink, fontFamily: fonts.semibold, fontSize: 13 },
+  categoryTextOn: { color: colors.white },
   action: { height: 44, paddingHorizontal: 16, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', minWidth: 96 },
   actionText: { fontFamily: fonts.bold, fontSize: 14 },
   message: { fontFamily: fonts.semibold, fontSize: 14, color: colors.okText, textAlign: 'center' },

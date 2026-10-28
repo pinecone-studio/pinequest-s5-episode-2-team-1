@@ -1,5 +1,6 @@
 import { Onest_400Regular, Onest_500Medium, Onest_600SemiBold, Onest_700Bold, Onest_800ExtraBold } from '@expo-google-fonts/onest';
 import { PixelifySans_500Medium, PixelifySans_700Bold } from '@expo-google-fonts/pixelify-sans';
+import { Silkscreen_400Regular } from '@expo-google-fonts/silkscreen';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -12,10 +13,13 @@ import { Button } from '@/components/Button';
 import { ConfirmHost } from '@/components/ConfirmHost';
 import { FurContext, Sprite } from '@/components/pixel';
 import { ServerStatus } from '@/components/ServerStatus';
+import { APP_NAME } from '@/constants/app';
 import { colors, fonts } from '@/constants/theme';
 import { type } from '@/constants/type';
 import { S } from '@/i18n/strings';
+import { askMicOnWeb } from '@/lib/mic';
 import { PixelBearProvider } from '@/lib/mock/pixelBear';
+import { COLUMN_MAX_W } from '@/hooks/useColumnWidth';
 
 void SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -28,12 +32,18 @@ export default function RootLayout() {
     Onest_800ExtraBold,
     PixelifySans_500Medium,
     PixelifySans_700Bold,
+    Silkscreen_400Regular,
   });
   const ready = loaded || !!error;
 
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync().catch(() => {});
   }, [ready]);
+
+  // Browser-оор ороход микрофоны зөвшөөрлийг эхэнд нь асууна (баавгайтай ярилцахад хэрэгтэй)
+  useEffect(() => {
+    void askMicOnWeb();
+  }, []);
 
   if (!ready) return null;
 
@@ -61,7 +71,7 @@ function RootNavigator() {
   if (status === 'loading') {
     return (
       <View style={[styles.center, { backgroundColor: colors.violet }]}>
-        <Text style={styles.wordmark}>pine{'\n'}quest</Text>
+        <Text style={styles.wordmark}>{APP_NAME}</Text>
         <ActivityIndicator color={colors.white} size="large" />
       </View>
     );
@@ -111,7 +121,7 @@ function RootNavigator() {
 
 const styles = StyleSheet.create({
   outer: { flex: 1, backgroundColor: colors.paper },
-  column: { flex: 1, width: '100%', maxWidth: 430, alignSelf: 'center', backgroundColor: colors.paper, overflow: 'hidden' },
+  column: { flex: 1, width: '100%', maxWidth: COLUMN_MAX_W, alignSelf: 'center', backgroundColor: colors.paper, overflow: 'hidden' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24, backgroundColor: colors.paper },
   wordmark: { fontFamily: fonts.pixel, fontSize: 66, lineHeight: 60, letterSpacing: -1, color: colors.lemon, textAlign: 'center' },
 });

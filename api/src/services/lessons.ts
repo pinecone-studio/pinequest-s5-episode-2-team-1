@@ -2,6 +2,7 @@
 // хамгийн сүүлийн хуудаснаас хойших хичээл замд орохгүй: ном дутуу орсон бол зам тэнд дуусна.
 import type { BookLesson, LessonsResponse } from '../../../shared/types';
 import type { Subject } from '../config/game';
+import { mathRoadmapNodes } from '../config/mathRoadmap';
 import { lessonAt } from '../domain/path';
 import type { Bindings } from '../env';
 import type { PageRange } from './grounding';
@@ -95,6 +96,13 @@ export async function bookLessons(env: Pick<Bindings, 'BOOKS'>, subject: Subject
 }
 
 export async function loadLessons(env: Pick<Bindings, 'BOOKS'>, subject: Subject, grade: number): Promise<LessonsResponse> {
+  const roadmap = subject === 'math' ? mathRoadmapNodes(grade) : [];
+  if (roadmap.length > 0) {
+    return {
+      book: `Математик ${grade}`,
+      lessons: roadmap.map(({ chapter, title }) => ({ chapter, title, page: null })),
+    };
+  }
   const book = await bookLessons(env, subject, grade);
   return book ? { book: book.title, lessons: book.lessons } : { book: null, lessons: [] };
 }

@@ -16,10 +16,10 @@ import { useOnline } from '@/lib/online';
 
 const SUBJECTS: Subject[] = ['math', 'mongolian', 'physics'];
 
-/** Өнөөдрийн даалгавар (доод цэсний тусдаа хэсэг). Офлайн үед даалгавар нь XP, оноогүй дасгал болно. */
+/** Өнөөдрийн даалгавар (доод цэсний тусдаа хэсэг). Офлайн үед даалгавар нь XP, боргоцойгүй дасгал болно. */
 export default function TasksScreen() {
   const { me, refreshMe } = useAuth();
-  const { coins } = usePixelBear();
+  const { honey } = usePixelBear();
   const online = useOnline();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -46,7 +46,7 @@ export default function TasksScreen() {
         <Text accessibilityRole="header" style={[type.h2, { flex: 1 }]}>
           {S.tasks.title}
         </Text>
-        <CountPill icon="icon_coin_24x24" value={coins} label="Coin" />
+        <CountPill icon="btn_honey_24x24" value={honey} label="Боргоцой" />
       </View>
 
       {online ? null : (
@@ -71,7 +71,7 @@ export default function TasksScreen() {
           <Enter key={subject} index={i + 1}>
             <PressScale
               accessibilityRole="button"
-              accessibilityLabel={online ? `${S.tasks.start(subjectNames[subject])}, +${maxReward} coin` : `${S.tasks.start(subjectNames[subject])}, ${S.offline.practice}`}
+              accessibilityLabel={online ? `${S.tasks.start(subjectNames[subject])}, +${maxReward} боргоцой` : `${S.tasks.start(subjectNames[subject])}, ${S.offline.practice}`}
               onPress={() => router.push(`/task/${subject}`)}
               scaleTo={0.97}
               style={[styles.quest, { backgroundColor: t.bg }]}
@@ -92,7 +92,7 @@ export default function TasksScreen() {
                 <Text style={[styles.questTitle, { color: t.fg }]}>{subjectNames[subject]}</Text>
                 {online ? (
                   <View style={styles.reward}>
-                    <Sprite id="icon_coin_12x12" />
+                    <Sprite id="btn_honey_12x12" />
                     <Text style={styles.rewardNum}>+{maxReward}</Text>
                   </View>
                 ) : null}
@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   progress: { borderRadius: radius.lg, padding: 18, gap: 6, overflow: 'hidden', minHeight: 150 },
   peek: { position: 'absolute', right: -16, bottom: -18 },
   progressLabel: { fontFamily: fonts.bold, fontSize: 13, letterSpacing: 1, color: colors.ink },
-  big: { fontFamily: fonts.pixel, fontSize: 40, lineHeight: 44, color: colors.ink },
+  big: { fontFamily: fonts.pixelNum, fontSize: 34, lineHeight: 37, color: colors.ink },
   status: { fontFamily: fonts.semibold, fontSize: 14, lineHeight: 19, color: colors.ink, maxWidth: '64%' },
   quest: {
     minHeight: 112,
@@ -150,6 +150,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
-  rewardNum: { fontFamily: fonts.pixel, fontSize: 14, color: colors.ink },
+  rewardNum: { fontFamily: fonts.pixelNum, fontSize: 12, color: colors.ink },
   play: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.ink, alignItems: 'center', justifyContent: 'center', paddingLeft: 3 },
 });

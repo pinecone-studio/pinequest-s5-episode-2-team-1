@@ -124,6 +124,16 @@ export async function loadSubjectPaths(db: D1Database, userId: number): Promise<
   return paths;
 }
 
+/** users.onboarding JSON-оос сонгосон хичээл; эвдэрсэн эсвэл байхгүй бол null. */
+export function onboardingSubject(json: string | null): Subject | null {
+  try {
+    const subject = json ? (JSON.parse(json) as { subject?: unknown }).subject : null;
+    return SUBJECTS.includes(subject as Subject) ? (subject as Subject) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function buildMe(
   user: UserRow,
   today: string,
@@ -145,6 +155,7 @@ export function buildMe(
     name: user.display_name ?? user.username,
     profileSet: user.display_name !== null,
     onboarded: user.onboarding !== null,
+    subject: onboardingSubject(user.onboarding),
     grade: user.grade,
     tier: user.tier,
     xp: user.xp,

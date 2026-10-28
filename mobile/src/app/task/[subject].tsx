@@ -1,9 +1,9 @@
 import type { AnswerResponse, FlagResponse, Subject, TaskDto, TaskResult } from '@shared/types';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import { type ComponentRef, useCallback, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import Animated, { FadeInDown, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { ApiError, api, errorText, isOfflineError } from '@/api/client';
@@ -31,7 +31,7 @@ const LESSON_WALL = '#3b2a8f';
 /**
  * 05 · Хичээл (асуулт) ба 06 · Шагнал. Логик: сонгох → ШАЛГАХ → серверт хариулт → тайлбар → дараагийн асуулт.
  * `?boss=<бүлэг>` бол дээд самбар нь boss тулаан болно (асуултууд нь ижил даалгавар).
- * Сервер хүрэхгүй бол офлайн дасгал: апп доторх асуултаар, хариуг утсан дээр шалгана, XP/оноо цуглуулахгүй.
+ * Сервер хүрэхгүй бол офлайн дасгал: апп доторх асуултаар, хариуг утсан дээр шалгана, XP/боргоцой цуглуулахгүй.
  */
 export default function TaskScreen() {
   const { subject, boss, node, stage, review } = useLocalSearchParams<{
@@ -46,6 +46,9 @@ export default function TaskScreen() {
   const { me, setMe } = useAuth();
   const online = useOnline();
   const insets = useSafeAreaInsets();
+  const { height: windowH } = useWindowDimensions();
+  /** Асуулт, хариулт, тайлбар, товчны хэсгийн өндөр (onLayout) */
+  const [bodyH, setBodyH] = useState(0);
   const tier = me?.tier;
   const grade = me?.grade;
   const size = me?.questionsPerTask ?? 5;
@@ -198,6 +201,20 @@ export default function TaskScreen() {
     }
   }
 
+  // Хариугаа шалгахад тайлбар, «Үргэлжлүүлэх» товч нэмэгдэж дэлгэцээс хэтэрдэг тул баавгайн самбарыг багасгаж
+  // бүгдийг нэг дэлгэцэнд багтаана (scroll хийх шаардлагагүй). Баавгай, шал доод талдаа бэхлэгдсэн тул дээд хэсэг нь л
+  // тайрагдана. Boss-ын талбар тогтмол өндөртэй зурагддаг тул хэвээр. Hook тул доорх эрт return-ээс өмнө байна.
+  const panelFull = PANEL_H + insets.top;
+  const panelH =
+    foe || !bodyH ? panelFull : Math.max(PANEL_MIN + insets.top, Math.min(panelFull, windowH - bodyH - insets.bottom - 24));
+  const panelStyle = useAnimatedStyle(() => ({ height: withTiming(panelH, { duration: 260 }) }), [panelH]);
+  // Самбар доод хэмжээндээ хүрсэн ч урт асуулт, тайлбар багтахгүй бол «Үргэлжлүүлэх» харагдтал доош гүйлгэнэ;
+  // дараагийн асуулт дээрээсээ эхэлнэ.
+  const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
+  useEffect(() => {
+    scroll.current?.scrollTo({ y: 0, animated: false });
+  }, [index]);
+
   if (showScore && practiceScore !== null) return <PracticeResultView correct={practiceScore} total={total} onAgain={load} />;
   // Шагналаа (XP, шат, streak) эхлээд харуулна; салаа зам нээгдсэн бол тэндээс шууд руу нь орно
   if (result) return <RewardView result={result} onAgain={load} onRecovery={recovery ? () => router.replace(`/recovery/${subject}`) : undefined} />;
@@ -244,8 +261,13 @@ export default function TaskScreen() {
 
   return (
     <View style={styles.root}>
-      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 24 }} showsVerticalScrollIndicator={false}>
-        <View style={[styles.panel, { paddingTop: insets.top, height: 402 + insets.top }, { backgroundColor: foe ? colors.indigo : LESSON_WALL }]}>
+      <ScrollView
+        ref={scroll}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+        showsVerticalScrollIndicator={false}
+        onContentSizeChange={() => feedback && scroll.current?.scrollToEnd({ animated: true })}
+      >
+        <Animated.View style={[styles.panel, { paddingTop: insets.top }, panelStyle, { backgroundColor: foe ? colors.indigo : LESSON_WALL }]}>
           {foe ? (
             <BossArena
               boss={foe}
@@ -292,9 +314,9 @@ export default function TaskScreen() {
               {answered}/{total}
             </Text>
           </View>
-        </View>
+        </Animated.View>
 
-        <View style={styles.body}>
+        <View style={styles.body} onLayout={(e) => setBodyH(e.nativeEvent.layout.height)}>
           {error ? (
             <BattleNotice
               tone={beaten ? 'won' : 'locked'}
@@ -388,6 +410,10 @@ export default function TaskScreen() {
   );
 }
 
+/** Баавгайн самбарын бүтэн өндөр ба хариу шалгасны дараа багасах доод хязгаар (баавгай, ✕, хөөс багтана). */
+const PANEL_H = 402;
+const PANEL_MIN = 250;
+
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.paper },
   panel: {
@@ -414,7 +440,7 @@ const styles = StyleSheet.create({
   bubbleText: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 19, color: colors.ink },
   progressRow: { position: 'absolute', left: 24, right: 24, bottom: 20, flexDirection: 'row', alignItems: 'center', gap: 10 },
   track: { flex: 1, height: 12, borderRadius: 6, backgroundColor: colors.white, overflow: 'hidden' },
-  progressNum: { fontFamily: fonts.pixel, fontSize: 16, color: colors.white },
+  progressNum: { fontFamily: fonts.pixelNum, fontSize: 14, color: colors.white },
   body: { paddingHorizontal: 24, paddingTop: 24 },
   loading: { alignItems: 'center', gap: 12, paddingVertical: 40 },
   label: { fontFamily: fonts.bold, fontSize: 13, letterSpacing: 1, textTransform: 'uppercase', color: colors.muted },

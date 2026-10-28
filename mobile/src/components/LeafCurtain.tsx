@@ -5,6 +5,7 @@ import { SheetFrame, SheetLoop } from '@/components/pixel';
 import { colors, fonts, radius } from '@/constants/theme';
 import room from '@/lib/pixelBear/classroom.json';
 import type { SpriteKey } from '@/sprites';
+import { useColumnWidth } from '@/hooks/useColumnWidth';
 
 type Kind = (typeof room.branch.kinds)[number];
 type Side = 'left' | 'right' | 'top' | 'bottom';
@@ -63,7 +64,9 @@ const ALL_IN = Math.max(...PIECES.map((p) => p[4])) + 720;
  */
 export function LeafCurtain({ covered, failed, label }: { covered: boolean; failed?: boolean; label: string }) {
   const reduce = useReducedMotion();
-  const { width, height } = useWindowDimensions();
+  // мөчир баганын хоёр захаас ургана: өргөн цонхонд ч баганын өргөнөөр
+  const width = useColumnWidth();
+  const { height } = useWindowDimensions();
   const [closed, setClosed] = useState(false);
   const [tick, setTick] = useState(0);
   const [visible, setVisible] = useState(false);

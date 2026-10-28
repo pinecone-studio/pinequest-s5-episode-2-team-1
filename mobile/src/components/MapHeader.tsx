@@ -18,7 +18,7 @@ import type { SpriteKey } from '@/sprites';
 const SUBJECTS = PATH_SUBJECTS;
 
 /**
- * Сурах замын дээд хэсэг (Duolingo шиг, хүрээгүй): самбар дээр аватар · XP · гал · coin жигд зайтай; түүнээс тусдаа,
+ * Сурах замын дээд хэсэг (Duolingo шиг, хүрээгүй): самбар дээр аватар · XP · гал · боргоцой жигд зайтай; түүнээс тусдаа,
  * газрын зураг дээр хөвөх харагдаж буй бүлгийн тод баннер (дарахад хичээл солих цэс). Өнгө бүлгийн theme-ийг дагана.
  * Нарийн дэлгэц, том текстэд stat-ууд доош шилжинэ. Тохиргооны цэс байхгүй.
  */
@@ -41,7 +41,7 @@ export function MapHeader({
   onHeight: (panel: number, total: number) => void;
 }) {
   const { me, refreshMe } = useAuth();
-  const { coins } = usePixelBear();
+  const { honey } = usePixelBear();
   const refill = useCallback(() => void refreshMe(), [refreshMe]);
   // хуучин хадгалсан Me-д амь байхгүй байж болно (офлайн кэш)
   const lives = me?.lives ?? 5;
@@ -74,11 +74,11 @@ export function MapHeader({
                       <Sprite key={k} id="icon_heart_12x12" style={k < lives ? null : styles.heartOff} />
                     ))}
                   </View>
-                  <Animated.Text style={[styles.timer, fade.text]}>{clock ?? S.lives.full}</Animated.Text>
+                  <Animated.Text style={[styles.timer, clock ? styles.timerNum : null, fade.text]}>{clock ?? S.lives.full}</Animated.Text>
                 </View>
               </View>
               <Stat icon="icon_flame_24x24" value={me.streak} label={S.path.streak} text={fade.text} />
-              <Stat icon="icon_coin_24x24" value={coins} label="Coin" text={fade.text} />
+              <Stat icon="btn_honey_24x24" value={honey} label="Боргоцой" text={fade.text} />
             </View>
           </Animated.View>
         </View>
@@ -149,10 +149,11 @@ const styles = StyleSheet.create({
   // жигд зайтай; багтахгүй бол дараагийн мөрөнд шилжинэ
   stats: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', columnGap: 12, rowGap: 6 },
   stat: { flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 36 },
-  num: { fontFamily: fonts.pixel, fontSize: 16, lineHeight: 18 },
+  num: { fontFamily: fonts.pixelNum, fontSize: 14, lineHeight: 15 },
   hearts: { flexDirection: 'row', gap: 2 },
   heartOff: { opacity: 0.3 },
   timer: { fontFamily: fonts.pixel, fontSize: 12, lineHeight: 13 },
+  timerNum: { fontFamily: fonts.pixelNum, fontSize: 10 },
   // газрын зураг дээр тод харагдахаар зөөлөн сүүдэр
   banner: {
     flexDirection: 'row',
@@ -170,9 +171,9 @@ const styles = StyleSheet.create({
   title: { fontFamily: fonts.bold, fontSize: 18, lineHeight: 23, color: colors.white },
   switch: { width: 56, alignItems: 'center', justifyContent: 'center', borderLeftWidth: 1.5, borderLeftColor: 'rgba(0,0,0,0.18)' },
   menu: {
-    alignSelf: 'flex-start',
+    alignSelf: 'flex-end',
     marginTop: 8,
-    marginLeft: 16,
+    marginRight: 16,
     backgroundColor: colors.white,
     borderRadius: 20,
     padding: 6,

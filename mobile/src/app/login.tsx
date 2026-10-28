@@ -5,7 +5,6 @@ import { errorText } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { Enter, Motion, Sprite } from '@/components/pixel';
-import { ServerStatus } from '@/components/ServerStatus';
 import { BackButton, Card, ErrorText, Screen, TextField } from '@/components/ui';
 import { colors, fonts, radius } from '@/constants/theme';
 import { type } from '@/constants/type';
@@ -91,8 +90,6 @@ export default function LoginScreen() {
       <Pressable accessibilityRole="link" onPress={() => router.replace('/register')} style={styles.linkWrap}>
         <Text style={styles.link}>{S.auth.toRegister}</Text>
       </Pressable>
-      <View style={{ flex: 1 }} />
-      <ServerStatus />
     </Screen>
   );
 }

@@ -7,7 +7,18 @@ const general: Template = { ref: 'math-6:5', id: 'general', preferStored: true, 
 
 describe('shouldGenerateTemplates', () => {
   it('загваргүй бол үүсгэхгүй', () => expect(shouldGenerateTemplates([], 0, 5)).toBe(false));
-  it('тусгай загвар үргэлж үүсгэнэ', () => expect(shouldGenerateTemplates([special], 25, 5)).toBe(true));
-  it('ерөнхий загвар хадгалсан асуултыг орлохгүй', () => expect(shouldGenerateTemplates([general], 25, 5)).toBe(false));
-  it('хадгалсан асуулт дутвал ерөнхий загвар нөхнө', () => expect(shouldGenerateTemplates([general], 4, 5)).toBe(true));
+  it('Суурь шат тусгай, ерөнхий аль ч template-ийн оронд DB ашиглана', () => {
+    expect(shouldGenerateTemplates([special], 25, 5, 1)).toBe(false);
+    expect(shouldGenerateTemplates([general], 25, 5, 1)).toBe(false);
+  });
+  it('Суурийн DB асуулт дутвал template нөхнө', () => expect(shouldGenerateTemplates([general], 4, 5, 1)).toBe(true));
+  it('Дунд, Ахисан шат DB-ийн тооноос үл хамааран template ашиглана', () => {
+    expect(shouldGenerateTemplates([general], 25, 5, 2)).toBe(true);
+    expect(shouldGenerateTemplates([general], 25, 5, 3)).toBe(true);
+  });
+  it('шатгүй урсгалд тусгай template үргэлж, ерөнхий template зөвхөн DB дутвал', () => {
+    expect(shouldGenerateTemplates([special], 25, 5)).toBe(true);
+    expect(shouldGenerateTemplates([general], 25, 5)).toBe(false);
+    expect(shouldGenerateTemplates([general], 4, 5)).toBe(true);
+  });
 });

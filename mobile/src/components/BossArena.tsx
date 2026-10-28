@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import Animated, {
   Easing,
   type SharedValue,
@@ -22,6 +22,7 @@ import golems from '@/lib/pixelBear/golems.json';
 import { BOSS_FRAME, type Boss, HOVER } from '@/lib/pixelBear/path';
 import { SKILL_HIT, skillOf } from '@/lib/pixelBear/skills';
 import type { SpriteKey } from '@/sprites';
+import { useColumnWidth } from '@/hooks/useColumnWidth';
 
 // Баавгайн frame бүр өөрийн хугацаатай, tag-аар бүлэглэгдсэн (mobile/scripts/bear-sprites.ts → bear.json).
 type Tag = keyof typeof bear.tags;
@@ -86,7 +87,7 @@ const SOUL: SpriteKey = 'fx_soul_sheet_248x122';
 const SOUL_LOOP = [0, 1, 2, 3];
 const SOUL_RISE = 22;
 /** баавгайн шидэх зөгийн балны сав ба boss-д тусаж хагарах эффект (scripts/bear-sprites.ts: PixelLab VFX) */
-const HONEY_JAR: SpriteKey = 'btn_honey_30x30';
+const HONEY_JAR: SpriteKey = 'btn_honey_jar_30x30';
 const SHATTER: SpriteKey = 'fx_honey_shatter_414x456';
 const SHATTER_MS = 80; // эх нь 63ms: нүдээр дагахуйц удаан
 type Spark = { id: SpriteKey; at: Point; frame: number; frames: number; cols: number; pivot: Point };
@@ -155,7 +156,8 @@ export function BossArena({
   insetTop: number;
 }) {
   const reduce = useReducedMotion();
-  const width = useWindowDimensions().width;
+  // баавгайн байрлал, довтолгооны зай, сумны чиглэл баганын өргөнөөр (өргөн цонхонд баганаас гарахгүй)
+  const width = useColumnWidth();
   const won = hits >= needed;
   const lost = misses >= hearts;
   const size = bossSize(boss);
@@ -677,8 +679,8 @@ const styles = StyleSheet.create({
   shot: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
   damage: { width: 60, alignItems: 'center', zIndex: 5 },
   damageText: {
-    fontFamily: fonts.pixel,
-    fontSize: 28,
+    fontFamily: fonts.pixelNum,
+    fontSize: 24,
     color: colors.lemon,
     textShadowColor: colors.ink,
     textShadowOffset: { width: 2, height: 2 },

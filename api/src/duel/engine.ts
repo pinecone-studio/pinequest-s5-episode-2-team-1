@@ -1,6 +1,9 @@
 // Тулааны цэвэр state machine. DuelRoom (Durable Object) нь socket, alarm, D1-ийг л хариуцна;
 // бүх дүрэм энд байгаа тул unit тестээр шалгагдана. Функц бүр шинэ state буцаана.
-import type { AvatarLook, DuelOutcome, DuelPhase, RevealInfo, ServerMsg, Subject, WsQuestion } from '../../../shared/types';
+// 1 vs 1: хамгийн түрүүнд зөв хариулсан нь асуултыг авна. Багийн тулаан (2 vs 2 … 5 vs 5): хүн бүр нэг удаа
+// хариулж, зөв хариулт бүр багтаа 1 оноо; бүх холбогдсон тоглогч хариулмагц (эсвэл хугацаа дуусахад) reveal.
+import type { AvatarLook, BearLook, DuelOutcome, DuelPhase, DuelTeam, RevealInfo, ServerMsg, Subject, WsQuestion } from '../../../shared/types';
+import { DEFAULT_LOOK } from '../config/cosmetics';
 import { GAME } from '../config/game';
 
 export interface DuelQuestion {
@@ -16,24 +19,30 @@ export interface DuelPlayerInfo {
   username: string;
   name: string;
   avatar: AvatarLook;
+  /** deploy-оос өмнө эхэлсэн тулааны хадгалсан тоглогчид look, team байхгүй */
+  look?: BearLook;
+  team?: DuelTeam;
 }
 
 export interface DuelInit {
   duelId: number;
   subject: Subject;
   stake: number;
-  /** [үүсгэгч, хүлээн авагч] */
-  players: [DuelPlayerInfo, DuelPlayerInfo];
+  /** 1 = 1 vs 1; 2–5 = багийн тулаан. */
+  teamSize?: number;
+  /** Үүсгэгч эхэнд. 1 vs 1-д [үүсгэгч, хүлээн авагч]. */
+  players: DuelPlayerInfo[];
   questions: DuelQuestion[];
 }
 
-/** D1 дээр хийх эцсийн тооцоо. */
-export type Settlement = { kind: 'win'; winnerId: number; loserId: number } | { kind: 'refund' };
+/** D1 дээр хийх эцсийн тооцоо: ялсан багийн гишүүн бүр хоёр бооцоо авна. */
+export type Settlement = { kind: 'win'; winners: number[]; losers: number[] } | { kind: 'refund' };
 
 export interface DuelState {
   duelId: number;
   subject: Subject;
   stake: number;
+  teamSize: number;
   players: DuelPlayerInfo[];
   questions: DuelQuestion[];
   phase: DuelPhase;
@@ -70,18 +79,40 @@ export interface Step {
 
 const ACTIVE: DuelPhase[] = ['countdown', 'question', 'reveal'];
 const key = (id: number) => String(id);
+const otherTeam = (t: DuelTeam): DuelTeam => (t === 'a' ? 'b' : 'a');
 
 export function isPlayer(s: DuelState, userId: number): boolean {
   return s.players.some((p) => p.id === userId);
 }
 
-export function opponentOf(s: DuelState, userId: number): number {
-  return s.players.find((p) => p.id !== userId)!.id;
+/** Хуучин (team-гүй) state-д: эхний тоглогч 'a', бусад нь 'b'. */
+export function teamOf(s: DuelState, userId: number): DuelTeam {
+  const i = s.players.findIndex((p) => p.id === userId);
+  return s.players[i]?.team ?? (i === 0 ? 'a' : 'b');
 }
+
+function membersOf(s: DuelState, team: DuelTeam): number[] {
+  return s.players.filter((p) => teamOf(s, p.id) === team).map((p) => p.id);
+}
+
+/** userId-аас бусад бүх тоглогч (presence, хариулсан мэдэгдэл). */
+function othersOf(s: DuelState, userId: number): number[] {
+  return s.players.filter((p) => p.id !== userId).map((p) => p.id);
+}
+
+const isTeamDuel = (s: DuelState) => (s.teamSize ?? 1) > 1;
 
 function numericScores(s: DuelState): Record<number, number> {
   return Object.fromEntries(s.players.map((p) => [p.id, s.scores[key(p.id)] ?? 0]));
 }
+
+function teamScores(s: DuelState): Record<DuelTeam, number> {
+  const t: Record<DuelTeam, number> = { a: 0, b: 0 };
+  for (const p of s.players) t[teamOf(s, p.id)] += s.scores[key(p.id)] ?? 0;
+  return t;
+}
+
+const connected = (s: DuelState, userId: number) => !!s.conn[key(userId)];
 
 function wsQuestion(s: DuelState): WsQuestion | null {
   const question = s.questions[s.q];
@@ -107,7 +138,8 @@ export function createDuel(init: DuelInit, now: number): DuelState {
     duelId: init.duelId,
     subject: init.subject,
     stake: init.stake,
-    players: init.players,
+    teamSize: init.teamSize ?? 1,
+    players: init.players.map((p, i) => ({ ...p, team: p.team ?? (i === 0 ? 'a' : 'b') })),
     questions: init.questions,
     phase: 'waiting',
     q: -1,
@@ -135,13 +167,16 @@ export function snapshot(s: DuelState, forUser: number, now: number): ServerMsg 
     duelId: s.duelId,
     subject: s.subject,
     stake: s.stake,
+    teamSize: s.teamSize ?? 1,
     players: s.players.map((p) => ({
       id: p.id,
       username: p.username,
       // deploy-оос өмнө эхэлсэн тулааны хадгалсан тоглогчид name байхгүй
       name: p.name ?? p.username,
       avatar: p.avatar,
-      connected: !!s.conn[key(p.id)],
+      look: p.look ?? DEFAULT_LOOK,
+      team: teamOf(s, p.id),
+      connected: connected(s, p.id),
       score: s.scores[key(p.id)] ?? 0,
     })),
     question: inQuestion ? wsQuestion(s) : null,
@@ -191,20 +226,31 @@ function reveal(s: DuelState, now: number, out: Out[]) {
     correctIndex: question.correctIndex,
     explanation: question.explanation,
     winnerId: s.qWinner,
+    correct: s.players.filter((p) => s.attempts[key(p.id)]?.correct).map((p) => p.id),
     scores: numericScores(s),
+    teamScores: teamScores(s),
   };
   out.push({ to: 'all', msg: { type: 'reveal', nextAt: s.phaseEndsAt, serverNow: now, ...s.lastReveal } });
 }
 
-function finish(s: DuelState, winnerId: number | null, reason: DuelOutcome['reason']) {
+function finish(s: DuelState, winnerTeam: DuelTeam | null, reason: DuelOutcome['reason']) {
   s.phase = 'finished';
   s.phaseEndsAt = null;
   s.connectDeadline = null;
   s.dropDeadline = {};
   const deltas: Record<number, number> = {};
-  for (const p of s.players) deltas[p.id] = winnerId === null ? 0 : p.id === winnerId ? s.stake : -s.stake;
-  s.outcome = { winnerId, reason, scores: numericScores(s), deltas, points: {} };
-  s.settlement = winnerId === null ? { kind: 'refund' } : { kind: 'win', winnerId, loserId: opponentOf(s, winnerId) };
+  for (const p of s.players) deltas[p.id] = winnerTeam === null ? 0 : teamOf(s, p.id) === winnerTeam ? s.stake : -s.stake;
+  const winners = winnerTeam === null ? [] : membersOf(s, winnerTeam);
+  s.outcome = {
+    winnerId: !isTeamDuel(s) && winners.length === 1 ? winners[0] : null,
+    winnerTeam,
+    reason,
+    scores: numericScores(s),
+    teamScores: teamScores(s),
+    deltas,
+    points: {},
+  };
+  s.settlement = winnerTeam === null ? { kind: 'refund' } : { kind: 'win', winners, losers: membersOf(s, otherTeam(winnerTeam)) };
 }
 
 function cancelNoShow(s: DuelState) {
@@ -214,8 +260,10 @@ function cancelNoShow(s: DuelState) {
   s.dropDeadline = {};
   s.outcome = {
     winnerId: null,
+    winnerTeam: null,
     reason: 'no_show',
     scores: numericScores(s),
+    teamScores: teamScores(s),
     deltas: Object.fromEntries(s.players.map((p) => [p.id, 0])),
     points: {},
   };
@@ -223,11 +271,19 @@ function cancelNoShow(s: DuelState) {
 }
 
 function finishByScore(s: DuelState) {
-  const [a, b] = s.players;
-  const sa = s.scores[key(a.id)] ?? 0;
-  const sb = s.scores[key(b.id)] ?? 0;
-  if (sa === sb) finish(s, null, 'draw');
-  else finish(s, sa > sb ? a.id : b.id, 'score');
+  const { a, b } = teamScores(s);
+  if (a === b) finish(s, null, 'draw');
+  else finish(s, a > b ? 'a' : 'b', 'score');
+}
+
+/** Багийн аль нэг гишүүн холбоотой эсвэл эргэж холбогдох хугацаатай байна. */
+function teamAlive(s: DuelState, team: DuelTeam): boolean {
+  return membersOf(s, team).some((id) => connected(s, id) || s.dropDeadline[key(id)] !== undefined);
+}
+
+/** Холбоотой бүх тоглогч энэ асуултад хариулсан (салсан тоглогчийг хүлээхгүй). */
+function allAnswered(s: DuelState): boolean {
+  return s.players.every((p) => s.attempts[key(p.id)] || !connected(s, p.id));
 }
 
 /** Хугацаа нь өнгөрсөн бүх deadline-ийг дарааллаар нь боловсруулна. */
@@ -235,15 +291,25 @@ function advance(s: DuelState, now: number, out: Out[]) {
   for (let guard = 0; guard < 16; guard++) {
     if (s.phase === 'finished' || s.phase === 'cancelled') return;
     if (s.phase === 'waiting') {
-      if (s.connectDeadline !== null && now >= s.connectDeadline) cancelNoShow(s);
+      if (s.connectDeadline === null || now < s.connectDeadline) return;
+      // Багийн тулаанд хоёр багаас хоёуланд нь хүн ирсэн бол ирээгүйг нь хүлээлгүй эхэлнэ.
+      if (isTeamDuel(s) && membersOf(s, 'a').some((id) => connected(s, id)) && membersOf(s, 'b').some((id) => connected(s, id))) {
+        startCountdown(s, now, out);
+        continue;
+      }
+      cancelNoShow(s);
       return;
     }
     const dropped = Object.entries(s.dropDeadline)
       .filter(([, t]) => now >= t)
       .sort((x, y) => x[1] - y[1]);
     if (dropped.length) {
-      // 10 секундээс удаан салсан тоглогч хожигдоно (хоёулаа бол түрүүлж хугацаа нь дууссан нь).
-      finish(s, opponentOf(s, Number(dropped[0][0])), 'forfeit');
+      // 10 секундээс удаан салсан тоглогч тоглолтоос гарна; багт нь хэн ч үлдээгүй бол баг нь хожигдоно
+      // (1 vs 1-д шууд; хоёулаа бол түрүүлж хугацаа нь дууссан нь).
+      const userId = Number(dropped[0][0]);
+      delete s.dropDeadline[key(userId)];
+      const team = teamOf(s, userId);
+      if (!teamAlive(s, team)) finish(s, otherTeam(team), 'forfeit');
       continue;
     }
     if (s.phaseEndsAt === null || now < s.phaseEndsAt) return;
@@ -274,7 +340,7 @@ export function onConnect(s0: DuelState, userId: number, connId: string, now: nu
     s.conn[key(userId)] = connId;
     delete s.dropDeadline[key(userId)];
     out.push({ to: userId, msg: snapshot(s, userId, now) });
-    out.push({ to: opponentOf(s, userId), msg: { type: 'presence', userId, connected: true } });
+    for (const o of othersOf(s, userId)) out.push({ to: o, msg: { type: 'presence', userId, connected: true } });
     if (s.phase === 'waiting' && s.players.every((p) => s.conn[key(p.id)])) startCountdown(s, now, out);
   });
 }
@@ -284,12 +350,15 @@ export function onDisconnect(s0: DuelState, userId: number, connId: string, now:
     // Шинэ холболтоор солигдсон хуучин socket бол тоохгүй.
     if (s.conn[key(userId)] !== connId) return;
     s.conn[key(userId)] = null;
-    out.push({ to: opponentOf(s, userId), msg: { type: 'presence', userId, connected: false } });
+    for (const o of othersOf(s, userId)) out.push({ to: o, msg: { type: 'presence', userId, connected: false } });
     if (ACTIVE.includes(s.phase)) s.dropDeadline[key(userId)] = now + GAME.DUEL.DISCONNECT_GRACE_MS;
   });
 }
 
-/** Хамгийн түрүүнд ирсэн зөв хариулт асуултыг авна; буруу хариулсан тоглогч дахин хариулахгүй. */
+/**
+ * 1 vs 1: хамгийн түрүүнд ирсэн зөв хариулт асуултыг авна. Багийн тулаан: зөв хариулт бүр 1 оноо.
+ * Тоглогч бүр асуулт бүрт нэг л удаа хариулна.
+ */
 export function onAnswer(s0: DuelState, userId: number, q: number, choice: number, now: number): Step {
   return step(s0, now, (s, out) => {
     const k = key(userId);
@@ -308,13 +377,12 @@ export function onAnswer(s0: DuelState, userId: number, q: number, choice: numbe
     const correct = choice === s.questions[s.q].correctIndex;
     s.attempts[k] = { choice, correct };
     out.push({ to: userId, msg: { type: 'answer_result', q, choice, correct } });
-    out.push({ to: opponentOf(s, userId), msg: { type: 'opponent_answered', q, correct } });
+    for (const o of othersOf(s, userId)) out.push({ to: o, msg: { type: 'opponent_answered', q, correct, userId } });
     if (correct) {
-      s.qWinner = userId;
+      s.qWinner ??= userId;
       s.scores[k] = (s.scores[k] ?? 0) + 1;
-      reveal(s, now, out);
-    } else if (s.players.every((p) => s.attempts[key(p.id)])) {
-      reveal(s, now, out); // хоёулаа буруу: хэн ч авахгүй
     }
+    // 1 vs 1-д зөв хариулт асуултыг шууд хаана; бусад үед бүгд хариулмагц (хоёулаа буруу бол хэн ч авахгүй).
+    if ((correct && !isTeamDuel(s)) || allAnswered(s)) reveal(s, now, out);
   });
 }

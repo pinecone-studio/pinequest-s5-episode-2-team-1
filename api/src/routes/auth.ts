@@ -11,7 +11,7 @@ import { hashPassword, newSessionToken, normalizeUsername, sha256Hex, usernameEr
 import { ApiError, readBody } from '../lib/errors';
 import { bearerToken, createSession, requireAuth, trackActive } from '../lib/session';
 import { loadLessons } from '../services/lessons';
-import { myProfile, rotateProfileCode, setAvatar, setBearLook, setOnboarding } from '../services/profiles';
+import { myProfile, rotateProfileCode, setAdminGrade, setAvatar, setBearLook, setOnboarding } from '../services/profiles';
 import { loadMe } from '../services/users';
 
 const registerSchema = z.object({
@@ -119,7 +119,7 @@ meRoutes.post('/profile/code', requireAuth, async (c) => c.json<MyProfileRespons
 
 /** Нүүрэн дээр сонгосон дэвсгэр, хувцас (профайл дээр бусдад харагдана). */
 meRoutes.put('/look', requireAuth, async (c) => {
-  const body = await readBody(c, z.object({ bg: z.string().min(1).max(40), outfit: z.string().min(1).max(40) }));
+  const body = await readBody(c, z.object({ bg: z.string().min(1).max(40), outfit: z.string().min(1).max(400) }));
   return c.json<MeResponse>({ me: await setBearLook(c.env.DB, c.get('userId'), body) });
 });
 
@@ -138,6 +138,15 @@ meRoutes.put('/onboarding', requireAuth, async (c) => {
   const tier = tierForGrade(body.grade);
   if (!tier) throw new ApiError(400, 'BAD_REQUEST', 'Анги буруу');
   return c.json<MeResponse>({ me: await setOnboarding(c.env.DB, c.get('userId'), body as OnboardingBody, tier) });
+});
+
+/** Хөгжүүлэгчийн бүртгэлээр 6–12-р ангийн агуулгыг шалгана. */
+meRoutes.put('/grade', requireAuth, async (c) => {
+  const { grade } = await readBody(
+    c,
+    z.object({ grade: z.number().int().min(GAME.GRADE_MIN).max(GAME.GRADE_MAX) }),
+  );
+  return c.json<MeResponse>({ me: await setAdminGrade(c.env.DB, c.get('userId'), grade) });
 });
 
 /** Профайлын нэр (хоч) ба баавгайн үс, царай, цээжний толбо. */

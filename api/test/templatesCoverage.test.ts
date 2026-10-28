@@ -4,6 +4,7 @@ import { validateDrafts } from '../src/llm/validate';
 import { generate, shouldGenerateTemplates, type Level, templatesFor } from '../src/templates';
 import { MATH6 } from '../src/templates/math6';
 import { MATH7 } from '../src/templates/math7';
+import { MATH8, MATH9, MATH10 } from '../src/templates/mathAdvanced';
 import { MATH6_MORE, MATH6_SPECS, MATH7_MORE, MATH7_SPECS } from '../src/templates/mathCurriculum';
 
 function seeded(seed: number) {
@@ -23,7 +24,7 @@ const MATH7_PAGES = [
   5, 7, 9, 11, 13, 14, 17, 18, 19, 22, 23, 25, 28, 32, 34, 37, 39, 41, 46, 50, 51, 59, 61, 63, 67, 69, 74, 76, 79, 83, 92, 94, 96, 98, 101, 104, 108, 120, 122, 123, 124, 126, 129, 132, 133, 135, 139, 141, 144, 147, 149, 151, 156, 157, 159, 161, 162, 164, 168, 173, 180,
 ];
 
-describe('Математик 6, 7-ын бүх хичээлийн template coverage', () => {
+describe('Математик 6–10-ын бүх хичээлийн template coverage', () => {
   it('63 ба 61 хичээл бүр нэг template-тэй', () => {
     expect(MATH6.length + MATH6_MORE.length).toBe(63);
     expect(MATH7.length + MATH7_MORE.length).toBe(61);
@@ -38,19 +39,48 @@ describe('Математик 6, 7-ын бүх хичээлийн template covera
     }
   });
 
+  it('8–10-р ангийн 145 хичээл бүр яг нэг template-тэй', () => {
+    expect([MATH8.length, MATH9.length, MATH10.length]).toEqual([51, 35, 59]);
+    for (const [grade, templates] of [
+      [8, MATH8],
+      [9, MATH9],
+      [10, MATH10],
+    ] as const) {
+      for (const template of templates) {
+        const match = /^math-\d+:(\d+)-(\d+)$/.exec(template.ref);
+        expect(match, template.ref).not.toBeNull();
+        expect(templatesFor({ slug: `math-${grade}`, from: Number(match![1]), to: Number(match![2]) })).toContain(template);
+      }
+      const ranges = templates.map((template) => {
+        const [, from, to] = /^math-\d+:(\d+)-(\d+)$/.exec(template.ref)!;
+        return [Number(from), Number(to)] as const;
+      });
+      for (let index = 1; index < ranges.length; index++)
+        expect(ranges[index][0], `math-${grade}:${ranges[index][0]}-${ranges[index][1]}`).toBe(ranges[index - 1][1] + 1);
+    }
+  });
+
   it('template id давхардахгүй, өөр ангийн ном руу холбогдохгүй', () => {
-    const all = [...MATH6, ...MATH6_MORE, ...MATH7, ...MATH7_MORE];
+    const all = [...MATH6, ...MATH6_MORE, ...MATH7, ...MATH7_MORE, ...MATH8, ...MATH9, ...MATH10];
     expect(new Set(all.map((template) => template.id)).size).toBe(all.length);
     expect([...MATH6, ...MATH6_MORE].every((template) => template.ref.startsWith('math-6:'))).toBe(true);
     expect([...MATH7, ...MATH7_MORE].every((template) => template.ref.startsWith('math-7:'))).toBe(true);
+    expect(MATH8.every((template) => template.ref.startsWith('math-8:'))).toBe(true);
+    expect(MATH9.every((template) => template.ref.startsWith('math-9:'))).toBe(true);
+    expect(MATH10.every((template) => template.ref.startsWith('math-10:'))).toBe(true);
   });
 
-  it('ерөнхий загвар хадгалсан 25 асуултыг орлохгүй, асуулт хүрэхгүй үед нөхнө', () => {
+  it('Суурь DB, Дунд ба Ахисан template ашиглана', () => {
     expect(MATH6_MORE.every((template) => template.preferStored)).toBe(true);
     expect(MATH7_MORE.every((template) => template.preferStored)).toBe(true);
-    expect(shouldGenerateTemplates([MATH7_MORE[0]], 25, 5)).toBe(false);
-    expect(shouldGenerateTemplates([MATH7_MORE[0]], 4, 5)).toBe(true);
-    expect(shouldGenerateTemplates([MATH7[0]], 25, 5)).toBe(true);
+    expect([...MATH8, ...MATH9, ...MATH10].every((template) => template.preferStored)).toBe(true);
+    expect(shouldGenerateTemplates([MATH7_MORE[0]], 25, 5, 1)).toBe(false);
+    expect(shouldGenerateTemplates([MATH7_MORE[0]], 4, 5, 1)).toBe(true);
+    expect(shouldGenerateTemplates([MATH7_MORE[0]], 25, 5, 2)).toBe(true);
+    expect(shouldGenerateTemplates([MATH7_MORE[0]], 25, 5, 3)).toBe(true);
+    expect(shouldGenerateTemplates([MATH10[0]], 25, 5, 1)).toBe(false);
+    expect(shouldGenerateTemplates([MATH10[0]], 25, 5, 2)).toBe(true);
+    expect(shouldGenerateTemplates([MATH10[0]], 25, 5, 3)).toBe(true);
   });
 
   it('өмнө зөрсөн хичээлүүд өөрийн сэдвийн үүсгэгчтэй', () => {

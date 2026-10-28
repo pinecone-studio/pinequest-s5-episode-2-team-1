@@ -42,9 +42,9 @@ export const GAME = {
   TZ_OFFSET_MINUTES: 8 * 60,
 
   GRADE_MIN: 6,
-  GRADE_MAX: 10,
+  GRADE_MAX: 12,
   /** Анги → түвшин */
-  GRADE_TO_TIER: { 6: 1, 7: 1, 8: 2, 9: 2, 10: 3 } as Record<number, Tier>,
+  GRADE_TO_TIER: { 6: 1, 7: 1, 8: 2, 9: 2, 10: 3, 11: 3, 12: 3 } as Record<number, Tier>,
 
   SHIELD: {
     PRICE: 50,
@@ -81,6 +81,10 @@ export const GAME = {
     LOBBY_PRESENCE_MS: 15_000,
     /** Үүсгэгч үүнээс удаан алга бол нээлттэй сорилтыг цуцална (кодоор ч орохгүй). Оноо хөдлөхгүй. */
     OPEN_TTL_MS: 10 * 60_000,
+    /** Багийн хэмжээ: 1 = 1 vs 1, 5 = 5 vs 5. */
+    TEAM_SIZE_MAX: 5,
+    /** Багийн тулаанд хүн бүр хариулдаг тул арай олон асуулт. */
+    TEAM_QUESTIONS: 5,
   },
 
   PROFILE: {

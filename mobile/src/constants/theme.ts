@@ -30,7 +30,11 @@ export const halo = { light: 'rgba(255,255,255,0.5)', night: 'rgba(122,92,245,0.
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 } as const;
 export const radius = { sm: 14, md: 20, card: 24, lg: 28, stage: 32, sheet: 36, pill: 999 } as const;
 
-/** Onest (UI) ба Pixelify Sans (тоо). `fontWeight` нь custom фонтод ажилладаггүй тул family-г жинээр нь сонгоно. */
+/**
+ * Onest (UI), Pixelify Sans (pixel бичиг) ба Silkscreen (pixel тоо: Pixelify-ийн 2 нь Z, 5 нь S шиг харагддаг).
+ * Silkscreen-д кирилл үсэг байхгүй тул зөвхөн тоо, латин үсэгт. `fontWeight` нь custom фонтод ажилладаггүй тул
+ * family-г жинээр нь сонгоно.
+ */
 export const fonts = {
   regular: 'Onest_400Regular',
   medium: 'Onest_500Medium',
@@ -39,6 +43,7 @@ export const fonts = {
   extrabold: 'Onest_800ExtraBold',
   pixel: 'PixelifySans_700Bold',
   pixelMedium: 'PixelifySans_500Medium',
+  pixelNum: 'Silkscreen_400Regular',
 } as const;
 
 /** Хатуу "game" сүүдэр (blur-гүй). */
@@ -68,3 +73,15 @@ export const subjectColors: Record<Subject, string> = {
   mongolian: colors.violet,
   physics: colors.lime,
 };
+
+/**
+ * Тулааны хоёр баг: 'a' = цэнхэр (үүсгэгчийн баг), 'b' = ягаан. `main` нь тод өнгө (VS дэлгэц, слот),
+ * `soft` нь цайвар дэвсгэр, `ink` нь soft дээрх бичиг (AA контраст).
+ */
+export const teamColors = {
+  a: { main: '#3D9BF0', soft: '#D6ECFB', ink: '#0B3A66' },
+  b: { main: '#EE5A9F', soft: '#FBDDEB', ink: '#6B1540' },
+} as const;
+
+/** VS / match дэлгэцийн бараан дэвсгэр. */
+export const arena = { bg: '#120A33', panel: '#1E1352', line: 'rgba(255,255,255,0.14)' } as const;

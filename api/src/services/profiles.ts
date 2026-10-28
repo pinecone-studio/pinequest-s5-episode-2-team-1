@@ -2,7 +2,7 @@ import type { AvatarBody, LookBody, Me, OnboardingBody, MyProfileResponse, Profi
 import { COSMETICS, type Cosmetic, OUTFIT_ITEMS } from '../config/cosmetics';
 import { SUBJECTS, type Subject } from '../config/game';
 import { bossesIn } from '../domain/boss';
-import { levelProgress } from '../domain/level';
+import { levelProgress, tierForGrade } from '../domain/level';
 import { parseBearLook } from '../domain/profile';
 import { normalizeStreak } from '../domain/streak';
 import { ubDay } from '../domain/time';
@@ -62,10 +62,12 @@ export async function loadPublicProfile(db: D1Database, userId: number, now = Da
       .first<{ n: number }>(),
     db
       .prepare(
-        `SELECT COUNT(*) AS played, COALESCE(SUM(winner_id = ?), 0) AS won
-         FROM duels WHERE status = 'finished' AND (creator_id = ? OR opponent_id = ?)`,
+        `SELECT COUNT(*) AS played,
+                COALESCE(SUM(CASE WHEN d.winner_id = ? OR (d.team_size > 1 AND d.winner_team = m.team) THEN 1 ELSE 0 END), 0) AS won
+         FROM duels d LEFT JOIN duel_members m ON m.duel_id = d.id AND m.user_id = ?
+         WHERE d.status = 'finished' AND (d.creator_id = ? OR d.opponent_id = ? OR m.user_id IS NOT NULL)`,
       )
-      .bind(userId, userId, userId)
+      .bind(userId, userId, userId, userId)
       .first<{ played: number; won: number }>(),
   ]);
   const progress = levelProgress(user.xp);
@@ -105,15 +107,22 @@ export async function findProfile(db: D1Database, viewerId: number, input: strin
   return { profile, isMe: ownerId === viewerId, friend };
 }
 
-/** Нүүрэн дээр сонгосон дэвсгэр, хувцсыг хадгална (профайл дээр бусдад харагдана). Зөвхөн эзэмшиж буйгаа. */
+/** Хослуулж өмссөн хувцсууд 'pirate_hat+glasses+staff00' (апп-ын catalog.ts joinWorn); нэг хувцас ч ийм хэлбэр. */
+export const wornOutfits = (outfit: string) => [...new Set(outfit.split('+'))];
+const MAX_WORN = 10;
+
+/** Нүүрэн дээр сонгосон дэвсгэр, өмссөн хувцсуудыг хадгална (профайл дээр бусдад харагдана). Зөвхөн эзэмшиж буйгаа. */
 export async function setBearLook(db: D1Database, userId: number, look: LookBody): Promise<Me> {
   const known = (kind: Cosmetic['kind'], key: string) =>
     COSMETICS.some((c) => c.kind === kind && c.key === key) || (kind === 'outfit' && Object.keys(OUTFIT_ITEMS).includes(key));
-  if (!known('bg', look.bg) || !known('outfit', look.outfit)) throw new ApiError(400, 'BAD_REQUEST', 'Дэвсгэр эсвэл хувцас буруу');
+  const worn = wornOutfits(look.outfit);
+  if (!known('bg', look.bg) || worn.length > MAX_WORN || !worn.every((key) => known('outfit', key))) {
+    throw new ApiError(400, 'BAD_REQUEST', 'Дэвсгэр эсвэл хувцас буруу');
+  }
   const { bgs, outfits } = await loadCollection(db, userId);
-  if (!bgs.includes(look.bg) || !outfits.includes(look.outfit)) throw new ApiError(403, 'NOT_OWNED', 'Эхлээд авна уу');
+  if (!bgs.includes(look.bg) || !worn.every((key) => outfits.includes(key))) throw new ApiError(403, 'NOT_OWNED', 'Эхлээд авна уу');
   // үс, царай, цээжний толбыг (PUT /me/avatar) хөндөхгүй
-  await db.prepare(`UPDATE users SET bear_look = json_set(${LOOK_JSON}, '$.bg', ?, '$.outfit', ?) WHERE id = ?`).bind(look.bg, look.outfit, userId).run();
+  await db.prepare(`UPDATE users SET bear_look = json_set(${LOOK_JSON}, '$.bg', ?, '$.outfit', ?) WHERE id = ?`).bind(look.bg, worn.join('+'), userId).run();
   return loadMe(db, userId);
 }
 
@@ -134,6 +143,20 @@ export async function setOnboarding(db: D1Database, userId: number, body: Onboar
     )
     .bind(grade, tier, JSON.stringify(answers), userId)
     .run();
+  return loadMe(db, userId);
+}
+
+/** Хөгжүүлэгчийн бүртгэлээр анги бүрийг шалгах: дуусаагүй даалгаврыг шинэ ангид үргэлжлүүлэхгүй. */
+export async function setAdminGrade(db: D1Database, userId: number, grade: number): Promise<Me> {
+  const user = await db.prepare('SELECT is_admin FROM users WHERE id = ?').bind(userId).first<{ is_admin: number }>();
+  if (user?.is_admin !== 1) throw new ApiError(403, 'FORBIDDEN', 'Зөвхөн хөгжүүлэгч анги сольж болно');
+  const tier = tierForGrade(grade);
+  if (!tier) throw new ApiError(400, 'BAD_REQUEST', 'Анги буруу');
+  await db.batch([
+    db.prepare('DELETE FROM recoveries WHERE user_id = ? AND cleared_at IS NULL').bind(userId),
+    db.prepare(`DELETE FROM tasks WHERE user_id = ? AND status = 'in_progress'`).bind(userId),
+    db.prepare('UPDATE users SET grade = ?, tier = ? WHERE id = ?').bind(grade, tier, userId),
+  ]);
   return loadMe(db, userId);
 }
 

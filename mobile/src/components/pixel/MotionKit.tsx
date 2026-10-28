@@ -197,7 +197,7 @@ export function CountUp({
   );
 }
 
-/** Доороос дээш хөвж, бүдгэрэн алга болох pixel icon-ууд (шагнал: зүрх, зоос). */
+/** Доороос дээш хөвж, бүдгэрэн алга болох pixel icon-ууд (шагнал: зүрх, боргоцой). */
 export function Rising({ sprite, left, bottom, delay = 0, distance = 120, duration = 2600 }: {
   sprite: SpriteKey;
   left: number | `${number}%`;

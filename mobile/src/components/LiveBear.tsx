@@ -32,9 +32,36 @@ const ITEM_SPRITES: Record<ItemId, SpriteKey> = {
   hiphop_chain: 'item_hiphop_chain_72x86',
   mickey_mask: 'item_mickey_mask_156x130',
   pirate_hat: 'item_pirate_hat_164x84',
+  pirate_shirt: 'item_pirate_shirt_164x280',
+  pirate_boots: 'item_pirate_boots_164x280',
+  wizard_robe: 'item_wizard_robe_164x280',
+  demon_cape: 'item_demon_cape_164x280',
+  demon_boots: 'item_demon_boots_164x280',
+  demon_horns: 'item_demon_horns_164x88',
+  ninja_jacket: 'item_ninja_jacket_164x280',
+  ninja_pants: 'item_ninja_pants_164x280',
+  ninja_sandals: 'item_ninja_sandals_164x280',
+  ninja_headband: 'item_ninja_headband_164x280',
+  straw_shirt: 'item_straw_shirt_164x280',
+  straw_shorts: 'item_straw_shorts_164x280',
+  straw_sandals: 'item_straw_sandals_164x280',
+  straw_hat: 'item_straw_hat_164x84',
   cowboy_hat: 'item_cowboy_hat_152x84',
   white_headscarf: 'item_white_headscarf_164x280',
   brown_boots: 'item_brown_boots_164x280',
+  hard_hat: 'item_hard_hat_128x100',
+  snorkel: 'item_snorkel_96x128',
+  ribbon: 'item_ribbon_64x52',
+  headband: 'item_headband_164x280',
+  mongol_hat: 'item_mongol_hat_98x60',
+  puss_hat: 'item_puss_hat_154x86',
+  puss_belt: 'item_puss_belt_80x26',
+  puss_cape: 'item_puss_cape_164x134',
+  mongol_deel: 'item_mongol_deel_164x280',
+  mongol_boots: 'item_mongol_boots_164x280',
+  sport_hoodie: 'item_sport_hoodie_164x280',
+  sport_shorts: 'item_sport_shorts_164x280',
+  sport_sneakers: 'item_sport_sneakers_164x280',
   staff00: 'item_staff00_64x192',
   staff03: 'item_staff03_64x192',
   staff04: 'item_staff04_64x192',
@@ -44,6 +71,8 @@ const ITEM_SPRITES: Record<ItemId, SpriteKey> = {
   w_staff_256: 'item_w_staff_256_64x192',
   black_sword: 'item_black_sword_48x128',
   bronze_shield: 'item_bronze_shield_72x76',
+  wizard_wand: 'item_wizard_wand_48x128',
+  pirate_sword: 'item_pirate_sword_48x128',
 };
 const HELMET_BASES: Record<BearAnim, SpriteKey> = {
   thriving: 'bear_helmet_base_thriving_940x280',
@@ -63,6 +92,16 @@ const BATMAN_BASES: Record<BearAnim, SpriteKey> = {
   sleep: 'bear_batman_base_sleep_970x260',
   ouch: 'bear_batman_base_ouch_1092x272',
   welcome: 'bear_batman_base_welcome_1320x1260',
+};
+/** Mongolian deel worn on the body per frame (scripts/home-sprites.ts deelBase) */
+const DEEL_BASES: Record<BearAnim, SpriteKey> = {
+  thriving: 'bear_deel_base_thriving_940x280',
+  happy: 'bear_deel_base_happy_1260x260',
+  tired: 'bear_deel_base_tired_1092x260',
+  neglected: 'bear_deel_base_neglected_1092x260',
+  sleep: 'bear_deel_base_sleep_970x260',
+  ouch: 'bear_deel_base_ouch_1092x272',
+  welcome: 'bear_deel_base_welcome_1320x1260',
 };
 const HEADSCARF_BASES: Record<BearAnim, SpriteKey> = {
   thriving: 'bear_headscarf_base_thriving_940x280',
@@ -115,21 +154,39 @@ export function LiveBear({
     ? HELMET_BASES[anim]
     : worn.includes('batman_suit')
       ? BATMAN_BASES[anim]
-      : worn.includes('white_headscarf')
-        ? HEADSCARF_BASES[anim]
-        : worn.includes('brown_boots')
-          ? BOOT_BASES[anim]
-          : SHEETS[anim];
+        : worn.includes('mongol_deel')
+          ? DEEL_BASES[anim]
+          : worn.includes('white_headscarf')
+            ? HEADSCARF_BASES[anim]
+            : worn.includes('brown_boots')
+              ? BOOT_BASES[anim]
+              : SHEETS[anim];
+  /** an item pinned to the head (loose ones follow it with a frame of lag) */
+  const pinned = (id: ItemId) => {
+    const it = items[id];
+    const [x, y] = it.loose ? [0, 1].map((k) => Math.round((head[k] + prev.current[k]) / 2)) : head;
+    return (
+      <View key={id} pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0 }}>
+        <Sprite id={ITEM_SPRITES[id]} style={{ position: 'absolute', left: (x + it.at[0]) * px, top: (y + it.at[1]) * px }} />
+      </View>
+    );
+  };
   return (
     <View style={{ marginTop: meta.offset[1] * px, transform: [{ translateX: shift }] }}>
+      {/* a cape hangs behind the bear */}
+      {worn.filter((id) => 'behind' in items[id]).map(pinned)}
       <SheetFrame id={sheet} frames={meta.frames.length} cols={meta.columns} frame={frame} label={label} />
-      {worn.filter((id) => id !== 'batman_suit').map((id) => {
+      {worn.filter((id) => id !== 'batman_suit' && id !== 'mongol_deel' && !('behind' in items[id])).map((id) => {
         const it = items[id];
-        if ('fitted' in it) return (
-          <View key={id} pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0 }}>
-            <SheetFrame id={it.fitted.sheets[anim] as SpriteKey} frames={meta.frames.length} cols={meta.columns} frame={frame} />
-          </View>
-        );
+        if ('fitted' in it) {
+          // boots worn under the deel show only below its hem
+          const sheets = worn.includes('mongol_deel') && 'deel' in it.fitted ? it.fitted.deel : it.fitted.sheets;
+          return (
+            <View key={id} pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0 }}>
+              <SheetFrame id={sheets[anim] as SpriteKey} frames={meta.frames.length} cols={meta.columns} frame={frame} />
+            </View>
+          );
+        }
         if ('held' in it) {
           const [x, y] = id === 'bronze_shield' ? meta.frames[frame].shieldHand : meta.frames[frame].hand;
           // Fingers and staff are baked into one frame at this exact hand pivot.
@@ -139,12 +196,7 @@ export function LiveBear({
             </View>
           );
         }
-        const [x, y] = it.loose ? [0, 1].map((k) => Math.round((head[k] + prev.current[k]) / 2)) : head;
-        return (
-          <View key={id} pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0 }}>
-            <Sprite id={ITEM_SPRITES[id]} style={{ position: 'absolute', left: (x + it.at[0]) * px, top: (y + it.at[1]) * px }} />
-          </View>
-        );
+        return pinned(id);
       })}
     </View>
   );

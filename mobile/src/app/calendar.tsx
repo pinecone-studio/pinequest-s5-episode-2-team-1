@@ -1,7 +1,9 @@
+import type { MeResponse } from '@shared/types';
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { api, errorText } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { CalendarFace } from '@/components/CalendarFace';
@@ -14,6 +16,7 @@ import { usePixelBear } from '@/lib/mock/pixelBear';
 import { buildMonth, FACE } from '@/lib/pixelBear/calendar';
 import { goBack } from '@/lib/nav';
 import { setOfflineMode, useOfflineMode, useOnline } from '@/lib/online';
+import { replayTour } from '@/lib/tour';
 
 const LEGEND = [
   { face: 'happy', label: S.calendar.legend.happy },
@@ -33,12 +36,14 @@ function Chevron({ dir }: { dir: 'left' | 'right' }) {
 
 /** 08 · Хичээлийн хуанли (Нүүрийн хуанли товч) + офлайн горим, гарах. */
 export default function CalendarScreen() {
-  const { me, signOut, refreshMe } = useAuth();
+  const { me, setMe, signOut, refreshMe } = useAuth();
   const { bear } = usePixelBear();
   const online = useOnline();
   const offlineMode = useOfflineMode();
   const [ty, tm] = (me?.today ?? '2026-01-01').split('-').map(Number);
   const [ym, setYm] = useState({ y: ty, m: tm });
+  const [gradeBusy, setGradeBusy] = useState<number | null>(null);
+  const [gradeError, setGradeError] = useState('');
   const month = useMemo(() => (me ? buildMonth(me, ym.y, ym.m) : null), [me, ym]);
   if (!me || !month) return null;
 
@@ -52,6 +57,19 @@ export default function CalendarScreen() {
 
   async function onLogout() {
     if (await confirm(S.auth.logoutConfirm, S.auth.logout)) await signOut();
+  }
+
+  async function switchGrade(grade: number) {
+    if (grade === me?.grade || gradeBusy !== null) return;
+    setGradeBusy(grade);
+    setGradeError('');
+    try {
+      setMe((await api<MeResponse>('/me/grade', { method: 'PUT', body: { grade } })).me);
+    } catch (e) {
+      setGradeError(errorText(e));
+    } finally {
+      setGradeBusy(null);
+    }
   }
 
   function toggleOffline(on: boolean) {
@@ -160,11 +178,47 @@ export default function CalendarScreen() {
         />
       </Enter>
 
+      {me.admin ? (
+        <Enter index={5} style={styles.gradePicker}>
+          <Text style={styles.offlineTitle}>{S.calendar.testGrade}</Text>
+          <Text style={styles.offlineHint}>{S.calendar.testGradeHint}</Text>
+          <View style={styles.gradeButtons}>
+            {Array.from({ length: 7 }, (_, i) => i + 6).map((grade) => {
+              const selected = grade === me.grade;
+              return (
+                <Pressable
+                  key={grade}
+                  accessibilityRole="button"
+                  accessibilityLabel={S.calendar.grade(grade)}
+                  accessibilityState={{ selected, disabled: gradeBusy !== null }}
+                  disabled={gradeBusy !== null}
+                  onPress={() => void switchGrade(grade)}
+                  style={[styles.gradeButton, selected && styles.gradeButtonSelected]}
+                >
+                  <Text style={[styles.gradeButtonText, selected && styles.gradeButtonTextSelected]}>{grade}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          {gradeError ? <Text style={styles.gradeError}>{gradeError}</Text> : null}
+        </Enter>
+      ) : null}
+
       <View style={styles.profile}>
         <Text style={styles.profileText}>{S.calendar.profile(me.name ?? me.username, me.grade)}</Text>
         <Button title={S.calendar.toProfile} variant="lemon" small onPress={() => router.push('/profile')} />
         <Button title={S.calendar.logout} variant="white" small onPress={onLogout} />
       </View>
+      <Button
+        title={S.tour.replay}
+        variant="ghost"
+        small
+        onPress={() => {
+          // танилцуулга Нүүр дээр явагдана
+          replayTour();
+          goBack();
+        }}
+      />
     </Screen>
   );
 }
@@ -187,7 +241,7 @@ const styles = StyleSheet.create({
   title: { fontFamily: fonts.semibold, fontSize: 17, color: colors.ink },
   monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   month: { fontFamily: fonts.semibold, fontSize: 24, letterSpacing: -0.5, color: colors.ink },
-  year: { fontFamily: fonts.pixelMedium, fontSize: 16, color: colors.muted },
+  year: { fontFamily: fonts.pixelNum, fontSize: 14, color: colors.muted },
   round: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
   week: { flexDirection: 'row', gap: 6 },
   weekday: { flex: 1, textAlign: 'center', fontFamily: fonts.semibold, fontSize: 12, color: colors.muted },
@@ -225,6 +279,13 @@ const styles = StyleSheet.create({
   },
   offlineTitle: { fontFamily: fonts.semibold, fontSize: 15, color: colors.ink },
   offlineHint: { fontFamily: fonts.medium, fontSize: 13, lineHeight: 18, color: colors.muted },
+  gradePicker: { gap: 8, padding: 16, borderRadius: radius.lg, backgroundColor: colors.stoneAlt },
+  gradeButtons: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  gradeButton: { width: 42, height: 42, alignItems: 'center', justifyContent: 'center', borderRadius: 14, backgroundColor: colors.white },
+  gradeButtonSelected: { backgroundColor: colors.violet },
+  gradeButtonText: { fontFamily: fonts.semibold, fontSize: 15, color: colors.ink },
+  gradeButtonTextSelected: { color: colors.white },
+  gradeError: { fontFamily: fonts.medium, fontSize: 13, color: colors.dangerText },
   profile: {
     marginTop: 8,
     flexDirection: 'row',

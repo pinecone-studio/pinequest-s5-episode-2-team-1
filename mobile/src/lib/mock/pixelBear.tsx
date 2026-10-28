@@ -4,12 +4,12 @@ import { api, ApiError, errorText } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
 import { cacheGet, cacheKeys, cacheSet } from '@/lib/cache';
 import { kvGet, kvSet } from '@/lib/kv';
-import { DEFAULT_BG_ID, DEFAULT_OUTFIT_ID, type OutfitId } from '@/lib/pixelBear/catalog';
+import { DEFAULT_BG_ID, DEFAULT_OUTFIT_ID, joinWorn, type OutfitId, parseWorn, toggleWorn } from '@/lib/pixelBear/catalog';
 import { BEAR_STATES, type BearState, type BearView, deriveBear, previewBear } from '@/lib/pixelBear/bear';
 
 /**
  * Pixel Bear-ийн төлөв.
- * - Дэвсгэр, хувцасны үнэ, эзэмшил, худалдан авалт серверт (`/cosmetics`); Coin = серверийн оноо.
+ * - Дэвсгэр, хувцасны үнэ, эзэмшил, худалдан авалт серверт (`/cosmetics`); боргоцой = серверийн оноо.
  * - Аль дэвсгэр/хувцсыг өмссөн, сонгосон хичээл нь зөвхөн харагдац тул төхөөрөмж дээр хэрэглэгч бүрээр хадгалагдана.
  *   Өмссөн дэвсгэр, хувцсыг серверт ч илгээнэ (`PUT /me/look`): профайлаа хуваалцахад бусдад ингэж харагдана.
  * - Офлайн үед эзэмшил, үнийг сүүлд ирсэн хариунаас (cache) харуулна: хувцсаа үзэж, сонгож болно, худалдаж авахгүй.
@@ -17,7 +17,8 @@ import { BEAR_STATES, type BearState, type BearView, deriveBear, previewBear } f
 
 interface Persisted {
   bgId: string;
-  outfitId: OutfitId;
+  /** өмссөн хувцсууд 'pirate_hat+glasses' (хуучин хадгалсан нэг хувцас ч ийм хэлбэр) */
+  outfitId: string;
   subject: Subject | null;
 }
 
@@ -26,14 +27,15 @@ const initial = (): Persisted => ({ bgId: DEFAULT_BG_ID, outfitId: DEFAULT_OUTFI
 interface PixelBearValue {
   ready: boolean;
   bgId: string;
-  outfitId: OutfitId;
+  /** өмссөн хувцсууд (хослуулж өмсөнө); хоосон бол анхдагч ороолт */
+  outfitIds: OutfitId[];
   ownedBgs: string[];
   /** Зөвхөн серверийн /cosmetics-ийн хувцсууд (нүдний шил, чихэвч нь /shop-оос) */
   ownedOutfits: string[];
   /** Сонгосон хичээл (onboarding); null = сонгоогүй */
   subject: Subject | null;
-  /** Серверийн оноо */
-  coins: number;
+  /** Хэрэглэгчид боргоцой гэж харагдах серверийн оноо */
+  honey: number;
   /** /cosmetics ачаалагдсан эсэх (үнэ, эзэмшил мэдэгдэж байгаа) */
   cosmeticsLoaded: boolean;
   priceOf: (kind: CosmeticKind, key: string) => number;
@@ -45,6 +47,7 @@ interface PixelBearValue {
   previewing: boolean;
   setSubject: (s: Subject) => void;
   equipBg: (id: string) => void;
+  /** Өмсөнө (ижил байрлалтай хувцсыг тайлна) эсвэл өмссөн бол тайлна. */
   equipOutfit: (id: OutfitId) => void;
   /** Худалдаж аваад өмсгөнө; алдааны мессеж эсвэл null. */
   buyBg: (id: string) => Promise<string | null>;
@@ -157,11 +160,11 @@ export function PixelBearProvider({ children }: { children: ReactNode }) {
     return {
       ready,
       bgId,
-      outfitId: data.outfitId,
+      outfitIds: parseWorn(data.outfitId),
       ownedBgs,
       ownedOutfits: ownedKeys('outfit', DEFAULT_OUTFIT_ID),
       subject: data.subject,
-      coins: me?.points ?? 0,
+      honey: me?.points ?? 0,
       cosmeticsLoaded: cosmetics !== null,
       priceOf: (kind, key) => find(kind, key)?.price ?? 0,
       reloadCosmetics,
@@ -176,9 +179,13 @@ export function PixelBearProvider({ children }: { children: ReactNode }) {
       },
       setSubject: (subject) => update((d) => ({ ...d, subject })),
       equipBg: (id) => update((d) => (ownedBgs.includes(id) ? { ...d, bgId: id } : d)),
-      equipOutfit: (id) => update((d) => ({ ...d, outfitId: id })),
+      equipOutfit: (id) => update((d) => ({ ...d, outfitId: joinWorn(toggleWorn(parseWorn(d.outfitId), id)) })),
       buyBg: (id) => buy('bg', id, (d) => ({ ...d, bgId: id })),
-      buyOutfit: (id) => buy('outfit', id, (d) => ({ ...d, outfitId: id })),
+      buyOutfit: (id) =>
+        buy('outfit', id, (d) => {
+          const worn = parseWorn(d.outfitId);
+          return { ...d, outfitId: joinWorn(worn.includes(id) ? worn : toggleWorn(worn, id)) };
+        }),
     };
   }, [ready, bgId, data, cosmetics, me, preview, update, setMe, reloadCosmetics]);
 
