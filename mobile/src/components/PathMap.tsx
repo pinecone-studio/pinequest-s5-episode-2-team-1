@@ -9,6 +9,7 @@ import { frameSize, Motion, SheetFrame, SheetLoop, Sprite } from '@/components/p
 import { THEMES } from '@/constants/chapterTheme';
 import { colors, fonts } from '@/constants/theme';
 import { S, subjectNames } from '@/i18n/strings';
+import { MapFriends, type MapFriend } from '@/components/MapFriends';
 import golems from '@/lib/pixelBear/golems.json';
 import { tagFrames } from '@/lib/pixelBear/anim';
 import { sprites } from '@/sprites';
@@ -87,6 +88,8 @@ export function PathMap({
   onNodePress,
   chests,
   onChest,
+  friends = [],
+  onFriend,
 }: {
   /** хичээлийн тооноос хамаарсан зам (pathLayout) */
   layout: PathLayout;
@@ -106,6 +109,9 @@ export function PathMap({
   /** нээсэн нууц хайрцгийн зангилаанууд ба хайрцаг дарахад */
   chests: readonly number[];
   onChest: (node: number) => void;
+  /** ижил ангийн найзуудын баавгай тэдний зангилаан дээр; дарвал профайл */
+  friends?: readonly MapFriend[];
+  onFriend?: (code: string) => void;
 }) {
   const curTrail = trailIndex(layout, current);
   /** Хичээлийн зангилааны од = давсан шат (хаалга, түгжээтэй зангилаанд байхгүй) */
@@ -196,6 +202,7 @@ export function PathMap({
           <UnitProps key={k} unit={u} layout={layout} current={current} />
         ))}
         <MapChests layout={layout} current={current} opened={chests} onOpen={onChest} />
+        <MapFriends layout={layout} current={current} friends={friends} onPress={(code) => onFriend?.(code)} />
         {layout.gates.map((_, g) => (
           <GateFigure key={g} g={g} layout={layout} beaten={g < beaten} />
         ))}

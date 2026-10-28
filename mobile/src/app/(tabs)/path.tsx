@@ -1,5 +1,5 @@
 import { STAGES, stageDone } from '@shared/path';
-import type { BookLesson, LessonsResponse, Subject } from '@shared/types';
+import type { BookLesson, FriendDto, FriendsResponse, LessonsResponse, Subject } from '@shared/types';
 import { router, useFocusEffect } from 'expo-router';
 import { type ComponentRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type NativeScrollEvent, type NativeSyntheticEvent, Pressable, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
@@ -71,9 +71,14 @@ export default function PathScreen() {
   const [visibleNode, setVisibleNode] = useState<number | null>(null);
   const scrollY = useRef(0);
 
+  // Найзууд (газрын зураг дээр баавгай нь): дэлгэц рүү орох бүрт шинэчилнэ, сүлжээгүй бол сүүлд ирснээр
+  const [friends, setFriends] = useState<FriendDto[]>([]);
   useFocusEffect(
     useCallback(() => {
       void refreshMe();
+      api<FriendsResponse>('/friends')
+        .then((r) => setFriends(r.friends))
+        .catch(() => {});
     }, [refreshMe]),
   );
 
@@ -98,6 +103,14 @@ export default function PathScreen() {
   const path = me?.paths[subject];
   const current = path ? currentNode(n, path) : 0;
   const bossFight = !!path && bossAhead(n, current, path.bossesBeaten);
+  // Ижил ангийн найзууд л ижил замаар явна; энэ хичээлийг эхлээгүй найз эхэнд нь
+  const mapFriends = useMemo(
+    () =>
+      friends
+        .filter((f) => f.grade === me?.grade)
+        .map((f) => ({ code: f.code, name: f.name, look: f.look, node: currentNode(n, f.paths?.[subject] ?? { level: 1, bossesBeaten: 0 }) })),
+    [friends, me?.grade, n, subject],
+  );
   const userId = me?.id;
   const chapterIdx = unitAtY(layout, layout.nodes[visibleNode ?? current].y);
   const chapter = MAP_CHAPTERS[chapterIdx].themeId;
@@ -229,7 +242,7 @@ export default function PathScreen() {
       >
         {/* хоосон газар дарахад түр карт хураагдана; зангилаа өөрийн дарилтыг авна */}
         <Pressable accessible={false} onPress={closeCard}>
-          <PathMap layout={layout} current={current} stages={path?.stages ?? {}} ring={ring} beaten={path?.bossesBeaten ?? 0} subject={subject} lessons={lessons} selected={sel} onNodePress={onNode} chests={path?.chests ?? []} onChest={(i) => router.push(`/chest?subject=${subject}&node=${i}`)} />
+          <PathMap layout={layout} current={current} stages={path?.stages ?? {}} ring={ring} beaten={path?.bossesBeaten ?? 0} subject={subject} lessons={lessons} selected={sel} onNodePress={onNode} chests={path?.chests ?? []} onChest={(i) => router.push(`/chest?subject=${subject}&node=${i}`)} friends={mapFriends} onFriend={(code) => router.push(`/u/${code}`)} />
         </Pressable>
 
         {sel !== null && selNode && selUnit && selStatus ? (

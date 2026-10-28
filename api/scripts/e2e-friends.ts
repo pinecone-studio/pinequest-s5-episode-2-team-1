@@ -1,6 +1,6 @@
 // Найзууд: кодоор (QR) хүсэлт, зөвшөөрөх, харилцан хүсэлт, хасах. `npm run e2e -- --only friends`
 import type { FriendActionResponse, FriendsResponse, MeResponse, MyProfileResponse, ProfileResponse } from '../../shared/types';
-import { check, expectError, register } from './e2e-lib';
+import { check, doTask, expectError, register } from './e2e-lib';
 import { call } from './lib';
 
 const code = async (token: string) => (await call<MyProfileResponse>('GET', '/me/profile', { token })).code;
@@ -31,6 +31,17 @@ export async function runFriendsScenario() {
   check(aAfter.friends.length === 1 && aAfter.incoming.length === 0, 'А-гийн найз 1, хүсэлт 0');
   check(bAfter.friends[0]?.username === a.me.username && bAfter.outgoing.length === 0, 'Б-гийн найзуудад А');
   check((await call<MeResponse>('GET', '/me', { token: a.token })).me.friendRequests === 0, 'Зөвшөөрсний дараа цэг алга');
+  check(aList.incoming[0].paths === undefined, 'Хүсэлтэд замын ахиц орохгүй');
+
+  console.log('\n— Найзын замын байрлал (газрын зураг дээр)');
+  await doTask(b.token, 'math', true);
+  const bPath = (await call<MeResponse>('GET', '/me', { token: b.token })).me.paths.math;
+  const bInA = (await friends(a.token)).friends.find((f) => f.username === b.me.username);
+  check(
+    bInA?.paths?.math?.level === bPath.level && bInA.paths.math.bossesBeaten === bPath.bossesBeaten,
+    'А Б-гийн математикийн замын байрлалыг харна',
+    bInA?.paths,
+  );
 
   console.log('\n— Харилцан уншуулах, татгалзах, хасах');
   const cCode = await code(c.token);
