@@ -44,7 +44,7 @@ M.bear_deel_base_welcome = [3];
 for (const n of ['glasses', 'gradcap', 'headphones']) M[`item_${n}`] = [2];
 M.item_warrior_helmet = [2];
 M.outfit_warrior_helmet = [1];
-for (const n of ['batman_mask', 'batman_suit', 'ny_cap', 'hiphop_chain', 'mickey_mask', 'hard_hat', 'snorkel', 'ribbon', 'mongol_hat', 'mongol_deel', 'puss_hat', 'puss_belt', 'puss_cape']) {
+for (const n of ['batman_mask', 'batman_suit', 'ny_cap', 'hiphop_chain', 'mickey_mask', 'hard_hat', 'snorkel', 'ribbon', 'headband', 'mongol_hat', 'mongol_deel', 'puss_hat', 'puss_belt', 'puss_cape']) {
   M[`item_${n}`] = [2];
   M[`outfit_${n}`] = [1];
 }
@@ -67,6 +67,20 @@ M.outfit_pirate = [1];
 M.item_wizard_robe = [2];
 M.outfit_wizard_robe = [1];
 for (const state of ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch', 'welcome']) M[`fitted_wizard_robe_${state}`] = [state === 'welcome' ? 3 : 2];
+for (const id of ['demon_cape', 'demon_boots', 'ninja_jacket', 'ninja_pants', 'ninja_sandals', 'ninja_headband', 'straw_shirt', 'straw_shorts', 'straw_sandals']) {
+  M[`item_${id}`] = [2];
+  M[`outfit_${id}`] = [1];
+  for (const state of ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch', 'welcome']) M[`fitted_${id}_${state}`] = [state === 'welcome' ? 3 : 2];
+}
+for (const state of ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch', 'welcome']) M[`fitted_headband_${state}`] = [state === 'welcome' ? 3 : 2];
+M.item_demon_horns = [2];
+M.outfit_demon_horns = [1];
+M.outfit_demon = [1];
+M.outfit_hero = [1];
+M.item_straw_hat = [2];
+M.outfit_straw_hat = [1];
+M.outfit_ninja = [1];
+M.outfit_strawhat = [1];
 M.outfit_wizard = [1];
 // Mongolian boots: fitted per state, and cut at the hem for wearing under the deel
 M.item_mongol_boots = [2];
@@ -157,7 +171,7 @@ M.btn_honey_jar = [[12, 12], [24, 24], [30, 30]];
 // the hoodie's and pirate shirt's fitted sheets carry a little fur too (the neck above the lowered collar)
 const FUR_SPRITES = new Set(
   Object.keys(M).filter(
-    (n) => /^(bear_|head_|outfit_|map_bear_small|fitted_sport_hoodie_|fitted_pirate_shirt_)/.test(n) || (n.startsWith('held_') && !n.startsWith('held_bronze_shield_')),
+    (n) => /^(bear_|head_|outfit_|map_bear_small|fitted_sport_hoodie_|fitted_pirate_shirt_|fitted_demon_cape_|fitted_ninja_jacket_|fitted_straw_shirt_)/.test(n) || (n.startsWith('held_') && !n.startsWith('held_bronze_shield_')),
   ),
 );
 
@@ -215,6 +229,10 @@ const CLOTH_COLORS = new Set([
   ...['12,12,16', '24,25,30', '38,40,46', '54,56,64', '22,150,110', '44,214,156', '34,52,168', '64,96,240', '150,60,170', '206,96,220', '176,178,188', '236,238,244'],
   ...['120,100,78', '196,180,148', '226,214,186', '244,236,214', '38,24,18', '70,46,32', '96,64,44', '120,84,58', '12,12,16', '36,36,44', '50,50,60', '68,68,80', '6,6,8', '16,15,19', '26,25,31', '44,42,50', '150,108,30', '214,170,60', '246,214,120'],
   ...['8,8,12', '24,24,32', '38,38,48', '54,54,66', '110,18,24', '156,30,36', '190,48,48', '170,120,30', '226,172,44', '246,206,96', '70,72,82', '104,106,116', '128,130,142'],
+  ...['8,8,12', '26,26,32', '44,44,54', '70,70,84', '44,46,54', '120,126,140', '196,202,214', '16,70,72', '34,150,146', '96,214,200', '196,58,20', '242,142,34', '255,216,92'],
+  ...['10,8,10', '22,18,20', '40,34,36', '110,22,20', '158,34,30', '196,58,44', '86,48,26', '122,70,38', '160,98,52', '222,140,52', '246,232,200', '250,248,240'],
+  ...['10,10,14', '28,28,36', '44,44,56', '62,62,76', '150,60,10', '220,100,24', '246,134,40', '255,170,80', '52,56,66', '120,126,140', '170,176,188', '222,226,234', '22,26,44', '36,42,70', '56,64,100'],
+  ...['110,16,20', '178,30,34', '214,48,48', '236,84,76', '176,120,10', '242,196,34', '255,230,110', '24,44,110', '46,84,170', '66,110,200', '96,140,220', '176,182,196', '214,220,232', '244,246,250', '70,40,20', '138,92,50', '190,146,90'],
 ]);
 function furred(name: string, base: Img, f: 'black' | 'white'): Img {
   const img = recolorFur(base, f);
@@ -223,7 +241,7 @@ function furred(name: string, base: Img, f: 'black' | 'white'): Img {
       if (base.d[i + 3] && CLOTH_COLORS.has(`${base.d[i]},${base.d[i + 1]},${base.d[i + 2]}`)) img.d.set(base.d.subarray(i, i + 4), i);
     return img;
   }
-  if (/^outfit_(sport|pirate|wizard)/.test(name)) {
+  if (/^outfit_(sport|pirate|wizard|demon|headband|ninja|straw)/.test(name)) {
     keepItem(base, img);
     for (let i = 0; i < base.d.length; i += 4)
       if (base.d[i + 3] && CLOTH_COLORS.has(`${base.d[i]},${base.d[i + 1]},${base.d[i + 2]}`)) img.d.set(base.d.subarray(i, i + 4), i);

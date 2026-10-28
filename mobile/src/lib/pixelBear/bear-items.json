@@ -123,6 +123,25 @@
     ],
     "loose": false
   },
+  "headband": {
+    "at": [
+      -6,
+      -14
+    ],
+    "loose": false,
+    "anchor": "body",
+    "fitted": {
+      "sheets": {
+        "thriving": "fitted_headband_thriving_940x280",
+        "sleep": "fitted_headband_sleep_970x260",
+        "happy": "fitted_headband_happy_1260x260",
+        "tired": "fitted_headband_tired_1092x260",
+        "welcome": "fitted_headband_welcome_1320x1260",
+        "ouch": "fitted_headband_ouch_1092x272",
+        "neglected": "fitted_headband_neglected_1092x260"
+      }
+    }
+  },
   "mongol_hat": {
     "at": [
       11,
@@ -215,6 +234,191 @@
         "neglected": "fitted_wizard_robe_neglected_1092x260"
       }
     }
+  },
+  "demon_cape": {
+    "at": [
+      -6,
+      -14
+    ],
+    "loose": false,
+    "anchor": "body",
+    "fitted": {
+      "sheets": {
+        "thriving": "fitted_demon_cape_thriving_940x280",
+        "sleep": "fitted_demon_cape_sleep_970x260",
+        "happy": "fitted_demon_cape_happy_1260x260",
+        "tired": "fitted_demon_cape_tired_1092x260",
+        "welcome": "fitted_demon_cape_welcome_1320x1260",
+        "ouch": "fitted_demon_cape_ouch_1092x272",
+        "neglected": "fitted_demon_cape_neglected_1092x260"
+      }
+    }
+  },
+  "ninja_jacket": {
+    "at": [
+      -6,
+      -14
+    ],
+    "loose": false,
+    "anchor": "body",
+    "fitted": {
+      "sheets": {
+        "thriving": "fitted_ninja_jacket_thriving_940x280",
+        "sleep": "fitted_ninja_jacket_sleep_970x260",
+        "happy": "fitted_ninja_jacket_happy_1260x260",
+        "tired": "fitted_ninja_jacket_tired_1092x260",
+        "welcome": "fitted_ninja_jacket_welcome_1320x1260",
+        "ouch": "fitted_ninja_jacket_ouch_1092x272",
+        "neglected": "fitted_ninja_jacket_neglected_1092x260"
+      }
+    }
+  },
+  "ninja_pants": {
+    "at": [
+      -6,
+      -14
+    ],
+    "loose": false,
+    "anchor": "body",
+    "fitted": {
+      "sheets": {
+        "thriving": "fitted_ninja_pants_thriving_940x280",
+        "sleep": "fitted_ninja_pants_sleep_970x260",
+        "happy": "fitted_ninja_pants_happy_1260x260",
+        "tired": "fitted_ninja_pants_tired_1092x260",
+        "welcome": "fitted_ninja_pants_welcome_1320x1260",
+        "ouch": "fitted_ninja_pants_ouch_1092x272",
+        "neglected": "fitted_ninja_pants_neglected_1092x260"
+      }
+    }
+  },
+  "ninja_sandals": {
+    "at": [
+      -6,
+      -14
+    ],
+    "loose": false,
+    "anchor": "body",
+    "fitted": {
+      "sheets": {
+        "thriving": "fitted_ninja_sandals_thriving_940x280",
+        "sleep": "fitted_ninja_sandals_sleep_970x260",
+        "happy": "fitted_ninja_sandals_happy_1260x260",
+        "tired": "fitted_ninja_sandals_tired_1092x260",
+        "welcome": "fitted_ninja_sandals_welcome_1320x1260",
+        "ouch": "fitted_ninja_sandals_ouch_1092x272",
+        "neglected": "fitted_ninja_sandals_neglected_1092x260"
+      }
+    }
+  },
+  "ninja_headband": {
+    "at": [
+      -6,
+      -14
+    ],
+    "loose": false,
+    "anchor": "body",
+    "fitted": {
+      "sheets": {
+        "thriving": "fitted_ninja_headband_thriving_940x280",
+        "sleep": "fitted_ninja_headband_sleep_970x260",
+        "happy": "fitted_ninja_headband_happy_1260x260",
+        "tired": "fitted_ninja_headband_tired_1092x260",
+        "welcome": "fitted_ninja_headband_welcome_1320x1260",
+        "ouch": "fitted_ninja_headband_ouch_1092x272",
+        "neglected": "fitted_ninja_headband_neglected_1092x260"
+      }
+    }
+  },
+  "straw_shirt": {
+    "at": [
+      -6,
+      -14
+    ],
+    "loose": false,
+    "anchor": "body",
+    "fitted": {
+      "sheets": {
+        "thriving": "fitted_straw_shirt_thriving_940x280",
+        "sleep": "fitted_straw_shirt_sleep_970x260",
+        "happy": "fitted_straw_shirt_happy_1260x260",
+        "tired": "fitted_straw_shirt_tired_1092x260",
+        "welcome": "fitted_straw_shirt_welcome_1320x1260",
+        "ouch": "fitted_straw_shirt_ouch_1092x272",
+        "neglected": "fitted_straw_shirt_neglected_1092x260"
+      }
+    }
+  },
+  "straw_shorts": {
+    "at": [
+      -6,
+      -14
+    ],
+    "loose": false,
+    "anchor": "body",
+    "fitted": {
+      "sheets": {
+        "thriving": "fitted_straw_shorts_thriving_940x280",
+        "sleep": "fitted_straw_shorts_sleep_970x260",
+        "happy": "fitted_straw_shorts_happy_1260x260",
+        "tired": "fitted_straw_shorts_tired_1092x260",
+        "welcome": "fitted_straw_shorts_welcome_1320x1260",
+        "ouch": "fitted_straw_shorts_ouch_1092x272",
+        "neglected": "fitted_straw_shorts_neglected_1092x260"
+      }
+    }
+  },
+  "straw_sandals": {
+    "at": [
+      -6,
+      -14
+    ],
+    "loose": false,
+    "anchor": "body",
+    "fitted": {
+      "sheets": {
+        "thriving": "fitted_straw_sandals_thriving_940x280",
+        "sleep": "fitted_straw_sandals_sleep_970x260",
+        "happy": "fitted_straw_sandals_happy_1260x260",
+        "tired": "fitted_straw_sandals_tired_1092x260",
+        "welcome": "fitted_straw_sandals_welcome_1320x1260",
+        "ouch": "fitted_straw_sandals_ouch_1092x272",
+        "neglected": "fitted_straw_sandals_neglected_1092x260"
+      }
+    }
+  },
+  "straw_hat": {
+    "at": [
+      -6,
+      -18
+    ],
+    "loose": false
+  },
+  "demon_boots": {
+    "at": [
+      -6,
+      -14
+    ],
+    "loose": false,
+    "anchor": "body",
+    "fitted": {
+      "sheets": {
+        "thriving": "fitted_demon_boots_thriving_940x280",
+        "sleep": "fitted_demon_boots_sleep_970x260",
+        "happy": "fitted_demon_boots_happy_1260x260",
+        "tired": "fitted_demon_boots_tired_1092x260",
+        "welcome": "fitted_demon_boots_welcome_1320x1260",
+        "ouch": "fitted_demon_boots_ouch_1092x272",
+        "neglected": "fitted_demon_boots_neglected_1092x260"
+      }
+    }
+  },
+  "demon_horns": {
+    "at": [
+      -6,
+      -18
+    ],
+    "loose": false
   },
   "pirate_boots": {
     "at": [
