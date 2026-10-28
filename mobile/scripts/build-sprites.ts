@@ -51,11 +51,33 @@ for (const n of ['batman_mask', 'batman_suit', 'ny_cap', 'hiphop_chain', 'mickey
 M.outfit_batman = [1];
 M.outfit_mongol = [1];
 M.outfit_puss = [1];
+// sports wear (home-sprites.ts sportPixels): fitted overlays per state, like the boots
+for (const id of ['sport_hoodie', 'sport_shorts', 'sport_sneakers']) {
+  M[`item_${id}`] = [2];
+  M[`outfit_${id}`] = [1];
+  for (const state of ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch', 'welcome']) M[`fitted_${id}_${state}`] = [state === 'welcome' ? 3 : 2];
+}
+M.outfit_sport = [1];
+for (const id of ['pirate_shirt', 'pirate_boots']) {
+  M[`item_${id}`] = [2];
+  M[`outfit_${id}`] = [1];
+  for (const state of ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch', 'welcome']) M[`fitted_${id}_${state}`] = [state === 'welcome' ? 3 : 2];
+}
+M.outfit_pirate = [1];
+M.item_wizard_robe = [2];
+M.outfit_wizard_robe = [1];
+for (const state of ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch', 'welcome']) M[`fitted_wizard_robe_${state}`] = [state === 'welcome' ? 3 : 2];
+M.outfit_wizard = [1];
+// Mongolian boots: fitted per state, and cut at the hem for wearing under the deel
+M.item_mongol_boots = [2];
+M.outfit_mongol_boots = [1];
+for (const state of ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch', 'welcome'])
+  for (const v of ['', '_deel']) M[`fitted_mongol_boots${v}_${state}`] = [state === 'welcome' ? 3 : 2];
 for (const id of ['pirate_hat', 'cowboy_hat', 'white_headscarf', 'brown_boots']) {
   M[`item_${id}`] = [2];
   M[`outfit_${id}`] = [1];
 }
-for (const id of ['staff00', 'staff03', 'staff04', 'staff05', 'holly_staff', 'pestilence_staff', 'w_staff_256', 'black_sword', 'bronze_shield']) {
+for (const id of ['staff00', 'staff03', 'staff04', 'staff05', 'holly_staff', 'pestilence_staff', 'w_staff_256', 'black_sword', 'bronze_shield', 'wizard_wand', 'pirate_sword']) {
   M[`item_${id}`] = [2];
   M[`outfit_${id}`] = [1];
   for (const state of ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch', 'welcome'])
@@ -132,7 +154,12 @@ M.btn_honey_jar = [[12, 12], [24, 24], [30, 30]];
 
 // баавгайтай sprite-ууд: сонгосон үсний өнгөөр (хар, цагаан) хувилбар `<нэр>_<өнгө>_<w>x<h>` үүснэ, components/pixel/Sprite
 // нь FurContext-оор сонгоно. Хөрөг (avatar_*) нь өнгө бүрээрээ тусдаа, item_* давхарга өнгөгүй.
-const FUR_SPRITES = new Set(Object.keys(M).filter((n) => /^(bear_|head_|outfit_|map_bear_small)/.test(n) || (n.startsWith('held_') && !n.startsWith('held_bronze_shield_'))));
+// the hoodie's and pirate shirt's fitted sheets carry a little fur too (the neck above the lowered collar)
+const FUR_SPRITES = new Set(
+  Object.keys(M).filter(
+    (n) => /^(bear_|head_|outfit_|map_bear_small|fitted_sport_hoodie_|fitted_pirate_shirt_)/.test(n) || (n.startsWith('held_') && !n.startsWith('held_bronze_shield_')),
+  ),
+);
 
 /** Nearest-neighbor: Pillow-ийн `resize(NEAREST)`-тэй яг ижил (pixel төв, давхардсан алхмаар нэмэгдэх координат). */
 function resize(img: Img, w: number, h: number): Img {
@@ -183,10 +210,27 @@ function keepHeld(name: string, base: Img, furred: Img): Img {
   for (let i = 0; i < base.d.length; i += 4) if (!paw.d[i + 3]) furred.d.set(base.d.subarray(i, i + 4), i);
   return furred;
 }
+/** Sports and pirate wear palettes (scripts/home-sprites.ts SPORT_*, PIRATE_*): the collar lies on the scarf, where keepItem would recolour it */
+const CLOTH_COLORS = new Set([
+  ...['12,12,16', '24,25,30', '38,40,46', '54,56,64', '22,150,110', '44,214,156', '34,52,168', '64,96,240', '150,60,170', '206,96,220', '176,178,188', '236,238,244'],
+  ...['120,100,78', '196,180,148', '226,214,186', '244,236,214', '38,24,18', '70,46,32', '96,64,44', '120,84,58', '12,12,16', '36,36,44', '50,50,60', '68,68,80', '6,6,8', '16,15,19', '26,25,31', '44,42,50', '150,108,30', '214,170,60', '246,214,120'],
+  ...['8,8,12', '24,24,32', '38,38,48', '54,54,66', '110,18,24', '156,30,36', '190,48,48', '170,120,30', '226,172,44', '246,206,96', '70,72,82', '104,106,116', '128,130,142'],
+]);
 function furred(name: string, base: Img, f: 'black' | 'white'): Img {
   const img = recolorFur(base, f);
+  if (name.startsWith('fitted_')) {
+    for (let i = 0; i < base.d.length; i += 4)
+      if (base.d[i + 3] && CLOTH_COLORS.has(`${base.d[i]},${base.d[i + 1]},${base.d[i + 2]}`)) img.d.set(base.d.subarray(i, i + 4), i);
+    return img;
+  }
+  if (/^outfit_(sport|pirate|wizard)/.test(name)) {
+    keepItem(base, img);
+    for (let i = 0; i < base.d.length; i += 4)
+      if (base.d[i + 3] && CLOTH_COLORS.has(`${base.d[i]},${base.d[i + 1]},${base.d[i + 2]}`)) img.d.set(base.d.subarray(i, i + 4), i);
+    return img;
+  }
   if (name.startsWith('bear_batman_base_')) return keepSuit(base, img);
-  if (/^(bear_deel_base_|outfit_mongol)/.test(name)) return keepDeel(base, img);
+  if (/^(bear_deel_base_|outfit_mongol)/.test(name)) return name.startsWith('outfit_') ? keepItem(base, keepDeel(base, img)) : keepDeel(base, img);
   if (name.startsWith('held_')) return keepHeld(name, base, img);
   if (name.startsWith('outfit_')) return keepItem(base, img);
   return img;
