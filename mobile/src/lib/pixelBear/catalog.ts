@@ -216,7 +216,9 @@ const ITEM_SLOT: Record<ItemId, Slot> = {
   bronze_shield: 'offhand',
 };
 /** Баавгайн суурь зургийг бүхэлд нь солидог item-ууд (LiveBear): нэг дор зөвхөн нэг нь. */
-const BASE_ITEMS: readonly ItemId[] = ['warrior_helmet', 'batman_suit', 'mongol_deel', 'white_headscarf', 'brown_boots'];
+const BASE_ITEMS: readonly ItemId[] = ['warrior_helmet', 'batman_suit', 'mongol_deel', 'white_headscarf', 'brown_boots', 'doctor_coat', 'officer_coat'];
+/** Урт хормойтой хувцас өмд, гутлын байрлалыг ч эзэлнэ. */
+const ALSO_COVERS: Partial<Record<ItemId, readonly Slot[]>> = { doctor_coat: ['legs', 'feet'], officer_coat: ['legs', 'feet'] };
 
 /** Нэг item-тэй хувцасны байрлал (дэлгүүрийн ангилалд); иж бүрдэл, анхдагч ороолтод null. */
 export function outfitSlot(id: OutfitId): Slot | null {
@@ -225,7 +227,7 @@ export function outfitSlot(id: OutfitId): Slot | null {
 }
 
 const slotsOf = (id: OutfitId): string[] =>
-  outfitItems(outfitById(id)).flatMap((it) => [ITEM_SLOT[it], ...(['doctor_coat', 'officer_coat'].includes(it) ? ['feet'] : []), ...(['doctor_coat', 'officer_coat'].includes(it) ? ['legs'] : []), ...(BASE_ITEMS.includes(it) ? ['base'] : [])]);
+  outfitItems(outfitById(id)).flatMap((it) => [ITEM_SLOT[it], ...(ALSO_COVERS[it] ?? []), ...(BASE_ITEMS.includes(it) ? ['base'] : [])]);
 
 /** Өмссөн хувцсуудын хадгалах хэлбэр ('pirate_hat+glasses+staff00'); хоосон бол анхдагч ороолт. */
 export const joinWorn = (ids: readonly OutfitId[]): string => (ids.length ? ids.join('+') : DEFAULT_OUTFIT_ID);
