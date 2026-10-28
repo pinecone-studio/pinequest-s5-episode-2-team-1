@@ -71,6 +71,16 @@ describe('SpeechQueue', () => {
     expect(log.join('')).toBe('abcde|');
   });
 
+  it('play() бэлэн дууг TTS-ийн хэсгүүдийн дарааллаар нь дамжуулна', async () => {
+    const { log, out } = collect();
+    const q = new SpeechQueue(fakeSynth({ ab: 20 }), out);
+    q.say('ab');
+    q.play([new Uint8Array([120]), new Uint8Array([121])]);
+    q.endTurn();
+    await tick(60);
+    expect(log.join('')).toBe('abxy|');
+  });
+
   it('TTS алдаа гарвал мэдэгдээд дараагийн хэсэг рүү шилжинэ', async () => {
     const { log, out } = collect();
     const q = new SpeechQueue(

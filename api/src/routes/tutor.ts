@@ -207,17 +207,29 @@ async function relay(
       })
     : null;
   let turnText = '';
+  /** turnText-ийн TTS-д өгсөн хэсгийн урт; saidInTurn = энэ ээлжид TTS-д текст өгсөн эсэх. */
   let spoken = 0;
-  /** Энэ ээлжийн текстийг бүгдийг нь TTS-д өгсөн (gen_done эсвэл turn_end, аль түрүүлж ирсэнээр). */
-  let flushed = true;
-  const flushTurn = () => {
-    if (!speech || useLiveVoice || flushed) return;
-    flushed = true;
+  let saidInTurn = false;
+  const sayRest = () => {
     const rest = cleanForSpeech(turnText.slice(spoken));
-    if (rest) speech.say(rest);
+    spoken = turnText.length;
+    if (!rest || !speech) return;
+    speech.say(rest);
+    saidInTurn = true;
+  };
+  /**
+   * Live ээлж дууссан (turnComplete): gen_done-ийн дараа хоцорч ирсэн текстийг хэлүүлээд ээлжийг хаана. Ээлжийг
+   * gen_done дээр хаавал хоцорсон текст хоёр дахь turn_end үүсгэж, хүүхдийн mic асаад буцаж унтардаг байсан.
+   * Текстгүй ээлж (зөвхөн дуу эсвэл finish_lesson) ч хаагдана: энэ ээлжид Live дуу ирсэн бол тэрийг нь тоглуулна.
+   */
+  const endSpeechTurn = (hadLiveAudio: boolean) => {
+    if (!speech) return;
+    sayRest();
+    if (!saidInTurn && hadLiveAudio) speech.play(liveTurnAudio);
     speech.endTurn();
     turnText = '';
     spoken = 0;
+    saidInTurn = false;
   };
 
   let ready = false;
@@ -294,12 +306,14 @@ async function relay(
             liveSpoke = true;
             send({ type: 'bear_text', text: ev.text.replace(/[*#_`]/g, '') });
             if (speech && !useLiveVoice) {
-              flushed = false;
               turnText += ev.text;
               const end = spoken === 0 ? speechChunkEnd(turnText, true) : -1;
               if (end > 0) {
                 const chunk = cleanForSpeech(turnText.slice(0, end));
-                if (chunk) speech.say(chunk);
+                if (chunk) {
+                  speech.say(chunk);
+                  saidInTurn = true;
+                }
                 spoken = end;
               }
             }
@@ -313,20 +327,22 @@ async function relay(
             speech?.clear();
             turnText = '';
             spoken = 0;
-            flushed = true;
+            saidInTurn = false;
             send({ type: 'interrupted' });
             break;
           case 'gen_done':
-            flushTurn();
+            // Үлдсэн текстийг TTS-д шууд өгнө (turn_end хэдэн арван секундын дараа ирдэг); ээлжийг turn_end хаана.
+            if (speech && !useLiveVoice) sayRest();
             break;
           case 'turn_end': {
+            const hadLiveAudio = liveTurnOpen;
             liveTurnOpen = false;
             // finish_lesson дуудаад дуугүй ээлж дуусгасан: баяртай гэж хэлүүлээд, тэр ээлжийн дараа хаана.
             const silentFinish = liveTool && !liveSpoke;
             liveTool = false;
             liveSpoke = false;
             if (silentFinish) sendUp(liveText(TUTOR_SAY_GOODBYE));
-            if (speech && !useLiveVoice) flushTurn();
+            if (speech && !useLiveVoice) endSpeechTurn(hadLiveAudio);
             else bearTurnEnd();
             break;
           }
