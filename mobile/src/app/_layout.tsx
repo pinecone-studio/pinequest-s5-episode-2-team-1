@@ -16,6 +16,7 @@ import { colors, fonts } from '@/constants/theme';
 import { type } from '@/constants/type';
 import { S } from '@/i18n/strings';
 import { PixelBearProvider } from '@/lib/mock/pixelBear';
+import { COLUMN_MAX_W } from '@/hooks/useColumnWidth';
 
 void SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -111,7 +112,7 @@ function RootNavigator() {
 
 const styles = StyleSheet.create({
   outer: { flex: 1, backgroundColor: colors.paper },
-  column: { flex: 1, width: '100%', maxWidth: 430, alignSelf: 'center', backgroundColor: colors.paper, overflow: 'hidden' },
+  column: { flex: 1, width: '100%', maxWidth: COLUMN_MAX_W, alignSelf: 'center', backgroundColor: colors.paper, overflow: 'hidden' },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24, backgroundColor: colors.paper },
   wordmark: { fontFamily: fonts.pixel, fontSize: 66, lineHeight: 60, letterSpacing: -1, color: colors.lemon, textAlign: 'center' },
 });

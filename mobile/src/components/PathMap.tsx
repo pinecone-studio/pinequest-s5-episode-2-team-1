@@ -1,7 +1,7 @@
 import { STAGES, stageDone } from '@shared/path';
 import type { BookLesson, Subject } from '@shared/types';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 import { MapChests } from '@/components/MapChests';
@@ -12,6 +12,7 @@ import { S, subjectNames } from '@/i18n/strings';
 import golems from '@/lib/pixelBear/golems.json';
 import { tagFrames } from '@/lib/pixelBear/anim';
 import { sprites } from '@/sprites';
+import { useColumnWidth } from '@/hooks/useColumnWidth';
 import {
   BOSSES,
   chapterHeight,
@@ -68,7 +69,7 @@ function segments(layout: PathLayout) {
  * Газрын зургийн цэг (x, y) дэлгэц дээр (x, y) × scale.
  */
 // апп нь 430 dp-ийн баганад төвлөрдөг (app/_layout.tsx column): өргөн цонхонд бүтэн өргөнөөр томруулахгүй
-export const useMapScale = () => Math.min(useWindowDimensions().width, 430) / MAP_W;
+export const useMapScale = () => useColumnWidth() / MAP_W;
 
 /**
  * Адал явдлын газрын зураг (DESIGN.md §8-04-ийг 3 бүлэг болгосон, дээрээс доош). Давхарга: дэвсгэр → үүл → цэгэн зам →

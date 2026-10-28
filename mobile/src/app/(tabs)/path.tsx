@@ -14,6 +14,7 @@ import { PathMap, useMapScale } from '@/components/PathMap';
 import { setChapterTheme, themeOf } from '@/constants/chapterTheme';
 import { S, subjectNames } from '@/i18n/strings';
 import { usePixelBear } from '@/lib/mock/pixelBear';
+import { useColumnWidth } from '@/hooks/useColumnWidth';
 import {
   BOSSES,
   bossAhead,
@@ -49,7 +50,8 @@ export default function PathScreen() {
   const barSpace = useTabBarSpace();
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
   // ScrollView бүтэн дэлгэцийг эзэлдэг (толгой, цэс дээр нь хөвнө); web дээр onLayout анх ажилладаггүй
-  const { height: viewH, width: viewW } = useWindowDimensions();
+  const { height: viewH } = useWindowDimensions();
+  const viewW = useColumnWidth();
   // газрын зураг дэлгэцийн өргөнд томорно: зургийн y → дэлгэцийн y × k
   const k = useMapScale();
   // Толгойн бодит өндөр (scroll padding), сонгосон зангилаа, popover-ын өндөр, харагдаж буй бүлэг
