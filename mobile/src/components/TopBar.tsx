@@ -6,6 +6,7 @@ import { CountPill, XpPill } from '@/components/StatPill';
 import { colors } from '@/constants/theme';
 import { S } from '@/i18n/strings';
 import { usePixelBear } from '@/lib/mock/pixelBear';
+import { tourRef } from '@/lib/tour';
 
 /** Аватар (→ миний профайл); хариулаагүй найзын хүсэлт байвал цэг. */
 export function AvatarLink({ size = 48, border, dotBorder = colors.paper }: { size?: number; border?: number; dotBorder?: string }) {
@@ -24,14 +25,19 @@ export function AvatarLink({ size = 48, border, dotBorder = colors.paper }: { si
   );
 }
 
-/** Нүүр дээрх дээд мөр: аватар, XP, дараалал, боргоцой. (Сурах замын мөр: MapHeader.) */
-export function TopBar({ xp = 'total' }: { xp?: 'total' | 'level' | 'none' }) {
+/**
+ * Нүүр дээрх дээд мөр: аватар, XP, дараалал, боргоцой. (Сурах замын мөр: MapHeader.) `tour` нь аватар,
+ * дараалал/боргоцойг аппын танилцуулгад (lib/tour.ts) тодруулахаар бүртгэнэ.
+ */
+export function TopBar({ xp = 'total', tour }: { xp?: 'total' | 'level' | 'none'; tour?: boolean }) {
   const { me } = useAuth();
   const { honey } = usePixelBear();
   if (!me) return null;
   return (
     <View style={styles.row}>
-      <AvatarLink />
+      <View ref={tour ? tourRef('avatar') : undefined} collapsable={false}>
+        <AvatarLink />
+      </View>
       {xp === 'none' ? null : (
         <XpPill
           text={xp === 'total' ? `${me.xp} XP` : `${me.levelXp}/${me.levelXpNeeded}`}
@@ -40,8 +46,10 @@ export function TopBar({ xp = 'total' }: { xp?: 'total' | 'level' | 'none' }) {
         />
       )}
       <View style={{ flex: 1 }} />
-      <CountPill icon="icon_flame_24x24" value={me.streak} label="Дараалал" />
-      <CountPill icon="btn_honey_24x24" value={honey} label="Боргоцой" />
+      <View ref={tour ? tourRef('stats') : undefined} collapsable={false} style={styles.row}>
+        <CountPill icon="icon_flame_24x24" value={me.streak} label="Дараалал" />
+        <CountPill icon="btn_honey_24x24" value={honey} label="Боргоцой" />
+      </View>
     </View>
   );
 }

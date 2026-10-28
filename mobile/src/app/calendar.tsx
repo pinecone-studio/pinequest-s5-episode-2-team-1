@@ -16,6 +16,7 @@ import { usePixelBear } from '@/lib/mock/pixelBear';
 import { buildMonth, FACE } from '@/lib/pixelBear/calendar';
 import { goBack } from '@/lib/nav';
 import { setOfflineMode, useOfflineMode, useOnline } from '@/lib/online';
+import { replayTour } from '@/lib/tour';
 
 const LEGEND = [
   { face: 'happy', label: S.calendar.legend.happy },
@@ -208,6 +209,16 @@ export default function CalendarScreen() {
         <Button title={S.calendar.toProfile} variant="lemon" small onPress={() => router.push('/profile')} />
         <Button title={S.calendar.logout} variant="white" small onPress={onLogout} />
       </View>
+      <Button
+        title={S.tour.replay}
+        variant="ghost"
+        small
+        onPress={() => {
+          // танилцуулга Нүүр дээр явагдана
+          replayTour();
+          goBack();
+        }}
+      />
     </Screen>
   );
 }

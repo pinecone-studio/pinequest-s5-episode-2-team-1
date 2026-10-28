@@ -8,6 +8,7 @@ import { useChapterTheme, useThemeFade } from '@/constants/chapterTheme';
 import { colors, fonts, radius } from '@/constants/theme';
 import { S } from '@/i18n/strings';
 import { useOnline } from '@/lib/online';
+import { tourRef } from '@/lib/tour';
 import type { SpriteKey } from '@/sprites';
 
 type TabBarProps = Parameters<NonNullable<ComponentProps<typeof Tabs>['tabBar']>>[0];
@@ -96,6 +97,7 @@ export function BottomNav({ state, emitter, navigateToTab }: TabBarProps) {
           return (
             <Pressable
               key={item.route}
+              ref={tourRef(`nav.${item.route}`)}
               accessibilityRole="tab"
               accessibilityLabel={locked ? S.offline.lockedTab(item.label) : item.label}
               accessibilityState={{ selected: active, disabled: locked }}
