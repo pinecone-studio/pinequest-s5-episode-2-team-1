@@ -1,10 +1,13 @@
 import { router, Tabs } from 'expo-router';
 import { useEffect } from 'react';
+import { View } from 'react-native';
 import { useAuth } from '@/auth/AuthContext';
 import { BottomNav } from '@/components/BottomNav';
+import { FirstTour } from '@/components/FirstTour';
 import { colors } from '@/constants/theme';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 import { useOnline } from '@/lib/online';
+import { markTourPending, startTourIfPending } from '@/lib/tour';
 import { S } from '@/i18n/strings';
 
 export default function TabsLayout() {
@@ -30,16 +33,30 @@ export default function TabsLayout() {
     }
   }, [needsProfile, needsQuiz, ready, subject, onboarded, savedSubject, setSubject]);
 
+  // Шинэ бүртгэл (асуулгаа бөглөөгүй): профайл, асуулгаа бөглөж Нүүрэнд ирэхэд аппын танилцуулгыг нэг удаа харуулна
+  const userId = me?.id;
+  const fresh = me?.onboarded === false;
+  const settled = !needsProfile && onboarded && ready && subject !== null;
+  useEffect(() => {
+    if (userId !== undefined && fresh) void markTourPending(userId);
+  }, [userId, fresh]);
+  useEffect(() => {
+    if (userId !== undefined && settled) void startTourIfPending(userId);
+  }, [userId, settled]);
+
   return (
-    <Tabs
-      tabBar={(props) => <BottomNav {...props} />}
-      screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.paper } }}
-    >
-      <Tabs.Screen name="index" options={{ title: S.tabs.home }} />
-      <Tabs.Screen name="tasks" options={{ title: S.tabs.tasks }} />
-      <Tabs.Screen name="path" options={{ title: S.tabs.path }} />
-      <Tabs.Screen name="shop" options={{ title: S.tabs.shop }} />
-      <Tabs.Screen name="duel" options={{ title: S.tabs.duel }} />
-    </Tabs>
+    <View style={{ flex: 1 }}>
+      <Tabs
+        tabBar={(props) => <BottomNav {...props} />}
+        screenOptions={{ headerShown: false, sceneStyle: { backgroundColor: colors.paper } }}
+      >
+        <Tabs.Screen name="index" options={{ title: S.tabs.home }} />
+        <Tabs.Screen name="tasks" options={{ title: S.tabs.tasks }} />
+        <Tabs.Screen name="path" options={{ title: S.tabs.path }} />
+        <Tabs.Screen name="shop" options={{ title: S.tabs.shop }} />
+        <Tabs.Screen name="duel" options={{ title: S.tabs.duel }} />
+      </Tabs>
+      <FirstTour />
+    </View>
   );
 }

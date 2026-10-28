@@ -13,6 +13,7 @@ import { colors, fonts } from '@/constants/theme';
 import { S } from '@/i18n/strings';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 import { pathSubject } from '@/lib/pixelBear/path';
+import { tourRef } from '@/lib/tour';
 
 /** 03 · Нүүр (Charlie маягийн цэвэрхэн): шат/XP, баавгай, төлөвийн мөр, доод хоёр pixel товч. */
 export default function HomeScreen() {
@@ -44,18 +45,20 @@ export default function HomeScreen() {
         setRefreshing(false);
       }}
     >
-      <TopBar xp="none" />
+      <TopBar xp="none" tour />
 
-      <Enter index={0} style={styles.counter}>
-        <Text style={styles.level}>{S.homeMin.level(me.level)}</Text>
-        <Text style={styles.xp} accessibilityLabel={S.homeMin.xpLabel(me.levelXp, me.levelXpNeeded)}>
-          {me.levelXp}
-          <Text style={styles.xpMuted}> /{me.levelXpNeeded} XP</Text>
-        </Text>
-        <View style={styles.barWrap}>
-          <BracketBar value={me.levelXp} max={me.levelXpNeeded} segments={12} color={colors.violet} label={S.homeMin.xpLabel(me.levelXp, me.levelXpNeeded)} />
-        </View>
-      </Enter>
+      <View ref={tourRef('xp')} collapsable={false}>
+        <Enter index={0} style={styles.counter}>
+          <Text style={styles.level}>{S.homeMin.level(me.level)}</Text>
+          <Text style={styles.xp} accessibilityLabel={S.homeMin.xpLabel(me.levelXp, me.levelXpNeeded)}>
+            {me.levelXp}
+            <Text style={styles.xpMuted}> /{me.levelXpNeeded} XP</Text>
+          </Text>
+          <View style={styles.barWrap}>
+            <BracketBar value={me.levelXp} max={me.levelXpNeeded} segments={12} color={colors.violet} label={S.homeMin.xpLabel(me.levelXp, me.levelXpNeeded)} />
+          </View>
+        </Enter>
+      </View>
 
       <Enter index={1}>
         <BearStage view={bear} bgId={bgId} outfitIds={outfitIds} onLongPress={cyclePreview} />
@@ -72,7 +75,9 @@ export default function HomeScreen() {
       <View style={styles.bottom}>
         <PixelButton icon="btn_calendar_30x30" label={S.homeMin.calendar} onPress={() => router.push('/calendar')} />
         <View style={{ flex: 1 }} />
-        <PixelButton icon="btn_honey_jar_30x30" label={S.homeMin.feed} onPress={feed} />
+        <View ref={tourRef('feed')} collapsable={false}>
+          <PixelButton icon="btn_honey_jar_30x30" label={S.homeMin.feed} onPress={feed} />
+        </View>
       </View>
     </Screen>
   );
