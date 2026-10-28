@@ -23,6 +23,9 @@ const SHEETS: Record<BearAnim, SpriteKey> = {
 };
 const ITEM_SPRITES: Record<ItemId, SpriteKey> = {
   glasses: 'item_glasses_98x44',
+  doctor_coat: 'item_doctor_coat_164x280',
+  officer_coat: 'item_officer_coat_164x280',
+  officer_cap: 'item_officer_cap_164x280',
   gradcap: 'item_gradcap_78x44',
   headphones: 'item_headphones_142x70',
   warrior_helmet: 'item_warrior_helmet_164x160',
@@ -103,6 +106,15 @@ const DEEL_BASES: Record<BearAnim, SpriteKey> = {
   ouch: 'bear_deel_base_ouch_1092x272',
   welcome: 'bear_deel_base_welcome_1320x1260',
 };
+const PROFESSIONAL_BASES: Record<BearAnim, SpriteKey> = {
+  thriving: 'bear_professional_base_thriving_940x280',
+  happy: 'bear_professional_base_happy_1260x260',
+  tired: 'bear_professional_base_tired_1092x260',
+  neglected: 'bear_professional_base_neglected_1092x260',
+  sleep: 'bear_professional_base_sleep_970x260',
+  ouch: 'bear_professional_base_ouch_1092x272',
+  welcome: 'bear_professional_base_welcome_1320x1260',
+};
 const HEADSCARF_BASES: Record<BearAnim, SpriteKey> = {
   thriving: 'bear_headscarf_base_thriving_940x280',
   happy: 'bear_headscarf_base_happy_1260x260',
@@ -150,7 +162,9 @@ export function LiveBear({
     prev.current = head;
   }, [head]);
   const shift = meta.offset[0] * px + (meta.frameSize.w * px) / 2 - w / 2; // frame-ийн төв анхны sprite-ийн төвөөс
-  const sheet = worn.includes('warrior_helmet')
+  const sheet = worn.includes('doctor_coat') || worn.includes('officer_coat')
+    ? PROFESSIONAL_BASES[anim]
+    : worn.includes('warrior_helmet')
     ? HELMET_BASES[anim]
     : worn.includes('batman_suit')
       ? BATMAN_BASES[anim]

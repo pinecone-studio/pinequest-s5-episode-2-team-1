@@ -77,6 +77,12 @@ M.item_demon_horns = [2];
 M.outfit_demon_horns = [1];
 M.outfit_demon = [1];
 M.outfit_hero = [1];
+for (const id of ['doctor_coat', 'officer_coat', 'officer_cap']) {
+  M[`item_${id}`] = [2]; M[`outfit_${id}`] = [1];
+  for (const state of ['thriving','happy','tired','neglected','sleep','ouch','welcome']) M[`fitted_${id}_${state}`] = [state === 'welcome' ? 3 : 2];
+}
+M.outfit_officer = [1];
+for (const state of ['thriving','happy','tired','neglected','sleep','ouch','welcome']) M[`bear_professional_base_${state}`] = [state === 'welcome' ? 3 : 2];
 M.item_straw_hat = [2];
 M.outfit_straw_hat = [1];
 M.outfit_ninja = [1];
@@ -241,7 +247,7 @@ function furred(name: string, base: Img, f: 'black' | 'white'): Img {
       if (base.d[i + 3] && CLOTH_COLORS.has(`${base.d[i]},${base.d[i + 1]},${base.d[i + 2]}`)) img.d.set(base.d.subarray(i, i + 4), i);
     return img;
   }
-  if (/^outfit_(sport|pirate|wizard|demon|headband|ninja|straw)/.test(name)) {
+  if (/^outfit_(sport|pirate|wizard|demon|headband|ninja|straw|doctor|officer)/.test(name)) {
     keepItem(base, img);
     for (let i = 0; i < base.d.length; i += 4)
       if (base.d[i + 3] && CLOTH_COLORS.has(`${base.d[i]},${base.d[i + 1]},${base.d[i + 2]}`)) img.d.set(base.d.subarray(i, i + 4), i);
