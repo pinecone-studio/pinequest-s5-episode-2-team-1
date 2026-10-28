@@ -2,8 +2,8 @@ import type { AnswerResponse, FlagResponse, Subject, TaskDto, TaskResult } from 
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import Animated, { FadeInDown } from 'react-native-reanimated';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import Animated, { FadeInDown, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { ApiError, api, errorText, isOfflineError } from '@/api/client';
@@ -46,6 +46,9 @@ export default function TaskScreen() {
   const { me, setMe } = useAuth();
   const online = useOnline();
   const insets = useSafeAreaInsets();
+  const { height: windowH } = useWindowDimensions();
+  /** Асуулт, хариулт, тайлбар, товчны хэсгийн өндөр (onLayout) */
+  const [bodyH, setBodyH] = useState(0);
   const tier = me?.tier;
   const grade = me?.grade;
   const size = me?.questionsPerTask ?? 5;
@@ -198,6 +201,14 @@ export default function TaskScreen() {
     }
   }
 
+  // Хариугаа шалгахад тайлбар, «Үргэлжлүүлэх» товч нэмэгдэж дэлгэцээс хэтэрдэг тул баавгайн самбарыг багасгаж
+  // бүгдийг нэг дэлгэцэнд багтаана (scroll хийх шаардлагагүй). Баавгай, шал доод талдаа бэхлэгдсэн тул дээд хэсэг нь л
+  // тайрагдана. Boss-ын талбар тогтмол өндөртэй зурагддаг тул хэвээр. Hook тул доорх эрт return-ээс өмнө байна.
+  const panelFull = PANEL_H + insets.top;
+  const panelH =
+    foe || !bodyH ? panelFull : Math.max(PANEL_MIN + insets.top, Math.min(panelFull, windowH - bodyH - insets.bottom - 24));
+  const panelStyle = useAnimatedStyle(() => ({ height: withTiming(panelH, { duration: 260 }) }), [panelH]);
+
   if (showScore && practiceScore !== null) return <PracticeResultView correct={practiceScore} total={total} onAgain={load} />;
   // Шагналаа (XP, шат, streak) эхлээд харуулна; салаа зам нээгдсэн бол тэндээс шууд руу нь орно
   if (result) return <RewardView result={result} onAgain={load} onRecovery={recovery ? () => router.replace(`/recovery/${subject}`) : undefined} />;
@@ -245,7 +256,7 @@ export default function TaskScreen() {
   return (
     <View style={styles.root}>
       <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 24 }} showsVerticalScrollIndicator={false}>
-        <View style={[styles.panel, { paddingTop: insets.top, height: 402 + insets.top }, { backgroundColor: foe ? colors.indigo : LESSON_WALL }]}>
+        <Animated.View style={[styles.panel, { paddingTop: insets.top }, panelStyle, { backgroundColor: foe ? colors.indigo : LESSON_WALL }]}>
           {foe ? (
             <BossArena
               boss={foe}
@@ -292,9 +303,9 @@ export default function TaskScreen() {
               {answered}/{total}
             </Text>
           </View>
-        </View>
+        </Animated.View>
 
-        <View style={styles.body}>
+        <View style={styles.body} onLayout={(e) => setBodyH(e.nativeEvent.layout.height)}>
           {error ? (
             <BattleNotice
               tone={beaten ? 'won' : 'locked'}
@@ -387,6 +398,10 @@ export default function TaskScreen() {
     </View>
   );
 }
+
+/** Баавгайн самбарын бүтэн өндөр ба хариу шалгасны дараа багасах доод хязгаар (баавгай, ✕, хөөс багтана). */
+const PANEL_H = 402;
+const PANEL_MIN = 250;
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.paper },
