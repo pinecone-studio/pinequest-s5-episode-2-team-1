@@ -94,6 +94,8 @@ export interface Me {
   profileSet: boolean;
   /** Анх орохдоо асуудаг асуултаа (хаанаас сонссон, анги, зорилго, түвшин) бөглөсөн эсэх */
   onboarded: boolean;
+  /** Асуулгад сонгосон хичээл (сурах зам): шинэ утас, browser дээр асуулгыг дахин асуулгүй сэргээнэ. Хуучин хэрэглэгчид null. */
+  subject: Subject | null;
   grade: number;
   /** Ангийн түвшин 1–3 */
   tier: number;

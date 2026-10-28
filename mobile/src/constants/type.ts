@@ -14,6 +14,6 @@ export const type = StyleSheet.create({
   small: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 19, color: colors.muted },
   label: { fontFamily: fonts.bold, fontSize: 12, lineHeight: 16, letterSpacing: 0.8, textTransform: 'uppercase', color: colors.ink },
   button: { fontFamily: fonts.semibold, fontSize: 18, color: colors.white },
-  num: { fontFamily: fonts.pixel, fontSize: 17, color: colors.ink },
-  numSm: { fontFamily: fonts.pixel, fontSize: 14, color: colors.ink },
+  num: { fontFamily: fonts.pixelNum, fontSize: 14, color: colors.ink },
+  numSm: { fontFamily: fonts.pixelNum, fontSize: 12, color: colors.ink },
 });

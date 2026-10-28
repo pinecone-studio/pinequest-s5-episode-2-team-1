@@ -11,7 +11,7 @@ import { colors } from '@/constants/theme';
 import { type } from '@/constants/type';
 import { S } from '@/i18n/strings';
 import { usePixelBear } from '@/lib/mock/pixelBear';
-import { BACKGROUNDS, bgById, outfitById } from '@/lib/pixelBear/catalog';
+import { BACKGROUNDS, bgById, isWorn, outfitById, wornItems } from '@/lib/pixelBear/catalog';
 import { useOutfits } from '@/lib/pixelBear/useOutfits';
 import { goBack } from '@/lib/nav';
 
@@ -23,7 +23,7 @@ export default function BagScreen() {
   const bear = usePixelBear();
   const outfits = useOutfits();
   const bg = bgById(bear.bgId);
-  const outfit = outfitById(bear.outfitId);
+  const outfit = outfitById(bear.outfitIds.at(-1) ?? 'scarf');
   const ownedBgs = BACKGROUNDS.filter((b) => bear.ownedBgs.includes(b.id));
   const ownedOutfits = outfits.views.filter((v) => v.owned);
   const ok = { color: colors.okText, showHoney: false, locked: false };
@@ -42,7 +42,7 @@ export default function BagScreen() {
       </View>
 
       <Enter index={0}>
-        <PreviewStage bg={bg} outfit={outfit} name={outfit.name} alt={S.shop.previewAlt(outfit.name, bg.name)} />
+        <PreviewStage bg={bg} items={wornItems(bear.outfitIds)} name={outfit.name} alt={S.shop.previewAlt(outfit.name, bg.name)} />
       </Enter>
 
       <Enter index={1} style={{ gap: 12 }}>
@@ -86,8 +86,8 @@ export default function BagScreen() {
                 <OutfitCard
                   key={v.def.id}
                   def={v.def}
-                  selected={v.def.id === bear.outfitId}
-                  status={{ ...ok, text: v.def.id === bear.outfitId ? S.shop.equipped : S.shop.equip }}
+                  selected={isWorn(bear.outfitIds, v.def.id)}
+                  status={{ ...ok, text: isWorn(bear.outfitIds, v.def.id) ? S.shop.equipped : S.shop.equip }}
                   onPress={() => {
                     bear.equipOutfit(v.def.id);
                     void Haptics.selectionAsync();

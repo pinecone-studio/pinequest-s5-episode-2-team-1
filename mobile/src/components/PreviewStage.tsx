@@ -3,21 +3,23 @@ import { StyleSheet, Text, View } from 'react-native';
 import { LiveBear } from '@/components/LiveBear';
 import { ColorFade } from '@/components/pixel';
 import { colors, fonts, halo, radius } from '@/constants/theme';
-import { type BgDef, type OutfitDef, outfitItems } from '@/lib/pixelBear/catalog';
+import type { ItemId } from '@/components/LiveBear';
+import type { BgDef } from '@/lib/pixelBear/catalog';
 
 /** баавгайн анхны sprite-ийн өргөн (bear_idle_scarf 2×): амьд frame-ууд түүний байранд таарна */
 const STAGE_W = 164;
 
 /** Дэлгүүр/Цүнхний урьдчилан харах stage (350×290): дэвсгэр + хувцсаа гайхуулж буй амьд баавгай + нэр + үйлдэл. */
-export function PreviewStage({ bg, outfit, name, alt, action }: { bg: BgDef; outfit: OutfitDef; name: string; alt: string; action?: ReactNode }) {
+/** `items`: өмсгөх item-ууд (өмссөн бүх хувцас, эсвэл үзэж буй хувцсыг өмссөнтэйгөө хамт). */
+export function PreviewStage({ bg, items, name, alt, action }: { bg: BgDef; items: ItemId[]; name: string; alt: string; action?: ReactNode }) {
   return (
     <View style={styles.stage}>
       <ColorFade color={bg.hex} style={StyleSheet.absoluteFill} />
       <ColorFade color={bg.dark ? halo.night : halo.light} style={styles.halo} />
       <View style={styles.shadow} />
-      <View style={[styles.bear, outfit.item === 'warrior_helmet' && { top: 6 }]}>
+      <View style={[styles.bear, items.includes('warrior_helmet') && { top: 6 }]}>
         {/* дэлгүүрт орж ирсэн хүнтэй мэндэлж даллана; item солиход баавгай тасралтгүй хөдөлсөөр, зөвхөн item солигдоно */}
-        <LiveBear anim="happy" w={STAGE_W} items={outfitItems(outfit)} label={alt} />
+        <LiveBear anim="happy" w={STAGE_W} items={items} label={alt} />
       </View>
       <View style={styles.chip}>
         <Text style={styles.chipText}>{name}</Text>

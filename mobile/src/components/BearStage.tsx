@@ -9,7 +9,7 @@ import { S } from '@/i18n/strings';
 import { BEAR_CONFIG, type BearView } from '@/lib/pixelBear/bear';
 import { tagFrames } from '@/lib/pixelBear/anim';
 import home from '@/lib/pixelBear/bear-home.json';
-import { bgById, outfitById, outfitItems, type OutfitId } from '@/lib/pixelBear/catalog';
+import { bgById, type OutfitId, wornItems } from '@/lib/pixelBear/catalog';
 
 const NIGHT_MOON = '#F3F66C';
 
@@ -17,19 +17,19 @@ const NIGHT_MOON = '#F3F66C';
 export function BearStage({
   view,
   bgId,
-  outfitId,
+  outfitIds,
   onLongPress,
 }: {
   view: BearView;
   bgId: string;
-  outfitId: OutfitId;
+  outfitIds: OutfitId[];
   onLongPress?: () => void;
 }) {
   const bg = bgById(bgId);
   const cfg = BEAR_CONFIG[view.state];
   const ink = bg.dark ? colors.white : colors.ink;
-  // сонгосон item-ээ бүх төлөвт өмсөнө
-  const items = outfitItems(outfitById(outfitId));
+  // өмссөн бүх хувцсаа бүх төлөвт өмсөнө
+  const items = wornItems(outfitIds);
   const ouch = useOuch();
 
   return (
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
     gap: 7,
   },
   energyTrack: { width: 52, height: 6, borderRadius: 3, backgroundColor: colors.trackAlt, overflow: 'hidden' },
-  energyNum: { fontFamily: fonts.pixel, fontSize: 15, color: colors.ink },
+  energyNum: { fontFamily: fonts.pixelNum, fontSize: 13, color: colors.ink },
   zz: { fontFamily: fonts.pixel, fontSize: 22 },
   // толгойн баруун талд, толгойг халхлахгүй
   say: { right: 10, top: 58, width: 92, alignItems: 'flex-start' },

@@ -18,7 +18,7 @@ import { S } from '@/i18n/strings';
 import { confirm } from '@/lib/confirm';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 import { useOnline } from '@/lib/online';
-import { BACKGROUNDS, bgById, outfitById, type OutfitId } from '@/lib/pixelBear/catalog';
+import { BACKGROUNDS, bgById, DEFAULT_OUTFIT_ID, isWorn, outfitById, type OutfitId, toggleWorn, wornItems } from '@/lib/pixelBear/catalog';
 import { type OutfitView, useOutfits } from '@/lib/pixelBear/useOutfits';
 
 type Tab = 'bg' | 'outfit';
@@ -57,7 +57,7 @@ export default function ShopScreen() {
   const [tab, setTab] = useState<Tab>('bg');
   const [outfitCategory, setOutfitCategory] = useState<OutfitCategory>('hat');
   const [selBg, setSelBg] = useState(bear.bgId);
-  const [selOutfit, setSelOutfit] = useState<OutfitId>(bear.outfitId);
+  const [selOutfit, setSelOutfit] = useState<OutfitId>(bear.outfitIds.at(-1) ?? DEFAULT_OUTFIT_ID);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -66,8 +66,11 @@ export default function ShopScreen() {
   const isBg = tab === 'bg';
   const visibleOutfits = outfits.views.filter((v) => categoryOf(v.def.id) === outfitCategory);
   const bgDef = bgById(isBg ? selBg : bear.bgId);
-  const outfitView = outfits.views.find((v) => v.def.id === (isBg ? bear.outfitId : selOutfit)) ?? outfits.views[0];
+  const outfitView = outfits.views.find((v) => v.def.id === selOutfit) ?? outfits.views[0];
   const outfitDef = outfitById(outfitView.def.id);
+  const selWorn = isWorn(bear.outfitIds, outfitDef.id);
+  // Дэвсгэр дээр өмссөнөөрөө; хувцас дээр сонгосноо өмссөнтэйгөө хамт (ижил байрлалтайг тайлаад) харуулна
+  const previewItems = wornItems(isBg || selWorn ? bear.outfitIds : toggleWorn(bear.outfitIds, outfitDef.id));
 
   // Одоо харж буй зүйлийн үйлдэл
   const cur = isBg
@@ -80,7 +83,7 @@ export default function ShopScreen() {
     }
     : {
       name: outfitDef.name,
-      equipped: outfitDef.id === bear.outfitId,
+      equipped: selWorn,
       owned: outfitView.owned,
       price: outfitView.price,
       lockedLevel: outfitView.lockedLevel,
@@ -89,7 +92,10 @@ export default function ShopScreen() {
   const action = !outfits.loaded
     ? { title: '…', bg: colors.stoneAlt, fg: colors.muted, disabled: true }
     : cur.equipped
-      ? { title: S.shop.equipped, bg: colors.white, fg: colors.okText, disabled: true }
+      ? // өмссөн хувцсаа тайлж болно (анхдагч ороолт, дэвсгэрээс бусад)
+        !isBg && outfitDef.id !== DEFAULT_OUTFIT_ID
+        ? { title: S.shop.unequip, bg: colors.white, fg: colors.ink, disabled: false }
+        : { title: S.shop.equipped, bg: colors.white, fg: colors.okText, disabled: true }
       : cur.owned
         ? { title: S.shop.equip, bg: colors.indigo, fg: colors.white, disabled: false }
         : !online
@@ -149,7 +155,7 @@ export default function ShopScreen() {
       <View>
         <PreviewStage
           bg={bgDef}
-          outfit={outfitDef}
+          items={previewItems}
           name={isBg ? S.shop.bgPreview(bgDef.name) : outfitDef.name}
           alt={S.shop.previewAlt(outfitDef.name, bgDef.name)}
           action={
@@ -247,7 +253,7 @@ export default function ShopScreen() {
                   def={v.def}
                   selected={v.def.id === selOutfit}
                   status={statusOf({
-                    equipped: v.def.id === bear.outfitId,
+                    equipped: isWorn(bear.outfitIds, v.def.id),
                     owned: v.owned,
                     price: v.price,
                     honey: bear.honey,

@@ -1,5 +1,6 @@
 import { Onest_400Regular, Onest_500Medium, Onest_600SemiBold, Onest_700Bold, Onest_800ExtraBold } from '@expo-google-fonts/onest';
 import { PixelifySans_500Medium, PixelifySans_700Bold } from '@expo-google-fonts/pixelify-sans';
+import { Silkscreen_400Regular } from '@expo-google-fonts/silkscreen';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -12,6 +13,7 @@ import { Button } from '@/components/Button';
 import { ConfirmHost } from '@/components/ConfirmHost';
 import { FurContext, Sprite } from '@/components/pixel';
 import { ServerStatus } from '@/components/ServerStatus';
+import { APP_NAME } from '@/constants/app';
 import { colors, fonts } from '@/constants/theme';
 import { type } from '@/constants/type';
 import { S } from '@/i18n/strings';
@@ -29,6 +31,7 @@ export default function RootLayout() {
     Onest_800ExtraBold,
     PixelifySans_500Medium,
     PixelifySans_700Bold,
+    Silkscreen_400Regular,
   });
   const ready = loaded || !!error;
 
@@ -62,7 +65,7 @@ function RootNavigator() {
   if (status === 'loading') {
     return (
       <View style={[styles.center, { backgroundColor: colors.violet }]}>
-        <Text style={styles.wordmark}>pine{'\n'}quest</Text>
+        <Text style={styles.wordmark}>{APP_NAME}</Text>
         <ActivityIndicator color={colors.white} size="large" />
       </View>
     );

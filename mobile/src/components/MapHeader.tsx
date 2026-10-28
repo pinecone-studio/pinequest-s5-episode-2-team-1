@@ -74,7 +74,7 @@ export function MapHeader({
                       <Sprite key={k} id="icon_heart_12x12" style={k < lives ? null : styles.heartOff} />
                     ))}
                   </View>
-                  <Animated.Text style={[styles.timer, fade.text]}>{clock ?? S.lives.full}</Animated.Text>
+                  <Animated.Text style={[styles.timer, clock ? styles.timerNum : null, fade.text]}>{clock ?? S.lives.full}</Animated.Text>
                 </View>
               </View>
               <Stat icon="icon_flame_24x24" value={me.streak} label={S.path.streak} text={fade.text} />
@@ -149,10 +149,11 @@ const styles = StyleSheet.create({
   // жигд зайтай; багтахгүй бол дараагийн мөрөнд шилжинэ
   stats: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', columnGap: 12, rowGap: 6 },
   stat: { flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 36 },
-  num: { fontFamily: fonts.pixel, fontSize: 16, lineHeight: 18 },
+  num: { fontFamily: fonts.pixelNum, fontSize: 14, lineHeight: 15 },
   hearts: { flexDirection: 'row', gap: 2 },
   heartOff: { opacity: 0.3 },
   timer: { fontFamily: fonts.pixel, fontSize: 12, lineHeight: 13 },
+  timerNum: { fontFamily: fonts.pixelNum, fontSize: 10 },
   // газрын зураг дээр тод харагдахаар зөөлөн сүүдэр
   banner: {
     flexDirection: 'row',

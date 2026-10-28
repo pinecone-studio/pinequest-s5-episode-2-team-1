@@ -679,8 +679,8 @@ const styles = StyleSheet.create({
   shot: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
   damage: { width: 60, alignItems: 'center', zIndex: 5 },
   damageText: {
-    fontFamily: fonts.pixel,
-    fontSize: 28,
+    fontFamily: fonts.pixelNum,
+    fontSize: 24,
     color: colors.lemon,
     textShadowColor: colors.ink,
     textShadowOffset: { width: 2, height: 2 },

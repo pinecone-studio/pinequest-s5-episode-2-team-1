@@ -5,7 +5,7 @@ import { API_URL, api } from '@/api/client';
 import { colors, fonts } from '@/constants/theme';
 import { S } from '@/i18n/strings';
 
-/** Нэвтрэх дэлгэцийн доод хэсэгт: утас серверт хүрч байгаа эсэх (LAN асуудлыг шууд харуулна). */
+/** Нэвтрэх дэлгэцийн доод хэсэгт: утас серверт хүрч байгаа эсэх (хөгжүүлэлтэд хаягтай нь: LAN асуудлыг шууд харуулна). */
 export function ServerStatus() {
   const [ok, setOk] = useState<boolean | null>(null);
 
@@ -21,10 +21,11 @@ export function ServerStatus() {
 
   const label = ok === null ? S.health.checking : ok ? S.health.ok : S.health.fail;
   return (
-    <View style={styles.row} accessible accessibilityLabel={`${label} · ${API_URL}`}>
+    <View style={styles.row} accessible accessibilityLabel={__DEV__ ? `${label} · ${API_URL}` : label}>
       <View style={[styles.dot, { backgroundColor: ok === null ? colors.stone : ok ? colors.okText : colors.dangerText }]} />
       <Text style={[styles.text, ok === false && { color: colors.dangerText }]}>
-        {label} · {API_URL}
+        {/* Серверийн хаягийг зөвхөн хөгжүүлэлтэд (LAN-ийн асуудал шалгах); апп-д KUMA-гаас өөр нэр харагдахгүй */}
+        {__DEV__ ? `${label} · ${API_URL}` : label}
       </Text>
     </View>
   );

@@ -1,13 +1,12 @@
-import { BEAR_FACES } from '@shared/bear';
 import type { AvatarBody, BearFur, MeResponse } from '@shared/types';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { api, errorText } from '@/api/client';
 import { useMe, useAuth } from '@/auth/AuthContext';
-import { Avatar, avatarSprite, type PortraitLook } from '@/components/Avatar';
+import { Avatar, type PortraitLook } from '@/components/Avatar';
 import { Button } from '@/components/Button';
-import { Enter, Pop, PressScale, Sprite } from '@/components/pixel';
+import { Enter, Pop, PressScale } from '@/components/pixel';
 import { BackButton, Card, Chip, ErrorText, Screen, TextField } from '@/components/ui';
 import { colors, fonts, radius } from '@/constants/theme';
 import { type } from '@/constants/type';
@@ -22,8 +21,9 @@ const FURS: { id: BearFur; hex: string }[] = [
 ];
 
 /**
- * Профайл үүсгэх (бүртгүүлсний дараах 2-р алхам) ба профайлаас «Зураг солих»: профайлын нэр, баавгайн үсний өнгө, царай,
- * цээжний цагаан толбо. Том хөрөг сонголт бүрт шууд солигдоно.
+ * Профайл үүсгэх (бүртгүүлсний дараах 2-р алхам) ба профайлаас «Зураг солих»: профайлын нэр, баавгайн үсний өнгө,
+ * цээжний цагаан толбо. Том хөрөг сонголт бүрт шууд солигдоно. Царайг сонгуулахгүй: Нүүрэн дээрх баавгай өөрөө янз
+ * бүрийн царай гаргадаг тул хөрөг хадгалсан (эсвэл анхдагч тайван) царайгаа үлдээнэ.
  */
 export default function AvatarScreen() {
   const me = useMe();
@@ -76,7 +76,7 @@ export default function AvatarScreen() {
 
       <Enter index={0} style={styles.hero}>
         {editing ? null : <Text style={styles.bubble}>{S.avatar.bubble}</Text>}
-        <Pop trigger={`${look.fur}${look.face}${look.chest}`}>
+        <Pop trigger={`${look.fur}${look.chest}`}>
           <Avatar size={172} border={6} look={look} label={S.avatar.preview(name.trim())} />
         </Pop>
       </Enter>
@@ -101,32 +101,6 @@ export default function AvatarScreen() {
                   >
                     <View style={[styles.swatch, { backgroundColor: f.hex }]} />
                     <Text style={styles.optionText}>{S.avatar.furs[f.id]}</Text>
-                  </PressScale>
-                );
-              })}
-            </View>
-          </View>
-
-          <View style={styles.group}>
-            <Text style={styles.label}>{S.avatar.face}</Text>
-            <View accessibilityRole="radiogroup" style={styles.faces}>
-              {BEAR_FACES.map((face) => {
-                const on = look.face === face;
-                return (
-                  <PressScale
-                    key={face}
-                    accessibilityRole="radio"
-                    accessibilityState={{ selected: on }}
-                    accessibilityLabel={S.avatar.faces[face]}
-                    onPress={() => pick({ face })}
-                    style={[styles.option, styles.faceOption, on && styles.on]}
-                  >
-                    <View style={styles.faceTile}>
-                      <Sprite id={avatarSprite({ ...look, face }, 48)} />
-                    </View>
-                    <Text style={styles.faceText} numberOfLines={1}>
-                      {S.avatar.faces[face]}
-                    </Text>
                   </PressScale>
                 );
               })}
@@ -166,9 +140,4 @@ const styles = StyleSheet.create({
   furOption: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 6 },
   swatch: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: colors.ink },
   optionText: { fontFamily: fonts.semibold, fontSize: 14, color: colors.ink },
-  faces: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  // мөрөнд 4 царай
-  faceOption: { flexBasis: '22%', alignItems: 'center', gap: 4, paddingBottom: 6, overflow: 'hidden' },
-  faceTile: { alignSelf: 'stretch', alignItems: 'center', backgroundColor: colors.lavender, paddingTop: 6 },
-  faceText: { fontFamily: fonts.semibold, fontSize: 12, color: colors.ink },
 });
