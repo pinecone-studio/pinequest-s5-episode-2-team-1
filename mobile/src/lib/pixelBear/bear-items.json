@@ -1,4 +1,61 @@
 {
+  "doctor_coat": {
+    "at": [
+      -6,
+      -14
+    ],
+    "loose": false,
+    "anchor": "body",
+    "fitted": {
+      "sheets": {
+        "thriving": "fitted_doctor_coat_thriving_940x280",
+        "sleep": "fitted_doctor_coat_sleep_970x260",
+        "happy": "fitted_doctor_coat_happy_1260x260",
+        "tired": "fitted_doctor_coat_tired_1092x260",
+        "welcome": "fitted_doctor_coat_welcome_1320x1260",
+        "ouch": "fitted_doctor_coat_ouch_1092x272",
+        "neglected": "fitted_doctor_coat_neglected_1092x260"
+      }
+    }
+  },
+  "officer_coat": {
+    "at": [
+      -6,
+      -14
+    ],
+    "loose": false,
+    "anchor": "body",
+    "fitted": {
+      "sheets": {
+        "thriving": "fitted_officer_coat_thriving_940x280",
+        "sleep": "fitted_officer_coat_sleep_970x260",
+        "happy": "fitted_officer_coat_happy_1260x260",
+        "tired": "fitted_officer_coat_tired_1092x260",
+        "welcome": "fitted_officer_coat_welcome_1320x1260",
+        "ouch": "fitted_officer_coat_ouch_1092x272",
+        "neglected": "fitted_officer_coat_neglected_1092x260"
+      }
+    }
+  },
+  "officer_cap": {
+    "at": [
+      -6,
+      -14
+    ],
+    "loose": false,
+    "anchor": "body",
+    "fitted": {
+      "sheets": {
+        "thriving": "fitted_officer_cap_thriving_940x280",
+        "sleep": "fitted_officer_cap_sleep_970x260",
+        "happy": "fitted_officer_cap_happy_1260x260",
+        "tired": "fitted_officer_cap_tired_1092x260",
+        "welcome": "fitted_officer_cap_welcome_1320x1260",
+        "ouch": "fitted_officer_cap_ouch_1092x272",
+        "neglected": "fitted_officer_cap_neglected_1092x260"
+      }
+    }
+  },
   "glasses": {
     "at": [
       10,

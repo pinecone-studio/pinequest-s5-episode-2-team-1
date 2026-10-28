@@ -13,7 +13,8 @@ const STAGE_W = 164;
 /** `items`: өмсгөх item-ууд (өмссөн бүх хувцас, эсвэл үзэж буй хувцсыг өмссөнтэйгөө хамт). */
 export function PreviewStage({ bg, items, name, alt, action }: { bg: BgDef; items: ItemId[]; name: string; alt: string; action?: ReactNode }) {
   return (
-    <View style={styles.stage}>
+    <View style={[styles.stage, { backgroundColor: bg.hex }]} >
+      <View style={styles.scene}>
       <ColorFade color={bg.hex} style={StyleSheet.absoluteFill} />
       <ColorFade color={bg.dark ? halo.night : halo.light} style={styles.halo} />
       <View style={styles.shadow} />
@@ -21,16 +22,19 @@ export function PreviewStage({ bg, items, name, alt, action }: { bg: BgDef; item
         {/* дэлгүүрт орж ирсэн хүнтэй мэндэлж даллана; item солиход баавгай тасралтгүй хөдөлсөөр, зөвхөн item солигдоно */}
         <LiveBear anim="happy" w={STAGE_W} items={items} label={alt} />
       </View>
-      <View style={styles.chip}>
-        <Text style={styles.chipText}>{name}</Text>
       </View>
-      {action ? <View style={styles.action}>{action}</View> : null}
+      <View style={styles.footer}>
+        <Text style={styles.chipText}>{name}</Text>
+        {action ? <View style={styles.action}>{action}</View> : null}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  stage: { height: 290, borderRadius: radius.stage, overflow: 'hidden' },
+  stage: { borderRadius: radius.stage, overflow: 'hidden' },
+  scene: { height: 290, overflow: 'hidden' },
+  footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: 14, backgroundColor: colors.white },
   halo: { position: 'absolute', top: 30, left: '50%', marginLeft: -110, width: 220, height: 220, borderRadius: 110 },
   shadow: {
     position: 'absolute',
@@ -44,16 +48,6 @@ const styles = StyleSheet.create({
     opacity: 0.15,
   },
   bear: { position: 'absolute', top: -2, left: 0, right: 0, alignItems: 'center' },
-  chip: {
-    position: 'absolute',
-    left: 14,
-    top: 14,
-    height: 32,
-    paddingHorizontal: 12,
-    borderRadius: radius.pill,
-    backgroundColor: colors.white,
-    justifyContent: 'center',
-  },
-  chipText: { fontFamily: fonts.bold, fontSize: 13, color: colors.ink },
-  action: { position: 'absolute', right: 14, bottom: 14 },
+  chipText: { fontFamily: fonts.bold, fontSize: 13, color: colors.ink, flex: 1 },
+  action: { flexShrink: 0 },
 });

@@ -37,6 +37,7 @@ const STAFF_OUTFITS = [
 ] as const;
 
 export type OutfitId =
+  | 'doctor_coat' | 'officer_coat' | 'officer_cap' | 'officer'
   | 'scarf'
   | 'glasses'
   | 'gradcap'
@@ -108,6 +109,10 @@ export interface OutfitDef {
 }
 
 export const OUTFITS: OutfitDef[] = [
+  { id: 'doctor_coat', name: 'Эмчийн хувцас', tile: '#C8E8F4', imgTop: -40, card: 'outfit_doctor_coat_82x140', item: 'doctor_coat' },
+  { id: 'officer', name: 'Офицерын бүтэн өмсгөл', tile: '#BCC8DE', imgTop: -26, card: 'outfit_officer_82x140', items: ['officer_coat', 'officer_cap'] },
+  { id: 'officer_coat', name: 'Офицерын дүрэмт хувцас', tile: '#BCC8DE', imgTop: -40, card: 'outfit_officer_coat_82x140', item: 'officer_coat' },
+  { id: 'officer_cap', name: 'Офицерын малгай', tile: '#BCC8DE', imgTop: 0, card: 'outfit_officer_cap_82x140', item: 'officer_cap' },
   { id: 'scarf', name: 'Монгол ороолт', tile: '#D4F55E', imgTop: -26, card: 'outfit_scarf_82x140' },
   { id: 'warrior_helmet', name: 'Баатрын дуулга', tile: '#EBCF9B', imgTop: 0, card: 'outfit_warrior_helmet_82x140', item: 'warrior_helmet' },
   { id: 'hero', name: 'Баатар', tile: '#EBCF9B', imgTop: 0, card: 'outfit_hero_82x140', items: ['warrior_helmet', 'black_sword'] },
@@ -193,6 +198,7 @@ export const outfitItems = (o: OutfitDef): ItemId[] => o.items ?? (o.item ? [o.i
  */
 export type Slot = 'head' | 'face' | 'neck' | 'body' | 'back' | 'waist' | 'legs' | 'feet' | 'hand' | 'offhand';
 const ITEM_SLOT: Record<ItemId, Slot> = {
+  doctor_coat: 'body', officer_coat: 'body', officer_cap: 'head',
   gradcap: 'head', warrior_helmet: 'head', ny_cap: 'head', pirate_hat: 'head', cowboy_hat: 'head', white_headscarf: 'head',
   hard_hat: 'head', ribbon: 'head', mongol_hat: 'head', puss_hat: 'head', headphones: 'head',
   headband: 'head', demon_horns: 'head', ninja_headband: 'head', straw_hat: 'head',
@@ -219,7 +225,7 @@ export function outfitSlot(id: OutfitId): Slot | null {
 }
 
 const slotsOf = (id: OutfitId): string[] =>
-  outfitItems(outfitById(id)).flatMap((it) => [ITEM_SLOT[it], ...(BASE_ITEMS.includes(it) ? ['base'] : [])]);
+  outfitItems(outfitById(id)).flatMap((it) => [ITEM_SLOT[it], ...(['doctor_coat', 'officer_coat'].includes(it) ? ['feet'] : []), ...(['doctor_coat', 'officer_coat'].includes(it) ? ['legs'] : []), ...(BASE_ITEMS.includes(it) ? ['base'] : [])]);
 
 /** Өмссөн хувцсуудын хадгалах хэлбэр ('pirate_hat+glasses+staff00'); хоосон бол анхдагч ороолт. */
 export const joinWorn = (ids: readonly OutfitId[]): string => (ids.length ? ids.join('+') : DEFAULT_OUTFIT_ID);

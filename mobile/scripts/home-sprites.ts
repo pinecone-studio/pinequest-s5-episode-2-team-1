@@ -9,6 +9,7 @@
  * Ажиллуулах:  npm run sprites:home && npm run sprites   (mobile/)
  * Шалгах:      node scripts/home-sprites.ts --preview <dir>
  */
+import { PROFESSIONAL_IDS, professionalPixels, professionalBase } from './professional-outfits.ts';
 import { writeFileSync } from 'node:fs';
 import { blank, type Img, readPng, writeApng, writePng } from './png.ts';
 import { at, bbox, clone, crop, type Frame, scale, source, SPRITES, toSheet } from './sprite-kit.ts';
@@ -26,6 +27,9 @@ const ITEMS_META = new URL('../src/lib/pixelBear/bear-items.json', import.meta.u
 const STAFF_IDS = ['staff00', 'staff03', 'staff04', 'staff05', 'holly_staff', 'pestilence_staff', 'w_staff_256'] as const;
 const HELD_IDS = [...STAFF_IDS, 'black_sword', 'bronze_shield', 'wizard_wand', 'pirate_sword'] as const;
 const ITEMS: Record<string, { loose: boolean; layer?: string; at?: [number, number]; anchor?: 'hand' | 'feet' | 'body'; behind?: boolean }> = {
+  doctor_coat: { loose: false, layer: 'item_doctor_coat', anchor: 'body' },
+  officer_coat: { loose: false, layer: 'item_officer_coat', anchor: 'body' },
+  officer_cap: { loose: false, layer: 'item_officer_cap', anchor: 'body' },
   glasses: { loose: false },
   gradcap: { loose: true },
   headphones: { loose: true },
@@ -76,7 +80,7 @@ const ITEMS: Record<string, { loose: boolean; layer?: string; at?: [number, numb
   sport_sneakers: { loose: false, layer: 'item_sport_sneakers', at: [-6, -14], anchor: 'body' },
 };
 /** хэд хэдэн item-ийг хамт өмсөх хувцасны карт (доороос дээш дарааллаар) */
-const COMBOS: Record<string, string[]> = { batman: ['batman_suit', 'batman_mask'], mongol: ['mongol_deel', 'mongol_boots', 'mongol_hat'], puss: ['puss_cape', 'brown_boots', 'puss_belt', 'puss_hat'],
+const COMBOS: Record<string, string[]> = { officer: ['officer_coat', 'officer_cap'], batman: ['batman_suit', 'batman_mask'], mongol: ['mongol_deel', 'mongol_boots', 'mongol_hat'], puss: ['puss_cape', 'brown_boots', 'puss_belt', 'puss_hat'],
   sport: ['sport_sneakers', 'sport_shorts', 'sport_hoodie'],
   pirate: ['pirate_shirt', 'pirate_boots', 'pirate_hat', 'pirate_sword'], // the boots go over the trousers
   wizard: ['wizard_robe', 'glasses', 'wizard_wand'],
@@ -1002,6 +1006,7 @@ function headbandPixels(img: Img, head: [number, number], ninja = false): Img {
 }
 
 function fitOn(id: string, img: Img, head: [number, number], hands: [number, number][], sleeping: boolean, deel = false): Img {
+  if ((PROFESSIONAL_IDS as readonly string[]).includes(id)) return professionalPixels(id, img, head, hands, sleeping);
   if (id === 'brown_boots') return fittedBootFrame(img);
   if (id === 'headband' || id === 'ninja_headband') return headbandPixels(img, head, id === 'ninja_headband');
   if (id === 'mongol_boots') return sleeping ? blank(img.w, img.h) : mongolBootPixels(img, deel ? head[1] + DEEL.hem - HEAD[1] : 0);
@@ -1308,7 +1313,7 @@ if (preview < 0) {
       writePng(new URL(`outfit_${id}.png`, SPRITES), deelBase(REF, [HEAD[0], HEAD[1]], IDLE_HANDS));
       continue;
     }
-    const card = id === 'warrior_helmet' ? helmetBase(REF, [HEAD[0], HEAD[1]]) : id === 'white_headscarf' ? clone(PLAIN) : id === 'brown_boots' ? bootsBase(REF) : clone(REF);
+    const card = id === 'doctor_coat' || id === 'officer_coat' ? professionalBase(REF, [HEAD[0], HEAD[1]], IDLE_HANDS) : id === 'warrior_helmet' ? helmetBase(REF, [HEAD[0], HEAD[1]]) : id === 'white_headscarf' ? clone(PLAIN) : id === 'brown_boots' ? bootsBase(REF) : clone(REF);
     if (id === 'brown_boots') {
       overlay(card, fittedBootFrame(REF), 0, 0);
       writePng(new URL(`outfit_${id}.png`, SPRITES), card);
@@ -1329,7 +1334,7 @@ if (preview < 0) {
     writePng(new URL(`outfit_${id}.png`, SPRITES), card);
   }
   for (const [id, worn] of Object.entries(COMBOS)) {
-    const card = worn.includes('mongol_deel') ? deelBase(REF, [HEAD[0], HEAD[1]], IDLE_HANDS) : worn.includes('brown_boots') ? bootsBase(REF) : worn.includes('warrior_helmet') ? helmetBase(REF, [HEAD[0], HEAD[1]]) : clone(REF);
+    const card = worn.includes('doctor_coat') || worn.includes('officer_coat') ? professionalBase(REF, [HEAD[0], HEAD[1]], IDLE_HANDS) : worn.includes('mongol_deel') ? deelBase(REF, [HEAD[0], HEAD[1]], IDLE_HANDS) : worn.includes('brown_boots') ? bootsBase(REF) : worn.includes('warrior_helmet') ? helmetBase(REF, [HEAD[0], HEAD[1]]) : clone(REF);
     for (const w of worn)
       if (w === 'brown_boots') overlay(card, fittedBootFrame(REF), 0, 0);
       else if (ITEMS[w].anchor === 'body') overlay(card, fitOn(w, REF, [HEAD[0], HEAD[1]], IDLE_HANDS, false, worn.includes('mongol_deel')), 0, 0);
@@ -1345,6 +1350,8 @@ if (preview < 0) {
     writePng(new URL(`bear_batman_base_${name}.png`, SPRITES), toSheet(suited, STATES[name].cols ?? frames.length));
     const deel = frames.map((f, i) => ({ ...f, img: deelBase(f.img, heads[i], [handAt(f.img, HANDS[name][i]), handAt(f.img, SHIELD_HANDS[name][i])]) }));
     writePng(new URL(`bear_deel_base_${name}.png`, SPRITES), toSheet(deel, STATES[name].cols ?? frames.length));
+    const professional = frames.map((f, i) => ({ ...f, img: professionalBase(f.img, heads[i], bothPaws(name, i, f.img, heads[i])) }));
+    writePng(new URL(`bear_professional_base_${name}.png`, SPRITES), toSheet(professional, STATES[name].cols ?? frames.length));
     const scarfFree = frames.map((f, i) => ({ ...f, img: headscarfBase(f.img, heads[i]) }));
     writePng(new URL(`bear_headscarf_base_${name}.png`, SPRITES), toSheet(scarfFree, STATES[name].cols ?? frames.length));
     const shod = frames.map((f) => ({ ...f, img: bootsBase(f.img) }));
@@ -1354,7 +1361,7 @@ if (preview < 0) {
   const deelCard = deelBase(REF, [HEAD[0], HEAD[1]], IDLE_HANDS);
   items.mongol_deel.img = blank(REF.w, REF.h);
   for (let p = 0; p < REF.w * REF.h * 4; p += 4) if (!sameAt(deelCard, REF, p)) items.mongol_deel.img.d.set(deelCard.d.subarray(p, p + 4), p);
-  for (const id of [...SPORT_IDS, ...PIRATE_IDS, ...WIZARD_IDS, ...DEMON_IDS, ...NINJA_IDS, ...STRAW_IDS, 'mongol_boots', 'headband', 'ninja_headband']) items[id].img = fitOn(id, REF, [HEAD[0], HEAD[1]], IDLE_HANDS, false);
+  for (const id of [...SPORT_IDS, ...PIRATE_IDS, ...WIZARD_IDS, ...DEMON_IDS, ...NINJA_IDS, ...STRAW_IDS, ...PROFESSIONAL_IDS, 'mongol_boots', 'headband', 'ninja_headband']) items[id].img = fitOn(id, REF, [HEAD[0], HEAD[1]], IDLE_HANDS, false);
   for (const [id, { img }] of Object.entries(items)) writePng(new URL(`item_${id}.png`, SPRITES), img);
   const heldSheets: Record<string, Record<string, string>> = {};
   for (const id of HELD_IDS) {
@@ -1373,7 +1380,7 @@ if (preview < 0) {
     writePng(new URL(`held_paw_${name}.png`, SPRITES), toSheet(frames.map((f, i) => ({ ...f, img: heldFrame(name, i, f.img, 'staff00', true) })), STATES[name].cols ?? frames.length));
   // fitted overlays: one sheet per state, the item drawn on that frame's own body
   const fittedSheets: Record<string, Record<string, string>> = {};
-  for (const id of ['brown_boots', 'mongol_boots', 'mongol_boots_deel', 'headband', 'ninja_headband', ...SPORT_IDS, ...PIRATE_IDS, ...WIZARD_IDS, ...DEMON_IDS, ...NINJA_IDS, ...STRAW_IDS]) {
+  for (const id of ['brown_boots', 'mongol_boots', 'mongol_boots_deel', 'headband', 'ninja_headband', ...SPORT_IDS, ...PIRATE_IDS, ...WIZARD_IDS, ...DEMON_IDS, ...NINJA_IDS, ...STRAW_IDS, ...PROFESSIONAL_IDS]) {
     fittedSheets[id] = {};
     for (const [name, { frames, heads }] of Object.entries(sheets)) {
       const cols = STATES[name].cols ?? frames.length;
