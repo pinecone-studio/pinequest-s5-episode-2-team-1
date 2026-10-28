@@ -1,7 +1,7 @@
 import type { AnswerResponse, FlagResponse, Subject, TaskDto, TaskResult } from '@shared/types';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { type ComponentRef, useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeInDown, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -208,6 +208,12 @@ export default function TaskScreen() {
   const panelH =
     foe || !bodyH ? panelFull : Math.max(PANEL_MIN + insets.top, Math.min(panelFull, windowH - bodyH - insets.bottom - 24));
   const panelStyle = useAnimatedStyle(() => ({ height: withTiming(panelH, { duration: 260 }) }), [panelH]);
+  // Самбар доод хэмжээндээ хүрсэн ч урт асуулт, тайлбар багтахгүй бол «Үргэлжлүүлэх» харагдтал доош гүйлгэнэ;
+  // дараагийн асуулт дээрээсээ эхэлнэ.
+  const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
+  useEffect(() => {
+    scroll.current?.scrollTo({ y: 0, animated: false });
+  }, [index]);
 
   if (showScore && practiceScore !== null) return <PracticeResultView correct={practiceScore} total={total} onAgain={load} />;
   // Шагналаа (XP, шат, streak) эхлээд харуулна; салаа зам нээгдсэн бол тэндээс шууд руу нь орно
@@ -255,7 +261,12 @@ export default function TaskScreen() {
 
   return (
     <View style={styles.root}>
-      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 24 }} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        ref={scroll}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 24 }}
+        showsVerticalScrollIndicator={false}
+        onContentSizeChange={() => feedback && scroll.current?.scrollToEnd({ animated: true })}
+      >
         <Animated.View style={[styles.panel, { paddingTop: insets.top }, panelStyle, { backgroundColor: foe ? colors.indigo : LESSON_WALL }]}>
           {foe ? (
             <BossArena
