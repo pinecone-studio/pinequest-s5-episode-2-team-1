@@ -5,9 +5,9 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { type ReactNode, useEffect } from 'react';
+import { ActivityIndicator, Platform, StyleSheet, Text, View } from 'react-native';
+import { type EdgeInsets, SafeAreaInsetsContext, SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { ConfirmHost } from '@/components/ConfirmHost';
@@ -49,20 +49,33 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <AuthProvider>
-        <PixelBearProvider>
-          <StatusBar style="dark" />
-          {/* Том дэлгэц (tablet / web) дээр 430px-ийн багана голлоно */}
-          <View style={styles.outer}>
-            <View style={styles.column}>
-              <RootNavigator />
-              <ConfirmHost />
+      <WebInsets>
+        <AuthProvider>
+          <PixelBearProvider>
+            <StatusBar style="dark" />
+            {/* Том дэлгэц (tablet / web) дээр 430px-ийн багана голлоно */}
+            <View style={styles.outer}>
+              <View style={styles.column}>
+                <RootNavigator />
+                <ConfirmHost />
+              </View>
             </View>
-          </View>
-        </PixelBearProvider>
-      </AuthProvider>
+          </PixelBearProvider>
+        </AuthProvider>
+      </WebInsets>
     </SafeAreaProvider>
   );
+}
+
+const NO_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
+
+/**
+ * Вэб дээр safe-area inset үргэлж 0: хуудас `viewport-fit=cover`-гүй тул browser апп-ыг notch, home indicator-ийн
+ * доогуур зурдаггүй. Гэвч зарим app доторх browser (Instagram, Facebook) `env(safe-area-inset-top)`-ийг буруу мэдээлж
+ * дэлгэцийн дээд талд том хоосон зай гаргадаг байсан.
+ */
+function WebInsets({ children }: { children: ReactNode }) {
+  return Platform.OS === 'web' ? <SafeAreaInsetsContext.Provider value={NO_INSETS}>{children}</SafeAreaInsetsContext.Provider> : children;
 }
 
 function RootNavigator() {
