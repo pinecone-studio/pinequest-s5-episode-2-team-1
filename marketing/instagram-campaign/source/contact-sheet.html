@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<title>KUMA — кампанит ажил</title>
+<link rel="stylesheet" href="brand.css">
+<style>
+  html, body { width: 2400px; height: 2250px; background: var(--abyss); }
+  .sheet { position: relative; width: 2400px; height: 2250px; padding: 110px 136px; overflow: hidden;
+    background: radial-gradient(70% 60% at 50% 0%, #2a1780 0%, var(--night) 45%, var(--abyss) 100%); }
+  .head { display: flex; justify-content: space-between; align-items: flex-end; }
+  .head .wm { font-size: 150px; color: var(--lemon); }
+  .head h1 { font-size: 56px; margin-top: 26px; }
+  .head p { margin-top: 12px; font-size: 26px; color: rgba(255, 255, 255, 0.6); }
+  .kit { display: flex; flex-direction: column; align-items: flex-end; gap: 22px; }
+  .sw { display: flex; gap: 12px; }
+  .sw i { width: 64px; height: 64px; border-radius: 18px; box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.15); }
+  .type { display: flex; gap: 28px; align-items: baseline; font-size: 26px; color: rgba(255, 255, 255, 0.6); }
+  .type b { color: #fff; font-size: 44px; font-weight: 800; letter-spacing: -0.03em; }
+  .type .px { font-family: 'Pixelify'; color: var(--lemon); font-size: 44px; }
+  .grid { margin-top: 84px; display: grid; grid-template-columns: repeat(5, 1fr); gap: 40px; }
+  .grid figure { position: relative; }
+  .grid img { display: block; width: 100%; aspect-ratio: 4 / 5; border-radius: 14px; box-shadow: 0 40px 70px -30px rgba(0, 0, 0, 0.8), 0 0 0 1.5px rgba(255, 255, 255, 0.08); }
+  .grid figcaption { margin-top: 16px; display: flex; gap: 12px; font-size: 22px; font-weight: 700; color: rgba(255, 255, 255, 0.7); }
+  .grid figcaption b { font-family: 'Pixelify'; color: var(--lemon); }
+  .sheet::after { opacity: 0.05; }
+  .series { grid-column: span 2; align-self: center; padding: 0 20px; }
+  .series b { font-size: 40px; color: var(--lemon); }
+  .series h2 { margin-top: 12px; font-size: 56px; font-weight: 800; letter-spacing: -0.035em; }
+  .series p { margin-top: 16px; font-size: 26px; line-height: 1.4; color: rgba(255, 255, 255, 0.65); font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="sheet poster" style="width:2400px;height:2250px">
+  <div class="head">
+    <div>
+      <div class="wm wordmark">KUMA</div>
+      <h1 class="headline">Instagram кампанит ажил · 13 постер</h1>
+      <p class="body">6–12-р ангийн математик, тоглоом шиг. 1080 × 1350 · 4:5</p>
+    </div>
+    <div class="kit">
+      <div class="sw"><i style="background:#7a5cf5"></i><i style="background:#22106e"></i><i style="background:#f3f66c"></i><i style="background:#d4f55e"></i><i style="background:#f2cde0"></i><i style="background:#aeddf3"></i><i style="background:#efeee9"></i><i style="background:#19152e"></i></div>
+      <div class="type"><span><b>Onest</b> гарчиг, текст</span><span><span class="px">Pixelify</span> лого, тоо</span></div>
+    </div>
+  </div>
+  <div class="grid" id="grid"></div>
+</div>
+<script>
+  const posters = [
+    ['01', 'Танилц', '01-reveal'], ['02', 'Асуудал', '02-problem'], ['03', 'Шийдэл', '03-solution'], ['04', 'Сурах зам', '04-map'],
+    ['05', 'Тулаан', '05-duel'], ['06', 'Баавгай найз', '06-dress-up'], ['07', 'Хэрхэн', '07-how-it-works'], ['08', 'Өдөр тутам', '08-everyday'],
+    ['09', 'Яагаад KUMA', '09-textbook'], ['10', 'Эхэл', '10-cta'],
+    ['11', 'Баавгайгаас асуу', '11-tutor-ask'], ['12', 'Самбар дээр', '12-tutor-board'], ['13', 'Ээлжлэн ярина', '13-tutor-turns'],
+  ];
+  document.getElementById('grid').innerHTML = posters
+    .map(([n, t, f]) => `<figure><img src="../posters/${f}.png" alt=""><figcaption><b>${n}</b>${t}</figcaption></figure>`)
+    .join('') +
+    `<div class="series"><b class="pixel">11–13</b><h2>Баавгайтай ярилцах</h2><p>Алдсан бодлогоо баавгайтай дуугаар ярилцах хэсгийн цуврал. Дэлгэцүүдийг local апп дээр жинхэнэ Gemini Live ярилцлагаас авсан.</p></div>`;
+</script>
+</body>
+</html>

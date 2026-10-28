@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<title>07 — Хэрхэн ажилладаг</title>
+<link rel="stylesheet" href="../brand.css">
+<style>
+  .poster { background: var(--paper); color: var(--ink); --grain: 0.1; }
+  h1 { position: absolute; left: var(--margin); top: 132px; font-size: 104px; }
+  h1 span { color: var(--violet); }
+  .steps { position: absolute; left: var(--margin); right: var(--margin); top: 360px; display: flex; flex-direction: column; gap: 26px; }
+  .step { position: relative; height: 272px; border-radius: 36px; background: #fff; display: flex; align-items: center; padding: 0 36px; gap: 30px;
+    box-shadow: 0 2px 0 rgba(25, 21, 46, 0.06), 0 30px 60px -36px rgba(25, 21, 46, 0.35); overflow: hidden; }
+  .step:nth-child(2) { background: var(--indigo); color: #fff; }
+  .step:nth-child(3) { background: var(--lemon); }
+  .num { flex: none; width: 112px; height: 112px; border-radius: 26px; background: var(--ink); color: var(--lemon); display: grid; place-items: center; font-size: 76px; }
+  .step:nth-child(2) .num { background: var(--lemon); color: var(--ink); }
+  .txt { flex: none; width: 250px; }
+  .txt b { display: block; font-size: 40px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.02; }
+  .txt small { display: block; margin-top: 10px; font-size: 21px; font-weight: 600; opacity: 0.65; line-height: 1.3; }
+  .snip { position: relative; flex: none; width: 420px; border-radius: 22px; box-shadow: 0 24px 50px -18px rgba(25, 21, 46, 0.4); }
+  .step:nth-child(2) .snip { box-shadow: 0 24px 60px -18px rgba(0, 0, 0, 0.6), 0 0 0 1.5px rgba(255, 255, 255, 0.15); }
+</style>
+</head>
+<body>
+<div class="poster">
+  <header class="meta ink"><span class="mark">KUMA</span></header>
+  <h1 class="headline">Гуравхан <span>алхам.</span></h1>
+  <div class="steps">
+    <div class="step">
+      <div class="num pixel">1</div>
+      <div class="txt"><b>Ангиа сонго</b><small>6–12-р анги</small></div>
+      <div class="snip" data-src="onboarding-grade.png" data-crop="12 248 366 228"></div>
+    </div>
+    <div class="step">
+      <div class="num pixel">2</div>
+      <div class="txt"><b>5 асуулт бод</b><small>Сурах бичгийн сэдвээр</small></div>
+      <div class="snip" data-src="lesson-selected.png" data-crop="12 422 368 246" style="width:380px; margin-left:40px"></div>
+    </div>
+    <div class="step">
+      <div class="num pixel">3</div>
+      <div class="txt"><b>Шагналаа ав</b><small>XP, шагнал, дараалал</small></div>
+      <div class="snip" data-src="lesson-result.png" data-crop="14 548 362 96"></div>
+    </div>
+  </div>
+  <footer class="signoff ink"><span></span><span class="url">surgalt.pinequest-team1.workers.dev</span></footer>
+</div>
+<script src="../kit.js"></script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<title>06 — Баавгай найз</title>
+<link rel="stylesheet" href="../brand.css">
+<style>
+  .poster { background: radial-gradient(75% 60% at 68% 62%, #ffffff 0%, var(--pink) 42%, var(--lavender) 100%); color: var(--ink); --grain: 0.09; }
+  h1 { position: absolute; left: var(--margin); top: 140px; font-size: 112px; }
+  .sub { position: absolute; left: var(--margin); top: 392px; width: 470px; font-size: 28px; color: var(--muted); }
+  .disc { position: absolute; left: 470px; top: 560px; width: 560px; height: 560px; border-radius: 50%; background: var(--lemon);
+    box-shadow: 0 0 0 26px rgba(243, 246, 108, 0.35); }
+  .orbit { position: absolute; left: 330px; top: 420px; width: 840px; height: 840px; border-radius: 50%; border: 2.5px dashed rgba(25, 21, 46, 0.25); }
+  .bear { width: 360px; left: 570px; top: 590px; filter: drop-shadow(0 26px 30px rgba(25, 21, 46, 0.25)); }
+  .item { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+  .item img { image-rendering: pixelated; display: block; filter: drop-shadow(0 14px 16px rgba(25, 21, 46, 0.22)); }
+  .item span { font-size: 19px; font-weight: 700; background: #fff; padding: 8px 16px; border-radius: 999px; box-shadow: 0 6px 18px rgba(25, 21, 46, 0.12); white-space: nowrap; }
+  .snip.shop { width: 400px; left: var(--margin); top: 880px; border-radius: 30px; transform: rotate(-4deg); box-shadow: 0 40px 80px -20px rgba(25, 21, 46, 0.35), 0 0 0 8px #fff; }
+</style>
+</head>
+<body>
+<div class="poster">
+  <header class="meta ink"><span class="mark">KUMA</span></header>
+  <h1 class="headline">Баавгайгаа<br>хувцасла.</h1>
+  <p class="sub body">Даалгавраар цуглуулсан шагналаараа хувцас, дэвсгэр сонго.</p>
+  <div class="orbit"></div>
+  <div class="disc"></div>
+  <img class="sprite bear" src="../../assets/sprites/bear_idle_scarf.png" alt="">
+  <div class="item" style="left:610px; top:436px; transform: rotate(-6deg)"><img src="../../assets/sprites/item_gradcap.png" style="width:190px"><span>Төгсөгчийн малгай</span></div>
+  <div class="item" style="left:880px; top:600px; transform: rotate(8deg)"><img src="../../assets/sprites/item_headphones.png" style="width:150px"><span>Чихэвч</span></div>
+  <div class="item" style="left:870px; top:930px; transform: rotate(-5deg)"><img src="../../assets/sprites/item_glasses.png" style="width:150px"><span>Нүдний шил</span></div>
+  <div class="item" style="left:400px; top:560px; transform: rotate(-10deg)"><img src="../../assets/sprites/item_cowboy_hat.png" style="width:190px"><span>Ковбой малгай</span></div>
+  <div class="snip shop" data-src="shop-outfit.png" data-crop="10 478 370 264"></div>
+  <footer class="signoff ink"><span></span><span class="url">surgalt.pinequest-team1.workers.dev</span></footer>
+</div>
+<script src="../kit.js"></script>
+</body>
+</html>

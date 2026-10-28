@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<title>12 — Самбар дээр</title>
+<link rel="stylesheet" href="../brand.css">
+<style>
+  /* the tutor classroom's warm wall */
+  .poster { background: linear-gradient(180deg, #f8e2c2 0%, #f3d2a9 60%, #e8bf8c 100%); color: var(--ink); --grain: 0.1; }
+  /* floorboards */
+  .floor { top: auto; height: 300px; background:
+      repeating-linear-gradient(90deg, rgba(120, 72, 30, 0.16) 0 3px, transparent 3px 90px),
+      linear-gradient(180deg, #e2b675, #d29f5c); }
+  h1 { position: absolute; left: var(--margin); top: 132px; font-size: 104px; }
+  h1 span { color: #1f6b45; }
+  .snip.board { width: 936px; left: var(--margin); top: 412px; border-radius: 26px; box-shadow: 0 50px 90px -30px rgba(70, 40, 10, 0.55); }
+  .note { position: absolute; left: var(--margin); top: 360px; font-size: 22px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #7a4a1e; }
+  .tbear { width: 210px; left: 100px; top: 968px; filter: drop-shadow(0 20px 24px rgba(70, 40, 10, 0.4)); }
+  .sub { position: absolute; left: 380px; top: 1050px; width: 560px; font-size: 26px; color: #5a3a1c; }
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="layer floor"></div>
+  <header class="meta ink"><span class="mark">KUMA</span></header>
+  <h1 class="headline">Хэлснээ<br><span>самбарт бичнэ.</span></h1>
+  <span class="note">Жинхэнэ ярилцлагаас</span>
+  <div class="snip board" data-src="tutor-listen.png" data-crop="14 206 366 222"></div>
+  <img class="sprite tbear" src="../../assets/sprites/bear_cheer_scarf.png" alt="">
+  <p class="sub body">Баавгайн яриа самбар дээр шохойгоор бичигдэнэ. Сонсоод, дахин уншаад ойлго.</p>
+  <footer class="signoff ink"><span></span><span class="url">surgalt.pinequest-team1.workers.dev</span></footer>
+</div>
+<script src="../kit.js"></script>
+</body>
+</html>

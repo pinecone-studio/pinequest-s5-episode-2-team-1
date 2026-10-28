@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<title>KUMA — профайл зураг (баавгай)</title>
+<link rel="stylesheet" href="../brand.css">
+<style>
+  /* 1080×1080; Instagram shows it as a circle, so everything important sits inside the inscribed circle */
+  html, body, .poster { width: 1080px; height: 1080px; }
+  .poster { background: radial-gradient(60% 60% at 50% 42%, #a48dff 0%, var(--violet) 48%, #5a3fd6 100%); --grain: 0.06; }
+  .glow { position: absolute; left: 50%; top: 46%; width: 760px; height: 760px; transform: translate(-50%, -50%); border-radius: 50%;
+    background: radial-gradient(circle, rgba(243, 246, 108, 0.55) 0%, rgba(243, 246, 108, 0.14) 46%, transparent 70%); }
+  .bear { width: 860px; left: 110px; top: 150px; filter: drop-shadow(0 24px 30px rgba(34, 16, 110, 0.45)); }
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="glow"></div>
+  <img class="sprite bear" src="../../assets/sprites/avatar_brown_laugh_plain.png" alt="">
+</div>
+</body>
+</html>

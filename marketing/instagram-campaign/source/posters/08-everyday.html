@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<title>08 — Өдөр тутам</title>
+<link rel="stylesheet" href="../brand.css">
+<style>
+  /* afternoon → night: the day of a student */
+  .poster { background: linear-gradient(180deg, #bfe4f6 0%, #f6d8e6 34%, #9c86f2 64%, var(--indigo) 86%, var(--night) 100%); color: var(--ink); }
+  .sun { position: absolute; left: 760px; top: 260px; width: 300px; height: 300px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(243, 246, 108, 0.95) 0%, rgba(243, 246, 108, 0.5) 35%, transparent 68%); }
+  h1 { position: absolute; left: var(--margin); top: 132px; font-size: 110px; }
+  .line { position: absolute; left: 128px; top: 470px; width: 4px; height: 640px; background: linear-gradient(to bottom, var(--ink), #fff); opacity: 0.35; border-radius: 2px; }
+  .stop { position: absolute; left: var(--margin); display: flex; align-items: center; gap: 26px; }
+  .stop .pic { flex: none; width: 116px; height: 116px; border-radius: 30px; background: #fff; overflow: hidden; display: grid; place-items: center;
+    box-shadow: 0 20px 40px -16px rgba(25, 21, 46, 0.45); }
+  .stop .pic img { image-rendering: pixelated; display: block; }
+  .stop b { display: block; font-size: 38px; font-weight: 800; letter-spacing: -0.03em; }
+  .stop small { display: block; margin-top: 6px; font-size: 22px; font-weight: 600; opacity: 0.7; }
+  .stop.night { color: #fff; }
+  .stop.night .pic { background: var(--violet); }
+  .phone.home { --pw: 340px; left: 660px; top: 380px; transform: rotate(5deg); }
+  .sub { position: absolute; left: var(--margin); right: var(--margin); bottom: 116px; font-size: 28px; color: rgba(255, 255, 255, 0.85); }
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="sun"></div>
+  <header class="meta ink"><span class="mark">KUMA</span></header>
+  <h1 class="headline">Өдөрт нэг<br>даалгавар.</h1>
+  <div class="line"></div>
+  <div class="stop" style="top:470px"><div class="pic"><img src="../../assets/sprites/classroom.png" style="width:116px; height:116px; object-fit:cover; object-position:50% 28%"></div><div><b>Хичээл тарлаа</b><small>Сургуулийн дараа</small></div></div>
+  <div class="stop" style="top:720px"><div class="pic" style="background:var(--lemon)"><span style="font-size:70px; font-weight:800; letter-spacing:-0.04em">5</span></div><div><b>5 асуулт</b><small>Нэг богино даалгавар</small></div></div>
+  <div class="stop night" style="top:970px"><div class="pic"><img src="../../assets/sprites/icon_flame.png" style="width:70px"></div><div><b>Дараалал +1</b><small>Баавгай чинь баяртай</small></div></div>
+  <div class="phone home" data-src="home.png"></div>
+  <p class="sub body">Өдөр алгасахгүй бол баавгай чинь өсөж, дараалал чинь нэмэгдэнэ.</p>
+  <footer class="signoff" style="color:#fff"><span></span><span class="url">surgalt.pinequest-team1.workers.dev</span></footer>
+</div>
+<script src="../kit.js"></script>
+</body>
+</html>

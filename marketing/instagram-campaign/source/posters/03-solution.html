@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<title>03 — Шийдэл</title>
+<link rel="stylesheet" href="../brand.css">
+<style>
+  .poster { background: radial-gradient(90% 70% at 85% 60%, #9b84ff 0%, var(--violet) 45%, #5a3fd6 100%); }
+  .five { position: absolute; left: -70px; top: 400px; font-family: 'Onest'; font-weight: 800; font-size: 1000px; line-height: 0.8; letter-spacing: -0.06em; color: var(--lemon);
+    text-shadow: 18px 18px 0 var(--indigo); }
+  h1 { position: absolute; left: var(--margin); top: 140px; font-size: 104px; z-index: 5; }
+  .phone.p { --pw: 400px; left: 560px; top: 330px; transform: rotate(4deg); z-index: 3; }
+  .snip.card { width: 600px; left: 360px; top: 868px; z-index: 6; border-radius: 30px; transform: rotate(-3deg);
+    box-shadow: 0 0 0 6px var(--lemon), 0 50px 90px -20px rgba(20, 8, 70, 0.6); }
+  .sub { position: absolute; left: var(--margin); bottom: 120px; z-index: 7; display: flex; flex-direction: column; gap: 14px; }
+  .sub .chip { height: 60px; font-size: 26px; }
+  .shade { top: auto; height: 340px; background: linear-gradient(to bottom, transparent, rgba(34, 16, 110, 0.75)); z-index: 4; }
+</style>
+</head>
+<body>
+<div class="poster">
+  <header class="meta"><span class="mark lemon">KUMA</span></header>
+  <div class="five">5</div>
+  <h1 class="headline">Өдөр бүр<br>5 асуулт.</h1>
+  <div class="phone p" data-src="lesson-correct.png" data-sb="#4a37a6" data-dark></div>
+  <div class="layer shade"></div>
+  <div class="snip card" data-src="lesson-correct.png" data-crop="12 578 366 104"></div>
+  <div class="sub">
+    <span class="chip ink">Богино даалгавар</span>
+    <span class="chip solid">Хариулт бүрийн дараа тайлбар</span>
+  </div>
+  <footer class="signoff"><span></span><span class="url">surgalt.pinequest-team1.workers.dev</span></footer>
+</div>
+<script src="../kit.js"></script>
+</body>
+</html>

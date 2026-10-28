@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<title>01 — Танилц</title>
+<link rel="stylesheet" href="../brand.css">
+<style>
+  .poster { background: radial-gradient(120% 70% at 50% 18%, #3b23a8 0%, var(--night) 42%, var(--abyss) 78%); }
+  /* light cone from above */
+  .beam { background: conic-gradient(from 180deg at 50% -8%, transparent 162deg, rgba(160, 140, 255, 0.28) 176deg, rgba(243, 246, 108, 0.16) 180deg, rgba(160, 140, 255, 0.28) 184deg, transparent 198deg); filter: blur(12px); }
+  /* pixel horizon grid */
+  .floor { top: auto; height: 420px; bottom: 0;
+    background:
+      linear-gradient(to bottom, var(--abyss) 0%, transparent 40%),
+      repeating-linear-gradient(90deg, rgba(122, 92, 245, 0.22) 0 2px, transparent 2px 60px),
+      repeating-linear-gradient(0deg, rgba(122, 92, 245, 0.22) 0 2px, transparent 2px 60px);
+    transform: perspective(500px) rotateX(58deg); transform-origin: 50% 100%; opacity: 0.55; }
+  .word { position: absolute; left: 0; right: 0; top: 128px; text-align: center; font-size: 320px; color: var(--lemon); }
+  .word-glow { color: transparent; filter: blur(46px); opacity: 0.55; -webkit-text-stroke: 26px var(--lemon); }
+  .halo { position: absolute; left: 50%; top: 380px; width: 720px; height: 720px; transform: translateX(-50%); border-radius: 50%;
+    background: radial-gradient(circle, rgba(122, 92, 245, 0.75) 0%, rgba(122, 92, 245, 0.18) 45%, transparent 68%); }
+  .phone.hero { --pw: 360px; left: 372px; top: 340px; transform: perspective(2400px) rotateY(-10deg) rotateX(4deg) rotateZ(2deg); }
+  .bear { width: 270px; left: 168px; top: 600px; filter: drop-shadow(0 30px 40px rgba(5, 2, 20, 0.6)); }
+  .copy { position: absolute; left: var(--margin); right: var(--margin); bottom: 112px; text-align: center; z-index: 10; }
+  .copy h1 { font-size: 84px; }
+  .copy p { margin-top: 18px; font-size: 28px; color: rgba(255, 255, 255, 0.78); }
+  .fade { top: auto; height: 470px; background: linear-gradient(to bottom, transparent, rgba(11, 6, 38, 0.94) 48%, var(--abyss)); z-index: 5; }
+  .eyebrow-chip { position: absolute; top: 112px; left: 50%; transform: translateX(-50%); z-index: 10; }
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="layer beam"></div>
+  <div class="layer floor"></div>
+  <header class="meta"><span class="mark lemon">KUMA</span></header>
+  <div class="word wordmark word-glow">KUMA</div>
+  <div class="word wordmark">KUMA</div>
+  <div class="halo"></div>
+  <div class="phone hero" data-src="path.png" data-sb="#2b1457" data-dark></div>
+  <img class="sprite bear" src="../../assets/sprites/bear_cheer_scarf.png" alt="">
+  <div class="layer fade"></div>
+  <div class="copy">
+    <h1 class="headline">Математик.<br><span class="lemon">Тоглоом шиг.</span></h1>
+    <p class="body">6–12-р ангийн сурах бичгийн сэдвүүд, баавгай найзтайгаа.</p>
+  </div>
+  <footer class="signoff"><span>Хөтөч дээр шууд нээгдэнэ</span><span class="url">surgalt.pinequest-team1.workers.dev</span></footer>
+</div>
+<script src="../kit.js"></script>
+</body>
+</html>

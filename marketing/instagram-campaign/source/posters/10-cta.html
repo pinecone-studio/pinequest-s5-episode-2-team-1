@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<title>10 — Эхэл</title>
+<link rel="stylesheet" href="../brand.css">
+<style>
+  .poster { background: radial-gradient(80% 55% at 50% 52%, #a48dff 0%, var(--violet) 38%, #4a2fc4 78%, var(--indigo) 100%); }
+  .rays { background: repeating-conic-gradient(from 0deg at 50% 56%, rgba(255, 255, 255, 0.07) 0deg 6deg, transparent 6deg 18deg);
+    -webkit-mask-image: radial-gradient(60% 50% at 50% 56%, #000 0%, transparent 100%); }
+  .word { position: absolute; left: 0; right: 0; top: 130px; text-align: center; font-size: 250px; color: var(--lemon); text-shadow: 10px 10px 0 var(--indigo); }
+  .phone.l { --pw: 320px; left: 130px; top: 470px; transform: rotate(-12deg); }
+  .phone.r { --pw: 320px; right: 130px; top: 470px; transform: rotate(12deg); }
+  .glow { position: absolute; left: 50%; top: 520px; width: 640px; height: 640px; transform: translateX(-50%); border-radius: 50%;
+    background: radial-gradient(circle, rgba(243, 246, 108, 0.55) 0%, rgba(243, 246, 108, 0.12) 45%, transparent 70%); }
+  .bear { width: 330px; left: 375px; top: 430px; filter: drop-shadow(0 30px 40px rgba(20, 8, 70, 0.55)); }
+  .fade { top: auto; height: 600px; background: linear-gradient(to bottom, transparent 0%, rgba(34, 16, 110, 0.85) 30%, rgba(34, 16, 110, 0.97) 50%, var(--indigo)); }
+  .cta { position: absolute; left: 0; right: 0; bottom: 196px; display: flex; flex-direction: column; align-items: center; gap: 24px; }
+  .cta h1 { font-size: 84px; text-align: center; }
+  .btn { display: inline-flex; align-items: center; gap: 18px; height: 92px; padding: 0 48px; border-radius: 999px; background: var(--lemon); color: var(--ink);
+    font-size: 32px; font-weight: 800; letter-spacing: -0.01em; box-shadow: 0 8px 0 var(--ink), 0 30px 60px -10px rgba(243, 246, 108, 0.45); }
+  .btn .arr { font-size: 36px; }
+  .foot { position: absolute; left: 0; right: 0; bottom: 74px; text-align: center; font-size: 22px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.7); }
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="layer rays"></div>
+  <header class="meta"><span class="mark lemon">KUMA</span></header>
+  <div class="word wordmark">KUMA</div>
+  <div class="phone l" data-src="lesson-result.png" data-sb="#22106e" data-dark></div>
+  <div class="phone r" data-src="path-popup.png" data-sb="#2b1457" data-dark></div>
+  <div class="glow"></div>
+  <img class="sprite bear" src="../../assets/sprites/bear_cheer_scarf.png" alt="">
+  <div class="layer fade"></div>
+  <div class="cta">
+    <h1 class="headline">Өнөөдөр эхэл.</h1>
+    <span class="btn">surgalt.pinequest-team1.workers.dev <span class="arr">→</span></span>
+  </div>
+  <div class="foot">6–12-р анги · Математик</div>
+</div>
+<script src="../kit.js"></script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<title>05 — Тулаан</title>
+<link rel="stylesheet" href="../brand.css">
+<style>
+  .poster { background: var(--ink); }
+  .half { background: var(--lemon); clip-path: polygon(0 0, 100% 0, 100% 46%, 0 64%); }
+  .vs { position: absolute; left: 0; right: 0; top: 600px; text-align: center; font-size: 300px; line-height: 0.8; color: var(--violet);
+    -webkit-text-stroke: 0; text-shadow: 12px 12px 0 var(--ink); z-index: 4; transform: rotate(-8deg); }
+  h1 { position: absolute; left: var(--margin); top: 128px; font-size: 128px; color: var(--ink); }
+  .meta.ink, .meta.ink .mark { color: var(--ink); }
+  .phone.a { --pw: 330px; left: 70px; top: 470px; transform: rotate(-9deg); z-index: 3; }
+  .phone.b { --pw: 330px; right: 70px; top: 520px; transform: rotate(8deg); z-index: 3; }
+  .sub { position: absolute; left: var(--margin); right: var(--margin); bottom: 120px; z-index: 6; font-size: 30px; text-align: center; }
+  .fade { top: auto; height: 420px; background: linear-gradient(to bottom, transparent, rgba(25, 21, 46, 0.96) 60%); z-index: 5; }
+  .code { position: absolute; z-index: 6; left: 50%; bottom: 190px; transform: translateX(-50%); display: flex; gap: 10px; }
+  .code b { width: 64px; height: 84px; border-radius: 16px; background: rgba(255, 255, 255, 0.08); border: 2px solid rgba(255, 255, 255, 0.2);
+    display: grid; place-items: center; font-size: 52px; color: var(--lemon); }
+  .invite { position: absolute; left: 420px; top: 316px; transform: rotate(-3deg); }
+  .lead { position: absolute; right: var(--margin); top: 168px; width: 300px; font-size: 26px; color: var(--ink); text-align: right; }
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="layer half"></div>
+  <header class="meta ink"><span class="mark">KUMA</span></header>
+  <h1 class="headline">Найзтайгаа<br>1v1.</h1>
+  <span class="chip ink invite">6 оронтой кодоор нэгдэнэ</span>
+  <div class="phone a" data-src="duel-q1.png"></div>
+  <div class="phone b" data-src="duel-result.png"></div>
+  <div class="vs pixel">VS</div>
+  <div class="layer fade"></div>
+  <p class="sub body">Кодоо хуваалцаад, ижил асуултаар хэн нь түрүүлэхийг шалга.</p>
+  <footer class="signoff"><span></span><span class="url">surgalt.pinequest-team1.workers.dev</span></footer>
+</div>
+<script src="../kit.js"></script>
+</body>
+</html>

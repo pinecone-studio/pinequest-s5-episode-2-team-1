@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<title>02 — Асуудал</title>
+<link rel="stylesheet" href="../brand.css">
+<style>
+  .poster { background: var(--paper); color: var(--ink); --grain: 0.1; }
+  /* an endless exercise list, the visual metaphor */
+  .drill { position: absolute; left: var(--margin); right: var(--margin); top: 640px; display: grid; grid-template-columns: repeat(4, 1fr); right: 470px; row-gap: 20px;
+    font-size: 26px; font-weight: 600; color: var(--muted); letter-spacing: 0.01em;
+    -webkit-mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, 0.5) 45%, transparent 92%); }
+  .drill span { display: flex; align-items: center; gap: 12px; }
+  .drill span::before { content: ''; width: 18px; height: 18px; border: 2.5px solid currentColor; border-radius: 5px; opacity: 0.6; }
+  .drill span.done::before { background: var(--muted); }
+  h1 { position: absolute; left: var(--margin); top: 150px; font-size: 128px; line-height: 1.02; }
+  h1 .l2 { color: rgba(25, 21, 46, 0.5); }
+  h1 .l3 { color: rgba(25, 21, 46, 0.22); }
+  .bear { width: 400px; right: 40px; bottom: 150px; }
+  .zzz { position: absolute; right: 96px; top: 560px; font-size: 64px; color: var(--violet); transform: rotate(-8deg); }
+  .zzz span { display: inline-block; }
+  .zzz span:nth-child(2) { font-size: 0.75em; transform: translate(-4px, -34px); }
+  .zzz span:nth-child(3) { font-size: 0.55em; transform: translate(-8px, -62px); }
+  .note { position: absolute; left: var(--margin); bottom: 150px; width: 520px; font-size: 46px; }
+  .mark { background: linear-gradient(transparent 58%, var(--lemon) 58%, var(--lemon) 92%, transparent 92%); padding: 0 4px; }
+  .rule { position: absolute; left: var(--margin); right: var(--margin); top: 108px; height: 2px; background: var(--ink); opacity: 0.12; }
+</style>
+</head>
+<body>
+<div class="poster">
+  <header class="meta ink"><span class="mark-logo pixel" style="font-size:34px">KUMA</span></header>
+  <h1 class="display">Нэг дасгал.<br><span class="l2">Дахиад нэг.</span><br><span class="l3">Дахиад…</span></h1>
+  <div class="drill" id="drill"></div>
+  <div class="zzz pixel"><span>Z</span><span>z</span><span>z</span></div>
+  <img class="sprite bear" src="../../assets/sprites/bear_sleep.png" alt="">
+  <p class="note headline">Давтлага ийм уйтгартай <span class="mark">байх ёсгүй.</span></p>
+  <footer class="signoff ink"><span>Тэгвэл яах вэ? →</span><span class="url">surgalt.pinequest-team1.workers.dev</span></footer>
+</div>
+<script>
+  // exercise numbers "1.1 … 4.12": a long, unfinished list
+  const d = document.getElementById('drill');
+  let n = 0;
+  for (let ch = 1; ch <= 3; ch++) for (let i = 1; i <= 12; i++) {
+    const s = document.createElement('span');
+    s.textContent = `${ch}.${i}`;
+    if (n++ < 3) s.className = 'done';
+    d.appendChild(s);
+  }
+</script>
+<script src="../kit.js"></script>
+</body>
+</html>

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<title>13 — Ээлжлэн ярина</title>
+<link rel="stylesheet" href="../brand.css">
+<style>
+  .poster { background: radial-gradient(100% 60% at 50% 70%, #3b23a8 0%, var(--night) 50%, var(--abyss) 100%); }
+  h1 { position: absolute; left: 0; right: 0; top: 136px; text-align: center; font-size: 112px; }
+  h1 .a { color: #fff; } h1 .b { color: var(--lime); } h1 .c { color: var(--lemon); }
+  .sub { position: absolute; left: 140px; right: 140px; top: 268px; text-align: center; font-size: 28px; color: rgba(255, 255, 255, 0.75); }
+  .phone.s1 { --pw: 300px; left: 52px; top: 470px; transform: rotate(-7deg); }
+  .phone.s2 { --pw: 330px; left: 375px; top: 410px; z-index: 2; }
+  .phone.s3 { --pw: 300px; right: 52px; top: 470px; transform: rotate(7deg); }
+  .labels { position: absolute; left: 40px; right: 40px; top: 1180px; display: grid; grid-template-columns: 1fr 1fr 1fr; text-align: center; z-index: 5; }
+  .labels div { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .labels b { font-family: 'Pixelify'; font-size: 30px; color: var(--lemon); }
+  .labels span { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; }
+  .fade { top: auto; height: 380px; background: linear-gradient(to bottom, transparent, rgba(11, 6, 38, 0.9) 45%, var(--abyss)); z-index: 4; }
+</style>
+</head>
+<body>
+<div class="poster">
+  <header class="meta"><span class="mark lemon">KUMA</span></header>
+  <h1 class="headline"><span class="a">Ярь.</span> <span class="b">Сонс.</span> <span class="c">Ойлго.</span></h1>
+  <p class="sub body">Баавгай ярьж дуусмагц чиний ээлж. Хүссэн үедээ «Би ярья» гээд тасалж асуу.</p>
+  <div class="phone s1" data-src="tutor-curtain.png" data-sb="#1e4a24" data-dark></div>
+  <div class="phone s2" data-src="tutor-answer.png" data-sb="#f3d2a9"></div>
+  <div class="phone s3" data-src="tutor-listen.png" data-sb="#f3d2a9"></div>
+  <div class="layer fade"></div>
+  <div class="labels">
+    <div><b>01</b><span>Баавгай бэлдэнэ</span></div>
+    <div><b>02</b><span>Тайлбарлана</span></div>
+    <div><b>03</b><span>Чиний ээлж</span></div>
+  </div>
+  <footer class="signoff" style="bottom:40px"><span></span><span class="url"></span></footer>
+</div>
+<script src="../kit.js"></script>
+</body>
+</html>

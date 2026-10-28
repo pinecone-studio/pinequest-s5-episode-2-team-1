@@ -1,0 +1,29 @@
+{
+  "name": "kuma-marketing-video",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "studio": "remotion studio",
+    "capture": "node scripts/capture.mjs",
+    "render": "remotion render KumaVertical out/kuma-promo-1080x1920.mp4",
+    "render:wide": "remotion render KumaWide out/kuma-promo-1920x1080.mp4",
+    "stills": "node scripts/stills.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/bundler": "^4.0.539",
+    "@remotion/cli": "4.0.539",
+    "@remotion/fonts": "^4.0.539",
+    "@remotion/renderer": "^4.0.539",
+    "@remotion/transitions": "^4.0.539",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "remotion": "4.0.539"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.2",
+    "playwright": "1.64.1",
+    "typescript": "5.9.3"
+  }
+}

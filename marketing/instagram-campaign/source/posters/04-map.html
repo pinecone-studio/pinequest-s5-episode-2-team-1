@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="mn">
+<head>
+<meta charset="utf-8">
+<title>04 — Сурах зам</title>
+<link rel="stylesheet" href="../brand.css">
+<style>
+  .poster { background: #2b1457; }
+  /* the real map, full bleed */
+  .snip.map { left: 0; top: 0; width: 1080px; border-radius: 0; box-shadow: none; transform: scale(1.06); transform-origin: 50% 40%; }
+  .vignette { background:
+      linear-gradient(to bottom, rgba(11, 6, 38, 0.95) 0%, rgba(11, 6, 38, 0.55) 26%, rgba(11, 6, 38, 0) 46%, rgba(11, 6, 38, 0) 58%, rgba(11, 6, 38, 0.9) 82%, var(--abyss) 100%),
+      radial-gradient(70% 50% at 50% 50%, transparent 40%, rgba(11, 6, 38, 0.55) 100%); }
+  h1 { position: absolute; left: var(--margin); top: 140px; font-size: 112px; }
+  .snip.pop { width: 600px; left: 400px; top: 520px; border-radius: 34px; transform: rotate(-2.5deg);
+    box-shadow: 0 60px 100px -20px rgba(5, 2, 20, 0.8), 0 0 0 2px rgba(255, 255, 255, 0.25), 0 0 120px rgba(122, 92, 245, 0.55); }
+  .tag { position: absolute; left: 360px; top: 470px; transform: rotate(-2.5deg); z-index: 3; }
+  .stages { position: absolute; left: var(--margin); right: var(--margin); bottom: 236px; display: flex; align-items: flex-end; gap: 14px; }
+  .stage { flex: 1; border-radius: 22px; padding: 22px 24px; background: rgba(255, 255, 255, 0.08); border: 1.5px solid rgba(255, 255, 255, 0.18); backdrop-filter: blur(16px); }
+  .stage b { display: block; font-size: 30px; font-weight: 800; letter-spacing: -0.02em; }
+  .stage small { display: block; margin-top: 6px; font-size: 20px; font-weight: 600; opacity: 0.7; }
+  .stage .steps { display: flex; gap: 6px; margin-bottom: 16px; }
+  .stage .steps i { width: 22px; height: 22px; background: rgba(255, 255, 255, 0.2); }
+  .stage .steps i.on { background: var(--lemon); }
+  .stage.boss { background: var(--lemon); color: var(--ink); border-color: var(--lemon); }
+  .stage.boss .steps i { background: var(--ink); }
+  .sub { position: absolute; left: var(--margin); right: var(--margin); bottom: 120px; font-size: 26px; color: rgba(255, 255, 255, 0.8); }
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="snip map" data-src="path.png" data-crop="0 146 390 487"></div>
+  <div class="layer vignette"></div>
+  <header class="meta"><span class="mark lemon">KUMA</span></header>
+  <h1 class="headline">Бүлэг бүр —<br><span class="lemon">адал явдал.</span></h1>
+  <span class="chip solid tag">Сурах бичгийн сэдэв</span>
+  <div class="snip pop" data-src="path-popup.png" data-crop="18 264 356 140"></div>
+  <div class="stages">
+    <div class="stage"><div class="steps"><i class="on"></i><i></i><i></i></div><b>Суурь</b><small>Эхлэл</small></div>
+    <div class="stage"><div class="steps"><i class="on"></i><i class="on"></i><i></i></div><b>Дунд</b><small>Ахиц</small></div>
+    <div class="stage"><div class="steps"><i class="on"></i><i class="on"></i><i class="on"></i></div><b>Ахисан</b><small>Сорил</small></div>
+    <div class="stage boss"><div class="steps"><i></i><i></i><i></i></div><b>Boss</b><small>Бүлгийн төгсгөл</small></div>
+  </div>
+  <p class="sub body">Сэдэв бүрийг Суурь, Дунд, Ахисан шатаар ахиж, бүлгийн төгсгөлд boss‑ыг ял.</p>
+  <footer class="signoff"><span></span><span class="url">surgalt.pinequest-team1.workers.dev</span></footer>
+</div>
+<script src="../kit.js"></script>
+</body>
+</html>

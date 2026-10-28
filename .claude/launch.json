@@ -1,0 +1,31 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "api",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "api", "run", "dev"],
+      "port": 8787
+    },
+    {
+      "name": "api-books",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "api",
+        "run",
+        "dev:books",
+        "--",
+        "--env-file",
+        "/private/tmp/claude-501/-Users-bileguudeiijilmurun-Desktop-pinequest-s5-episode-2-team-1/9f3044c2-8237-4ae7-a57d-e63c33ee8430/scratchpad/local-model.env"
+      ],
+      "port": 8787
+    },
+    {
+      "name": "web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "mobile", "run", "web"],
+      "port": 8081
+    }
+  ]
+}
