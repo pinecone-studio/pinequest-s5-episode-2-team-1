@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="mn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>KUMA · Шулмын хөдөлгөөн</title>
+  <style>
+    :root { color-scheme: dark; font-family: system-ui, sans-serif; background: #171125; color: #f7f2ff; }
+    * { box-sizing: border-box; }
+    body { max-width: 1050px; margin: auto; padding: 24px 18px 48px; }
+    h1 { font-size: clamp(26px, 5vw, 42px); margin: 0 0 8px; }
+    p { color: #d5cbe6; line-height: 1.5; margin: 0 0 22px; }
+    nav { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px; }
+    button { border: 1px solid #77658e; border-radius: 999px; background: #2e2242; color: #fff; padding: 11px 16px; min-height: 44px; font: inherit; font-weight: 650; cursor: pointer; }
+    button[aria-pressed="true"] { background: #8e71ff; border-color: #b8a6ff; color: #120b20; }
+    button:focus-visible { outline: 3px solid #f3f66c; outline-offset: 2px; }
+    .grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+    .card { border: 1px solid #4e3b67; border-radius: 20px; background: radial-gradient(circle at 50% 48%, #4b305c, #251a37 70%); padding: 14px; text-align: center; min-height: 365px; }
+    .card h2 { margin: 0; font-size: 18px; }
+    .stage { height: 315px; display: flex; align-items: center; justify-content: center; }
+    .stage img { height: 280px; width: auto; max-width: 100%; object-fit: contain; image-rendering: pixelated; }
+    footer { margin-top: 18px; color: #bbaecf; font-size: 14px; line-height: 1.5; }
+    @media (max-width: 680px) { .grid { grid-template-columns: 1fr; } .card { min-height: 330px; } .stage { height: 280px; } .stage img { height: 250px; } }
+    @media (prefers-reduced-motion: reduce) { .stage img { display: none; } .stage::after { content: 'Хөдөлгөөнийг системийн тохиргооноос асааж үзнэ үү'; color: #d5cbe6; } }
+  </style>
+</head>
+<body>
+  <h1>Шулмын хувцас</h1>
+  <p>PixelLab-аар хийсэн 7 хөдөлгөөнийг бор, хар, цагаан баавгай дээр зэрэг харьцуулж үзээрэй.</p>
+  <nav aria-label="Хөдөлгөөн">
+    <button type="button" data-state="thriving">Сэргэлэн</button>
+    <button type="button" data-state="happy">Баяртай</button>
+    <button type="button" data-state="tired">Ядарсан</button>
+    <button type="button" data-state="neglected">Гунигтай</button>
+    <button type="button" data-state="sleep">Унтах</button>
+    <button type="button" data-state="ouch">Өвдөх</button>
+    <button type="button" data-state="welcome">Мэндлэх</button>
+  </nav>
+  <main class="grid">
+    <section class="card"><h2>Бор</h2><div class="stage"><img id="brown" alt="Бор баавгайн шулмын хөдөлгөөн"></div></section>
+    <section class="card"><h2>Хар</h2><div class="stage"><img id="black" alt="Хар баавгайн шулмын хөдөлгөөн"></div></section>
+    <section class="card"><h2>Цагаан</h2><div class="stage"><img id="white" alt="Цагаан баавгайн шулмын хөдөлгөөн"></div></section>
+  </main>
+  <footer>Энэ нь хөдөлгөөний туршилтын үзүүлэн. Тулаан, хичээл, багшийн хөдөлгөөнд хувцас тааруулаагүй тул дэлгүүрт хараахан худалдаалахгүй.</footer>
+  <script>
+    const buttons = [...document.querySelectorAll('[data-state]')];
+    function show(state) {
+      for (const button of buttons) button.setAttribute('aria-pressed', String(button.dataset.state === state));
+      for (const fur of ['brown', 'black', 'white']) document.getElementById(fur).src = `previews/${state}-${fur}.png`;
+    }
+    for (const button of buttons) button.addEventListener('click', () => show(button.dataset.state));
+    show('happy');
+  </script>
+</body>
+</html>
