@@ -1,93 +1,9 @@
-import type { DuelOutcome, DuelPhase, RevealInfo, ServerMsg, Subject, WsPlayer, WsQuestion } from '@shared/types';
+import type { ServerMsg } from '@shared/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { openDuelSocket } from '@/api/client';
+import { type DuelView, initialDuelView, reduceDuelView } from '@/lib/duelView';
 
-export interface DuelView {
-  /** replaced: өөр төхөөрөмж энэ тулаанд орсон; failed: олон удаа оролдоод холбогдсонгүй. */
-  connection: 'connecting' | 'open' | 'reconnecting' | 'replaced' | 'failed';
-  phase: DuelPhase | null;
-  subject: Subject | null;
-  stake: number;
-  players: WsPlayer[];
-  question: WsQuestion | null;
-  /** Асуултын нийт хугацаа (timer bar-т). */
-  questionTotalMs: number;
-  myAnswer: { choice: number; correct: boolean } | null;
-  opponentWrong: boolean;
-  reveal: RevealInfo | null;
-  /** Одоогийн үе шатын төгсгөл (серверийн цагаар). */
-  deadline: number | null;
-  outcome: DuelOutcome | null;
-}
-
-const initial: DuelView = {
-  connection: 'connecting',
-  phase: null,
-  subject: null,
-  stake: 0,
-  players: [],
-  question: null,
-  questionTotalMs: 20_000,
-  myAnswer: null,
-  opponentWrong: false,
-  reveal: null,
-  deadline: null,
-  outcome: null,
-};
-
-function withScores(players: WsPlayer[], scores: Record<number, number>): WsPlayer[] {
-  return players.map((p) => ({ ...p, score: scores[p.id] ?? p.score }));
-}
-
-function reduce(v: DuelView, msg: ServerMsg): DuelView {
-  switch (msg.type) {
-    case 'state':
-      return {
-        ...v,
-        phase: msg.phase,
-        subject: msg.subject,
-        stake: msg.stake,
-        players: msg.players,
-        question: msg.question,
-        myAnswer: msg.myAnswer,
-        opponentWrong: false,
-        reveal: msg.reveal,
-        deadline: msg.deadline,
-        outcome: msg.outcome ?? v.outcome,
-      };
-    case 'presence':
-      return { ...v, players: v.players.map((p) => (p.id === msg.userId ? { ...p, connected: msg.connected } : p)) };
-    case 'countdown':
-      return { ...v, phase: 'countdown', deadline: msg.startsAt };
-    case 'question': {
-      const { type: _t, serverNow, ...question } = msg;
-      return {
-        ...v,
-        phase: 'question',
-        question,
-        questionTotalMs: Math.max(1, question.endsAt - serverNow),
-        myAnswer: null,
-        opponentWrong: false,
-        reveal: null,
-        deadline: question.endsAt,
-      };
-    }
-    case 'answer_result':
-      return v.question?.q === msg.q ? { ...v, myAnswer: { choice: msg.choice, correct: msg.correct } } : v;
-    case 'opponent_answered':
-      return v.question?.q === msg.q && !msg.correct ? { ...v, opponentWrong: true } : v;
-    case 'reveal': {
-      const { type: _t, nextAt, serverNow: _s, ...reveal } = msg;
-      return { ...v, phase: 'reveal', reveal, players: withScores(v.players, reveal.scores), deadline: nextAt };
-    }
-    case 'finished':
-      return { ...v, phase: 'finished', outcome: msg.outcome, players: withScores(v.players, msg.outcome.scores), deadline: null };
-    case 'cancelled':
-      return { ...v, phase: 'cancelled', outcome: msg.outcome, deadline: null };
-    default:
-      return v;
-  }
-}
+export type { DuelView };
 
 /** Нэг ч удаа нээгдээгүй дараалсан оролдлого (token хүчингүй, тоглогч биш гэх мэт) үүнээс хэтэрвэл зогсоно. */
 const MAX_FAILED_ATTEMPTS = 6;
@@ -99,7 +15,7 @@ const CLOSE_REPLACED = 4000;
  * snapshot илгээж одоогийн байдлыг сэргээнэ. Цагийн зөрүүг serverNow-оор засна.
  */
 export function useDuelSocket(duelId: number) {
-  const [view, setView] = useState<DuelView>(initial);
+  const [view, setView] = useState<DuelView>(initialDuelView);
   const wsRef = useRef<WebSocket | null>(null);
   const offsetRef = useRef(0);
   const doneRef = useRef(false);
@@ -126,7 +42,7 @@ export function useDuelSocket(duelId: number) {
         if ('serverNow' in msg) offsetRef.current = msg.serverNow - Date.now();
         if (msg.type === 'finished' || msg.type === 'cancelled') doneRef.current = true;
         if (msg.type === 'state' && msg.outcome) doneRef.current = true;
-        setView((v) => reduce(v, msg));
+        setView((v) => reduceDuelView(v, msg));
       };
       ws.onclose = (ev) => {
         if (!alive || doneRef.current) return;

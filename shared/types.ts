@@ -44,6 +44,7 @@ export type ErrorCode =
   | 'WRONG_GRADE'
   | 'OWN_DUEL'
   | 'CODE_NOT_FOUND'
+  | 'TEAM_FULL'
   | 'LLM_UNAVAILABLE'
   | 'LLM_FAILED'
   | 'BOSS_LOCKED'
@@ -400,6 +401,9 @@ export type DuelStatus = 'open' | 'accepted' | 'finished' | 'cancelled';
 /** 'public' = ижил түвшний лобби дээр гарна, 'private' = зөвхөн урилгын кодоор орно. */
 export type DuelVisibility = 'public' | 'private';
 
+/** Багийн тулааны хоёр тал: 'a' = үүсгэгчийн баг (цэнхэр), 'b' = эсрэг баг (ягаан). 1 vs 1-д ч мөн адил. */
+export type DuelTeam = 'a' | 'b';
+
 export interface DuelPlayerDto {
   id: number;
   username: string;
@@ -407,6 +411,12 @@ export interface DuelPlayerDto {
   name: string;
   level: number;
   avatar: AvatarLook;
+  /** Баавгайн хөрөг (үс, царай): VS дэлгэц, багийн слот дээр. */
+  look: BearLook;
+}
+
+export interface DuelMemberDto extends DuelPlayerDto {
+  team: DuelTeam;
 }
 
 export interface DuelSummary {
@@ -415,7 +425,13 @@ export interface DuelSummary {
   stake: number;
   status: DuelStatus;
   visibility: DuelVisibility;
-  /** Урилгын код: зөвхөн үүсгэгчид (бусдад null). */
+  /** Багийн хэмжээ: 1 = 1 vs 1, 2–5 = багийн тулаан (2 vs 2 … 5 vs 5). */
+  teamSize: number;
+  /** Бүх оролцогч багаар нь (үүсгэгч 'a'-д). 1 vs 1-д үүсгэгч ба өрсөлдөгч. */
+  members: DuelMemberDto[];
+  /** Харж буй хэрэглэгчийн баг (оролцогч биш бол null). */
+  myTeam: DuelTeam | null;
+  /** Урилгын код: зөвхөн оролцогчдод (бусдад null), нээлттэй үед. */
   code: string | null;
   createdAt: number;
   creator: DuelPlayerDto;
@@ -444,11 +460,19 @@ export interface CreateDuelBody {
   subject: Subject;
   stake: number;
   visibility?: DuelVisibility;
+  /** 1 (анхдагч) … 5 */
+  teamSize?: number;
 }
 
-/** POST /duels/join — урилгын кодоор орно. */
+/** POST /duels/join — урилгын кодоор орно. Багийн тулаанд `team` өгөхгүй бол дутуу баг руу орно. */
 export interface JoinDuelBody {
   code: string;
+  team?: DuelTeam;
+}
+
+/** POST /duels/:id/accept, POST /duels/:id/team */
+export interface DuelTeamBody {
+  team?: DuelTeam;
 }
 
 // ---------- Дэлгүүр ----------
@@ -496,6 +520,8 @@ export interface WsPlayer {
   username: string;
   name: string;
   avatar: AvatarLook;
+  look: BearLook;
+  team: DuelTeam;
   connected: boolean;
   score: number;
 }
@@ -514,15 +540,22 @@ export interface RevealInfo {
   q: number;
   correctIndex: number;
   explanation: string;
-  /** Энэ асуултыг авсан тоглогч, эсвэл null (хэн ч аваагүй). */
+  /** Энэ асуултыг (хамгийн түрүүнд) авсан тоглогч, эсвэл null (хэн ч аваагүй). */
   winnerId: number | null;
+  /** Зөв хариулсан бүх тоглогч (багийн тулаанд хүн бүр хариулна). */
+  correct: number[];
   scores: Record<number, number>;
+  teamScores: Record<DuelTeam, number>;
 }
 
 export interface DuelOutcome {
+  /** 1 vs 1-ийн ялагч; багийн тулаанд null (winnerTeam-ийг үз). */
   winnerId: number | null;
+  /** Ялсан баг, тэнцээ/цуцлалт бол null. */
+  winnerTeam: DuelTeam | null;
   reason: 'score' | 'draw' | 'forfeit' | 'no_show' | 'stale';
   scores: Record<number, number>;
+  teamScores: Record<DuelTeam, number>;
   /** Цэвэр өөрчлөлт: ялагч +stake, ялагдагч −stake, тэнцээ/цуцлалт 0. */
   deltas: Record<number, number>;
   /** Settle хийсний дараах оноо. */
@@ -538,6 +571,7 @@ export type ServerMsg =
       duelId: number;
       subject: Subject;
       stake: number;
+      teamSize: number;
       players: WsPlayer[];
       question: WsQuestion | null;
       myAnswer: { choice: number; correct: boolean } | null;
@@ -551,7 +585,8 @@ export type ServerMsg =
   | { type: 'countdown'; startsAt: number; serverNow: number }
   | ({ type: 'question'; serverNow: number } & WsQuestion)
   | { type: 'answer_result'; q: number; choice: number; correct: boolean }
-  | { type: 'opponent_answered'; q: number; correct: boolean }
+  /** Өөр тоглогч (өрсөлдөгч эсвэл багийн нөхөр) хариуллаа. */
+  | { type: 'opponent_answered'; q: number; correct: boolean; userId: number }
   | ({ type: 'reveal'; nextAt: number; serverNow: number } & RevealInfo)
   | { type: 'finished'; outcome: DuelOutcome }
   | { type: 'cancelled'; outcome: DuelOutcome }

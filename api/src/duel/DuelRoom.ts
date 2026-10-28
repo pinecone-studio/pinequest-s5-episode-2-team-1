@@ -2,7 +2,7 @@ import { DurableObject } from 'cloudflare:workers';
 import type { ClientMsg, ServerMsg } from '../../../shared/types';
 import type { Bindings } from '../env';
 import { settleDuel } from '../services/duels';
-import { createDuel, type DuelInit, type DuelState, nextDeadline, onAnswer, onConnect, onDisconnect, onTick, type Step } from './engine';
+import { createDuel, type DuelInit, type DuelState, nextDeadline, onAnswer, onConnect, onDisconnect, onTick, type Step, teamOf } from './engine';
 
 interface Attachment {
   userId: number;
@@ -127,15 +127,14 @@ export class DuelRoom extends DurableObject<Bindings> {
     else await this.ctx.storage.deleteAlarm();
   }
 
-  /** Үр дүнг D1-д бичээд хоёр тоглогчид шинэ оноотой нь зэрэг илгээнэ. Амжилтгүй бол alarm-аар давтана. */
+  /** Үр дүнг D1-д бичээд бүх тоглогчид шинэ оноотой нь зэрэг илгээнэ. Амжилтгүй бол alarm-аар давтана. */
   private async settle() {
     const s = this.state;
     if (!s?.settlement || !s.outcome) return;
-    const [creator, opponent] = s.players;
     try {
       const points = await settleDuel(
         this.env.DB,
-        { id: s.duelId, stake: s.stake, creatorId: creator.id, opponentId: opponent.id },
+        { id: s.duelId, stake: s.stake, teamSize: s.teamSize ?? 1, players: s.players.map((p) => ({ id: p.id, team: teamOf(s, p.id) })) },
         s.settlement,
         s.outcome.reason,
         s.scores,
