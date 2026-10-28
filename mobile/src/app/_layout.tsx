@@ -17,6 +17,7 @@ import { APP_NAME } from '@/constants/app';
 import { colors, fonts } from '@/constants/theme';
 import { type } from '@/constants/type';
 import { S } from '@/i18n/strings';
+import { askMicOnWeb } from '@/lib/mic';
 import { PixelBearProvider } from '@/lib/mock/pixelBear';
 import { COLUMN_MAX_W } from '@/hooks/useColumnWidth';
 
@@ -38,6 +39,11 @@ export default function RootLayout() {
   useEffect(() => {
     if (ready) void SplashScreen.hideAsync().catch(() => {});
   }, [ready]);
+
+  // Browser-оор ороход микрофоны зөвшөөрлийг эхэнд нь асууна (баавгайтай ярилцахад хэрэгтэй)
+  useEffect(() => {
+    void askMicOnWeb();
+  }, []);
 
   if (!ready) return null;
 
