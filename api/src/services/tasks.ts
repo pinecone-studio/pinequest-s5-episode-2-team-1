@@ -104,7 +104,7 @@ export async function startTask(
     throw new ApiError(409, 'RECOVERY_REQUIRED', 'Эхлээд давтлагаа дуусгаарай');
   }
   const path = (await loadSubjectPaths(db, userId))[subject];
-  // Математик 6, 7 нь анги тус бүрийн тогтмол roadmap; бусад нь номын хичээл бүр нэг зангилаа.
+  // Математик 6–12 нь анги тус бүрийн тогтмол roadmap; бусад нь номын хичээл бүр нэг зангилаа.
   const roadmap = subject === 'math' ? mathRoadmapNodes(user.grade) : [];
   const book = roadmap.length > 0 ? null : await bookLessons(env, subject, user.grade).catch(() => null);
   const pathLen = roadmap.length || pathLessons(book?.lessons.length ?? 0);
@@ -148,15 +148,16 @@ export async function startTask(
     const template = templateById(id);
     return template ? [template] : [];
   }) ?? [];
-  const lesson = mappedTemplates[0] ? templateRange(mappedTemplates[0].ref) : book ? lessonPages(book, node) : null;
+  const mappedRef = mapped?.ref ?? mappedTemplates[0]?.ref;
+  const lesson = mappedRef ? templateRange(mappedRef) : book ? lessonPages(book, node) : null;
   const lessonRefill = (range: PageRange) =>
     refillLesson(env, tier, subject, { grade: user.grade, range }, userId).catch((e) => console.error('[pool] lesson refill failed', e));
-  // Суурь шат curated DB асуултаас; Дунд, Ахисан шат тухайн түвшний template-ээс. Суурийн асуулт дутвал
-  // template нөөц болно. Шатгүй урсгалд ерөнхий template хадгалсан асуулт хүрэлцэхгүй үед л ашиглагдана.
+  // Суурь шат curated DB асуултаас; Дунд, Ахисан шат template-тэй бол түүнээс. 11–12-р ангийн template-гүй
+  // хичээлүүд шат бүрийн difficulty-тэй DB асуултаа ашиглана. Шатгүй урсгалд ерөнхий template нь DB дутвал нөөц болно.
   const templates = mapped ? mappedTemplates : lesson ? templatesFor(lesson) : [];
   const basic = stageNo === 1;
   const preferStored = stageNo === null && templates.length > 0 && templates.every((template) => template.preferStored);
-  const storedFirst = basic || preferStored;
+  const storedFirst = basic || preferStored || mapped?.ref !== undefined;
   const storedBefore =
     lesson && storedFirst
       ? ((

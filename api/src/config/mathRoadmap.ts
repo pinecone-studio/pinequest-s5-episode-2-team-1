@@ -1,11 +1,14 @@
 /**
- * Математик 6: номын 12 бүлэг, 63 хичээл; Математик 7: номын 10 бүлэг, 61 хичээл.
+ * Математик 6–12-ын сурах бичгийн бүлэг, хичээлийн roadmap.
  * Зангилаа бүр одоо байгаа нэг буюу хэд хэдэн deterministic template-ийг ашиглана. Эхний template нь
  * Суурь шатны DB bookRef хүрээг сонгох үндсэн ref.
  */
+import { ADVANCED_MATH_CURRICULUM, advancedMathTemplateId, type AdvancedMathGrade } from './mathAdvancedCurriculum';
 export interface MathRoadmapNode {
   title: string;
   templateIds: readonly string[];
+  /** Template-гүй ч DB-д хадгалсан бодлогын яг book_ref хүрээ (11–12-р анги). */
+  ref?: string;
 }
 
 export interface MathRoadmapTopic {
@@ -14,6 +17,7 @@ export interface MathRoadmapTopic {
 }
 
 const node = (title: string, ...templateIds: string[]): MathRoadmapNode => ({ title, templateIds });
+const storedNode = (title: string, ref: string): MathRoadmapNode => ({ title, templateIds: [], ref });
 const topic = (title: string, nodes: MathRoadmapTopic['nodes']): MathRoadmapTopic => ({ title, nodes });
 
 export const MATH6_ROADMAP: readonly MathRoadmapTopic[] = [
@@ -190,8 +194,155 @@ export const MATH7_ROADMAP: readonly MathRoadmapTopic[] = [
   ]),
 ];
 
+export const MATH11_ROADMAP: readonly MathRoadmapTopic[] = [
+  topic('I БҮЛЭГ. КВАДРАТ ТЭГШИТГЭЛ БА ТЭНЦЭТГЭЛ БИШ', [
+    storedNode('Квадрат тэгшитгэл', 'math-11:5-9'),
+    storedNode('Квадрат тэнцэтгэл биш', 'math-11:10-13'),
+    storedNode('Квадрат тэнцэтгэл бишийг бодох графикийн арга', 'math-11:14-19'),
+  ]),
+  topic('II БҮЛЭГ. ТЭГШИТГЭЛИЙН СИСТЕМ', [
+    storedNode('Хоёр хувьсагчтай тэгшитгэлийн систем', 'math-11:20-26'),
+    storedNode('Шугаман тэгшитгэлийн систем', 'math-11:27-35'),
+  ]),
+  topic('III БҮЛЭГ. ФУНКЦ БА ГРАФИК', [
+    storedNode('Функц, функцийг өгөх арга', 'math-11:36-39'),
+    storedNode('Зэрэгт функц', 'math-11:40-42'),
+    storedNode('Харилцан нэг утгатай функц', 'math-11:43-46'),
+    storedNode('Давхар функц', 'math-11:47-49'),
+    storedNode('Урвуу функц', 'math-11:50-54'),
+    storedNode('Өсөх ба буурах функц', 'math-11:55'),
+    storedNode('Тэгш, сондгой функц', 'math-11:56-58'),
+  ]),
+  topic('IV БҮЛЭГ. ПРОГРЕСС БА БИНОМ ЗАДАРГАА', [
+    storedNode('Тоон дараалал', 'math-11:59-60'),
+    storedNode('Арифметик прогресс', 'math-11:61-65'),
+    storedNode('Геометр прогресс', 'math-11:66-71'),
+  ]),
+  topic('V БҮЛЭГ. КООРДИНАТЫН ГЕОМЕТР', [
+    storedNode('Параллел ба перпендикуляр шулуун', 'math-11:72-78'),
+    storedNode('Огторгуйн тэгш өнцөгт координатын систем, цэгийн координат', 'math-11:79-82'),
+    storedNode('Огторгуйн тэгш өнцөгт координатын систем дэх хоёр цэгийн хоорондох зай, хэрчмийн дундаж цэгийн координат', 'math-11:83-86'),
+  ]),
+  topic('VI БҮЛЭГ. ТРИГОНОМЕТР', [
+    storedNode('Нэгж радиустай тойрог ба тригонометр функц', 'math-11:87-91'),
+    storedNode('Тригонометр функцийн зарим утга', 'math-11:92-94'),
+    storedNode('Тригонометр адилтгалууд', 'math-11:95-100'),
+  ]),
+  topic('VII БҮЛЭГ. ОГТОРГУЙ ДАХЬ ВЕКТОР', [
+    storedNode('Огторгуй дахь векторын тухай ухагдахуун', 'math-11:101'),
+    storedNode('Огторгуй дахь векторын үйлдэл', 'math-11:102-104'),
+    storedNode('Огторгуй дахь векторын координат', 'math-11:105-111'),
+    storedNode('Хоёр векторын скаляр үржвэр', 'math-11:112-117'),
+  ]),
+  topic('VIII БҮЛЭГ. УЛАМЖЛАЛ', [
+    storedNode('Функцийн графикийн өгсөн цэг дээрх шүргэгч шулууны налалт', 'math-11:118-120'),
+    storedNode('Уламжлал ба дифференциалчлах үйлдэл', 'math-11:121-123'),
+    storedNode('y = xⁿ функцийн уламжлал', 'math-11:124-125'),
+    storedNode('Нийлбэр, ялгавар, тогтмол тоон үржигдэхүүнтэй функцийн уламжлалыг олох', 'math-11:126-127'),
+    storedNode('Давхар функцийн уламжлал', 'math-11:128-130'),
+    storedNode('Функцийн графикийн өгсөн цэг дээрх налалт, шүргэгч ба нормал шулууны тэгшитгэл', 'math-11:131-134'),
+    storedNode('Функцийн өсөх, буурах завсар, функцийн өөрчлөлтийн хурд', 'math-11:135-138'),
+    storedNode('Функцийн экстремум (максимум, минимум) цэг', 'math-11:139-144'),
+    storedNode('Уламжлал ашиглан функцийн графикийг тоймлон зурах', 'math-11:145-154'),
+  ]),
+  topic('IX БҮЛЭГ. ИНТЕГРАЛ', [
+    storedNode('Дифференциалчлахын урвуу үйлдэл интегралчлах үйлдэл', 'math-11:155-158'),
+    storedNode('xⁿ хэлбэрийн функцийн интеграл', 'math-11:159-160'),
+    storedNode('(ax + b)ⁿ хэлбэрийн функцийн интеграл', 'math-11:161-162'),
+    storedNode('Интегралын чанарууд', 'math-11:163'),
+    storedNode('Өгсөн цэгийг дайрсан муруйн тэгшитгэл ба интеграл ашиглан бодох бодлогууд', 'math-11:164-166'),
+    storedNode('Тодорхой интеграл', 'math-11:167-169'),
+    storedNode('Тодорхой интеграл ба дүрсийн талбай', 'math-11:170-175'),
+  ]),
+  topic('X БҮЛЭГ. ӨГӨГДЛИЙН ШИНЖИЛГЭЭ', [
+    storedNode('Өгөгдлийн шинжилгээ', 'math-11:176-193'),
+    storedNode('Дундаж', 'math-11:194-197'),
+    storedNode('Хазайлт', 'math-11:198-220'),
+  ]),
+];
+
+export const MATH12_ROADMAP: readonly MathRoadmapTopic[] = [
+  topic('I БҮЛЭГ. ТЭГШИТГЭЛ, ТЭНЦЭТГЭЛ БИШ', [
+    storedNode('Тооны модул', 'math-12:5'),
+    storedNode('Модул агуулсан тэгшитгэл', 'math-12:6-8'),
+    storedNode('Модул агуулсан тэнцэтгэл биш', 'math-12:9-16'),
+  ]),
+  topic('II БҮЛЭГ. ОЛОН ГИШҮҮНТ', [
+    storedNode('Нэг ба олон гишүүнт', 'math-12:17-22'),
+    storedNode('Олон гишүүнтийн хуваах үйлдэл', 'math-12:23-24'),
+    storedNode('Безугийн теорем', 'math-12:25-29'),
+    storedNode('Рационал илэрхийллийг олон гишүүнт болон алгебрын хялбар бутархайн нийлбэр болгон задлах', 'math-12:30-42'),
+  ]),
+  topic('III БҮЛЭГ. ФУНКЦ БА ГРАФИК', [
+    storedNode('Тооны логарифм', 'math-12:43-45'),
+    storedNode('Логарифмын чанар', 'math-12:46-58'),
+    storedNode('Хялбар илтгэгч тэгшитгэл, тэнцэтгэл биш', 'math-12:59-65'),
+    storedNode('Логарифм функц', 'math-12:66-73'),
+    storedNode('y = eˣ ба y = ln x функц', 'math-12:74-76'),
+    storedNode('Рационал функц', 'math-12:77-85'),
+    storedNode('Тоон аргументтай тригонометр функц', 'math-12:86-94'),
+  ]),
+  topic('IV БҮЛЭГ. ФУНКЦИЙН УЛАМЖЛАЛ', [
+    storedNode('y = eˣ функцийн уламжлал', 'math-12:95-97'),
+    storedNode('y = ln x функцийн уламжлал', 'math-12:98-100'),
+    storedNode('y = sin x ба y = cos x функцийн уламжлал', 'math-12:101-106'),
+    storedNode('Үржвэр функцийн уламжлал', 'math-12:107-110'),
+    storedNode('Ногдвор функцийн уламжлал', 'math-12:111-114'),
+    storedNode('y = tg x функцийн уламжлал', 'math-12:115-117'),
+    storedNode('Давхар функцийн уламжлал', 'math-12:118-124'),
+  ]),
+  topic('V БҮЛЭГ. ИНТЕГРАЛ', [
+    storedNode('Илтгэгч, тригонометр, рационал функцийн интеграл', 'math-12:125-134'),
+    storedNode('Рационал функцийн интеграл', 'math-12:135-138'),
+    storedNode("∫ f′(x)/f(x) dx хэлбэрийн интеграл бодох", 'math-12:139-143'),
+    storedNode("∫ f′(x)/f(x) dx = ln|f(x)| + C томьёо ашиглан тодорхой интеграл бодох", 'math-12:144-147'),
+    storedNode('Орлуулах аргаар тодорхой болон тодорхой бус интегралыг хялбар интегралд шилжүүлэн бодох', 'math-12:148-160'),
+  ]),
+  topic('VI БҮЛЭГ. МАГАДЛАЛ БА СТАТИСТИК', [
+    storedNode('Дискрет санамсаргүй хувьсагч', 'math-12:161-166'),
+    storedNode('Математик дундаж', 'math-12:167-174'),
+    storedNode('Дисперс', 'math-12:175-182'),
+  ]),
+  topic('VII БҮЛЭГ. КОМПЛЕКС ТОО', [
+    storedNode('Комплекс тоо, түүний бодит ба хуурмаг хэсэг', 'math-12:183-184'),
+    storedNode('Комплекс тооны нэмэх үйлдэл', 'math-12:185-187'),
+    storedNode('Комплекс тооны үржүүлэх үйлдэл', 'math-12:188-189'),
+    storedNode('Хоёр комплекс тооны тэнцүүгийн тодорхойлолтыг хэрэглэх', 'math-12:190-191'),
+    storedNode('Комплекс тооны хуваах үйлдэл', 'math-12:192-193'),
+    storedNode('Комплекс тооны модул ба хосмог тоо', 'math-12:194-198'),
+    storedNode('Бодит коэффициенттэй квадрат тэгшитгэлийн комплекс тоон язгуур', 'math-12:199-200'),
+    storedNode('Комплекс тооны геометр дүрслэл', 'math-12:201-240'),
+  ]),
+];
+
+const advancedRoadmap = (grade: AdvancedMathGrade): readonly MathRoadmapTopic[] =>
+  ADVANCED_MATH_CURRICULUM[grade].map((group) =>
+    topic(
+      group.title,
+      group.lessons.map((item) => node(item.title, advancedMathTemplateId(item.ref))),
+    ),
+  );
+
+export const MATH8_ROADMAP = advancedRoadmap(8);
+export const MATH9_ROADMAP = advancedRoadmap(9);
+export const MATH10_ROADMAP = advancedRoadmap(10);
+
 export const mathRoadmapTopics = (grade: number): readonly MathRoadmapTopic[] | null =>
-  grade === 6 ? MATH6_ROADMAP : grade === 7 ? MATH7_ROADMAP : null;
+  grade === 6
+    ? MATH6_ROADMAP
+    : grade === 7
+      ? MATH7_ROADMAP
+      : grade === 8
+        ? MATH8_ROADMAP
+        : grade === 9
+          ? MATH9_ROADMAP
+          : grade === 10
+            ? MATH10_ROADMAP
+            : grade === 11
+              ? MATH11_ROADMAP
+              : grade === 12
+                ? MATH12_ROADMAP
+                : null;
 
 export const mathRoadmapNodes = (grade: number): readonly (MathRoadmapNode & { chapter: string })[] =>
   (mathRoadmapTopics(grade) ?? []).flatMap((group) => group.nodes.map((item) => ({ ...item, chapter: group.title })));

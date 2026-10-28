@@ -196,11 +196,13 @@ const X_MIN = 115;
 const X_MAX = 275;
 const PAD_TOP = 70;
 /** 1-р бүлгийн эхэнд: дээд баннер газрын зураг дээр хөвдөг тул эхний зангилаа түүний доор */
-const PAD_FIRST = 150;
+const PAD_FIRST = 220;
 /** 2-р бүлгийн зүүн/баруун гарын зангилаа голдоо ойр: хамгаалагчид газрын зургийн хоёр захад зогсоно (PathMap) */
 const GUARD_NODE_DX = 20;
 /** boss болон түүний доорх шошгонд зай: дараагийн бүлгийн баннер хүртэл */
 const PAD_BOTTOM = 112;
+/** Олон хичээлтэй замд зангилаа, од, дарах талбай давхцахгүй хамгийн бага босоо зай. */
+const MIN_NODE_GAP = 54;
 /** Номын хоёр бүлгийн хоорондох banner-ын зай. */
 const BOOK_CHAPTER_GAP = 72;
 
@@ -232,14 +234,16 @@ export function pathLayout(n: number, lessons: readonly BookLesson[] = []): Path
   const starts = chapterStarts(n, lessons);
   let top = 0;
   for (let u = 0; u < UNIT_COUNT; u++) {
-    const y0 = top + (u === 0 ? PAD_FIRST : PAD_TOP);
+    const topPad = u === 0 ? PAD_FIRST : PAD_TOP;
     const baseHeight = chapterHeight(MAP_CHAPTERS[u]);
     const boss = gates[UNIT_GATE[u]];
     const start = u === 0 ? 0 : units[u - 1].boss + 1;
     const breaks = starts.slice(1).filter((chapter) => chapter.start > start && chapter.start <= boss).map((chapter) => chapter.start);
-    const height = baseHeight + breaks.length * BOOK_CHAPTER_GAP;
-    const y1 = top + baseHeight - PAD_BOTTOM;
     const m = boss - start;
+    const contentHeight = Math.max(baseHeight, topPad + m * MIN_NODE_GAP + PAD_BOTTOM);
+    const height = contentHeight + breaks.length * BOOK_CHAPTER_GAP;
+    const y0 = top + topPad;
+    const y1 = top + contentHeight - PAD_BOTTOM;
     const at = (f: number) => start + Math.min(m - 1, Math.round(f * m));
     const unit = { start, sapling: at(3 / 15), gift: at(9 / 15), myst: at(12 / 15), boss, top, height, chests: chests.filter((c) => c >= start && c < boss) };
     units.push(unit);
