@@ -137,7 +137,7 @@ describe('үр дүн', () => {
     const last = play(s, t, 2, A);
     expect(last.s.phase).toBe('finished');
     expect(last.s.outcome).toMatchObject({ winnerId: A, reason: 'score', scores: { [A]: 2, [B]: 1 }, deltas: { [A]: 10, [B]: -10 } });
-    expect(last.s.settlement).toEqual({ kind: 'win', winnerId: A, loserId: B });
+    expect(last.s.settlement).toEqual({ kind: 'win', winners: [A], losers: [B] });
     expect(nextDeadline(last.s)).toBeNull();
   });
 
@@ -200,5 +200,95 @@ describe('холболт', () => {
     expect(s.phase).toBe('waiting');
     s = onConnect(s, A, 'ca2', T0 + 400).state;
     expect(s.phase).toBe('countdown');
+  });
+});
+
+describe('багийн тулаан (2 vs 2)', () => {
+  const [A1, A2, B1, B2] = [11, 12, 21, 22];
+  const team: DuelInit = {
+    ...init,
+    teamSize: 2,
+    players: [
+      { id: A1, username: 'a1', name: 'a1', avatar: {}, team: 'a' },
+      { id: A2, username: 'a2', name: 'a2', avatar: {}, team: 'a' },
+      { id: B1, username: 'b1', name: 'b1', avatar: {}, team: 'b' },
+      { id: B2, username: 'b2', name: 'b2', avatar: {}, team: 'b' },
+    ],
+  };
+  const ALL = [A1, A2, B1, B2];
+
+  function teamQuestion0(ids = ALL): { s: DuelState; t: number } {
+    let s = createDuel(team, T0);
+    ids.forEach((id, i) => {
+      s = onConnect(s, id, `c${id}`, T0 + 100 + i).state;
+    });
+    // Бүгд ирвэл сүүлчийнх нь холбогдмогц, үгүй бол холбогдох хугацаа дуусахад countdown эхэлнэ.
+    const countdownAt = ids.length === ALL.length ? T0 + 100 + ids.length - 1 : T0 + CONNECT_TIMEOUT_MS;
+    if (ids.length !== ALL.length) s = onTick(s, countdownAt).state;
+    const t = countdownAt + COUNTDOWN_MS;
+    s = onTick(s, t).state;
+    return { s, t };
+  }
+
+  it('бүгд холбогдмогц эхэлнэ; snapshot тоглогч бүрийн багийг агуулна', () => {
+    let s = createDuel(team, T0);
+    for (const id of ALL.slice(0, 3)) s = onConnect(s, id, `c${id}`, T0 + 100).state;
+    expect(s.phase).toBe('waiting');
+    const last = onConnect(s, B2, 'cB2', T0 + 200);
+    expect(last.state.phase).toBe('countdown');
+    const snap = msgOf(last.out, 'state', B2);
+    expect(snap).toMatchObject({ teamSize: 2 });
+    expect(snap?.type === 'state' && snap.players.map((p) => p.team)).toEqual(['a', 'a', 'b', 'b']);
+  });
+
+  it('зөв хариулт бүр багтаа оноо; бүгд хариулмагц reveal', () => {
+    const { s, t } = teamQuestion0();
+    let st = onAnswer(s, A1, 0, 0, t + 10).state;
+    expect(st.phase).toBe('question'); // 1 vs 1-ээс ялгаатай: зөв хариултаар хаагдахгүй
+    st = onAnswer(st, B1, 0, 0, t + 20).state;
+    st = onAnswer(st, A2, 0, 0, t + 30).state;
+    const r = onAnswer(st, B2, 0, 3, t + 40);
+    expect(msgOf(r.out, 'reveal', 'all')).toMatchObject({ winnerId: A1, correct: [A1, A2, B1], teamScores: { a: 2, b: 1 } });
+  });
+
+  it('оноо их баг хожиж, гишүүн бүр бооцоо авна', () => {
+    let { s, t } = teamQuestion0();
+    for (let q = 0; q < init.questions.length; q++) {
+      s = onAnswer(s, A1, q, q, t + 10).state;
+      s = onAnswer(s, A2, q, (q + 1) % 4, t + 20).state;
+      s = onAnswer(s, B1, q, (q + 1) % 4, t + 30).state;
+      s = onAnswer(s, B2, q, (q + 1) % 4, t + 40).state;
+      t += 40 + REVEAL_MS;
+      s = onTick(s, t).state;
+    }
+    expect(s.phase).toBe('finished');
+    expect(s.outcome).toMatchObject({ winnerId: null, winnerTeam: 'a', teamScores: { a: 3, b: 0 }, deltas: { [A1]: 10, [A2]: 10, [B1]: -10, [B2]: -10 } });
+    expect(s.settlement).toEqual({ kind: 'win', winners: [A1, A2], losers: [B1, B2] });
+  });
+
+  it('хоёр багаас хүн ирсэн бол ирээгүйг хүлээлгүй эхэлж, салсан тоглогчийг хүлээхгүй', () => {
+    const { s, t } = teamQuestion0([A1, B1, B2]);
+    expect(s.phase).toBe('question');
+    let st = onAnswer(s, A1, 0, 1, t + 10).state;
+    st = onAnswer(st, B1, 0, 1, t + 20).state;
+    const r = onAnswer(st, B2, 0, 1, t + 30);
+    expect(r.state.phase).toBe('reveal');
+  });
+
+  it('нэг багаас хэн ч ирээгүй бол цуцлана', () => {
+    let s = createDuel(team, T0);
+    s = onConnect(s, A1, 'cA1', T0 + 100).state;
+    s = onConnect(s, A2, 'cA2', T0 + 100).state;
+    expect(onTick(s, T0 + CONNECT_TIMEOUT_MS).state.outcome?.reason).toBe('no_show');
+  });
+
+  it('нэг гишүүн салбал тоглолт үргэлжилнэ; баг бүхэлдээ салбал хожигдоно', () => {
+    const { s, t } = teamQuestion0();
+    let st = onDisconnect(s, B1, 'c21', t + 100).state;
+    st = onTick(st, t + 100 + DISCONNECT_GRACE_MS).state;
+    expect(st.phase).toBe('question');
+    st = onDisconnect(st, B2, 'c22', t + 200).state;
+    const r = onTick(st, t + 200 + DISCONNECT_GRACE_MS);
+    expect(r.state.outcome).toMatchObject({ winnerTeam: 'a', reason: 'forfeit' });
   });
 });

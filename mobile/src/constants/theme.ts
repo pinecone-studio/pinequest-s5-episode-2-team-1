@@ -73,3 +73,15 @@ export const subjectColors: Record<Subject, string> = {
   mongolian: colors.violet,
   physics: colors.lime,
 };
+
+/**
+ * Тулааны хоёр баг: 'a' = цэнхэр (үүсгэгчийн баг), 'b' = ягаан. `main` нь тод өнгө (VS дэлгэц, слот),
+ * `soft` нь цайвар дэвсгэр, `ink` нь soft дээрх бичиг (AA контраст).
+ */
+export const teamColors = {
+  a: { main: '#3D9BF0', soft: '#D6ECFB', ink: '#0B3A66' },
+  b: { main: '#EE5A9F', soft: '#FBDDEB', ink: '#6B1540' },
+} as const;
+
+/** VS / match дэлгэцийн бараан дэвсгэр. */
+export const arena = { bg: '#120A33', panel: '#1E1352', line: 'rgba(255,255,255,0.14)' } as const;

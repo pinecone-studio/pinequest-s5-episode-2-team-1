@@ -62,10 +62,12 @@ export async function loadPublicProfile(db: D1Database, userId: number, now = Da
       .first<{ n: number }>(),
     db
       .prepare(
-        `SELECT COUNT(*) AS played, COALESCE(SUM(winner_id = ?), 0) AS won
-         FROM duels WHERE status = 'finished' AND (creator_id = ? OR opponent_id = ?)`,
+        `SELECT COUNT(*) AS played,
+                COALESCE(SUM(CASE WHEN d.winner_id = ? OR (d.team_size > 1 AND d.winner_team = m.team) THEN 1 ELSE 0 END), 0) AS won
+         FROM duels d LEFT JOIN duel_members m ON m.duel_id = d.id AND m.user_id = ?
+         WHERE d.status = 'finished' AND (d.creator_id = ? OR d.opponent_id = ? OR m.user_id IS NOT NULL)`,
       )
-      .bind(userId, userId, userId)
+      .bind(userId, userId, userId, userId)
       .first<{ played: number; won: number }>(),
   ]);
   const progress = levelProgress(user.xp);
