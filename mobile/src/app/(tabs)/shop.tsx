@@ -1,9 +1,10 @@
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { useState } from 'react';
+import { type ComponentRef, useRef, useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { BgSwatch, type SwatchStatus } from '@/components/BgSwatch';
+import { CostumeGrid, CostumePreview } from '@/components/CostumeGallery';
 import { MagicBurst } from '@/components/MagicBurst';
 import { OutfitCard } from '@/components/OutfitCard';
 import { PressScale, Sprite } from '@/components/pixel';
@@ -18,23 +19,25 @@ import { S } from '@/i18n/strings';
 import { confirm } from '@/lib/confirm';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 import { useOnline } from '@/lib/online';
-import { BACKGROUNDS, bgById, DEFAULT_OUTFIT_ID, isWorn, outfitById, type OutfitId, toggleWorn, wornItems } from '@/lib/pixelBear/catalog';
+import { BACKGROUNDS, bgById, DEFAULT_OUTFIT_ID, isWorn, outfitById, type OutfitId, outfitSlot, toggleWorn, wornItems } from '@/lib/pixelBear/catalog';
 import { type OutfitView, useOutfits } from '@/lib/pixelBear/useOutfits';
 
-type Tab = 'bg' | 'outfit';
-type OutfitCategory = 'hat' | 'mask' | 'clothes' | 'boots' | 'staff';
+type Tab = 'bg' | 'outfit' | 'concept';
+type OutfitCategory = 'hat' | 'mask' | 'clothes' | 'boots' | 'hand';
 const CATEGORIES: { value: OutfitCategory; label: string }[] = [
   { value: 'hat', label: 'Малгай' },
   { value: 'mask', label: 'Маск' },
   { value: 'clothes', label: 'Хувцас' },
   { value: 'boots', label: 'Гутал' },
-  { value: 'staff', label: 'Таяг' },
+  { value: 'hand', label: 'Зэвсэг' },
 ];
 function categoryOf(id: OutfitId): OutfitCategory {
-  if (['glasses', 'mickey_mask', 'batman_mask', 'snorkel'].includes(id)) return 'mask';
-  if (['brown_boots', 'mongol_boots', 'pirate_boots', 'sport_sneakers', 'demon_boots', 'ninja_sandals', 'straw_sandals'].includes(id)) return 'boots';
-  if (['warrior_helmet', 'pirate_hat', 'cowboy_hat', 'white_headscarf', 'ny_cap', 'gradcap', 'headphones', 'hard_hat', 'mongol_hat', 'ribbon', 'headband', 'puss_hat', 'demon_horns', 'ninja_headband', 'straw_hat'].includes(id)) return 'hat';
-  if (id.includes('staff') || id === 'black_sword' || id === 'bronze_shield' || id === 'wizard_wand' || id === 'pirate_sword') return 'staff';
+  const slot = outfitSlot(id);
+  // бүтэн нүүрний маск толгойн байрлал эзэлдэг ч Маск ангилалд харагдана
+  if (slot === 'face' || id.endsWith('_mask')) return 'mask';
+  if (slot === 'head') return 'hat';
+  if (slot === 'feet') return 'boots';
+  if (slot === 'hand' || slot === 'offhand') return 'hand';
   return 'clothes';
 }
 
@@ -58,12 +61,15 @@ export default function ShopScreen() {
   const [outfitCategory, setOutfitCategory] = useState<OutfitCategory>('hat');
   const [selBg, setSelBg] = useState(bear.bgId);
   const [selOutfit, setSelOutfit] = useState<OutfitId>(bear.outfitIds.at(-1) ?? DEFAULT_OUTFIT_ID);
+  const [selConcept, setSelConcept] = useState('witch');
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [castKey, setCastKey] = useState(0);
 
   const isBg = tab === 'bg';
+  const isConcept = tab === 'concept';
   const visibleOutfits = outfits.views.filter((v) => categoryOf(v.def.id) === outfitCategory);
   const bgDef = bgById(isBg ? selBg : bear.bgId);
   const outfitView = outfits.views.find((v) => v.def.id === selOutfit) ?? outfits.views[0];
@@ -138,7 +144,7 @@ export default function ShopScreen() {
   }
 
   return (
-    <Screen tabBar>
+    <Screen tabBar scrollRef={scrollRef}>
       <View style={styles.header}>
         <View style={{ flex: 1, gap: 4 }}>
           <Text accessibilityRole="header" style={type.h1}>
@@ -153,7 +159,7 @@ export default function ShopScreen() {
       </View>
 
       <View>
-        <PreviewStage
+        {isConcept ? <CostumePreview selectedId={selConcept} /> : <PreviewStage
           bg={bgDef}
           items={previewItems}
           name={isBg ? S.shop.bgPreview(bgDef.name) : outfitDef.name}
@@ -169,8 +175,8 @@ export default function ShopScreen() {
               {busy ? <ActivityIndicator color={action.fg} /> : <Text style={[styles.actionText, { color: action.fg }]}>{action.title}</Text>}
             </PressScale>
           }
-        />
-        <MagicBurst active={!isBg && outfitDef.id === 'pestilence_staff'} castKey={castKey} />
+        />}
+        {!isConcept ? <MagicBurst active={!isBg && outfitDef.id === 'pestilence_staff'} castKey={castKey} /> : null}
       </View>
 
       {online ? null : <Text style={styles.offline}>{S.offline.shopNote}</Text>}
@@ -186,6 +192,7 @@ export default function ShopScreen() {
         value={tab}
         onChange={(next) => {
           setTab(next);
+          scrollRef.current?.scrollTo({ y: 0, animated: true });
           if (next === 'outfit' && !visibleOutfits.some((v) => v.def.id === selOutfit)) {
             const first = visibleOutfits[0];
             if (first) setSelOutfit(first.def.id);
@@ -194,10 +201,11 @@ export default function ShopScreen() {
         options={[
           { value: 'bg', label: S.shop.tabBg },
           { value: 'outfit', label: S.shop.tabOutfit },
+          { value: 'concept', label: S.shop.tabConcept },
         ]}
       />
 
-      {!isBg && (
+      {tab === 'outfit' && (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categories}>
           <View accessibilityRole="tablist" accessibilityLabel="Хувцасны төрөл" style={styles.categoryRow}>
             {CATEGORIES.map((category) => {
@@ -242,6 +250,8 @@ export default function ShopScreen() {
             </View>
           ))}
         </Animated.View>
+      ) : isConcept ? (
+        <CostumeGrid selectedId={selConcept} onSelect={(id) => { setSelConcept(id); scrollRef.current?.scrollTo({ y: 0, animated: true }); }} />
       ) : (
         <Animated.View key="outfit" entering={FadeInDown.duration(260)} style={{ gap: 10 }}>
           {!outfits.loaded ? <ActivityIndicator color={colors.violet} /> : null}
