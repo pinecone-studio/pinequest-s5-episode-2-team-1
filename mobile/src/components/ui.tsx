@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ComponentRef, ReactNode, Ref } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -27,6 +27,7 @@ export function Screen({
   background = colors.paper,
   edges = ['top', 'left', 'right'],
   tabBar,
+  scrollRef,
 }: {
   children: ReactNode;
   scroll?: boolean;
@@ -37,6 +38,7 @@ export function Screen({
   edges?: Edge[];
   /** Хөвдөг доод цэсний доор контент нуугдахгүй байх зай */
   tabBar?: boolean;
+  scrollRef?: Ref<ComponentRef<typeof ScrollView>>;
 }) {
   const barSpace = useTabBarSpace();
   const bottom = tabBar ? { paddingBottom: barSpace + 16 } : null;
@@ -45,6 +47,7 @@ export function Screen({
       <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {scroll ? (
           <ScrollView
+            ref={scrollRef}
             contentContainerStyle={[styles.content, bottom, contentStyle]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"

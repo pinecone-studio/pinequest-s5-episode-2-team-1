@@ -51,3 +51,10 @@ an existing animation's poses, requires Tier 1. The KUMA app has seven home
 animations plus 57 battle, 33 lesson, and 49 tutor frames. Finish and inspect
 all contexts and three fur colours before adding an outfit to the shop catalog
 and server cosmetics. Otherwise it would disappear during play.
+
+## Local shop review
+
+The shop's `Загварууд` category shows all 16 full costume cutouts as selectable
+previews. App copies live in `mobile/assets/costume-gallery/`; the three parts
+sheets stay in the source pack. The category is preview-only until the costumes
+fit every game animation. `shop-local-review.png` records the local web review.

@@ -1,9 +1,10 @@
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import { type ComponentRef, useRef, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { BgSwatch, type SwatchStatus } from '@/components/BgSwatch';
+import { CostumeGrid, CostumePreview } from '@/components/CostumeGallery';
 import { MagicBurst } from '@/components/MagicBurst';
 import { OutfitCard } from '@/components/OutfitCard';
 import { PressScale, Sprite } from '@/components/pixel';
@@ -21,7 +22,7 @@ import { useOnline } from '@/lib/online';
 import { BACKGROUNDS, bgById, outfitById, type OutfitId } from '@/lib/pixelBear/catalog';
 import { type OutfitView, useOutfits } from '@/lib/pixelBear/useOutfits';
 
-type Tab = 'bg' | 'outfit';
+type Tab = 'bg' | 'outfit' | 'concept';
 
 const chunk = <T,>(arr: T[], n: number): T[][] => Array.from({ length: Math.ceil(arr.length / n) }, (_, i) => arr.slice(i * n, i * n + n));
 
@@ -42,12 +43,15 @@ export default function ShopScreen() {
   const [tab, setTab] = useState<Tab>('bg');
   const [selBg, setSelBg] = useState(bear.bgId);
   const [selOutfit, setSelOutfit] = useState<OutfitId>(bear.outfitId);
+  const [selConcept, setSelConcept] = useState('witch');
+  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [castKey, setCastKey] = useState(0);
 
   const isBg = tab === 'bg';
+  const isConcept = tab === 'concept';
   const bgDef = bgById(isBg ? selBg : bear.bgId);
   const outfitView = outfits.views.find((v) => v.def.id === (isBg ? bear.outfitId : selOutfit)) ?? outfits.views[0];
   const outfitDef = outfitById(outfitView.def.id);
@@ -115,7 +119,7 @@ export default function ShopScreen() {
   }
 
   return (
-    <Screen tabBar>
+    <Screen tabBar scrollRef={scrollRef}>
       <View style={styles.header}>
         <View style={{ flex: 1, gap: 4 }}>
           <Text accessibilityRole="header" style={type.h1}>
@@ -130,7 +134,7 @@ export default function ShopScreen() {
       </View>
 
       <View>
-        <PreviewStage
+        {isConcept ? <CostumePreview selectedId={selConcept} /> : <PreviewStage
           bg={bgDef}
           outfit={outfitDef}
           name={isBg ? S.shop.bgPreview(bgDef.name) : outfitDef.name}
@@ -146,8 +150,8 @@ export default function ShopScreen() {
               {busy ? <ActivityIndicator color={action.fg} /> : <Text style={[styles.actionText, { color: action.fg }]}>{action.title}</Text>}
             </PressScale>
           }
-        />
-        <MagicBurst active={!isBg && outfitDef.id === 'pestilence_staff'} castKey={castKey} />
+        />}
+        {!isConcept ? <MagicBurst active={!isBg && outfitDef.id === 'pestilence_staff'} castKey={castKey} /> : null}
       </View>
 
       {online ? null : <Text style={styles.offline}>{S.offline.shopNote}</Text>}
@@ -161,10 +165,11 @@ export default function ShopScreen() {
       <SegmentedTabs<Tab>
         label={S.shop.tabs}
         value={tab}
-        onChange={setTab}
+        onChange={(value) => { setTab(value); scrollRef.current?.scrollTo({ y: 0, animated: true }); }}
         options={[
           { value: 'bg', label: S.shop.tabBg },
           { value: 'outfit', label: S.shop.tabOutfit },
+          { value: 'concept', label: S.shop.tabConcept },
         ]}
       />
 
@@ -188,6 +193,8 @@ export default function ShopScreen() {
             </View>
           ))}
         </Animated.View>
+      ) : isConcept ? (
+        <CostumeGrid selectedId={selConcept} onSelect={(id) => { setSelConcept(id); scrollRef.current?.scrollTo({ y: 0, animated: true }); }} />
       ) : (
         <Animated.View key="outfit" entering={FadeInDown.duration(260)} style={{ gap: 10 }}>
           {!outfits.loaded ? <ActivityIndicator color={colors.violet} /> : null}
