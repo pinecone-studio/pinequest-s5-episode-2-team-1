@@ -398,6 +398,7 @@ export const S = {
     full: 'Дүүрэн',
   },
   path: {
+    friendHere: (name: string) => `${name} энд байна. Дарвал профайл нь нээгдэнэ`,
     subjectMenu: 'Хичээл солих',
     streak: 'Дараалал',
     chapterOver: (n: number) => `${n}-Р БҮЛЭГ`,

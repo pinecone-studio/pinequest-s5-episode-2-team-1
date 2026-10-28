@@ -1,5 +1,5 @@
 import type { FriendDto, FriendsResponse, FriendStatus } from '../../../shared/types';
-import { GAME } from '../config/game';
+import { GAME, type Subject } from '../config/game';
 import { levelFromXp } from '../domain/level';
 import { parseBearLook } from '../domain/profile';
 import { normalizeStreak } from '../domain/streak';
@@ -86,6 +86,14 @@ export async function listFriends(db: D1Database, me: number, now = Date.now()):
     .all<FriendRow>();
   const today = ubDay(now);
   const out: FriendsResponse = { friends: [], incoming: [], outgoing: [] };
+  // Найзуудын сурах замын ахиц нэг query-ээр (хүсэлт илгээсэн, хүлээж буй хүмүүсийнхийг харуулахгүй)
+  const friendIds = results.filter((r) => statusOf(r, me) === 'friends').map((r) => (r.from_id === me ? r.to_id : r.from_id));
+  const { results: progress } = friendIds.length
+    ? await db
+        .prepare('SELECT user_id, subject, nodes, bosses_beaten FROM subject_progress WHERE user_id IN (SELECT value FROM json_each(?))')
+        .bind(JSON.stringify(friendIds))
+        .all<{ user_id: number; subject: Subject; nodes: number; bosses_beaten: number }>()
+    : { results: [] };
   for (const r of results) {
     if (!r.profile_code) continue;
     const dto: FriendDto = {
@@ -98,7 +106,13 @@ export async function listFriends(db: D1Database, me: number, now = Date.now()):
       look: parseBearLook(r.bear_look),
     };
     const status = statusOf(r, me);
-    if (status === 'friends') out.friends.push(dto);
+    if (status === 'friends') {
+      const id = r.from_id === me ? r.to_id : r.from_id;
+      dto.paths = Object.fromEntries(
+        progress.filter((p) => p.user_id === id).map((p) => [p.subject, { level: p.nodes + 1, bossesBeaten: p.bosses_beaten }]),
+      );
+      out.friends.push(dto);
+    }
     else if (status === 'incoming') out.incoming.push(dto);
     else out.outgoing.push(dto);
   }

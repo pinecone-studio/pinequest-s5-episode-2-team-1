@@ -260,6 +260,14 @@ export interface FriendDto {
   level: number;
   streak: number;
   look: BearLook;
+  /** Найз болсон хүний сурах замын ахиц (газрын зураг дээр баавгайг нь харуулна); хүсэлтэд байхгүй. */
+  paths?: Partial<Record<Subject, FriendPath>>;
+}
+
+/** Найзын нэг хичээлийн замын байрлал: SubjectPath-ын level, bossesBeaten (currentNode-д хангалттай). */
+export interface FriendPath {
+  level: number;
+  bossesBeaten: number;
 }
 
 /** GET /friends */
