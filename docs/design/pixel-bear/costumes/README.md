@@ -58,3 +58,14 @@ The shop's `Загварууд` category shows all 16 full costume cutouts as se
 previews. App copies live in `mobile/assets/costume-gallery/`; the three parts
 sheets stay in the source pack. The category is preview-only until the costumes
 fit every game animation. `shop-local-review.png` records the local web review.
+
+## Witch motion review page
+
+`pixellab/pilot/witch/review.html` compares all three fur colours for each state;
+`review-local.png` is a local screenshot. To view it from the repository root:
+
+```bash
+python3 -m http.server 8090 --directory docs/design/pixel-bear/costumes/pixellab/pilot/witch
+```
+
+Open `http://localhost:8090/review.html`.
