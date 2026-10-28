@@ -1,3 +1,4 @@
+import type { ImageSourcePropType } from 'react-native';
 import type { ItemId } from '@/components/LiveBear';
 import type { SpriteKey } from '@/sprites';
 
@@ -9,6 +10,12 @@ export interface BgDef {
   name: string;
   hex: string;
   dark?: boolean;
+  /** баавгайн ард харагдах зураг; hex нь зураг ачаалахаас өмнөх/swatch-ийн өнгө */
+  image?: ImageSourcePropType;
+  /** зураг биш, апп дотор pixel-ээр зурагдах үзэгдэл (components/BgArt) */
+  scene?: 'space' | 'binary';
+  /** баавгайн ард тусах гэрлийн өнгө (анхдагч нь theme-ийн halo) */
+  halo?: string;
 }
 
 export const BACKGROUNDS: BgDef[] = [
@@ -20,6 +27,11 @@ export const BACKGROUNDS: BgDef[] = [
   { id: 'govi', name: 'Говь', hex: '#EBCF9B' },
   { id: 'ulbar', name: 'Улбар', hex: '#F7A97E' },
   { id: 'shunu', name: 'Шөнө', hex: '#22106E', dark: true },
+  { id: 'zun_tal', name: 'Зуны тал', hex: '#8CC4EE', image: require('../../../assets/images/backgrounds/steppe-summer.webp') },
+  { id: 'namar_oi', name: 'Намрын ой', hex: '#E29A45', image: require('../../../assets/images/backgrounds/autumn-forest.webp') },
+  { id: 'od_shunu', name: 'Одтой шөнө', hex: '#1C1F4D', dark: true, image: require('../../../assets/images/backgrounds/steppe-night.webp') },
+  { id: 'sansar', name: 'Сансар', hex: '#FAFAF7', scene: 'space' },
+  { id: 'kod', name: 'Код', hex: '#FAFAF7', scene: 'binary', halo: 'rgba(250,250,247,0.88)' },
 ];
 
 export const DEFAULT_BG_ID = 'nimbeg';

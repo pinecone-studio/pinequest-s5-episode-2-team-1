@@ -60,6 +60,7 @@ export default function BagScreen() {
                   key={b.id}
                   name={b.name}
                   hex={b.hex}
+                  bg={b}
                   label={S.shop.bgLabel(b.name)}
                   selected={b.id === bear.bgId}
                   equipped={b.id === bear.bgId}

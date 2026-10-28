@@ -42,6 +42,7 @@ function categoryOf(id: OutfitId): OutfitCategory {
 }
 
 const chunk = <T,>(arr: T[], n: number): T[][] => Array.from({ length: Math.ceil(arr.length / n) }, (_, i) => arr.slice(i * n, i * n + n));
+const pad = <T,>(row: T[], n: number): (T | null)[] => [...row, ...Array(n - row.length).fill(null)];
 
 function statusOf(opts: { equipped: boolean; owned: boolean; price: number; honey: number; lockedLevel?: number | null }): SwatchStatus {
   const { equipped, owned, price, honey, lockedLevel } = opts;
@@ -235,18 +236,23 @@ export default function ShopScreen() {
           {!outfits.loaded ? <ActivityIndicator color={colors.violet} /> : null}
           {chunk(BACKGROUNDS, 4).map((row, r) => (
             <View key={r} style={styles.row}>
-              {row.map((b) => (
-                <BgSwatch
-                  key={b.id}
-                  name={b.name}
-                  hex={b.hex}
-                  label={S.shop.bgLabel(b.name)}
-                  selected={b.id === selBg}
-                  equipped={b.id === bear.bgId}
-                  status={statusOf({ equipped: b.id === bear.bgId, owned: bear.ownedBgs.includes(b.id), price: bear.priceOf('bg', b.id), honey: bear.honey })}
-                  onPress={() => setSelBg(b.id)}
-                />
-              ))}
+              {pad(row, 4).map((b, i) =>
+                b ? (
+                  <BgSwatch
+                    key={b.id}
+                    name={b.name}
+                    hex={b.hex}
+                    bg={b}
+                    label={S.shop.bgLabel(b.name)}
+                    selected={b.id === selBg}
+                    equipped={b.id === bear.bgId}
+                    status={statusOf({ equipped: b.id === bear.bgId, owned: bear.ownedBgs.includes(b.id), price: bear.priceOf('bg', b.id), honey: bear.honey })}
+                    onPress={() => setSelBg(b.id)}
+                  />
+                ) : (
+                  <View key={`e${i}`} style={{ flex: 1 }} />
+                ),
+              )}
             </View>
           ))}
         </Animated.View>
