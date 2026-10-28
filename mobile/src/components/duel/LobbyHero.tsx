@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withTiming } from 'react-native-reanimated';
 import Svg, { Defs, LinearGradient, Rect, Stop } from 'react-native-svg';
-import { Motion, Sprite } from '@/components/pixel';
+import { LiveBear } from '@/components/LiveBear';
 import { CountPill } from '@/components/StatPill';
 import { arena, colors, fonts, hardShadow, radius, teamColors } from '@/constants/theme';
 import { S } from '@/i18n/strings';
@@ -36,9 +36,10 @@ export function LobbyHero({ honey }: { honey: number }) {
         <Rect x="0" y="0" width="100%" height="100%" fill="url(#heroScrim)" />
       </Svg>
 
-      <Motion preset="float" style={styles.bear}>
-        <Sprite id="bear_cheer_scarf_180x252" style={styles.bearImg} />
-      </Motion>
+      {/* Тулаанд бэлэн баавгай: баатрын дуулга, хар сэлэм, одтой бамбай (дэлгүүрийн хувцаснууд). */}
+      <View pointerEvents="none" style={styles.bear}>
+        <LiveBear anim="thriving" w={164} items={['warrior_helmet', 'black_sword', 'bronze_shield']} label={S.duel.heroBear} />
+      </View>
 
       <View style={styles.top}>
         <View style={styles.badge}>
@@ -76,8 +77,7 @@ const styles = StyleSheet.create({
     ...hardShadow(5),
   },
   stripes: { position: 'absolute', top: 0, bottom: 0, left: -24, right: -24 },
-  bear: { position: 'absolute', right: 6, bottom: -18 },
-  bearImg: { width: 108, height: 151 },
+  bear: { position: 'absolute', right: -26, bottom: -44, width: 164, transform: [{ scale: 0.6 }] },
   top: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   badge: {
     width: 44,
