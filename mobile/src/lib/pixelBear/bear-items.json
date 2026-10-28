@@ -159,6 +159,148 @@
     ],
     "loose": false
   },
+  "sport_hoodie": {
+    "at": [
+      -6,
+      -14
+    ],
+    "loose": false,
+    "anchor": "body",
+    "fitted": {
+      "sheets": {
+        "thriving": "fitted_sport_hoodie_thriving_940x280",
+        "sleep": "fitted_sport_hoodie_sleep_970x260",
+        "happy": "fitted_sport_hoodie_happy_1260x260",
+        "tired": "fitted_sport_hoodie_tired_1092x260",
+        "welcome": "fitted_sport_hoodie_welcome_1320x1260",
+        "ouch": "fitted_sport_hoodie_ouch_1092x272",
+        "neglected": "fitted_sport_hoodie_neglected_1092x260"
+      }
+    }
+  },
+  "pirate_shirt": {
+    "at": [
+      -6,
+      -14
+    ],
+    "loose": false,
+    "anchor": "body",
+    "fitted": {
+      "sheets": {
+        "thriving": "fitted_pirate_shirt_thriving_940x280",
+        "sleep": "fitted_pirate_shirt_sleep_970x260",
+        "happy": "fitted_pirate_shirt_happy_1260x260",
+        "tired": "fitted_pirate_shirt_tired_1092x260",
+        "welcome": "fitted_pirate_shirt_welcome_1320x1260",
+        "ouch": "fitted_pirate_shirt_ouch_1092x272",
+        "neglected": "fitted_pirate_shirt_neglected_1092x260"
+      }
+    }
+  },
+  "wizard_robe": {
+    "at": [
+      -6,
+      -14
+    ],
+    "loose": false,
+    "anchor": "body",
+    "fitted": {
+      "sheets": {
+        "thriving": "fitted_wizard_robe_thriving_940x280",
+        "sleep": "fitted_wizard_robe_sleep_970x260",
+        "happy": "fitted_wizard_robe_happy_1260x260",
+        "tired": "fitted_wizard_robe_tired_1092x260",
+        "welcome": "fitted_wizard_robe_welcome_1320x1260",
+        "ouch": "fitted_wizard_robe_ouch_1092x272",
+        "neglected": "fitted_wizard_robe_neglected_1092x260"
+      }
+    }
+  },
+  "pirate_boots": {
+    "at": [
+      -6,
+      -14
+    ],
+    "loose": false,
+    "anchor": "body",
+    "fitted": {
+      "sheets": {
+        "thriving": "fitted_pirate_boots_thriving_940x280",
+        "sleep": "fitted_pirate_boots_sleep_970x260",
+        "happy": "fitted_pirate_boots_happy_1260x260",
+        "tired": "fitted_pirate_boots_tired_1092x260",
+        "welcome": "fitted_pirate_boots_welcome_1320x1260",
+        "ouch": "fitted_pirate_boots_ouch_1092x272",
+        "neglected": "fitted_pirate_boots_neglected_1092x260"
+      }
+    }
+  },
+  "mongol_boots": {
+    "at": [
+      -6,
+      -14
+    ],
+    "loose": false,
+    "anchor": "body",
+    "fitted": {
+      "sheets": {
+        "thriving": "fitted_mongol_boots_thriving_940x280",
+        "sleep": "fitted_mongol_boots_sleep_970x260",
+        "happy": "fitted_mongol_boots_happy_1260x260",
+        "tired": "fitted_mongol_boots_tired_1092x260",
+        "welcome": "fitted_mongol_boots_welcome_1320x1260",
+        "ouch": "fitted_mongol_boots_ouch_1092x272",
+        "neglected": "fitted_mongol_boots_neglected_1092x260"
+      },
+      "deel": {
+        "thriving": "fitted_mongol_boots_deel_thriving_940x280",
+        "sleep": "fitted_mongol_boots_deel_sleep_970x260",
+        "happy": "fitted_mongol_boots_deel_happy_1260x260",
+        "tired": "fitted_mongol_boots_deel_tired_1092x260",
+        "welcome": "fitted_mongol_boots_deel_welcome_1320x1260",
+        "ouch": "fitted_mongol_boots_deel_ouch_1092x272",
+        "neglected": "fitted_mongol_boots_deel_neglected_1092x260"
+      }
+    }
+  },
+  "sport_shorts": {
+    "at": [
+      -6,
+      -14
+    ],
+    "loose": false,
+    "anchor": "body",
+    "fitted": {
+      "sheets": {
+        "thriving": "fitted_sport_shorts_thriving_940x280",
+        "sleep": "fitted_sport_shorts_sleep_970x260",
+        "happy": "fitted_sport_shorts_happy_1260x260",
+        "tired": "fitted_sport_shorts_tired_1092x260",
+        "welcome": "fitted_sport_shorts_welcome_1320x1260",
+        "ouch": "fitted_sport_shorts_ouch_1092x272",
+        "neglected": "fitted_sport_shorts_neglected_1092x260"
+      }
+    }
+  },
+  "sport_sneakers": {
+    "at": [
+      -6,
+      -14
+    ],
+    "loose": false,
+    "anchor": "body",
+    "fitted": {
+      "sheets": {
+        "thriving": "fitted_sport_sneakers_thriving_940x280",
+        "sleep": "fitted_sport_sneakers_sleep_970x260",
+        "happy": "fitted_sport_sneakers_happy_1260x260",
+        "tired": "fitted_sport_sneakers_tired_1092x260",
+        "welcome": "fitted_sport_sneakers_welcome_1320x1260",
+        "ouch": "fitted_sport_sneakers_ouch_1092x272",
+        "neglected": "fitted_sport_sneakers_neglected_1092x260"
+      }
+    }
+  },
   "staff00": {
     "at": [
       -16,
@@ -340,6 +482,52 @@
         "welcome": "held_black_sword_welcome_768x1008",
         "ouch": "held_black_sword_ouch_896x224",
         "neglected": "held_black_sword_neglected_896x224"
+      }
+    }
+  },
+  "wizard_wand": {
+    "at": [
+      -12,
+      -54
+    ],
+    "loose": false,
+    "anchor": "hand",
+    "held": {
+      "at": [
+        -32,
+        -60
+      ],
+      "sheets": {
+        "thriving": "held_wizard_wand_thriving_640x224",
+        "sleep": "held_wizard_wand_sleep_640x224",
+        "happy": "held_wizard_wand_happy_896x224",
+        "tired": "held_wizard_wand_tired_896x224",
+        "welcome": "held_wizard_wand_welcome_768x1008",
+        "ouch": "held_wizard_wand_ouch_896x224",
+        "neglected": "held_wizard_wand_neglected_896x224"
+      }
+    }
+  },
+  "pirate_sword": {
+    "at": [
+      -12,
+      -54
+    ],
+    "loose": false,
+    "anchor": "hand",
+    "held": {
+      "at": [
+        -32,
+        -60
+      ],
+      "sheets": {
+        "thriving": "held_pirate_sword_thriving_640x224",
+        "sleep": "held_pirate_sword_sleep_640x224",
+        "happy": "held_pirate_sword_happy_896x224",
+        "tired": "held_pirate_sword_tired_896x224",
+        "welcome": "held_pirate_sword_welcome_768x1008",
+        "ouch": "held_pirate_sword_ouch_896x224",
+        "neglected": "held_pirate_sword_neglected_896x224"
       }
     }
   },
