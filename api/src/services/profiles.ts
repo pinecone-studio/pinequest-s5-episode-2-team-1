@@ -2,7 +2,7 @@ import type { AvatarBody, LookBody, Me, OnboardingBody, MyProfileResponse, Profi
 import { COSMETICS, type Cosmetic, OUTFIT_ITEMS } from '../config/cosmetics';
 import { SUBJECTS, type Subject } from '../config/game';
 import { bossesIn } from '../domain/boss';
-import { levelProgress } from '../domain/level';
+import { levelProgress, tierForGrade } from '../domain/level';
 import { parseBearLook } from '../domain/profile';
 import { normalizeStreak } from '../domain/streak';
 import { ubDay } from '../domain/time';
@@ -134,6 +134,20 @@ export async function setOnboarding(db: D1Database, userId: number, body: Onboar
     )
     .bind(grade, tier, JSON.stringify(answers), userId)
     .run();
+  return loadMe(db, userId);
+}
+
+/** Хөгжүүлэгчийн бүртгэлээр анги бүрийг шалгах: дуусаагүй даалгаврыг шинэ ангид үргэлжлүүлэхгүй. */
+export async function setAdminGrade(db: D1Database, userId: number, grade: number): Promise<Me> {
+  const user = await db.prepare('SELECT is_admin FROM users WHERE id = ?').bind(userId).first<{ is_admin: number }>();
+  if (user?.is_admin !== 1) throw new ApiError(403, 'FORBIDDEN', 'Зөвхөн хөгжүүлэгч анги сольж болно');
+  const tier = tierForGrade(grade);
+  if (!tier) throw new ApiError(400, 'BAD_REQUEST', 'Анги буруу');
+  await db.batch([
+    db.prepare('DELETE FROM recoveries WHERE user_id = ? AND cleared_at IS NULL').bind(userId),
+    db.prepare(`DELETE FROM tasks WHERE user_id = ? AND status = 'in_progress'`).bind(userId),
+    db.prepare('UPDATE users SET grade = ?, tier = ? WHERE id = ?').bind(grade, tier, userId),
+  ]);
   return loadMe(db, userId);
 }
 

@@ -170,9 +170,9 @@ const styles = StyleSheet.create({
   title: { fontFamily: fonts.bold, fontSize: 18, lineHeight: 23, color: colors.white },
   switch: { width: 56, alignItems: 'center', justifyContent: 'center', borderLeftWidth: 1.5, borderLeftColor: 'rgba(0,0,0,0.18)' },
   menu: {
-    alignSelf: 'flex-start',
+    alignSelf: 'flex-end',
     marginTop: 8,
-    marginLeft: 16,
+    marginRight: 16,
     backgroundColor: colors.white,
     borderRadius: 20,
     padding: 6,

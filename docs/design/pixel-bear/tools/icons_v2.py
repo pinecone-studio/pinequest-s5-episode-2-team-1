@@ -3,13 +3,15 @@
 
 Гаралт (../sprites/):
   nav2_{home,tasks,path,shop,crew,bag}_{on,off}.png  — доод цэс (on = өнгөт, off = саарал outline)
-  btn_calendar.png, btn_honey.png                     — Нүүрний доод буланд байрлах товчны icon
+  btn_calendar.png, btn_honey_jar.png                 — Нүүрний доод буланд байрлах товчны icon
+  btn_honey.png                                       — Валютын 24×24 хушны боргоцой
 Ажиллуулах:  python3 icons_v2.py   (Pillow)
 """
 from pathlib import Path
 from PIL import Image
 
 OUT = Path(__file__).resolve().parent.parent / 'sprites'
+PINECONE = OUT.parent / 'pixellab' / 'pinecone-currency.png'
 N = 20
 INK = '#231C38'
 OFF_LINE = '#77737F'
@@ -158,7 +160,7 @@ def calendar():
     return i, {'W': ('#FFFFFF', '#FFFFFF'), 'A': ('#EF6B5B', '#E6E4EC'), 'L': ('#D9D6E3', '#E6E4EC'), 'Y': ('#F3C93D', '#E6E4EC')}
 
 
-def honey():
+def honey_jar():
     i = Icon()
     jar = [c for c in rect(4, 7, 15, 18) if c not in {(4, 18), (15, 18), (4, 7), (15, 7)}]
     i.part(jar, 'A')
@@ -184,8 +186,29 @@ def honey():
     }
 
 
+def pinecone():
+    """Лавлагааны боргоцойг жижиг дэлгэцэд уншигдах 12 өнгийн pixel icon болгоно."""
+    src = Image.open(PINECONE).convert('RGBA')
+    src = src.crop(src.getbbox())
+    src.thumbnail((20, 22), Image.Resampling.BOX)
+    alpha = src.getchannel('A').point(lambda a: 255 if a >= 96 else 0)
+    src = src.convert('RGB').quantize(colors=12, dither=Image.Dither.NONE).convert('RGBA')
+    src.putalpha(alpha)
+    im = Image.new('RGBA', (24, 24), (0, 0, 0, 0))
+    im.alpha_composite(src, ((24 - src.width) // 2, (24 - src.height) // 2))
+    return im
+
+
 NAV = {'home': home, 'tasks': tasks, 'path': path, 'shop': shop, 'crew': crew, 'bag': bag}
-BTN = {'calendar': calendar, 'honey': honey}
+BTN = {'calendar': calendar, 'honey_jar': honey_jar}
+
+
+def save(im, path):
+    if path.exists():
+        old = Image.open(path).convert('RGBA')
+        if old.size == im.size and list(old.getdata()) == list(im.getdata()):
+            return
+    im.save(path)
 
 
 def main():
@@ -194,11 +217,12 @@ def main():
         icon, pal = fn()
         on = {k: v[0] for k, v in pal.items()}
         off = {k: v[1] for k, v in pal.items()}
-        icon.render(on, INK).save(OUT / f'nav2_{name}_on.png')
-        icon.render(off, OFF_LINE).save(OUT / f'nav2_{name}_off.png')
+        save(icon.render(on, INK), OUT / f'nav2_{name}_on.png')
+        save(icon.render(off, OFF_LINE), OUT / f'nav2_{name}_off.png')
     for name, fn in BTN.items():
         icon, pal = fn()
-        icon.render({k: v[0] for k, v in pal.items()}, INK).save(OUT / f'btn_{name}.png')
+        save(icon.render({k: v[0] for k, v in pal.items()}, INK), OUT / f'btn_{name}.png')
+    save(pinecone(), OUT / 'btn_honey.png')
     print('ok')
 
 

@@ -81,13 +81,14 @@ export default function PathScreen() {
   const [book, setBook] = useState<{ subject: Subject; lessons: BookLesson[] } | null>(null);
   useEffect(() => {
     let alive = true;
+    setBook(null);
     api<LessonsResponse>(`/me/lessons/${subject}`)
       .then((r) => alive && setBook({ subject, lessons: r.lessons }))
       .catch(() => alive && setBook(null));
     return () => {
       alive = false;
     };
-  }, [subject]);
+  }, [subject, me?.grade]);
   const lessons = book?.subject === subject ? book.lessons : [];
   // Замын урт = хичээлийн тоо + boss: хичээл бүр нэг зангилаа
   const n = pathLessons(lessons.length);

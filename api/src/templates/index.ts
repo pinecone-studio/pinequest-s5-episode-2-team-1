@@ -5,6 +5,7 @@ import { shuffleOptions } from '../llm/validate';
 import type { PageRange } from '../services/grounding';
 import { MATH6 } from './math6';
 import { MATH7 } from './math7';
+import { MATH8, MATH9, MATH10 } from './mathAdvanced';
 import { MATH6_MORE, MATH7_MORE } from './mathCurriculum';
 
 export type Rng = () => number;
@@ -24,7 +25,7 @@ export interface Template {
   make(rng: Rng, level: Level): Omit<QuestionDraft, 'correctIndex' | 'topic'>;
 }
 
-const ALL: readonly Template[] = [...MATH6, ...MATH7, ...MATH6_MORE, ...MATH7_MORE];
+const ALL: readonly Template[] = [...MATH6, ...MATH7, ...MATH6_MORE, ...MATH7_MORE, ...MATH8, ...MATH9, ...MATH10];
 
 export const templateById = (id: string): Template | undefined => ALL.find((t) => t.id === id);
 
