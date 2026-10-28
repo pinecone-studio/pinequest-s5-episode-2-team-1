@@ -8,7 +8,7 @@ import { Card, ProgressBar, SectionTitle } from '@/components/ui';
 import { colors, fonts, radius, subjectTheme } from '@/constants/theme';
 import { type } from '@/constants/type';
 import { S, subjectNames } from '@/i18n/strings';
-import { BACKGROUNDS, bgById, OUTFITS, outfitById } from '@/lib/pixelBear/catalog';
+import { BACKGROUNDS, bgById, OUTFITS, outfitById, parseWorn, wornItems } from '@/lib/pixelBear/catalog';
 import type { SpriteKey } from '@/sprites';
 
 /**
@@ -17,7 +17,8 @@ import type { SpriteKey } from '@/sprites';
  */
 export function ProfileView({ profile, index = 0 }: { profile: PublicProfile; index?: number }) {
   const bg = bgById(profile.look.bg);
-  const outfit = outfitById(profile.look.outfit);
+  const worn = parseWorn(profile.look.outfit);
+  const outfit = outfitById(worn.at(-1) ?? 'scarf');
   const bgs = BACKGROUNDS.filter((b) => profile.collection.bgs.includes(b.id));
   const outfits = OUTFITS.filter((o) => profile.collection.outfits.includes(o.id));
 
@@ -26,7 +27,7 @@ export function ProfileView({ profile, index = 0 }: { profile: PublicProfile; in
       <Enter index={index}>
         {/* найзын профайл дээр баавгай нь тэр хүний сонгосон өнгөөр */}
         <FurContext.Provider value={profile.look.fur ?? 'brown'}>
-          <PreviewStage bg={bg} outfit={outfit} name={S.profile.levelChip(profile.level)} alt={S.shop.previewAlt(outfit.name, bg.name)} />
+          <PreviewStage bg={bg} items={wornItems(worn)} name={S.profile.levelChip(profile.level)} alt={S.shop.previewAlt(outfit.name, bg.name)} />
         </FurContext.Provider>
       </Enter>
 
@@ -82,7 +83,7 @@ export function ProfileView({ profile, index = 0 }: { profile: PublicProfile; in
           <Text style={styles.count}>{S.profile.outfitCount(outfits.length, OUTFITS.length)}</Text>
           <View style={styles.wrap}>
             {outfits.map((o) => (
-              <View key={o.id} accessible accessibilityLabel={o.name} style={[styles.outfit, { backgroundColor: o.tile }, o.id === outfit.id && styles.swatchOn]}>
+              <View key={o.id} accessible accessibilityLabel={o.name} style={[styles.outfit, { backgroundColor: o.tile }, worn.includes(o.id) && styles.swatchOn]}>
                 <Sprite id={o.card} style={{ marginTop: o.imgTop }} />
               </View>
             ))}
@@ -144,7 +145,7 @@ const styles = StyleSheet.create({
   tile: { flex: 1, height: 104, padding: 12, borderRadius: 22, backgroundColor: colors.white, justifyContent: 'space-between' },
   tileLabel: { fontFamily: fonts.semibold, fontSize: 13, color: colors.ink },
   tileValueRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  tileValue: { fontFamily: fonts.pixel, fontSize: 28, lineHeight: 32, color: colors.ink },
+  tileValue: { fontFamily: fonts.pixelNum, fontSize: 24, lineHeight: 27, color: colors.ink },
   tileSub: { fontFamily: fonts.medium, fontSize: 12, color: colors.muted },
   section: { gap: 10 },
   skills: { gap: 16 },

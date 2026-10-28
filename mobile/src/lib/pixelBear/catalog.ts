@@ -154,3 +154,48 @@ export const bgById = (id: string): BgDef => BACKGROUNDS.find((b) => b.id === id
 export const outfitById = (id: string): OutfitDef => OUTFITS.find((o) => o.id === id) ?? OUTFITS[0];
 /** амьд баавгайд өмсгөх item-үүд */
 export const outfitItems = (o: OutfitDef): ItemId[] => o.items ?? (o.item ? [o.item] : []);
+
+/**
+ * Хувцсыг хослуулж өмсөх: item бүр биеийн нэг байрлалтай. Шинэ хувцас өмсөхөд ижил байрлалтай (жишээ нь хоёр малгай)
+ * хувцас тайлагдана, бусад нь үлдэнэ: малгай + нүдний шил + таяг зэрэг өмсөгдөнө.
+ */
+type Slot = 'head' | 'face' | 'neck' | 'body' | 'back' | 'waist' | 'legs' | 'feet' | 'hand' | 'offhand';
+const ITEM_SLOT: Record<ItemId, Slot> = {
+  gradcap: 'head', warrior_helmet: 'head', ny_cap: 'head', pirate_hat: 'head', cowboy_hat: 'head', white_headscarf: 'head',
+  hard_hat: 'head', ribbon: 'head', mongol_hat: 'head', puss_hat: 'head', headphones: 'head',
+  // бүтэн нүүр, толгойг бүрхдэг маск толгойн байрлал эзэлнэ
+  batman_mask: 'head', mickey_mask: 'head',
+  glasses: 'face', snorkel: 'face',
+  hiphop_chain: 'neck',
+  batman_suit: 'body', mongol_deel: 'body', sport_hoodie: 'body', pirate_shirt: 'body', wizard_robe: 'body',
+  puss_cape: 'back', puss_belt: 'waist', sport_shorts: 'legs',
+  brown_boots: 'feet', pirate_boots: 'feet', mongol_boots: 'feet', sport_sneakers: 'feet',
+  staff00: 'hand', staff03: 'hand', staff04: 'hand', staff05: 'hand', holly_staff: 'hand', pestilence_staff: 'hand',
+  w_staff_256: 'hand', black_sword: 'hand', wizard_wand: 'hand', pirate_sword: 'hand',
+  bronze_shield: 'offhand',
+};
+/** Баавгайн суурь зургийг бүхэлд нь солидог item-ууд (LiveBear): нэг дор зөвхөн нэг нь. */
+const BASE_ITEMS: readonly ItemId[] = ['warrior_helmet', 'batman_suit', 'mongol_deel', 'white_headscarf', 'brown_boots'];
+
+const slotsOf = (id: OutfitId): string[] =>
+  outfitItems(outfitById(id)).flatMap((it) => [ITEM_SLOT[it], ...(BASE_ITEMS.includes(it) ? ['base'] : [])]);
+
+/** Өмссөн хувцсуудын хадгалах хэлбэр ('pirate_hat+glasses+staff00'); хоосон бол анхдагч ороолт. */
+export const joinWorn = (ids: readonly OutfitId[]): string => (ids.length ? ids.join('+') : DEFAULT_OUTFIT_ID);
+export function parseWorn(value: string | null | undefined): OutfitId[] {
+  const ids = (value ?? '').split('+').filter((id): id is OutfitId => id !== DEFAULT_OUTFIT_ID && OUTFITS.some((o) => o.id === id));
+  return [...new Set(ids)];
+}
+
+/** `id`-г өмсөнө (ижил байрлалтайг тайлна) эсвэл өмссөн бол тайлна. Анхдагч ороолт бүгдийг тайлна. */
+export function toggleWorn(worn: readonly OutfitId[], id: OutfitId): OutfitId[] {
+  if (id === DEFAULT_OUTFIT_ID) return [];
+  if (worn.includes(id)) return worn.filter((w) => w !== id);
+  const slots = slotsOf(id);
+  return [...worn.filter((w) => !slotsOf(w).some((s) => slots.includes(s))), id];
+}
+
+export const isWorn = (worn: readonly OutfitId[], id: OutfitId) => (id === DEFAULT_OUTFIT_ID ? worn.length === 0 : worn.includes(id));
+
+/** Өмссөн бүх хувцасны item-ууд (амьд баавгайд). */
+export const wornItems = (worn: readonly OutfitId[]): ItemId[] => [...new Set(worn.flatMap((id) => outfitItems(outfitById(id))))];

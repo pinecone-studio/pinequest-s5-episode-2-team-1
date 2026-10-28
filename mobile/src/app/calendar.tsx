@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
   title: { fontFamily: fonts.semibold, fontSize: 17, color: colors.ink },
   monthRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   month: { fontFamily: fonts.semibold, fontSize: 24, letterSpacing: -0.5, color: colors.ink },
-  year: { fontFamily: fonts.pixelMedium, fontSize: 16, color: colors.muted },
+  year: { fontFamily: fonts.pixelNum, fontSize: 14, color: colors.muted },
   round: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
   week: { flexDirection: 'row', gap: 6 },
   weekday: { flex: 1, textAlign: 'center', fontFamily: fonts.semibold, fontSize: 12, color: colors.muted },

@@ -30,7 +30,11 @@ export const halo = { light: 'rgba(255,255,255,0.5)', night: 'rgba(122,92,245,0.
 export const spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24, xxl: 32 } as const;
 export const radius = { sm: 14, md: 20, card: 24, lg: 28, stage: 32, sheet: 36, pill: 999 } as const;
 
-/** Onest (UI) ба Pixelify Sans (тоо). `fontWeight` нь custom фонтод ажилладаггүй тул family-г жинээр нь сонгоно. */
+/**
+ * Onest (UI), Pixelify Sans (pixel бичиг) ба Silkscreen (pixel тоо: Pixelify-ийн 2 нь Z, 5 нь S шиг харагддаг).
+ * Silkscreen-д кирилл үсэг байхгүй тул зөвхөн тоо, латин үсэгт. `fontWeight` нь custom фонтод ажилладаггүй тул
+ * family-г жинээр нь сонгоно.
+ */
 export const fonts = {
   regular: 'Onest_400Regular',
   medium: 'Onest_500Medium',
@@ -39,6 +43,7 @@ export const fonts = {
   extrabold: 'Onest_800ExtraBold',
   pixel: 'PixelifySans_700Bold',
   pixelMedium: 'PixelifySans_500Medium',
+  pixelNum: 'Silkscreen_400Regular',
 } as const;
 
 /** Хатуу "game" сүүдэр (blur-гүй). */

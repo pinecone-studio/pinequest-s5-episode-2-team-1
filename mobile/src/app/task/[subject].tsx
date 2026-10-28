@@ -440,7 +440,7 @@ const styles = StyleSheet.create({
   bubbleText: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 19, color: colors.ink },
   progressRow: { position: 'absolute', left: 24, right: 24, bottom: 20, flexDirection: 'row', alignItems: 'center', gap: 10 },
   track: { flex: 1, height: 12, borderRadius: 6, backgroundColor: colors.white, overflow: 'hidden' },
-  progressNum: { fontFamily: fonts.pixel, fontSize: 16, color: colors.white },
+  progressNum: { fontFamily: fonts.pixelNum, fontSize: 14, color: colors.white },
   body: { paddingHorizontal: 24, paddingTop: 24 },
   loading: { alignItems: 'center', gap: 12, paddingVertical: 40 },
   label: { fontFamily: fonts.bold, fontSize: 13, letterSpacing: 1, textTransform: 'uppercase', color: colors.muted },

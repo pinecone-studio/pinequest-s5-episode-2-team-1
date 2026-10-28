@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
   hint: { fontFamily: fonts.medium, fontSize: 15, color: colors.muted },
   num: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.track, alignItems: 'center', justifyContent: 'center' },
   numOn: { backgroundColor: colors.violet },
-  numText: { fontFamily: fonts.pixel, fontSize: 18, color: colors.indigo },
+  numText: { fontFamily: fonts.pixelNum, fontSize: 15, color: colors.indigo },
   numTextOn: { color: colors.white },
   benefit: { flexDirection: 'row', alignItems: 'center', gap: 16, paddingVertical: 16 },
   divider: { borderTopWidth: 2, borderTopColor: colors.line },

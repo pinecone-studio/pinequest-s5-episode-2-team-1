@@ -17,7 +17,7 @@ import { pathSubject } from '@/lib/pixelBear/path';
 /** 03 · Нүүр (Charlie маягийн цэвэрхэн): шат/XP, баавгай, төлөвийн мөр, доод хоёр pixel товч. */
 export default function HomeScreen() {
   const { me, refreshMe } = useAuth();
-  const { bear, bgId, outfitId, cyclePreview, subject } = usePixelBear();
+  const { bear, bgId, outfitIds, cyclePreview, subject } = usePixelBear();
   const [refreshing, setRefreshing] = useState(false);
 
   useFocusEffect(
@@ -58,7 +58,7 @@ export default function HomeScreen() {
       </Enter>
 
       <Enter index={1}>
-        <BearStage view={bear} bgId={bgId} outfitId={outfitId} onLongPress={cyclePreview} />
+        <BearStage view={bear} bgId={bgId} outfitIds={outfitIds} onLongPress={cyclePreview} />
       </Enter>
 
       <Enter index={2}>
@@ -82,8 +82,8 @@ const styles = StyleSheet.create({
   content: { flexGrow: 1, gap: 14 },
   counter: { alignItems: 'center', gap: 2, marginTop: 4 },
   level: { fontFamily: fonts.bold, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: colors.muted },
-  xp: { fontFamily: fonts.pixel, fontSize: 30, lineHeight: 34, color: colors.ink },
-  xpMuted: { fontFamily: fonts.pixel, fontSize: 18, color: '#A19DAE' },
+  xp: { fontFamily: fonts.pixelNum, fontSize: 26, lineHeight: 29, color: colors.ink },
+  xpMuted: { fontFamily: fonts.pixelNum, fontSize: 15, color: '#A19DAE' },
   barWrap: { alignSelf: 'stretch', paddingHorizontal: 18, marginTop: 4 },
   mood: { fontFamily: fonts.semibold, fontSize: 17, lineHeight: 23, color: colors.ink, textAlign: 'center', paddingHorizontal: 12 },
   bottom: { flexDirection: 'row', alignItems: 'center', gap: 12 },

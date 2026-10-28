@@ -1,5 +1,6 @@
 import { Onest_400Regular, Onest_500Medium, Onest_600SemiBold, Onest_700Bold, Onest_800ExtraBold } from '@expo-google-fonts/onest';
 import { PixelifySans_500Medium, PixelifySans_700Bold } from '@expo-google-fonts/pixelify-sans';
+import { Silkscreen_400Regular } from '@expo-google-fonts/silkscreen';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -30,6 +31,7 @@ export default function RootLayout() {
     Onest_800ExtraBold,
     PixelifySans_500Medium,
     PixelifySans_700Bold,
+    Silkscreen_400Regular,
   });
   const ready = loaded || !!error;
 

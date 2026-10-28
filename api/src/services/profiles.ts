@@ -105,15 +105,22 @@ export async function findProfile(db: D1Database, viewerId: number, input: strin
   return { profile, isMe: ownerId === viewerId, friend };
 }
 
-/** Нүүрэн дээр сонгосон дэвсгэр, хувцсыг хадгална (профайл дээр бусдад харагдана). Зөвхөн эзэмшиж буйгаа. */
+/** Хослуулж өмссөн хувцсууд 'pirate_hat+glasses+staff00' (апп-ын catalog.ts joinWorn); нэг хувцас ч ийм хэлбэр. */
+export const wornOutfits = (outfit: string) => [...new Set(outfit.split('+'))];
+const MAX_WORN = 10;
+
+/** Нүүрэн дээр сонгосон дэвсгэр, өмссөн хувцсуудыг хадгална (профайл дээр бусдад харагдана). Зөвхөн эзэмшиж буйгаа. */
 export async function setBearLook(db: D1Database, userId: number, look: LookBody): Promise<Me> {
   const known = (kind: Cosmetic['kind'], key: string) =>
     COSMETICS.some((c) => c.kind === kind && c.key === key) || (kind === 'outfit' && Object.keys(OUTFIT_ITEMS).includes(key));
-  if (!known('bg', look.bg) || !known('outfit', look.outfit)) throw new ApiError(400, 'BAD_REQUEST', 'Дэвсгэр эсвэл хувцас буруу');
+  const worn = wornOutfits(look.outfit);
+  if (!known('bg', look.bg) || worn.length > MAX_WORN || !worn.every((key) => known('outfit', key))) {
+    throw new ApiError(400, 'BAD_REQUEST', 'Дэвсгэр эсвэл хувцас буруу');
+  }
   const { bgs, outfits } = await loadCollection(db, userId);
-  if (!bgs.includes(look.bg) || !outfits.includes(look.outfit)) throw new ApiError(403, 'NOT_OWNED', 'Эхлээд авна уу');
+  if (!bgs.includes(look.bg) || !worn.every((key) => outfits.includes(key))) throw new ApiError(403, 'NOT_OWNED', 'Эхлээд авна уу');
   // үс, царай, цээжний толбыг (PUT /me/avatar) хөндөхгүй
-  await db.prepare(`UPDATE users SET bear_look = json_set(${LOOK_JSON}, '$.bg', ?, '$.outfit', ?) WHERE id = ?`).bind(look.bg, look.outfit, userId).run();
+  await db.prepare(`UPDATE users SET bear_look = json_set(${LOOK_JSON}, '$.bg', ?, '$.outfit', ?) WHERE id = ?`).bind(look.bg, worn.join('+'), userId).run();
   return loadMe(db, userId);
 }
 

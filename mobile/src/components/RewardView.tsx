@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
   tiles: { flexDirection: 'row', gap: 10 },
   tile: { flex: 1, height: 80, borderRadius: 22, backgroundColor: TILE, alignItems: 'center', justifyContent: 'center', gap: 4 },
   tileRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  tileNum: { fontFamily: fonts.pixel, fontSize: 22, color: colors.white },
+  tileNum: { fontFamily: fonts.pixelNum, fontSize: 19, color: colors.white },
   tileLabel: { fontFamily: fonts.semibold, fontSize: 12, color: SOFT },
   lemon: {
     minHeight: 78,

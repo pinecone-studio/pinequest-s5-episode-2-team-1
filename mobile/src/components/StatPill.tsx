@@ -73,8 +73,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 7,
   },
-  num: { fontFamily: fonts.pixel, fontSize: 17, color: colors.ink },
-  xpNum: { fontFamily: fonts.pixel, fontSize: 16, lineHeight: 16, color: colors.ink },
+  num: { fontFamily: fonts.pixelNum, fontSize: 14, color: colors.ink },
+  xpNum: { fontFamily: fonts.pixelNum, fontSize: 14, lineHeight: 14, color: colors.ink },
   track: { width: 70, height: 4, borderRadius: 2, backgroundColor: colors.track },
   fill: { height: 4, borderRadius: 2, backgroundColor: colors.violet },
 });

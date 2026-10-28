@@ -122,7 +122,7 @@ const styles = StyleSheet.create({
   progress: { borderRadius: radius.lg, padding: 18, gap: 6, overflow: 'hidden', minHeight: 150 },
   peek: { position: 'absolute', right: -16, bottom: -18 },
   progressLabel: { fontFamily: fonts.bold, fontSize: 13, letterSpacing: 1, color: colors.ink },
-  big: { fontFamily: fonts.pixel, fontSize: 40, lineHeight: 44, color: colors.ink },
+  big: { fontFamily: fonts.pixelNum, fontSize: 34, lineHeight: 37, color: colors.ink },
   status: { fontFamily: fonts.semibold, fontSize: 14, lineHeight: 19, color: colors.ink, maxWidth: '64%' },
   quest: {
     minHeight: 112,
@@ -150,6 +150,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
   },
-  rewardNum: { fontFamily: fonts.pixel, fontSize: 14, color: colors.ink },
+  rewardNum: { fontFamily: fonts.pixelNum, fontSize: 12, color: colors.ink },
   play: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.ink, alignItems: 'center', justifyContent: 'center', paddingLeft: 3 },
 });

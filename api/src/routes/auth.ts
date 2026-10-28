@@ -119,7 +119,7 @@ meRoutes.post('/profile/code', requireAuth, async (c) => c.json<MyProfileRespons
 
 /** Нүүрэн дээр сонгосон дэвсгэр, хувцас (профайл дээр бусдад харагдана). */
 meRoutes.put('/look', requireAuth, async (c) => {
-  const body = await readBody(c, z.object({ bg: z.string().min(1).max(40), outfit: z.string().min(1).max(40) }));
+  const body = await readBody(c, z.object({ bg: z.string().min(1).max(40), outfit: z.string().min(1).max(400) }));
   return c.json<MeResponse>({ me: await setBearLook(c.env.DB, c.get('userId'), body) });
 });
 

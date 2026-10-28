@@ -9,7 +9,6 @@ import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { FriendRow } from '@/components/FriendRow';
 import { Enter } from '@/components/pixel';
-import { ProfileView } from '@/components/ProfileView';
 import { QrIsland } from '@/components/QrIsland';
 import { BackButton, Card, ErrorText, Muted, Screen, SectionTitle } from '@/components/ui';
 import { colors, fonts } from '@/constants/theme';
@@ -26,8 +25,9 @@ import { formatProfileCode, profileLink, profileQrText } from '@/lib/profile';
 const POLL_MS = 3_000;
 
 /**
- * Миний профайл (аватар дээр дарж нээнэ): QR арал (найз нь уншуулна), найз болох хүсэлтүүд, найзууд, бусдад харагдах
- * байдал. Найз нь QR-ийг уншуулаад «Найз болох» дармагц хүсэлт энд гарч ирэхэд «Зөвшөөрөх» дарна.
+ * Миний профайл (аватар дээр дарж нээнэ): баавгай, нэр, шат; баавгайгаа хуваалцах; найз болох хүсэлт, найзууд. Миний
+ * код (QR арал, код, хуваалцах, солих) «Миний код»-ыг дарахад л нээгдэнэ. Найз нь QR-ийг уншуулаад «Найз болох» дармагц
+ * хүсэлт энд гарч ирэхэд «Зөвшөөрөх» дарна.
  */
 export default function ProfileScreen() {
   const { me, refreshMe } = useAuth();
@@ -38,6 +38,7 @@ export default function ProfileScreen() {
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
   const [cardNote, setCardNote] = useState('');
+  const [showCode, setShowCode] = useState(false);
   const seenIncoming = useRef<number | null>(null);
 
   const loadFriends = useCallback(async () => {
@@ -137,12 +138,9 @@ export default function ProfileScreen() {
     <Screen>
       <View style={styles.header}>
         <BackButton onPress={() => goBack()} />
-        <View style={{ flex: 1, gap: 4 }}>
-          <Text accessibilityRole="header" style={type.h1}>
-            {S.profile.title}
-          </Text>
-          <Text style={type.small}>{S.profile.subtitle}</Text>
-        </View>
+        <Text accessibilityRole="header" style={[type.h1, { flex: 1 }]}>
+          {S.profile.title}
+        </Text>
       </View>
 
       {!data ? (
@@ -153,20 +151,27 @@ export default function ProfileScreen() {
         <>
           {me ? (
             <Enter index={0}>
-              <Card style={styles.photoCard}>
-                <Avatar size={64} look={me.look} label={S.avatar.preview(me.name ?? me.username)} />
-                <Text style={[styles.cardTitle, { flex: 1 }]} numberOfLines={1}>
-                  {me.name ?? me.username}
-                </Text>
-                <Button title={S.avatar.change} variant="secondary" small onPress={() => router.push('/avatar')} />
+              <Card style={styles.hero}>
+                <View style={styles.heroRow}>
+                  <Avatar size={72} look={me.look} label={S.avatar.preview(me.name ?? me.username)} />
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <Text style={styles.cardTitle} numberOfLines={1}>
+                      {me.name ?? me.username}
+                    </Text>
+                    <Text style={type.small} numberOfLines={1}>
+                      {S.profile.heroLine(me.username, me.level)}
+                    </Text>
+                  </View>
+                  <Button title={S.avatar.change} variant="secondary" small onPress={() => router.push('/avatar')} />
+                </View>
+                <Button title={S.profile.shareBear} variant="lemon" loading={busy === 'card'} onPress={shareBear} />
+                {cardNote ? <Text style={styles.note}>{cardNote}</Text> : null}
               </Card>
-              <Button title={S.profile.shareBear} variant="lemon" loading={busy === 'card'} onPress={shareBear} style={styles.shareBear} />
-              {cardNote ? <Text style={styles.note}>{cardNote}</Text> : null}
             </Enter>
           ) : null}
 
           {incoming.length > 0 ? (
-            <Enter index={0}>
+            <Enter index={1}>
               <Card style={styles.requests}>
                 <Text accessibilityRole="header" style={styles.cardTitle}>
                   {S.friends.requests(incoming.length)}
@@ -197,36 +202,9 @@ export default function ProfileScreen() {
             </Enter>
           ) : null}
 
-          <Enter index={1}>
-            <Card style={styles.qrCard}>
-              <QrIsland
-                value={profileQrText(data.code)}
-                bg={bgById(bgId)}
-                islandHint={S.profile.islandHint}
-                qrHint={S.profile.qrHint}
-                islandLabel={S.profile.islandLabel}
-                qrLabel={S.profile.qrLabel}
-              />
-              <View style={styles.codeRow}>
-                <Text style={styles.label}>{S.profile.codeLabel}</Text>
-                <Text selectable accessibilityLabel={`${S.profile.codeLabel}: ${data.code.split('').join(' ')}`} style={styles.code}>
-                  {formatProfileCode(data.code)}
-                </Text>
-              </View>
-              <Muted center>{S.profile.codeHint}</Muted>
-              <View style={styles.actions}>
-                <Button title={S.friends.add} variant="lemon" small onPress={() => router.push('/scan')} style={{ flex: 1 }} />
-                <Button title={S.profile.share} variant="secondary" small onPress={share} style={{ flex: 1 }} />
-              </View>
-              <Button title={S.profile.rotate} variant="ghost" small loading={busy === 'rotate'} onPress={rotate} />
-              {note ? <Text style={styles.note}>{note}</Text> : null}
-              <ErrorText>{error}</ErrorText>
-            </Card>
-          </Enter>
-
           <Enter index={2} style={styles.section}>
             <SectionTitle>{S.friends.title(list.length)}</SectionTitle>
-            <Card>
+            <Card style={styles.friends}>
               {list.length === 0 ? <Muted>{S.friends.empty}</Muted> : null}
               {list.map((f) => (
                 <FriendRow key={f.code} friend={f} onPress={() => open(f.code)} />
@@ -237,11 +215,39 @@ export default function ProfileScreen() {
                   <Button title={S.friends.cancel} variant="white" small loading={busy === `remove-${f.code}`} onPress={() => remove(f.code)} />
                 </FriendRow>
               ))}
+              <View style={styles.actions}>
+                <Button title={S.friends.add} variant="lemon" small onPress={() => router.push('/scan')} style={{ flex: 1 }} />
+                <Button
+                  title={showCode ? S.profile.hideCode : S.profile.myCode}
+                  variant="secondary"
+                  small
+                  onPress={() => setShowCode((v) => !v)}
+                  style={{ flex: 1 }}
+                />
+              </View>
+              {showCode ? (
+                <View style={styles.codePanel}>
+                  <QrIsland
+                    value={profileQrText(data.code)}
+                    bg={bgById(bgId)}
+                    islandHint={S.profile.islandHint}
+                    qrHint={S.profile.qrHint}
+                    islandLabel={S.profile.islandLabel}
+                    qrLabel={S.profile.qrLabel}
+                  />
+                  <Text selectable accessibilityLabel={`${S.profile.codeLabel}: ${data.code.split('').join(' ')}`} style={styles.code}>
+                    {formatProfileCode(data.code)}
+                  </Text>
+                  <View style={styles.actions}>
+                    <Button title={S.profile.share} variant="secondary" small onPress={share} style={{ flex: 1 }} />
+                    <Button title={S.profile.rotate} variant="ghost" small loading={busy === 'rotate'} onPress={rotate} style={{ flex: 1 }} />
+                  </View>
+                </View>
+              ) : null}
+              {note ? <Text style={styles.note}>{note}</Text> : null}
+              <ErrorText>{error}</ErrorText>
             </Card>
           </Enter>
-
-          <SectionTitle>{S.profile.preview}</SectionTitle>
-          <ProfileView profile={data.profile} index={3} />
         </>
       )}
     </Screen>
@@ -249,17 +255,16 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   center: { paddingVertical: 40, alignItems: 'center' },
-  photoCard: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  shareBear: { marginTop: 10 },
+  hero: { gap: 14 },
+  heroRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   requests: { backgroundColor: colors.lavender },
   cardTitle: { fontFamily: fonts.semibold, fontSize: 18, color: colors.ink },
-  qrCard: { gap: 10 },
-  codeRow: { alignItems: 'center', gap: 2 },
-  label: { fontFamily: fonts.bold, fontSize: 12, letterSpacing: 0.8, textTransform: 'uppercase', color: colors.muted },
-  code: { fontFamily: fonts.pixel, fontSize: 32, lineHeight: 38, letterSpacing: 2, color: colors.ink },
-  actions: { flexDirection: 'row', gap: 10 },
+  friends: { gap: 4 },
+  codePanel: { gap: 10, marginTop: 8, alignItems: 'stretch' },
+  code: { fontFamily: fonts.pixelNum, fontSize: 27, lineHeight: 32, letterSpacing: 2, color: colors.ink, textAlign: 'center' },
+  actions: { flexDirection: 'row', gap: 10, marginTop: 8 },
   note: { fontFamily: fonts.semibold, fontSize: 13, color: colors.okText, textAlign: 'center' },
   section: { gap: 10 },
   subTitle: { fontFamily: fonts.bold, fontSize: 13, color: colors.muted, marginTop: 4 },

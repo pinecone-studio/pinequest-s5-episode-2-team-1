@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { newProfileCode, normalizeProfileCode, parseBearLook } from '../src/domain/profile';
+import { wornOutfits } from '../src/services/profiles';
 import { onboardingSubject } from '../src/services/users';
 
 describe('профайлын код', () => {
@@ -57,5 +58,12 @@ describe('асуулгад сонгосон хичээл (шинэ төхөөр�
     expect(onboardingSubject(null)).toBeNull();
     expect(onboardingSubject('{"subject":"chemistry"}')).toBeNull();
     expect(onboardingSubject('эвдэрсэн')).toBeNull();
+  });
+});
+
+describe('хослуулж өмссөн хувцас', () => {
+  it("'+'-ээр тусгаарласан жагсаалт; давхардлыг хасна", () => {
+    expect(wornOutfits('pirate_hat+staff00+pirate_hat')).toEqual(['pirate_hat', 'staff00']);
+    expect(wornOutfits('scarf')).toEqual(['scarf']);
   });
 });
