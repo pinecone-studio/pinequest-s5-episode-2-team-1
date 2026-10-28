@@ -143,7 +143,7 @@ export default function ShopScreen() {
         <PressScale accessibilityRole="button" accessibilityLabel={S.bag.title} onPress={() => router.push('/bag')} style={styles.bagBtn}>
           <Sprite id="nav2_bag_on_30x30" />
         </PressScale>
-        <CountPill icon="btn_honey_24x24" value={bear.honey} label="Зөгийн бал" />
+        <CountPill icon="btn_honey_24x24" value={bear.honey} label="Боргоцой" />
       </View>
 
       <View>

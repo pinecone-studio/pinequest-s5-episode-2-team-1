@@ -16,7 +16,7 @@ import { useOnline } from '@/lib/online';
 
 const SUBJECTS: Subject[] = ['math', 'mongolian', 'physics'];
 
-/** Өнөөдрийн даалгавар (доод цэсний тусдаа хэсэг). Офлайн үед даалгавар нь XP, зөгийн балгүй дасгал болно. */
+/** Өнөөдрийн даалгавар (доод цэсний тусдаа хэсэг). Офлайн үед даалгавар нь XP, боргоцойгүй дасгал болно. */
 export default function TasksScreen() {
   const { me, refreshMe } = useAuth();
   const { honey } = usePixelBear();
@@ -46,7 +46,7 @@ export default function TasksScreen() {
         <Text accessibilityRole="header" style={[type.h2, { flex: 1 }]}>
           {S.tasks.title}
         </Text>
-        <CountPill icon="btn_honey_jar_24x24" value={honey} label="Зөгийн бал" />
+        <CountPill icon="btn_honey_24x24" value={honey} label="Боргоцой" />
       </View>
 
       {online ? null : (
@@ -71,7 +71,7 @@ export default function TasksScreen() {
           <Enter key={subject} index={i + 1}>
             <PressScale
               accessibilityRole="button"
-              accessibilityLabel={online ? `${S.tasks.start(subjectNames[subject])}, +${maxReward} зөгийн бал` : `${S.tasks.start(subjectNames[subject])}, ${S.offline.practice}`}
+              accessibilityLabel={online ? `${S.tasks.start(subjectNames[subject])}, +${maxReward} боргоцой` : `${S.tasks.start(subjectNames[subject])}, ${S.offline.practice}`}
               onPress={() => router.push(`/task/${subject}`)}
               scaleTo={0.97}
               style={[styles.quest, { backgroundColor: t.bg }]}
@@ -92,7 +92,7 @@ export default function TasksScreen() {
                 <Text style={[styles.questTitle, { color: t.fg }]}>{subjectNames[subject]}</Text>
                 {online ? (
                   <View style={styles.reward}>
-                    <Sprite id="btn_honey_jar_12x12" />
+                    <Sprite id="btn_honey_12x12" />
                     <Text style={styles.rewardNum}>+{maxReward}</Text>
                   </View>
                 ) : null}

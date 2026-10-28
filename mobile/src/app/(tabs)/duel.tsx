@@ -152,7 +152,7 @@ export default function DuelLobby() {
           </Text>
           <Text style={type.small}>{S.duel.hint}</Text>
         </View>
-        <CountPill icon="btn_honey_24x24" value={honey} label="Зөгийн бал" />
+        <CountPill icon="btn_honey_24x24" value={honey} label="Боргоцой" />
       </View>
 
       {mine ? (

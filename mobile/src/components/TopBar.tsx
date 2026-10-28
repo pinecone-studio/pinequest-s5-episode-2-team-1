@@ -24,7 +24,7 @@ export function AvatarLink({ size = 48, border, dotBorder = colors.paper }: { si
   );
 }
 
-/** Нүүр дээрх дээд мөр: аватар, XP, дараалал, зөгийн бал. (Сурах замын мөр: MapHeader.) */
+/** Нүүр дээрх дээд мөр: аватар, XP, дараалал, боргоцой. (Сурах замын мөр: MapHeader.) */
 export function TopBar({ xp = 'total' }: { xp?: 'total' | 'level' | 'none' }) {
   const { me } = useAuth();
   const { honey } = usePixelBear();
@@ -41,7 +41,7 @@ export function TopBar({ xp = 'total' }: { xp?: 'total' | 'level' | 'none' }) {
       )}
       <View style={{ flex: 1 }} />
       <CountPill icon="icon_flame_24x24" value={me.streak} label="Дараалал" />
-      <CountPill icon="btn_honey_24x24" value={honey} label="Зөгийн бал" />
+      <CountPill icon="btn_honey_24x24" value={honey} label="Боргоцой" />
     </View>
   );
 }
