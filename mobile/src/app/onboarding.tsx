@@ -11,6 +11,7 @@ import { ErrorText } from '@/components/ui';
 import { S, subjectNames } from '@/i18n/strings';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 import { isOnline } from '@/lib/online';
+import { PATH_SUBJECTS } from '@/lib/pixelBear/path';
 
 type Step = 'heard' | 'grade' | 'reason' | 'subject' | 'level' | 'benefits' | 'result';
 const STEPS: Step[] = ['heard', 'grade', 'reason', 'subject', 'level', 'benefits', 'result'];
@@ -18,30 +19,37 @@ const STEPS: Step[] = ['heard', 'grade', 'reason', 'subject', 'level', 'benefits
 /**
  * 03 · Анх орохдоо асуух асуултууд (Duolingo маягийн): хаанаас сонссон → анги → яагаад → хичээл → түвшин → юу өгөх →
  * дүгнэлт. Хариултыг серверт нэг дор хадгална (анги нь зөвхөн анх удаа хэрэгжинэ); хичээл нь төхөөрөмж дээр Сурах
- * замын хичээл болно. Сүлжээгүй бол хичээлийг л хадгалж, сүлжээ сэргэхэд дахин асууна.
+ * замын хичээл болно. Өмнө нь бөглөсөн хэрэглэгч шинэ төхөөрөмж дээр зөвхөн хичээлээ сонгоно. Сүлжээгүй бол
+ * хичээлийг л хадгалж, сүлжээ сэргэхэд дахин асууна.
  */
 export default function OnboardingScreen() {
   const { me, setMe } = useAuth();
   const { setSubject } = usePixelBear();
   const [i, setI] = useState(0);
   const [heard, setHeard] = useState<HeardFrom | null>(null);
-  const [grade, setGrade] = useState<number | null>(me?.onboarded ? me.grade : null);
+  const [grade, setGrade] = useState<number | null>(null);
   const [reason, setReason] = useState<Reason | null>(null);
-  const [subject, setPick] = useState<Subject>(SUGGESTED);
+  // өмнө нь бөглөсөн бол тэр хичээлээ (Сурах зам дээр байвал) урьдчилан сонгоно
+  const [subject, setPick] = useState<Subject>(() => PATH_SUBJECTS.find((s) => s === me?.subject) ?? SUGGESTED);
   const [level, setLevel] = useState<SelfLevel | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const step = STEPS[i];
+  // нээгдэх үед нэг л удаа шийднэ: дуусгахад setMe(onboarded) болоход гарах шилжилтийн үеэр дэлгэц солигдохгүй
+  const [steps] = useState<Step[]>(() => (me?.onboarded === false && isOnline() ? STEPS : ['subject']));
+  const step = steps[i];
+  const last = i === steps.length - 1;
 
   async function finish() {
-    if (busy || heard === null || grade === null || reason === null || level === null) return;
+    if (busy) return;
+    let body: OnboardingBody | null = null;
+    if (steps.length > 1) {
+      if (heard === null || grade === null || reason === null || level === null) return;
+      body = { heardFrom: heard, grade, reason, subject, level };
+    }
     setBusy(true);
     setError('');
     try {
-      if (me && isOnline()) {
-        const body: OnboardingBody = { heardFrom: heard, grade, reason, subject, level };
-        setMe((await api<MeResponse>('/me/onboarding', { method: 'PUT', body })).me);
-      }
+      if (body && isOnline()) setMe((await api<MeResponse>('/me/onboarding', { method: 'PUT', body })).me);
       setSubject(subject);
       router.replace('/');
     } catch (e) {
@@ -72,13 +80,13 @@ export default function OnboardingScreen() {
   return (
     <QuizShell
       step={i}
-      total={STEPS.length}
+      total={steps.length}
       question={question[step]}
       onBack={i > 0 ? () => setI(i - 1) : undefined}
       canNext={answered[step]}
       busy={busy}
-      nextTitle={step === 'result' ? S.onboarding.start : S.onboarding.continue}
-      onNext={step === 'result' ? finish : () => setI(i + 1)}
+      nextTitle={last ? S.onboarding.start : S.onboarding.continue}
+      onNext={last ? finish : () => setI(i + 1)}
     >
       {step === 'heard' ? <HeardStep value={heard} onChange={setHeard} /> : null}
       {step === 'grade' ? <GradeStep value={grade} onChange={setGrade} /> : null}
