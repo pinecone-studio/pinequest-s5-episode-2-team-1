@@ -8,7 +8,7 @@ import { useOnline } from '@/lib/online';
 import { S } from '@/i18n/strings';
 
 export default function TabsLayout() {
-  const { ready, subject } = usePixelBear();
+  const { ready, subject, setSubject } = usePixelBear();
   const { me } = useAuth();
   const online = useOnline();
   // хуучин кэшэлсэн профайлд profileSet байхгүй (undefined): /me шинэчлэгдтэл чиглүүлэхгүй
@@ -17,11 +17,18 @@ export default function TabsLayout() {
   const needsQuiz = me?.onboarded === false && online;
 
   // Анх орсон хэрэглэгч эхлээд профайлаа үүсгээд (нэр, баавгай), дараа нь асуултад хариулж, хичээлээ сонгоно.
-  // Профайлыг офлайн хадгалж чадахгүй тул сүлжээгүй үед алгасна.
+  // Профайлыг офлайн хадгалж чадахгүй тул сүлжээгүй үед алгасна. Хичээл нь төхөөрөмж дээр хадгалагддаг тул шинэ утас,
+  // browser дээр хоосон: асуулгаа бөглөсөн бол дахин асуулгүй серверт хадгалсан хичээлээр (хуучин хэрэглэгчид математик).
+  const onboarded = me?.onboarded !== false;
+  const savedSubject = me?.subject ?? 'math';
   useEffect(() => {
     if (needsProfile) router.replace('/avatar');
-    else if (needsQuiz || (ready && subject === null)) router.replace('/onboarding');
-  }, [needsProfile, needsQuiz, ready, subject]);
+    else if (needsQuiz) router.replace('/onboarding');
+    else if (ready && subject === null) {
+      if (onboarded) setSubject(savedSubject);
+      else router.replace('/onboarding');
+    }
+  }, [needsProfile, needsQuiz, ready, subject, onboarded, savedSubject, setSubject]);
 
   return (
     <Tabs

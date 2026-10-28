@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { newProfileCode, normalizeProfileCode, parseBearLook } from '../src/domain/profile';
+import { onboardingSubject } from '../src/services/users';
 
 describe('профайлын код', () => {
   it('8 оронтой цифр үүсгэнэ (0-ээр эхэлж болно)', () => {
@@ -46,5 +47,15 @@ describe('баавгайн харагдац', () => {
   it('үс, царай, цээжний толбыг уншина; мэдэгдэхгүй утга бол анхдагч', () => {
     expect(parseBearLook('{"fur":"black","face":"sleepy","chest":false}')).toEqual({ bg: 'nimbeg', outfit: 'scarf', fur: 'black', face: 'sleepy', chest: false });
     expect(parseBearLook('{"fur":"pink","face":"angry","chest":"no"}')).toEqual({ bg: 'nimbeg', outfit: 'scarf', ...bear });
+  });
+});
+
+describe('асуулгад сонгосон хичээл (шинэ төхөөрөмж дээр асуулгыг дахин асуухгүй)', () => {
+  it('users.onboarding JSON-оос; байхгүй, буруу бол null', () => {
+    expect(onboardingSubject('{"heardFrom":"friends","subject":"physics","level":2}')).toBe('physics');
+    expect(onboardingSubject('{}')).toBeNull(); // migration 0028-аас өмнөх хэрэглэгч
+    expect(onboardingSubject(null)).toBeNull();
+    expect(onboardingSubject('{"subject":"chemistry"}')).toBeNull();
+    expect(onboardingSubject('эвдэрсэн')).toBeNull();
   });
 });

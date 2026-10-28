@@ -15,6 +15,7 @@ import { BackButton, Card, ErrorText, Muted, Screen, SectionTitle } from '@/comp
 import { colors, fonts } from '@/constants/theme';
 import { type } from '@/constants/type';
 import { S } from '@/i18n/strings';
+import { canShareCardImage, shareBearCard } from '@/lib/bearCard';
 import { confirm } from '@/lib/confirm';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 import { goBack } from '@/lib/nav';
@@ -36,6 +37,7 @@ export default function ProfileScreen() {
   const [error, setError] = useState('');
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
+  const [cardNote, setCardNote] = useState('');
   const seenIncoming = useRef<number | null>(null);
 
   const loadFriends = useCallback(async () => {
@@ -100,6 +102,23 @@ export default function ProfileScreen() {
     }
   }
 
+  /** Баавгайн картыг зургаар (вэб); утсан дээр зураг үүсгэх боломжгүй тул кодоо текстээр хуваалцана. */
+  async function shareBear() {
+    if (!me || !data) return;
+    if (!canShareCardImage()) return share();
+    setBusy('card');
+    setCardNote('');
+    try {
+      const look = { fur: me.look.fur ?? 'brown', face: me.look.face ?? 'calm', chest: me.look.chest ?? true };
+      const card = { name: me.name ?? me.username, look, level: me.level, streak: me.streak };
+      if ((await shareBearCard(card, S.profile.shareBearText(profileLink(data.code)))) === 'downloaded') setCardNote(S.profile.cardSaved);
+    } catch {
+      setCardNote(S.profile.cardError);
+    } finally {
+      setBusy(null);
+    }
+  }
+
   async function rotate() {
     if (!(await confirm(S.profile.rotateConfirm, S.profile.rotateYes))) return;
     setNote('');
@@ -141,6 +160,8 @@ export default function ProfileScreen() {
                 </Text>
                 <Button title={S.avatar.change} variant="secondary" small onPress={() => router.push('/avatar')} />
               </Card>
+              <Button title={S.profile.shareBear} variant="lemon" loading={busy === 'card'} onPress={shareBear} style={styles.shareBear} />
+              {cardNote ? <Text style={styles.note}>{cardNote}</Text> : null}
             </Enter>
           ) : null}
 
@@ -231,6 +252,7 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   center: { paddingVertical: 40, alignItems: 'center' },
   photoCard: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  shareBear: { marginTop: 10 },
   requests: { backgroundColor: colors.lavender },
   cardTitle: { fontFamily: fonts.semibold, fontSize: 18, color: colors.ink },
   qrCard: { gap: 10 },

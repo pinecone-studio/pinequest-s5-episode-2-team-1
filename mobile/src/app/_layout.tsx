@@ -12,6 +12,7 @@ import { Button } from '@/components/Button';
 import { ConfirmHost } from '@/components/ConfirmHost';
 import { FurContext, Sprite } from '@/components/pixel';
 import { ServerStatus } from '@/components/ServerStatus';
+import { APP_NAME } from '@/constants/app';
 import { colors, fonts } from '@/constants/theme';
 import { type } from '@/constants/type';
 import { S } from '@/i18n/strings';
@@ -62,7 +63,7 @@ function RootNavigator() {
   if (status === 'loading') {
     return (
       <View style={[styles.center, { backgroundColor: colors.violet }]}>
-        <Text style={styles.wordmark}>pine{'\n'}quest</Text>
+        <Text style={styles.wordmark}>{APP_NAME}</Text>
         <ActivityIndicator color={colors.white} size="large" />
       </View>
     );
