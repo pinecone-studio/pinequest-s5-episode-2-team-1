@@ -3,7 +3,7 @@ node_modules/
 *.log
 
 # Cloudflare local state ба нууц утгууд
-api/.wrangler/
+api/.wrangler*/
 api/.dev.vars
 api/.dev.vars.*
 !api/.dev.vars.example
