@@ -205,11 +205,18 @@ export const livesArgs = (l: Lives) => [l.lives, l.at] as const;
 
 /** Буруу хариултын нэг амийг хасна; аль хэдийн 0 бол доош оруулахгүй. */
 export async function spendUserLife(db: D1Database, userId: number, now = Date.now()): Promise<boolean> {
-  const lives = livesNow(livesOf(await getUserRow(db, userId)), now);
-  if (lives.lives <= 0) return false;
-  const next = spendLife(lives, now);
-  await db.prepare('UPDATE users SET lives = ?, lives_at = ? WHERE id = ?').bind(...livesArgs(next), userId).run();
-  return true;
+  // Уншсан утга өөрчлөгдөөгүй үед л бичнэ (compare-and-set): зэрэг ирсэн буруу хариулт бүр нэг амь хасна.
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const read = livesOf(await getUserRow(db, userId));
+    const lives = livesNow(read, now);
+    if (lives.lives <= 0) return false;
+    const r = await db
+      .prepare('UPDATE users SET lives = ?, lives_at = ? WHERE id = ? AND lives = ? AND lives_at IS ?')
+      .bind(...livesArgs(spendLife(lives, now)), userId, ...livesArgs(read))
+      .run();
+    if (r.meta.changes) return true;
+  }
+  return false;
 }
 
 /**
