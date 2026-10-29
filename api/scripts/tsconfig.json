@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": ["ES2023", "DOM"],
+    "lib": ["ES2023", "ESNext.TypedArrays", "DOM"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "types": ["node"],
