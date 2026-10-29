@@ -479,10 +479,36 @@ async function playerInfo(db: D1Database, users: UserRow[], teamOf: (id: number)
 }
 
 /**
+ * Нээлттэй багийн тулааны гишүүдээс (ids = JSON) өөр тулаан хийж буйг нь хасна. Үүсгэгч өөр тулаанд орсон бол
+ * тулааныг цуцална. Тулаан аль хэдийн эхэлсэн бол юу ч хийхгүй.
+ */
+async function dropPlayingMembers(db: D1Database, duel: DuelRow, ids: string, now: number): Promise<void> {
+  const { results: playing } = await db
+    .prepare(
+      `SELECT j.value AS id FROM json_each(?) j WHERE EXISTS (SELECT 1 FROM duels d WHERE d.status = 'accepted' AND d.id != ?
+         AND (d.creator_id = j.value OR d.opponent_id = j.value OR EXISTS (SELECT 1 FROM duel_members m WHERE m.duel_id = d.id AND m.user_id = j.value)))`,
+    )
+    .bind(ids, duel.id)
+    .all<{ id: number }>();
+  if (!playing.length) return;
+  if (playing.some((p) => p.id === duel.creator_id)) {
+    await cancelChallenge(db, duel.creator_id, duel.id, now).catch(() => undefined);
+    return;
+  }
+  await db
+    .prepare(
+      `DELETE FROM duel_members WHERE duel_id = ? AND user_id IN (SELECT value FROM json_each(?))
+         AND EXISTS (SELECT 1 FROM duels WHERE id = ? AND status = 'open')`,
+    )
+    .bind(duel.id, JSON.stringify(playing.map((p) => p.id)), duel.id)
+    .run();
+}
+
+/**
  * Хоёр баг дүүрсэн бол бүх гишүүний бооцоог нэг batch-аар түр хасаж (оноо хүрэлцэхгүй бол CHECK → rollback),
  * асуулт сонгож DuelRoom-ыг эхлүүлнэ. Боргоцой нь буурч 20%-ийн хязгаар зөрчигдсөн гишүүнийг багаас хасна.
  */
-async function startTeamDuelIfFull(env: Bindings, duel: DuelRow, now: number): Promise<void> {
+async function startTeamDuelIfFull(env: Bindings, duel: DuelRow, now: number, retried = false): Promise<void> {
   const db = env.DB;
   const parties = await partiesOf(db, duel);
   const countOf = (t: DuelTeam) => parties.filter((p) => p.team === t).length;
@@ -513,7 +539,11 @@ async function startTeamDuelIfFull(env: Bindings, duel: DuelRow, now: number): P
     )
     .bind(duel.tier, duel.subject, grade, ids, GAME.DUEL.TEAM_QUESTIONS)
     .all<PickedQuestion>();
-  if (picked.length < GAME.DUEL.TEAM_QUESTIONS) throw new ApiError(503, 'NO_QUESTIONS', 'Асуулт хүрэлцэхгүй');
+  if (picked.length < GAME.DUEL.TEAM_QUESTIONS) {
+    // Дүүрсэн багийг эхлүүлэх өөр оролдлого гарахгүй тул нээлттэй үлдээвэл гацна.
+    await cancelChallenge(db, duel.creator_id, duel.id, now).catch(() => undefined);
+    throw new ApiError(503, 'NO_QUESTIONS', 'Асуулт хүрэлцэхгүй');
+  }
   const questionIds = JSON.stringify(picked.map((q) => q.id));
 
   const tx = newTx();
@@ -545,8 +575,11 @@ async function startTeamDuelIfFull(env: Bindings, duel: DuelRow, now: number): P
         )
         .bind(now, ids, questionIds, duel.id, tx),
     ]);
-    if (!res[0].meta.changes) return; // өөр хүсэлт түрүүлж эхлүүлсэн, эсвэл гишүүн өөр тулаанд орсон
+    // Өөр хүсэлт түрүүлж эхлүүлсэн, эсвэл гишүүн өөр тулаанд орсон: тэр гишүүнийг хасч суудлыг нээнэ.
+    if (!res[0].meta.changes) return dropPlayingMembers(db, duel, ids, now);
   } catch (e) {
+    // Уншсаны дараа оноо нь буурсан гишүүн: дахин уншиж, 20%-ийн хязгаар зөрчсөнийг нь хасна.
+    if (isConstraintError(e, 'CHECK') && !retried) return startTeamDuelIfFull(env, duel, now, true);
     if (isConstraintError(e, 'CHECK')) throw new ApiError(409, 'INSUFFICIENT_POINTS', 'Боргоцой хүрэлцэхгүй');
     throw e;
   }
