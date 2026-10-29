@@ -59,6 +59,42 @@ const COSTUME_SHEETS: Record<CostumeId, Record<BearAnim, SpriteKey>> = {
     ouch: 'costume_robot_ouch_864x656',
     welcome: 'costume_robot_welcome_1620x984',
   },
+  wrestler: {
+    thriving: 'costume_wrestler_thriving_1200x344',
+    happy: 'costume_wrestler_happy_960x688',
+    tired: 'costume_wrestler_tired_960x688',
+    neglected: 'costume_wrestler_neglected_960x688',
+    sleep: 'costume_wrestler_sleep_1200x344',
+    ouch: 'costume_wrestler_ouch_960x688',
+    welcome: 'costume_wrestler_welcome_1800x1032',
+  },
+  brown_deel: {
+    thriving: 'costume_brown_deel_thriving_1200x344',
+    happy: 'costume_brown_deel_happy_960x688',
+    tired: 'costume_brown_deel_tired_960x688',
+    neglected: 'costume_brown_deel_neglected_960x688',
+    sleep: 'costume_brown_deel_sleep_1200x344',
+    ouch: 'costume_brown_deel_ouch_960x688',
+    welcome: 'costume_brown_deel_welcome_1800x1032',
+  },
+  khuur: {
+    thriving: 'costume_khuur_thriving_1200x344',
+    happy: 'costume_khuur_happy_960x688',
+    tired: 'costume_khuur_tired_960x688',
+    neglected: 'costume_khuur_neglected_960x688',
+    sleep: 'costume_khuur_sleep_1200x344',
+    ouch: 'costume_khuur_ouch_960x688',
+    welcome: 'costume_khuur_welcome_1800x1032',
+  },
+  archer: {
+    thriving: 'costume_archer_thriving_1200x344',
+    happy: 'costume_archer_happy_960x688',
+    tired: 'costume_archer_tired_960x688',
+    neglected: 'costume_archer_neglected_960x688',
+    sleep: 'costume_archer_sleep_1200x344',
+    ouch: 'costume_archer_ouch_960x688',
+    welcome: 'costume_archer_welcome_1800x1032',
+  },
 };
 
 /** scripts/home-sprites.ts: хөдөлгөөн бүрийн нэг мөр sheet (PixelLab animate_image), 2× */
