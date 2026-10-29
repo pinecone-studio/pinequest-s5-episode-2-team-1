@@ -30,6 +30,8 @@ export const BACKGROUNDS: BgDef[] = [
   { id: 'zun_tal', name: 'Зуны тал', hex: '#8CC4EE', image: require('../../../assets/images/backgrounds/steppe-summer.webp') },
   { id: 'namar_oi', name: 'Намрын ой', hex: '#E29A45', image: require('../../../assets/images/backgrounds/autumn-forest.webp') },
   { id: 'od_shunu', name: 'Одтой шөнө', hex: '#1C1F4D', dark: true, image: require('../../../assets/images/backgrounds/steppe-night.webp') },
+  { id: 'sakura', name: 'Интоорын хөндий', hex: '#F2B8D0', image: require('../../../assets/images/backgrounds/sakura-valley.webp') },
+  { id: 'mogoi_shunu', name: 'Могойн шөнө', hex: '#2A2560', dark: true, image: require('../../../assets/images/backgrounds/serpent-night.webp') },
   { id: 'sansar', name: 'Сансар', hex: '#FAFAF7', scene: 'space' },
   { id: 'kod', name: 'Код', hex: '#FAFAF7', scene: 'binary', halo: 'rgba(250,250,247,0.88)' },
 ];
@@ -83,6 +85,8 @@ export type OutfitId =
   | 'khuur'
   | 'archer'
   | 'leaf_ninja'
+  | 'shadow_ninja'
+  | 'blossom_ninja'
   | 'cowboy_hat'
   | 'white_headscarf'
   | 'brown_boots'
@@ -118,6 +122,8 @@ export const OUTFITS: OutfitDef[] = [
   // PixelLab costumes first, so the newest outfits are the first the shop shows
   { id: 'vampire', name: 'Цус сорогч', tile: '#C9B8E8', imgTop: -26, card: 'outfit_vampire_82x140', item: 'vampire' },
   { id: 'witch', name: 'Шулам', tile: '#C9B8E8', imgTop: -26, card: 'outfit_witch_82x140', item: 'witch' },
+  { id: 'shadow_ninja', name: 'Сүүдрийн нинжа', tile: '#BCC8DE', imgTop: -26, card: 'outfit_shadow_ninja_82x140', item: 'shadow_ninja' },
+  { id: 'blossom_ninja', name: 'Цэцгийн нинжа', tile: '#F2CDE0', imgTop: -26, card: 'outfit_blossom_ninja_82x140', item: 'blossom_ninja' },
   { id: 'leaf_ninja', name: 'Навчны нинжа', tile: '#F7A97E', imgTop: -26, card: 'outfit_leaf_ninja_82x140', item: 'leaf_ninja' },
   { id: 'wrestler', name: 'Бөх', tile: '#BCC8DE', imgTop: -26, card: 'outfit_wrestler_82x140', item: 'wrestler' },
   { id: 'brown_deel', name: 'Хүрэн дээл', tile: '#DDBB8E', imgTop: -26, card: 'outfit_brown_deel_82x140', item: 'brown_deel' },
@@ -202,7 +208,7 @@ const ITEM_SLOT: Record<ItemId, Slot> = {
   hiphop_chain: 'neck',
   batman_suit: 'body', mongol_deel: 'body', sport_hoodie: 'body', pirate_shirt: 'body', wizard_robe: 'body',
   demon_cape: 'body', ninja_jacket: 'body', straw_shirt: 'body', vampire: 'body', witch: 'body', cyborg: 'body',
-  mummy: 'body', liquid_cop: 'body', robot: 'body', wrestler: 'body', brown_deel: 'body', khuur: 'body', archer: 'body', leaf_ninja: 'body',
+  mummy: 'body', liquid_cop: 'body', robot: 'body', wrestler: 'body', brown_deel: 'body', khuur: 'body', archer: 'body', leaf_ninja: 'body', shadow_ninja: 'body', blossom_ninja: 'body',
   puss_cape: 'back', puss_belt: 'waist', sport_shorts: 'legs', ninja_pants: 'legs', straw_shorts: 'legs',
   brown_boots: 'feet', pirate_boots: 'feet', mongol_boots: 'feet', sport_sneakers: 'feet',
   demon_boots: 'feet', ninja_sandals: 'feet', straw_sandals: 'feet',
@@ -222,7 +228,7 @@ export function outfitSlot(id: OutfitId): Slot | null {
 }
 
 /** a costume with its own motions (LiveBear) is the whole bear: it takes every place, so nothing is worn with it */
-const WHOLE_ITEMS: readonly ItemId[] = ['witch', 'cyborg', 'mummy', 'liquid_cop', 'robot', 'wrestler', 'brown_deel', 'khuur', 'archer', 'leaf_ninja'];
+const WHOLE_ITEMS: readonly ItemId[] = ['witch', 'cyborg', 'mummy', 'liquid_cop', 'robot', 'wrestler', 'brown_deel', 'khuur', 'archer', 'leaf_ninja', 'shadow_ninja', 'blossom_ninja'];
 const ALL_SLOTS = [...new Set(Object.values(ITEM_SLOT)), 'base'];
 const slotsOf = (id: OutfitId): string[] =>
   outfitItems(outfitById(id)).flatMap((it) => (WHOLE_ITEMS.includes(it) ? ALL_SLOTS : [ITEM_SLOT[it], ...(ALSO_COVERS[it] ?? []), ...(BASE_ITEMS.includes(it) ? ['base'] : [])]));

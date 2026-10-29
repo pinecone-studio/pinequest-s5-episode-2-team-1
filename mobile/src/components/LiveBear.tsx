@@ -104,6 +104,24 @@ const COSTUME_SHEETS: Record<CostumeId, Record<BearAnim, SpriteKey>> = {
     ouch: 'costume_leaf_ninja_ouch_960x688',
     welcome: 'costume_leaf_ninja_welcome_1800x1032',
   },
+  shadow_ninja: {
+    thriving: 'costume_shadow_ninja_thriving_1200x344',
+    happy: 'costume_shadow_ninja_happy_960x688',
+    tired: 'costume_shadow_ninja_tired_960x688',
+    neglected: 'costume_shadow_ninja_neglected_960x688',
+    sleep: 'costume_shadow_ninja_sleep_1200x344',
+    ouch: 'costume_shadow_ninja_ouch_960x688',
+    welcome: 'costume_shadow_ninja_welcome_1800x1032',
+  },
+  blossom_ninja: {
+    thriving: 'costume_blossom_ninja_thriving_1200x344',
+    happy: 'costume_blossom_ninja_happy_960x688',
+    tired: 'costume_blossom_ninja_tired_960x688',
+    neglected: 'costume_blossom_ninja_neglected_960x688',
+    sleep: 'costume_blossom_ninja_sleep_1200x344',
+    ouch: 'costume_blossom_ninja_ouch_960x688',
+    welcome: 'costume_blossom_ninja_welcome_1800x1032',
+  },
 };
 
 /** scripts/home-sprites.ts: хөдөлгөөн бүрийн нэг мөр sheet (PixelLab animate_image), 2× */
