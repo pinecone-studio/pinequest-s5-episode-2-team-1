@@ -217,11 +217,13 @@ export const livesOf = (u: Pick<UserRow, 'lives' | 'lives_at'>): Lives => ({ liv
 /** users.lives, lives_at-д бичих утга */
 export const livesArgs = (l: Lives) => [l.lives, l.at] as const;
 
-/** Буруу хариултын нэг амийг хасна; аль хэдийн 0 бол доош оруулахгүй. */
+/** Буруу хариултын нэг амийг хасна; аль хэдийн 0 бол доош оруулахгүй. Admin хэрэглэгчийн амийг хасахгүй. */
 export async function spendUserLife(db: D1Database, userId: number, now = Date.now()): Promise<boolean> {
   // Уншсан утга өөрчлөгдөөгүй үед л бичнэ (compare-and-set): зэрэг ирсэн буруу хариулт бүр нэг амь хасна.
   for (let attempt = 0; attempt < 5; attempt++) {
-    const read = livesOf(await getUserRow(db, userId));
+    const user = await getUserRow(db, userId);
+    if (user.is_admin === 1) return false;
+    const read = livesOf(user);
     const lives = livesNow(read, now);
     if (lives.lives <= 0) return false;
     const r = await db
