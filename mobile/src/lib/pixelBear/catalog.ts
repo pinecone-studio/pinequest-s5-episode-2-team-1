@@ -87,6 +87,9 @@ export type OutfitId =
   | 'vampire'
   | 'witch'
   | 'cyborg'
+  | 'mummy'
+  | 'liquid_cop'
+  | 'robot'
   | 'cowboy_hat'
   | 'white_headscarf'
   | 'brown_boots'
@@ -132,6 +135,9 @@ export const OUTFITS: OutfitDef[] = [
   // PixelLab costumes first, so the newest outfits are the first the shop shows
   { id: 'vampire', name: 'Цус сорогч', tile: '#C9B8E8', imgTop: -26, card: 'outfit_vampire_82x140', item: 'vampire' },
   { id: 'witch', name: 'Шулам', tile: '#C9B8E8', imgTop: -26, card: 'outfit_witch_82x140', item: 'witch' },
+  { id: 'mummy', name: 'Мумми', tile: '#EBDCC0', imgTop: -26, card: 'outfit_mummy_82x140', item: 'mummy' },
+  { id: 'liquid_cop', name: 'Шингэн төмөр цагдаа', tile: '#BCC8DE', imgTop: -26, card: 'outfit_liquid_cop_82x140', item: 'liquid_cop' },
+  { id: 'robot', name: 'Робот', tile: '#B9B6C8', imgTop: -26, card: 'outfit_robot_82x140', item: 'robot' },
   { id: 'cyborg', name: 'Терминатор', tile: '#B9B6C8', imgTop: -26, card: 'outfit_cyborg_82x140', item: 'cyborg' },
   { id: 'warrior_helmet', name: 'Баатрын дуулга', tile: '#EBCF9B', imgTop: 0, card: 'outfit_warrior_helmet_82x140', item: 'warrior_helmet' },
   { id: 'hero', name: 'Баатар', tile: '#EBCF9B', imgTop: 0, card: 'outfit_hero_82x140', items: ['warrior_helmet', 'black_sword'] },
@@ -227,6 +233,7 @@ const ITEM_SLOT: Record<ItemId, Slot> = {
   hiphop_chain: 'neck',
   batman_suit: 'body', mongol_deel: 'body', sport_hoodie: 'body', pirate_shirt: 'body', wizard_robe: 'body',
   demon_cape: 'body', ninja_jacket: 'body', straw_shirt: 'body', vampire: 'body', witch: 'body', cyborg: 'body',
+  mummy: 'body', liquid_cop: 'body', robot: 'body',
   puss_cape: 'back', puss_belt: 'waist', sport_shorts: 'legs', ninja_pants: 'legs', straw_shorts: 'legs',
   brown_boots: 'feet', pirate_boots: 'feet', mongol_boots: 'feet', sport_sneakers: 'feet',
   demon_boots: 'feet', ninja_sandals: 'feet', straw_sandals: 'feet',
@@ -246,7 +253,7 @@ export function outfitSlot(id: OutfitId): Slot | null {
 }
 
 /** a costume with its own motions (LiveBear) is the whole bear: it takes every place, so nothing is worn with it */
-const WHOLE_ITEMS: readonly ItemId[] = ['witch', 'cyborg'];
+const WHOLE_ITEMS: readonly ItemId[] = ['witch', 'cyborg', 'mummy', 'liquid_cop', 'robot'];
 const ALL_SLOTS = [...new Set(Object.values(ITEM_SLOT)), 'base'];
 const slotsOf = (id: OutfitId): string[] =>
   outfitItems(outfitById(id)).flatMap((it) => (WHOLE_ITEMS.includes(it) ? ALL_SLOTS : [ITEM_SLOT[it], ...(ALSO_COVERS[it] ?? []), ...(BASE_ITEMS.includes(it) ? ['base'] : [])]));

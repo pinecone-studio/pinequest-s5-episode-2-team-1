@@ -34,8 +34,11 @@ function nextToEye(img: Img, x: number, y: number, x0: number, y0: number, cell:
  * crimson, saturated orange and gold remain exact. Dark outlines and eye irises
  * remain exact so every fur colour keeps the character's expression and silhouette.
  */
-/** `hat`: the witch's hat band sits above the forehead; costumes without a hat recolour the whole head */
-export function recolorCostumeFur(src: Img, fur: Exclude<Fur, 'brown'>, cell: Cell = src, hat = true): Img {
+/**
+ * `hat`: the witch's hat band sits above the forehead; costumes without a hat recolour the whole head.
+ * `cream`: recolour the muzzle cream too; the mummy's bandages are that same cream, so it keeps it.
+ */
+export function recolorCostumeFur(src: Img, fur: Exclude<Fur, 'brown'>, cell: Cell = src, hat = true, cream = true): Img {
   if (src.w % cell.w || src.h % cell.h) throw new Error('Costume sheet must contain whole frames');
   const out: Img = { w: src.w, h: src.h, d: src.d.slice() };
   const cols = src.w / cell.w;
@@ -49,11 +52,11 @@ export function recolorCostumeFur(src: Img, fur: Exclude<Fur, 'brown'>, cell: Ce
       const hatBottom = hats[Math.floor(x / cell.w) + cols * Math.floor(y / cell.h)];
       if (!src.d[i + 3] || y - y0 <= hatBottom + 1) continue;
       const [h, s, l] = hsl([src.d[i], src.d[i + 1], src.d[i + 2]]);
-      const cream = h >= 20 && h <= 36 && s >= 0.7 && l >= 0.69 && l <= 0.96;
+      const isCream = h >= 20 && h <= 36 && s >= 0.7 && l >= 0.69 && l <= 0.96;
       // the fur's dark brown outline too (leather and metal outlines are grey, not brown)
       const brown = h >= 6 && h <= 29 && ((s >= 0.25 && s <= 1 && l >= 0.13 && l < 0.69) || (s >= 0.45 && l >= 0.05 && l < 0.13));
-      if ((!cream && !brown) || (brown && l < 0.4 && nextToEye(src, x, y, x0, y0, cell))) continue;
-      const target = cream ? lerp(CL, MUZZLE[fur]!, l) : lerp(L, FUR[fur], l);
+      if ((!isCream && !brown) || (isCream && !cream) || (brown && l < 0.4 && nextToEye(src, x, y, x0, y0, cell))) continue;
+      const target = isCream ? lerp(CL, MUZZLE[fur]!, l) : lerp(L, FUR[fur], l);
       out.d.set(target, i);
     }
   return out;

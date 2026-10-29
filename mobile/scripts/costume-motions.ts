@@ -1,5 +1,5 @@
 /**
- * PixelLab costumes with motions of their own (the witch, the cyborg): review sheets and previews in each pilot folder,
+ * PixelLab costumes with motions of their own (the witch, the cyborg, the mummy, the liquid cop, the robot): review sheets and previews in each pilot folder,
  * and the app's sprites. Worn, a costume's frames replace the bear's (LiveBear): each state's sheet in three fur colours
  * (costume_<id>_<state>, `_black`/`_white` beside it for build-sprites), the shop card (outfit_<id>) and
  * mobile/src/lib/pixelBear/bear-costumes.json. A frame sits where the bear's own first frame does: the same bottom row
@@ -16,12 +16,15 @@ const PILOT = new URL('../../docs/design/pixel-bear/costumes/pixellab/pilot/', i
 const HOME = new URL('../src/lib/pixelBear/bear-home.json', import.meta.url);
 const META = new URL('../src/lib/pixelBear/bear-costumes.json', import.meta.url);
 
-/** `idle`: the dressed bear PixelLab animated, `card`: where the 82×140 shop card is cut from it, `hat`: see recolorCostumeFur */
-const COSTUMES: Record<string, { idle: string; card: [number, number]; hat: boolean }> = {
+/** `idle`: the dressed bear PixelLab animated, `card`: where the 82×140 shop card is cut from it, `hat`/`cream`: see recolorCostumeFur */
+const COSTUMES: Record<string, { idle: string; card: [number, number]; hat: boolean; cream?: false }> = {
   // the hat brim's outermost pixel is cut from the card
   witch: { idle: 'idle-84x140.png', card: [1, 0], hat: true },
-  // bear_idle sits at [9, 8] of the PixelLab canvas
-  cyborg: { idle: 'idle-100x148.png', card: [9, 8], hat: false },
+  // drawn whole from the art, bear_idle's size, standing 4 px above the bottom of a 108×164 canvas
+  cyborg: { idle: 'idle-108x164.png', card: [13, 20], hat: false },
+  mummy: { idle: 'idle-108x164.png', card: [13, 20], hat: false, cream: false },
+  liquid_cop: { idle: 'idle-108x164.png', card: [13, 20], hat: false },
+  robot: { idle: 'idle-108x164.png', card: [13, 20], hat: false },
 };
 const STATES = ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch', 'welcome'] as const;
 type State = (typeof STATES)[number];
@@ -30,15 +33,15 @@ const TIMING: Record<State, [first: number, rest: number]> = {
   thriving: [500, 150], happy: [900, 180], tired: [800, 230], neglected: [750, 190],
   sleep: [900, 360], ouch: [600, 160], welcome: [600, 180],
 };
-/** like the bear's own tags (scripts/home-sprites.ts STATES), over a costume's five frames (welcome: all of them) */
+/** like the bear's own tags (scripts/home-sprites.ts STATES), over a costume's `n` frames */
 type Tag = [from: number, to: number, direction?: 'pingpong'];
 const TAGS: Record<State, (n: number) => { in: Tag; loop: Tag }> = {
-  thriving: () => ({ in: [0, 0], loop: [0, 4, 'pingpong'] }),
-  happy: () => ({ in: [0, 0], loop: [0, 4] }),
-  tired: () => ({ in: [0, 0], loop: [0, 4] }),
-  neglected: () => ({ in: [0, 2], loop: [2, 4, 'pingpong'] }),
-  sleep: () => ({ in: [0, 0], loop: [0, 4, 'pingpong'] }),
-  ouch: () => ({ in: [0, 4, 'pingpong'], loop: [0, 0] }),
+  thriving: (n) => ({ in: [0, 0], loop: [0, n - 1, 'pingpong'] }),
+  happy: (n) => ({ in: [0, 0], loop: [0, n - 1] }),
+  tired: (n) => ({ in: [0, 0], loop: [0, n - 1] }),
+  neglected: (n) => ({ in: [0, n >> 1], loop: [n >> 1, n - 1, 'pingpong'] }),
+  sleep: (n) => ({ in: [0, 0], loop: [0, n - 1, 'pingpong'] }),
+  ouch: (n) => ({ in: [0, n - 1, 'pingpong'], loop: [0, 0] }),
   welcome: (n) => ({ in: [0, 0], loop: [0, n - 1, 'pingpong'] }),
 };
 const tag = ([from, to, direction]: Tag) => ({ from, to, direction: direction ?? 'forward' });
@@ -123,6 +126,8 @@ for (const [id, costume] of Object.entries(COSTUMES)) {
     const base: Img[] = own ? [] : fittedSleep(id);
     for (let i = 0; own && existsSync(new URL(`${state}-${i}.png`, root)); i++) base.push(plainFurOf(readPng(new URL(`${state}-${i}.png`, root))));
     if (base.length < 5) throw new Error(`${id} ${state}: fewer than five frames`);
+    // LiveBear reads the bear's own frame at the costume's frame index
+    if (base.length > home[state].frames.length) throw new Error(`${id} ${state}: more frames than the bear's ${home[state].frames.length}`);
     if (base.some((frame) => frame.w !== base[0].w || frame.h !== base[0].h)) throw new Error(`${id} ${state}: frame sizes differ`);
     const cols = base.length <= 5 ? base.length : Math.ceil(base.length / 2);
     const durations = own
@@ -132,7 +137,7 @@ for (const [id, costume] of Object.entries(COSTUMES)) {
     for (const fur of FURS) {
       const named = base.map((img, i) => ({ img, name: `${state}${i}`, duration: durations[i] }));
       const brown = toSheet(named, cols);
-      const sheet = fur === 'brown' ? brown : recolorCostumeFur(brown, fur, cell, costume.hat);
+      const sheet = fur === 'brown' ? brown : recolorCostumeFur(brown, fur, cell, costume.hat, costume.cream);
       writePng(new URL(`sheets/${state}-${fur}.png`, root), sheet);
       writeApng(new URL(`previews/${state}-${fur}.png`, root), base.map((_, i) => crop(sheet, (i % cols) * cell.w, Math.floor(i / cols) * cell.h, cell.w, cell.h)), durations);
       writePng(new URL(`costume_${id}_${state}${fur === 'brown' ? '' : `_${fur}`}.png`, SPRITES), sheet);
@@ -159,7 +164,7 @@ for (const [id, costume] of Object.entries(COSTUMES)) {
   }
   // the shop card: the idle costume on the bear's 82×140 card, its fur coloured like the sheets
   const card = crop(plainFurOf(readPng(new URL(costume.idle, root))), costume.card[0], costume.card[1], 82, 140);
-  for (const fur of FURS) writePng(new URL(`outfit_${id}${fur === 'brown' ? '' : `_${fur}`}.png`, SPRITES), fur === 'brown' ? card : recolorCostumeFur(card, fur, card, costume.hat));
+  for (const fur of FURS) writePng(new URL(`outfit_${id}${fur === 'brown' ? '' : `_${fur}`}.png`, SPRITES), fur === 'brown' ? card : recolorCostumeFur(card, fur, card, costume.hat, costume.cream));
 }
 writeFileSync(META, `${JSON.stringify(meta, null, 2)}\n`);
 console.log(`${built} costume sheets (${Object.keys(COSTUMES).join(', ')}), the shop cards and bear-costumes.json`);
