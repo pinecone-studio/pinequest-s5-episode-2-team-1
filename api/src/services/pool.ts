@@ -35,14 +35,17 @@ export async function insertDrafts(
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
   // Өмнө сэдэвгүй, хүндгүй хадгалагдсан ижил асуултад (жишээ нь seed-ийг дахин import хийхэд) тэдгээрийг нөхнө.
+  // lesson-seed нь хүндийн эх сурвалж тул дахин import хийхэд өөрийн мөрүүдийн хүндийг шинэчилнэ.
   const fill = db.prepare('UPDATE questions SET topic = ? WHERE tier = ? AND subject = ? AND prompt_key = ? AND topic IS NULL');
-  const fillDifficulty = db.prepare('UPDATE questions SET difficulty = ? WHERE tier = ? AND subject = ? AND prompt_key = ? AND difficulty IS NULL');
+  const fillDifficulty = db.prepare(
+    "UPDATE questions SET difficulty = ? WHERE tier = ? AND subject = ? AND prompt_key = ? AND (difficulty IS NULL OR (source = ? AND ? = 'lesson-seed'))",
+  );
   const results = await db.batch([
     ...drafts.map((d) =>
       stmt.bind(tier, subject, d.prompt, JSON.stringify(d.options), d.correctIndex, d.explanation, promptKey(d.prompt), source, book?.ref ?? null, bookPage(book?.ref ?? null), book?.grade ?? null, d.topic ?? null, d.difficulty ?? null, now),
     ),
     ...drafts.flatMap((d) => (d.topic ? [fill.bind(d.topic, tier, subject, promptKey(d.prompt))] : [])),
-    ...drafts.flatMap((d) => (d.difficulty ? [fillDifficulty.bind(d.difficulty, tier, subject, promptKey(d.prompt))] : [])),
+    ...drafts.flatMap((d) => (d.difficulty ? [fillDifficulty.bind(d.difficulty, tier, subject, promptKey(d.prompt), source, source)] : [])),
   ]);
   const inserted = results.slice(0, drafts.length).reduce((n, r) => n + (r.meta.changes ?? 0), 0);
   return { inserted, duplicates: drafts.length - inserted };
