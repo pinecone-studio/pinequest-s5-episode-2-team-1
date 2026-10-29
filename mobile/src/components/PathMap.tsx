@@ -6,9 +6,8 @@ import { useReducedMotion } from 'react-native-reanimated';
 import Svg, { Path } from 'react-native-svg';
 import { MapChests } from '@/components/MapChests';
 import { frameSize, Motion, SheetFrame, SheetLoop, Sprite } from '@/components/pixel';
-import { THEMES } from '@/constants/chapterTheme';
 import { colors, fonts } from '@/constants/theme';
-import { S, subjectNames } from '@/i18n/strings';
+import { S } from '@/i18n/strings';
 import { MapFriends, type MapFriend } from '@/components/MapFriends';
 import golems from '@/lib/pixelBear/golems.json';
 import { tagFrames } from '@/lib/pixelBear/anim';
@@ -18,9 +17,9 @@ import {
   BOSSES,
   chapterHeight,
   HOVER,
-  lessonAt,
   lessonTitle,
   MAP_CHAPTERS,
+  type MapChapter,
   MAP_W,
   type NodeStatus,
   type PathLayout,
@@ -46,8 +45,9 @@ const RING = { rx: 40, ry: 31, w: 5, gap: 18 };
 /** Замын цэг: алхам, хэмжээ, зангилааны төвөөс хэр холоос эхлэх */
 const DOT_GAP = 10;
 const DOT = 4;
-/** бүлэг хоорондын баннерын өндөр */
-const BAND_H = 60;
+/** Хоёр ертөнцийн заагийг уусгах өндөр (тал бүрд, dp) ба шат: pixel шиг алхамтай бүдгэрэлт (бүдэг blur биш) */
+const SEAM = 48;
+const SEAM_STEPS = 12;
 
 const isBoss = (layout: PathLayout, i: number) => layout.nodes[i].kind === 'boss';
 
@@ -218,40 +218,6 @@ export function PathMap({
           </View>
         ))}
       </View>
-
-      {/* Номын бүлэг бүрийн баннер; номгүй замд хуучин 3 ертөнцийн баннер. */}
-      {layout.chapters.length > 0
-        ? layout.chapters.map((chapter) => {
-            const theme = THEMES[MAP_CHAPTERS[chapter.unit].themeId];
-            return (
-              <View
-                key={`${chapter.start}:${chapter.title}`}
-                pointerEvents="none"
-                style={[styles.band, { top: chapter.y * scale - BAND_H / 2, backgroundColor: theme.panel }]}
-                accessibilityRole="header"
-              >
-                <Text style={[styles.bandTitle, { color: theme.text }]} numberOfLines={2}>
-                  {chapter.title}
-                </Text>
-              </View>
-            );
-          })
-        : layout.units.slice(1).map((u, j) => {
-            const theme = THEMES[MAP_CHAPTERS[j + 1].themeId];
-            return (
-              <View
-                key={j}
-                pointerEvents="none"
-                style={[styles.band, { top: u.top * scale - BAND_H / 2, backgroundColor: theme.panel }]}
-                accessibilityRole="header"
-              >
-                <Text style={[styles.bandOver, { color: theme.muted }]}>{S.path.chapterOver(j + 2)}</Text>
-                <Text style={[styles.bandTitle, { color: theme.text }]} numberOfLines={1}>
-                  {lessonAt(lessons, u.start)?.chapter ?? subjectNames[subject]}
-                </Text>
-              </View>
-            );
-          })}
     </View>
   );
 }
@@ -266,34 +232,78 @@ const edgeFixes = (e?: number) =>
         { left: MAP_W - e, shift: -(MAP_W - 2 * e) },
       ];
 
-function MapBackground({ layout }: { layout: PathLayout }) {
+/** Нэг бүлгийн дэвсгэр, бүлгийн `height` өндөрт босоогоор сунгасан */
+function ChapterImage({ c, height }: { c: MapChapter; height: number }) {
   const width = MAP_W;
+  const baseHeight = chapterHeight(c);
   return (
-    <View pointerEvents="none">
-      {MAP_CHAPTERS.map((c, unit) => {
-        const baseHeight = chapterHeight(c);
-        const height = layout.units[unit].height;
+    <View style={{ width, height: baseHeight, transform: [{ scaleY: height / baseHeight }], transformOrigin: 'top left' }}>
+      <Sprite id={c.bg} style={{ width, marginTop: -(c.cropTop ?? 0) }} />
+      {/* захын гажигтай `edgeFix` баганын оронд хажуугийн ижил өргөнтэй баганыг давхарлана */}
+      {edgeFixes(c.edgeFix).map(({ left, shift }) => (
+        <View key={left} style={[styles.abs, { left, top: 0, width: c.edgeFix, height: baseHeight, overflow: 'hidden' }]}>
+          <Sprite id={c.bg} style={{ width, marginTop: -(c.cropTop ?? 0), marginLeft: shift }} />
+        </View>
+      ))}
+      {c.foot ? <Sprite id={c.foot} style={{ width }} /> : null}
+      {c.extend === undefined ? null : (
+        // `extend` мөрөөс доошхи хэсгийг л харуулна
+        <View style={{ height: sprites[c.bg].height - c.extend, overflow: 'hidden' }}>
+          <Sprite id={c.bg} style={{ width, marginTop: -c.extend }} />
+        </View>
+      )}
+    </View>
+  );
+}
+
+/**
+ * Хоёр ертөнцийн заагийн хатуу шугамыг нууна: заагийн дээд талд доод зургийн, доод талд дээд зургийн толин тусгалыг
+ * давхарлана (тусгал нь заагт яг таарна). Тал бүрд заагаас эхэлсэн SEAM_STEPS давхарга улам богиносно: заагт нийлбэр нь
+ * 50%, холдох тусам шатлан алга болно. Давхарга бүр заагаас өөр ганц л захтай тул хөрш шатны хооронд зураас гарахгүй.
+ */
+function Seam({ layout, unit }: { layout: PathLayout; unit: number }) {
+  const y = layout.units[unit].top;
+  const aboveH = layout.units[unit - 1].height;
+  const step = SEAM / SEAM_STEPS;
+  const opacity = 1 - 0.5 ** (1 / SEAM_STEPS);
+  // scaleY −1-ийн өмнөх y': дээд талд заагаас зай, доод талд SEAM − зай
+  const halves = [
+    { top: y - SEAM, c: MAP_CHAPTERS[unit], height: layout.units[unit].height, shift: 0, lower: false },
+    { top: y, c: MAP_CHAPTERS[unit - 1], height: aboveH, shift: SEAM - aboveH, lower: true },
+  ];
+  return halves.map(({ top, c, height, shift, lower }) => (
+    <View key={top} style={[styles.abs, { left: 0, top, width: MAP_W, height: SEAM, transform: [{ scaleY: -1 }] }]}>
+      {Array.from({ length: SEAM_STEPS }, (_, k) => {
+        const len = (k + 1) * step;
+        const y0 = lower ? SEAM - len : 0;
         return (
-          <View key={c.bg} style={{ width, height, overflow: 'hidden' }}>
-            <View style={{ width, height: baseHeight, transform: [{ scaleY: height / baseHeight }], transformOrigin: 'top left' }}>
-              <Sprite id={c.bg} style={{ width, marginTop: -(c.cropTop ?? 0) }} />
-              {/* захын гажигтай `edgeFix` баганын оронд хажуугийн ижил өргөнтэй баганыг давхарлана */}
-              {edgeFixes(c.edgeFix).map(({ left, shift }) => (
-                <View key={left} style={[styles.abs, { left, top: 0, width: c.edgeFix, height: baseHeight, overflow: 'hidden' }]}>
-                  <Sprite id={c.bg} style={{ width, marginTop: -(c.cropTop ?? 0), marginLeft: shift }} />
-                </View>
-              ))}
-              {c.foot ? <Sprite id={c.foot} style={{ width }} /> : null}
-              {c.extend === undefined ? null : (
-                // `extend` мөрөөс доошхи хэсгийг л харуулна
-                <View style={{ height: sprites[c.bg].height - c.extend, overflow: 'hidden' }}>
-                  <Sprite id={c.bg} style={{ width, marginTop: -c.extend }} />
-                </View>
-              )}
+          <View key={k} style={[styles.abs, { left: 0, top: y0, width: MAP_W, height: len, overflow: 'hidden', opacity }]}>
+            <View style={{ marginTop: shift - y0 }}>
+              <ChapterImage c={c} height={height} />
             </View>
           </View>
         );
       })}
+    </View>
+  ));
+}
+
+function MapBackground({ layout }: { layout: PathLayout }) {
+  return (
+    <View pointerEvents="none">
+      {MAP_CHAPTERS.map((c, unit) => {
+        // дараагийн зургийн доор 1dp давна: бутархай өндрийн захаар ар талын өнгө цайвар шугам болж нэвчихгүй
+        const last = unit === MAP_CHAPTERS.length - 1;
+        const height = layout.units[unit].height + (last ? 0 : 1);
+        return (
+          <View key={c.bg} style={{ width: MAP_W, height, marginBottom: last ? 0 : -1, overflow: 'hidden' }}>
+            <ChapterImage c={c} height={height} />
+          </View>
+        );
+      })}
+      {MAP_CHAPTERS.slice(1).map((c, k) => (
+        <Seam key={c.bg} layout={layout} unit={k + 1} />
+      ))}
     </View>
   );
 }
@@ -514,7 +524,4 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     color: colors.white,
   },
-  band: { position: 'absolute', left: 0, right: 0, height: BAND_H, paddingHorizontal: 20, justifyContent: 'center', alignItems: 'center', gap: 2 },
-  bandOver: { fontFamily: fonts.extrabold, fontSize: 11, letterSpacing: 1.2 },
-  bandTitle: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 18, textAlign: 'center' },
 });
