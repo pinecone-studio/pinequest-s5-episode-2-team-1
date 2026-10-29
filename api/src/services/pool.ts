@@ -161,6 +161,8 @@ export const LESSON_COUNT_SQL = `SELECT COUNT(*) AS n FROM questions q
        WHERE q.tier = ? AND q.subject = ? AND q.flagged = 0 AND ${IN_RANGE}`;
 /** Суурь шатанд template-ээс өмнө хадгалагдсан curated асуултын тоо. */
 export const CURATED_LESSON_COUNT_SQL = `${LESSON_COUNT_SQL} AND q.source NOT LIKE 'template:%'`;
+/** Шатны хүнд (difficulty, NULL = дунд)-тэй curated асуултын тоо. Утгууд: tier, subject, ...rangeArgs, level. */
+export const CURATED_LEVEL_COUNT_SQL = `${CURATED_LESSON_COUNT_SQL} AND COALESCE(q.difficulty, 2) = ?`;
 /** pickSql(lesson !== null, exclude.length > 0)-ийн утгууд. `level` = шатны хүнд (1–3), null бол ялгахгүй. */
 export const pickArgs = (
   userId: number,

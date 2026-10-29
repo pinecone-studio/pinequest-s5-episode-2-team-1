@@ -70,17 +70,17 @@ describe('Математик 6–10-ын бүх хичээлийн template cove
     expect(MATH10.every((template) => template.ref.startsWith('math-10:'))).toBe(true);
   });
 
-  it('Суурь DB, Дунд ба Ахисан template ашиглана', () => {
+  it('шат бүр бэлэн бодлогыг түрүүлж, дутвал л template ашиглана', () => {
     expect(MATH6_MORE.every((template) => template.preferStored)).toBe(true);
     expect(MATH7_MORE.every((template) => template.preferStored)).toBe(true);
     expect([...MATH8, ...MATH9, ...MATH10].every((template) => template.preferStored)).toBe(true);
     expect(shouldGenerateTemplates([MATH7_MORE[0]], 25, 5, 1)).toBe(false);
     expect(shouldGenerateTemplates([MATH7_MORE[0]], 4, 5, 1)).toBe(true);
-    expect(shouldGenerateTemplates([MATH7_MORE[0]], 25, 5, 2)).toBe(true);
-    expect(shouldGenerateTemplates([MATH7_MORE[0]], 25, 5, 3)).toBe(true);
+    expect(shouldGenerateTemplates([MATH7_MORE[0]], 25, 5, 2)).toBe(false);
+    expect(shouldGenerateTemplates([MATH7_MORE[0]], 25, 5, 3)).toBe(false);
     expect(shouldGenerateTemplates([MATH10[0]], 25, 5, 1)).toBe(false);
-    expect(shouldGenerateTemplates([MATH10[0]], 25, 5, 2)).toBe(true);
-    expect(shouldGenerateTemplates([MATH10[0]], 25, 5, 3)).toBe(true);
+    expect(shouldGenerateTemplates([MATH10[0]], 25, 5, 2)).toBe(false);
+    expect(shouldGenerateTemplates([MATH10[0]], 25, 5, 3)).toBe(false);
   });
 
   it('өмнө зөрсөн хичээлүүд өөрийн сэдвийн үүсгэгчтэй', () => {

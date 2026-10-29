@@ -18,6 +18,7 @@ import { bookLessons, lessonPages } from './lessons';
 import { levelOf, shouldGenerateTemplates, templateById, templateRange, templatesFor } from '../templates';
 import {
   CURATED_LESSON_COUNT_SQL,
+  CURATED_LEVEL_COUNT_SQL,
   generateTemplateSet,
   LESSON_COUNT_SQL,
   lessonRef,
@@ -152,24 +153,19 @@ export async function startTask(
   const lesson = mappedRef ? templateRange(mappedRef) : book ? lessonPages(book, node) : null;
   const lessonRefill = (range: PageRange) =>
     refillLesson(env, tier, subject, { grade: user.grade, range }, userId).catch((e) => console.error('[pool] lesson refill failed', e));
-  // Суурь шат curated DB асуултаас; Дунд, Ахисан шат template-тэй бол түүнээс. 11–12-р ангийн template-гүй
-  // хичээлүүд шат бүрийн difficulty-тэй DB асуултаа ашиглана. Шатгүй урсгалд ерөнхий template нь DB дутвал нөөц болно.
+  // Шат бүр (Суурь, Дунд, Ахисан) номын бэлэн бодлогоос тэр шатны хүнд (difficulty)-ийг түрүүлж авна; тэр хүндийн
+  // бодлого нэг даалгаварт хүрэлцэхгүй бол л template тэр түвшнээр нөхнө. Шатгүй урсгалд ерөнхий template нь DB дутвал нөөц.
   const templates = mapped ? mappedTemplates : lesson ? templatesFor(lesson) : [];
-  const basic = stageNo === 1;
-  const preferStored = stageNo === null && templates.length > 0 && templates.every((template) => template.preferStored);
-  const storedFirst = basic || preferStored || mapped?.ref !== undefined;
-  const storedBefore =
-    lesson && storedFirst
-      ? ((
-          await db
-            .prepare(basic ? CURATED_LESSON_COUNT_SQL : LESSON_COUNT_SQL)
-            .bind(tier, subject, ...rangeArgs(lesson))
-            .first<{ n: number }>()
-        )?.n ?? 0)
-      : 0;
-  // Шатны хүнд (1 Суурь … 3 Ахисан): загвар тэр хүндээр үүсгэж, хадгалсан бодлогоос тэр хүндийг түрүүлж сонгоно.
+  const staged = stageNo !== null;
+  const preferStored = !staged && templates.length > 0 && templates.every((template) => template.preferStored);
+  const storedFirst = staged || preferStored || mapped?.ref !== undefined;
+  // Шатны хүнд (1 Суурь … 3 Ахисан): бэлэн бодлогоос тэр хүндийг сонгож, дутвал template тэр хүндээр үүсгэнэ.
   const level = levelOf(stageNo ?? (boss === undefined ? null : (GATE_STAGE[boss] ?? null)));
-  const made = shouldGenerateTemplates(templates, storedBefore, GAME.QUESTIONS_PER_TASK, stageNo)
+  const count = async (sql: string, ...extra: number[]) =>
+    (await db.prepare(sql).bind(tier, subject, ...rangeArgs(lesson!), ...extra).first<{ n: number }>())?.n ?? 0;
+  const storedBefore = lesson && storedFirst ? await count(staged ? CURATED_LESSON_COUNT_SQL : LESSON_COUNT_SQL) : 0;
+  const storedAtLevel = lesson && staged && templates.length > 0 ? await count(CURATED_LEVEL_COUNT_SQL, level) : storedBefore;
+  const made = shouldGenerateTemplates(templates, storedAtLevel, GAME.QUESTIONS_PER_TASK, stageNo)
     ? await generateTemplateSet(db, tier, subject, user.grade, templates, GAME.QUESTIONS_PER_TASK, level, now)
     : [];
   if (lesson && (storedFirst ? storedBefore < GAME.QUESTIONS_PER_TASK : made.length < GAME.QUESTIONS_PER_TASK)) {
@@ -185,12 +181,11 @@ export async function startTask(
     }
   }
 
-  // Загвар хүрэлцээгүй бол (Дунд, Ахисан шат ч) хадгалсан бодлогоос шатны хүндээр нөхнө; Суурь шат загвараас
-  // үүссэн мөрийг сонгохгүй.
+  // Бэлэн бодлогоос шатны хүндэд ойрыг түрүүлж; шатанд template-ээс үүссэн мөрийг сонгохгүй.
   const picked =
     made.length >= GAME.QUESTIONS_PER_TASK
       ? made.map((id) => ({ id }))
-      : await pickQuestions(db, userId, tier, subject, lesson, GAME.QUESTIONS_PER_TASK, level, basic);
+      : await pickQuestions(db, userId, tier, subject, lesson, GAME.QUESTIONS_PER_TASK, level, staged);
   if (picked.length < GAME.QUESTIONS_PER_TASK) {
     ctx.waitUntil(refillPool(env, tier, subject, { grade: user.grade }));
     throw new ApiError(503, 'NO_QUESTIONS', 'Асуулт хүрэлцэхгүй байна');

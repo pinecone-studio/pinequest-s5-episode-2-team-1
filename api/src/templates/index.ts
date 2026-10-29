@@ -83,12 +83,11 @@ export function generate(
 }
 
 /**
- * Зангилааны шатны эх үүсвэр: Суурь хадгалсан асуултыг ашиглана (дутвал template), Дунд/Ахисан template.
+ * Зангилааны шатны эх үүсвэр: шат бүр (Суурь, Дунд, Ахисан) тэр хүндийн бэлэн бодлогыг ашиглана, дутвал template.
  * Шатгүй урсгалд хуучин дүрэм хэвээр: тусгай template үргэлж, ерөнхий template зөвхөн DB дутвал.
  */
 export function shouldGenerateTemplates(templates: readonly Template[], storedCount: number, needed: number, stage: number | null = null) {
   if (templates.length === 0) return false;
-  if (stage === 1) return storedCount < needed;
-  if (stage === 2 || stage === 3) return true;
+  if (stage !== null) return storedCount < needed;
   return !templates.every((template) => template.preferStored) || storedCount < needed;
 }
