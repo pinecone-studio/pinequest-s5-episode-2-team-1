@@ -1,5 +1,5 @@
 import type { DuelMemberDto, DuelPlayerDto, DuelSummary, DuelTeam, DuelVisibility, LobbyResponse, Subject } from '../../../shared/types';
-import { GAME } from '../config/game';
+import { DUEL_SUBJECTS, GAME } from '../config/game';
 import type { DuelPlayerInfo, DuelQuestion, Settlement } from '../duel/engine';
 import { newDuelCode, normalizeDuelCode } from '../domain/duelCode';
 import { levelFromXp } from '../domain/level';
@@ -276,10 +276,10 @@ export async function lobby(db: D1Database, userId: number, now = Date.now()): P
     .prepare(
       `${SUMMARY_SELECT}
        WHERE d.status = 'open' AND d.visibility = 'public' AND c.grade = ? AND d.creator_id != ? AND d.creator_seen_at >= ?
-         AND NOT ${IS_MEMBER}
+         AND NOT ${IS_MEMBER} AND d.subject IN (SELECT value FROM json_each(?))
        ORDER BY d.created_at DESC LIMIT 30`,
     )
-    .bind(user.grade, userId, now - GAME.DUEL.LOBBY_PRESENCE_MS, userId)
+    .bind(user.grade, userId, now - GAME.DUEL.LOBBY_PRESENCE_MS, userId, JSON.stringify(DUEL_SUBJECTS))
     .all<SummaryRow>();
   const mine = await db
     .prepare(
@@ -405,6 +405,8 @@ export async function leaveTeam(db: D1Database, userId: number, duelId: number):
 async function checkCanJoin(db: D1Database, userId: number, duel: DuelRow): Promise<UserRow> {
   if (duel.creator_id === userId) throw new ApiError(409, 'OWN_DUEL', 'Өөрийн сорилт');
   if (duel.status !== 'open') throw new ApiError(409, duel.status === 'accepted' ? 'DUEL_TAKEN' : 'DUEL_NOT_OPEN', 'Сорилт хаагдсан');
+  // Тулаан зөвхөн DUEL_SUBJECTS-ээр: дүрэм гарахаас өмнө үүссэн бусад хичээлийн сорилтод нэгдэхгүй.
+  if (!(DUEL_SUBJECTS as readonly string[]).includes(duel.subject)) throw new ApiError(409, 'DUEL_NOT_OPEN', 'Энэ хичээлээр тулаан хийхгүй');
   const joiner = await getUserRow(db, userId);
   const creator = await getUserRow(db, duel.creator_id);
   if (joiner.grade !== creator.grade) throw new ApiError(403, 'WRONG_GRADE', 'Өөр ангийн сорилт');

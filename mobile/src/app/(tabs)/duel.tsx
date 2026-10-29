@@ -33,8 +33,6 @@ export default function DuelLobby() {
 
   const mine = lobby.mine;
   const playing = mine?.status === 'accepted';
-  // Тулаан зөвхөн математикаар: бусад хичээлийн хуучин сорилтыг жагсаалтад харуулахгүй.
-  const open = lobby.open.filter((d) => d.subject === 'math');
   const matching = mine ? 0 : lobby.open.filter((d) => d.subject === subject && d.stake <= lobby.maxStake).length;
   return (
     <Screen tabBar>
@@ -71,8 +69,8 @@ export default function DuelLobby() {
       <ErrorText>{error}</ErrorText>
 
       <SectionTitle>{S.duel.openTitle}</SectionTitle>
-      {open.length === 0 ? <Muted>{S.duel.empty}</Muted> : null}
-      {open.map((d, i) => (
+      {lobby.open.length === 0 ? <Muted>{S.duel.empty}</Muted> : null}
+      {lobby.open.map((d, i) => (
         <ChallengeCard
           key={d.id}
           index={i}
