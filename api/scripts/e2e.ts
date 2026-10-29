@@ -1,8 +1,9 @@
 // Ажиллаж буй dev сервер дээр демо сценарийн гол урсгалыг автоматаар шалгана.
 //   npm run e2e                 # даалгавар, оноо, streak, хамгаалалт, өдрийн хязгаар, тулаан
-//   npm run e2e -- --only tasks # зөвхөн нэг хэсэг (tasks | paths | lives | review | gates | recovery | shop | profiles | friends | duel | books)
+//   npm run e2e -- --only tasks # зөвхөн нэг хэсэг (tasks | paths | lives | review | gates | recovery | shop | profiles | friends | clans | duel | books)
 import type { AnswerResponse, CosmeticsResponse, MeResponse, RecoveryAnswerResponse, RecoveryDto, ShopResponse, TaskDto } from '../../shared/types';
 import { runBooksScenario } from './e2e-books';
+import { runClansScenario } from './e2e-clans';
 import { runDuelScenario } from './e2e-duel';
 import { runFriendsScenario } from './e2e-friends';
 import { runProfilesScenario } from './e2e-profiles';
@@ -338,6 +339,7 @@ async function main() {
   if (!only || only === 'shop') await shopScenario();
   if (!only || only === 'profiles') await runProfilesScenario();
   if (!only || only === 'friends') await runFriendsScenario();
+  if (!only || only === 'clans') await runClansScenario();
   if (!only || only === 'duel') await runDuelScenario();
   if (!only || only === 'books') await runBooksScenario();
   console.log('\n— Ledger');

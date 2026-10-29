@@ -21,3 +21,8 @@ export function daysBetween(from: string, to: string): number {
 export function addDays(day: string, n: number): string {
   return new Date((dayNumber(day) + n) * DAY_MS).toISOString().slice(0, 10);
 }
+
+/** Тухайн өдрийн 7 хоногийн Даваа гараг (1970-01-01 нь Пүрэв гараг). */
+export function weekStart(day: string): string {
+  return addDays(day, -((dayNumber(day) + 3) % 7));
+}

@@ -59,7 +59,10 @@ export type ErrorCode =
   | 'TUTOR_UNAVAILABLE'
   | 'TUTOR_LIMIT'
   | 'PROFILE_NOT_FOUND'
-  | 'FRIEND_LIMIT';
+  | 'FRIEND_LIMIT'
+  | 'CLAN_NOT_FOUND'
+  | 'CLAN_FULL'
+  | 'CLAN_MEMBER';
 
 export interface ApiErrorBody {
   error: { code: ErrorCode; message: string };
@@ -229,6 +232,8 @@ export interface PublicProfile {
   duels: { played: number; won: number };
   /** Бүртгүүлсэн хугацаа (epoch ms) */
   joinedAt: number;
+  /** Нэгдсэн Уулын нэр ("Төгсбилэгийн", апп ард нь " Уул" нэмнэ); Уулгүй бол null. Урилгын код орохгүй. */
+  clan: string | null;
 }
 
 /** GET /me/profile, POST /me/profile/code */
@@ -289,6 +294,63 @@ export interface FriendBody {
 /** POST /friends, DELETE /friends/:code */
 export interface FriendActionResponse {
   friend: FriendStatus;
+}
+
+// ---------- Уул (ангийн баг) ----------
+// Ангийнхан 6 оронтой кодоор нэг Ууланд нэгдэнэ (дээд тал нь 40). Гишүүдийн XP Уулыг өндөрсгөнө (shared/clan.ts).
+
+/** Уулын гишүүн: найзын мөрийн адил (профайлын кодоор нь /u/<код> нээгдэнэ), дээр нь Уулд нэмсэн метр. */
+export interface ClanMemberDto extends Omit<FriendDto, 'paths'> {
+  /** Уулыг өндөрсгөсөн нийт метр (XP / XP_PER_METER) */
+  meters: number;
+  /** Энэ 7 хоногт (Даваа гарагаас) нэмсэн метр */
+  weekMeters: number;
+  owner: boolean;
+  isMe: boolean;
+}
+
+export interface ClanDto {
+  /** Урилгын код: гишүүн бүр харж, ангийнхандаа өгнө; эзэн нь солино. */
+  code: string;
+  /** Нэрийн эхний хэсэг: "Төгсбилэгийн" (clanTitle → "Төгсбилэгийн Уул") */
+  name: string;
+  /** Гишүүдийн нийт метр */
+  height: number;
+  weekHeight: number;
+  maxMembers: number;
+  /** Би Уулын эзэн (нэр, код солих, гишүүн хасах) */
+  isOwner: boolean;
+  /** Энэ 7 хоногт хамгийн их өндөрсгөсөн нь эхэндээ */
+  members: ClanMemberDto[];
+}
+
+/** GET /clans/mine, POST /clans, POST /clans/:code/join, PATCH /clans/mine, POST /clans/mine/code, POST /clans/mine/leave */
+export interface MyClanResponse {
+  clan: ClanDto | null;
+}
+
+/** Нэгдэхээс өмнө кодоор харах: гишүүдийн жагсаалтгүй, зөвхөн баавгайнуудын харагдац. */
+export interface ClanPreview {
+  code: string;
+  name: string;
+  members: number;
+  maxMembers: number;
+  height: number;
+  /** Эзний нэр */
+  owner: string;
+  /** Эхний гишүүдийн баавгай (Уулын зурган дээр) */
+  looks: BearLook[];
+}
+
+/** GET /clans/:code. member = энэ Ууланд байна, elsewhere = өөр Ууланд байна (эхлээд гарах ёстой). */
+export interface ClanPreviewResponse {
+  clan: ClanPreview;
+  status: 'member' | 'elsewhere' | 'none';
+}
+
+/** POST /clans (name байхгүй бол үүсгэгчийн нэрээс: "Төгсбилэгийн"), PATCH /clans/mine */
+export interface ClanBody {
+  name?: string;
 }
 
 /** PUT /me/look */

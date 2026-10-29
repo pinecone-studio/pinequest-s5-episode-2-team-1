@@ -7,6 +7,7 @@ import { parseBearLook } from '../domain/profile';
 import { normalizeStreak } from '../domain/streak';
 import { ubDay } from '../domain/time';
 import { ApiError } from '../lib/errors';
+import { clanNameOf } from './clans';
 import { friendStatus } from './friends';
 import { getCatalog } from './items';
 import { assignProfileCode, ensureProfileCode, profileOwner } from './profileCodes';
@@ -53,7 +54,7 @@ async function loadSkills(db: D1Database, userId: number): Promise<SubjectSkill[
 /** Бусдад харагдах профайл. Харж буй хүн бусдын өгөгдлийг өөрчлөхгүйн тулд streak-ийг DB-д бичилгүй тооцно. */
 export async function loadPublicProfile(db: D1Database, userId: number, now = Date.now()): Promise<PublicProfile> {
   const user = await getUserRow(db, userId);
-  const [skills, collection, days, duels] = await Promise.all([
+  const [skills, collection, days, duels, clan] = await Promise.all([
     loadSkills(db, userId),
     loadCollection(db, userId),
     db
@@ -69,6 +70,7 @@ export async function loadPublicProfile(db: D1Database, userId: number, now = Da
       )
       .bind(userId, userId, userId, userId)
       .first<{ played: number; won: number }>(),
+    clanNameOf(db, userId),
   ]);
   const progress = levelProgress(user.xp);
   return {
@@ -85,6 +87,7 @@ export async function loadPublicProfile(db: D1Database, userId: number, now = Da
     skills,
     duels: { played: duels?.played ?? 0, won: duels?.won ?? 0 },
     joinedAt: user.created_at,
+    clan,
   };
 }
 
