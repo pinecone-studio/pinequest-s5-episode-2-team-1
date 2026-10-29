@@ -61,6 +61,7 @@ export default function LoginScreen() {
           setError('');
         }}
         textContentType="username"
+        autoComplete="username"
         returnKeyType="next"
         blurOnSubmit={false}
         onSubmitEditing={() => passwordRef.current?.focus()}
@@ -76,6 +77,8 @@ export default function LoginScreen() {
         }}
         secureTextEntry={!showPassword}
         textContentType="password"
+        autoComplete="current-password"
+        returnKeyType="go"
         onFocus={() => setTypingPassword(true)}
         onBlur={() => setTypingPassword(false)}
         onSubmitEditing={submit}

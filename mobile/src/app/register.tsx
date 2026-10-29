@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
-import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { StyleSheet, type TextInputInstance, View } from 'react-native';
 import { errorText } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
 import { AuthField, type AuthMood, AuthShell, passwordOk, usernameOk } from '@/components/AuthShell';
@@ -18,6 +18,7 @@ export default function RegisterScreen() {
   const [error, setError] = useState('');
   const [fails, setFails] = useState(0);
   const [typingPassword, setTypingPassword] = useState(false);
+  const passwordRef = useRef<TextInputInstance>(null);
   const ready = usernameOk(username) && passwordOk(password);
   const mood: AuthMood = error ? 'oops' : typingPassword ? 'peek' : ready ? 'yay' : 'idle';
 
@@ -69,6 +70,11 @@ export default function RegisterScreen() {
           setError('');
         }}
         maxLength={20}
+        textContentType="username"
+        autoComplete="username"
+        returnKeyType="next"
+        blurOnSubmit={false}
+        onSubmitEditing={() => passwordRef.current?.focus()}
       />
       <AuthField
         label={S.auth.password}
@@ -82,6 +88,11 @@ export default function RegisterScreen() {
         onFocus={() => setTypingPassword(true)}
         onBlur={() => setTypingPassword(false)}
         secureTextEntry
+        inputRef={passwordRef}
+        textContentType="newPassword"
+        autoComplete="new-password"
+        returnKeyType="go"
+        onSubmitEditing={submit}
       />
       <ErrorText>{error}</ErrorText>
       <Button title={S.auth.register} onPress={submit} loading={busy} disabled={!ready} />
