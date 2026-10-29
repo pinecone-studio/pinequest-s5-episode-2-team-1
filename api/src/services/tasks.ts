@@ -269,11 +269,8 @@ async function recordChoice(db: D1Database, books: Books, userId: number, taskId
     .bind(choice, correct ? 1 : 0, now, taskId, row.position)
     .run();
   if (!upd.meta.changes) throw new ApiError(409, 'ALREADY_ANSWERED', 'Хариулсан асуулт');
-  // Flag (-1) нь хэрэглэгчийн алдаа биш. Admin хэрэглэгчийн амийг хасахгүй.
-  if (!correct && choice >= 0) {
-    const user = await getUserRow(db, userId);
-    if (user.is_admin !== 1) await spendUserLife(db, userId, now);
-  }
+  // Flag (-1) нь хэрэглэгчийн алдаа биш. Admin-ийг spendUserLife өөрөө алгасна.
+  if (!correct && choice >= 0) await spendUserLife(db, userId, now);
   // flag (-1) нь жинхэнэ алдаа биш
   const count = await db
     .prepare('SELECT SUM(choice IS NULL) AS open, SUM(choice >= 0 AND correct = 0) AS wrong FROM task_questions WHERE task_id = ?')
