@@ -107,6 +107,7 @@ function RootNavigator() {
           <Stack.Screen name="onboarding" />
           <Stack.Screen name="calendar" options={{ animation: 'slide_from_bottom' }} />
           <Stack.Screen name="bag" />
+          <Stack.Screen name="pinecones" />
           <Stack.Screen name="chest" options={{ animation: 'fade', gestureEnabled: false }} />
           <Stack.Screen name="profile" />
           <Stack.Screen name="u/[code]" />
