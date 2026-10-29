@@ -92,11 +92,8 @@ export function AuthShell({
         <Pop trigger={mood} from={0.9} style={styles.bear}>
           <MoodBear key={mood} mood={mood} />
         </Pop>
-        <ZoomEnter key={say} delay={mood === 'idle' ? 300 : 0} style={styles.bubble}>
-          <Text style={styles.bubbleText} accessibilityLiveRegion="polite">
-            {say}
-          </Text>
-          <View style={styles.tail} />
+        <ZoomEnter key={say} delay={mood === 'idle' ? 300 : 0} style={styles.bubbleAt}>
+          <SpeechBubble>{say}</SpeechBubble>
         </ZoomEnter>
       </View>
       <Enter index={1} style={styles.head}>
@@ -117,6 +114,18 @@ export function AuthShell({
       </Enter>
       <BusyOverlay visible={busy} />
     </Screen>
+  );
+}
+
+/** Баавгайн хэлэх үг: бүртгэл, баавгай, асуулт бүгд энэ нэг хөөсийг хэрэглэнэ. `tail` = баавгай аль талд байна. */
+export function SpeechBubble({ children, tail = 'bottom', size = 'sm' }: { children: string; tail?: 'bottom' | 'left'; size?: 'sm' | 'lg' }) {
+  return (
+    <View style={styles.bubble}>
+      <Text style={size === 'lg' ? styles.bubbleTextLg : styles.bubbleText} accessibilityLiveRegion="polite">
+        {children}
+      </Text>
+      <View style={[styles.tail, tail === 'left' && styles.tailLeft]} />
+    </View>
   );
 }
 
@@ -216,11 +225,8 @@ const styles = StyleSheet.create({
   haloCircle: { width: 230, height: 230, borderRadius: 115, backgroundColor: colors.lavender },
   blob: { borderRadius: 999 },
   bear: { marginBottom: -6 },
+  bubbleAt: { position: 'absolute', top: 0, right: 0, maxWidth: 190 },
   bubble: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    maxWidth: 190,
     backgroundColor: colors.white,
     borderRadius: 18,
     borderWidth: 2,
@@ -230,6 +236,7 @@ const styles = StyleSheet.create({
     ...hardShadow(3),
   },
   bubbleText: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 19, color: colors.ink },
+  bubbleTextLg: { fontFamily: fonts.bold, fontSize: 18, lineHeight: 24, color: colors.ink },
   tail: {
     position: 'absolute',
     left: 22,
@@ -242,6 +249,7 @@ const styles = StyleSheet.create({
     borderColor: colors.ink,
     transform: [{ rotate: '45deg' }],
   },
+  tailLeft: { left: -8, bottom: 18, borderRightWidth: 0, borderTopWidth: 0, borderLeftWidth: 2 },
   head: { alignItems: 'center', gap: 6 },
   title: { fontFamily: fonts.extrabold, fontSize: 28, lineHeight: 34, letterSpacing: -0.6, color: colors.ink, textAlign: 'center' },
   sub: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 21, color: colors.muted, textAlign: 'center' },

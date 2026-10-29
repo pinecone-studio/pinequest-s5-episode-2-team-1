@@ -1,13 +1,13 @@
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { StyleSheet, type TextInputInstance, View } from 'react-native';
+import type { TextInputInstance } from 'react-native';
 import { errorText } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
 import { AuthField, type AuthMood, AuthShell, passwordOk, usernameOk } from '@/components/AuthShell';
 import { Button } from '@/components/Button';
 import { JudgeButton } from '@/components/JudgeButton';
-import { BackButton, ErrorText, Muted } from '@/components/ui';
-import { colors } from '@/constants/theme';
+import { FlowTop } from '@/components/onboarding/FlowTop';
+import { ErrorText, Muted } from '@/components/ui';
 import { S } from '@/i18n/strings';
 
 export default function RegisterScreen() {
@@ -42,16 +42,7 @@ export default function RegisterScreen() {
   return (
     <AuthShell
       title={S.auth.registerTitle}
-      top={
-        <View style={styles.top}>
-          {router.canGoBack() ? <BackButton onPress={() => router.back()} /> : null}
-          <View style={styles.progress} accessible accessibilityLabel="Алхам 1/3">
-            <View style={[styles.seg, { backgroundColor: colors.indigo }]} />
-            <View style={[styles.seg, styles.todo]} />
-            <View style={[styles.seg, styles.todo]} />
-          </View>
-        </View>
-      }
+      top={<FlowTop step={1} onBack={router.canGoBack() ? () => router.back() : undefined} />}
       sub={S.auth.registerSub}
       hello={S.auth.registerHello}
       mood={mood}
@@ -101,10 +92,3 @@ export default function RegisterScreen() {
     </AuthShell>
   );
 }
-
-const styles = StyleSheet.create({
-  top: { flexDirection: 'row', alignItems: 'center', gap: 14 },
-  progress: { flex: 1, flexDirection: 'row', gap: 6 },
-  seg: { flex: 1, height: 8, borderRadius: 4 },
-  todo: { backgroundColor: 'rgba(25,21,46,0.12)' },
-});

@@ -1,29 +1,47 @@
 import { HEARD_FROM, type HeardFrom, type Reason, REASONS, SELF_LEVELS, type SelfLevel } from '@shared/onboarding';
 import type { Subject } from '@shared/types';
+import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { SpeechBubble } from '@/components/AuthShell';
 import { Sprite } from '@/components/pixel';
-import { colors, fonts } from '@/constants/theme';
+import { colors, fonts, radius } from '@/constants/theme';
 import { S, subjectNames } from '@/i18n/strings';
-import type { SpriteKey } from '@/sprites';
-import { Emoji, LevelBars, QuizOption } from './QuizOption';
-import { ONBOARDING_COLORS } from './OnboardingHeader';
+import { Icon, type IconName, LevelBars, QuizOption } from './QuizOption';
 
-const HEARD_ICON: Record<HeardFrom, string> = { friends: '👫', teacher: '🧑‍🏫', family: '🏠', social: '📱', tiktok: '🎵', youtube: '▶️', other: '💬' };
-const REASON_ICON: Record<Reason, SpriteKey> = {
-  grades: 'icon_star_36x36',
-  exam: 'hud_cap_20x28',
-  catchup: 'icon_flame_36x36',
-  fun: 'icon_mystery_box_28x22',
-  compete: 'hud_skull_34x30',
-  other: 'icon_heart_36x36',
+/** «Сошиал медиа» нэг сонголт: дөрвөн жинхэнэ брэнд лого 2×2 */
+function SocialIcons() {
+  return (
+    <View style={styles.pair}>
+      <Icon name="logo-facebook" color="#1877F2" size={15} />
+      <Icon name="logo-instagram" color="#E1306C" size={15} />
+      <Icon name="logo-tiktok" color={colors.ink} size={15} />
+      <Icon name="logo-youtube" color="#FF0000" size={15} />
+    </View>
+  );
+}
+
+// emoji биш: нэг гэр бүлийн icon, сошиал нь жинхэнэ брэнд лого, өнгөөрөө
+const HEARD_ICON: Record<HeardFrom, ReactNode> = {
+  friends: <Icon name="people-outline" />,
+  teacher: <Icon name="school-outline" />,
+  family: <Icon name="home-outline" />,
+  social: <SocialIcons />,
+  other: <Icon name="chatbubble-ellipses-outline" />,
+};
+const REASON_ICON: Record<Reason, IconName> = {
+  grades: 'trending-up-outline',
+  exam: 'document-text-outline',
+  catchup: 'time-outline',
+  fun: 'game-controller-outline',
+  compete: 'trophy-outline',
+  other: 'chatbubble-ellipses-outline',
 };
 export const GRADES = [6, 7, 8, 9, 10, 11, 12] as const;
-const BENEFIT_ICON: SpriteKey[] = ['icon_star_36x36', 'hud_skull_34x30', 'icon_flame_36x36'];
-const BENEFIT_BG = [ONBOARDING_COLORS.yellow, '#FFB7AA', ONBOARDING_COLORS.lavender] as const;
+const BENEFIT_ICON: IconName[] = ['calendar-outline', 'game-controller-outline', 'flame-outline'];
 
 export function HeardStep({ value, onChange }: { value: HeardFrom | null; onChange: (v: HeardFrom) => void }) {
   return HEARD_FROM.map((k) => (
-    <QuizOption key={k} icon={<Emoji>{HEARD_ICON[k]}</Emoji>} label={S.onboarding.heard[k]} selected={value === k} onPress={() => onChange(k)} />
+    <QuizOption key={k} icon={HEARD_ICON[k]} label={S.onboarding.heard[k]} selected={value === k} onPress={() => onChange(k)} />
   ));
 }
 
@@ -34,11 +52,7 @@ export function GradeStep({ value, onChange }: { value: number | null; onChange:
       {GRADES.map((g) => (
         <QuizOption
           key={g}
-          icon={
-            <View style={[styles.num, value === g && styles.numOn]}>
-              <Text style={[styles.numText, value === g && styles.numTextOn]}>{g}</Text>
-            </View>
-          }
+          icon={<Text style={styles.numText}>{g}</Text>}
           label={S.onboarding.grade(g)}
           selected={value === g}
           onPress={() => onChange(g)}
@@ -50,7 +64,7 @@ export function GradeStep({ value, onChange }: { value: number | null; onChange:
 
 export function ReasonStep({ value, onChange }: { value: Reason | null; onChange: (v: Reason) => void }) {
   return REASONS.map((k) => (
-    <QuizOption key={k} icon={<Sprite id={REASON_ICON[k]} />} label={S.onboarding.reason[k]} selected={value === k} onPress={() => onChange(k)} />
+    <QuizOption key={k} icon={<Icon name={REASON_ICON[k]} />} label={S.onboarding.reason[k]} selected={value === k} onPress={() => onChange(k)} />
   ));
 }
 
@@ -63,9 +77,9 @@ export function LevelStep({ value, onChange }: { value: SelfLevel | null; onChan
 /** KUMA юу өгөх вэ: сонголт биш, 3 мөр тайлбар */
 export function BenefitsStep() {
   return S.onboarding.benefits.map((b, i) => (
-    <View key={b.title} style={[styles.benefit, { backgroundColor: BENEFIT_BG[i] }]} accessible accessibilityLabel={`${b.title}. ${b.body}`}>
+    <View key={b.title} style={styles.benefit} accessible accessibilityLabel={`${b.title}. ${b.body}`}>
       <View style={styles.benefitIcon}>
-        <Sprite id={BENEFIT_ICON[i]} />
+        <Icon name={BENEFIT_ICON[i]} />
       </View>
       <View style={{ flex: 1, gap: 4 }}>
         <Text style={styles.benefitTitle}>{b.title}</Text>
@@ -79,37 +93,19 @@ export function BenefitsStep() {
 export function ResultStep({ level, subject }: { level: SelfLevel; subject: Subject }) {
   return (
     <View style={styles.result}>
-      <View style={styles.resultBubble}>
-        <Text style={styles.resultText}>{S.onboarding.result(level, subjectNames[subject])}</Text>
-      </View>
-      <Sprite id="bear_cheer_scarf_180x252" label="Баярлаж буй баавгай" />
-    </View>
-  );
-}
-
-/** Богино onboarding-ийн төгсгөл: сонгосон ангид тохирсон зам бэлэн болсныг хэлнэ. */
-export function ReadyStep({ grade, level }: { grade: number; level: SelfLevel }) {
-  return (
-    <View style={styles.result}>
-      <View style={styles.resultBubble}>
-        <Text style={styles.resultText}>{`${S.onboarding.ready(grade)} ${S.onboarding.result(level, subjectNames.math)}`}</Text>
-      </View>
+      <SpeechBubble size="lg">{S.onboarding.result(level, subjectNames[subject])}</SpeechBubble>
       <Sprite id="bear_cheer_scarf_180x252" label="Баярлаж буй баавгай" />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  hint: { fontFamily: fonts.bold, fontSize: 14, lineHeight: 20, color: ONBOARDING_COLORS.ink, backgroundColor: '#F7DCCB', padding: 12, borderRadius: 14, overflow: 'hidden' },
-  num: { width: 36, height: 36, borderRadius: 10, backgroundColor: ONBOARDING_COLORS.white, borderWidth: 2, borderColor: ONBOARDING_COLORS.ink, alignItems: 'center', justifyContent: 'center' },
-  numOn: { backgroundColor: ONBOARDING_COLORS.ink },
-  numText: { fontFamily: fonts.pixelNum, fontSize: 15, color: ONBOARDING_COLORS.ink },
-  numTextOn: { color: colors.white },
-  benefit: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16, borderRadius: 20, borderWidth: 2, borderColor: ONBOARDING_COLORS.ink, shadowColor: ONBOARDING_COLORS.ink, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 1, shadowRadius: 0, elevation: 4 },
-  benefitIcon: { width: 48, height: 48, borderRadius: 24, backgroundColor: ONBOARDING_COLORS.white, borderWidth: 2, borderColor: ONBOARDING_COLORS.ink, alignItems: 'center', justifyContent: 'center' },
-  benefitTitle: { fontFamily: fonts.extrabold, fontSize: 18, color: colors.ink },
+  hint: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 21, color: colors.muted },
+  numText: { fontFamily: fonts.pixelNum, fontSize: 16, color: colors.indigo },
+  pair: { width: 34, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 2 },
+  benefit: { flexDirection: 'row', alignItems: 'center', gap: 14, padding: 14, backgroundColor: colors.white, borderRadius: radius.md, borderWidth: 2, borderColor: colors.line },
+  benefitIcon: { width: 40, height: 40, borderRadius: radius.sm, backgroundColor: colors.trackAlt, alignItems: 'center', justifyContent: 'center' },
+  benefitTitle: { fontFamily: fonts.extrabold, fontSize: 17, color: colors.ink },
   benefitBody: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 21, color: colors.muted },
-  result: { alignItems: 'center', gap: 8, paddingTop: 8 },
-  resultBubble: { backgroundColor: ONBOARDING_COLORS.yellow, borderRadius: 20, borderWidth: 2, borderColor: ONBOARDING_COLORS.ink, padding: 18, shadowColor: ONBOARDING_COLORS.ink, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 1, shadowRadius: 0, elevation: 4 },
-  resultText: { fontFamily: fonts.bold, fontSize: 18, lineHeight: 25, color: colors.ink, textAlign: 'center' },
+  result: { alignItems: 'center', gap: 16, paddingTop: 8 },
 });
