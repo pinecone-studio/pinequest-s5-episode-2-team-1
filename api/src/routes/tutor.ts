@@ -162,6 +162,7 @@ async function relay(
   };
   /** Баавгайн ээлж клиентэд дууссан: хугацаа нь дуусах гэж байвал дуусгах ээлж, дууссан бол баяртай гэснийх нь дараа хаана. */
   const bearTurnEnd = () => {
+    clientTurn = false;
     send({ type: 'turn_end' });
     const spoke = bearMs > turnStartMs;
     const next = finishing ? (spoke ? 'end' : 'continue') : speechBudget(bearMs, wrapping, spoke);
@@ -210,6 +211,22 @@ async function relay(
   /** turnText-ийн TTS-д өгсөн хэсгийн урт; saidInTurn = энэ ээлжид TTS-д текст өгсөн эсэх. */
   let spoken = 0;
   let saidInTurn = false;
+  /**
+   * Хүүхэд "Тасал" дарсан: энэ Live ээлжийн үлдсэн дуу, текстийг хаяна (клиент тоглуулахгүй, TTS-д мөнгө, баавгайн
+   * хугацаа зарцуулахгүй). Ээлж дуусахад (turn_end, interrupted) буцаад сонсоно.
+   */
+  let muted = false;
+  /** Live энэ ээлжийг үүсгэж байна (turn_end ирээгүй); clientTurn = клиентэд энэ ээлжийн turn_end хараахан очоогүй. */
+  let liveTurn = false;
+  let clientTurn = false;
+  /** Энэ Live ээлжийн хуримтлуулсан бүх зүйлийг хаяна. */
+  const dropTurn = () => {
+    speech?.clear();
+    turnText = '';
+    spoken = 0;
+    saidInTurn = false;
+    liveTurnAudio = [];
+  };
   const sayRest = () => {
     const rest = cleanForSpeech(turnText.slice(spoken));
     spoken = turnText.length;
@@ -293,6 +310,9 @@ async function relay(
           }
           case 'audio': {
             liveSpoke = true;
+            liveTurn = true;
+            if (muted) break;
+            clientTurn = true;
             const pcm = fromB64(ev.data);
             if (!liveTurnOpen) {
               liveTurnOpen = true;
@@ -304,6 +324,9 @@ async function relay(
           }
           case 'bear_text':
             liveSpoke = true;
+            liveTurn = true;
+            if (muted) break;
+            clientTurn = true;
             send({ type: 'bear_text', text: ev.text.replace(/[*#_`]/g, '') });
             if (speech && !useLiveVoice) {
               turnText += ev.text;
@@ -324,19 +347,23 @@ async function relay(
           case 'interrupted':
             liveSpoke = false;
             liveTool = false;
-            speech?.clear();
-            turnText = '';
-            spoken = 0;
-            saidInTurn = false;
+            muted = false;
+            liveTurn = false;
+            clientTurn = false;
+            // Тасалсан ээлжийн Live дууг дараагийн (текстгүй) ээлжид дахин тоглуулахгүй.
+            liveTurnOpen = false;
+            dropTurn();
             send({ type: 'interrupted' });
             break;
           case 'gen_done':
             // Үлдсэн текстийг TTS-д шууд өгнө (turn_end хэдэн арван секундын дараа ирдэг); ээлжийг turn_end хаана.
-            if (speech && !useLiveVoice) sayRest();
+            if (speech && !useLiveVoice && !muted) sayRest();
             break;
           case 'turn_end': {
-            const hadLiveAudio = liveTurnOpen;
+            const hadLiveAudio = liveTurnOpen && !muted;
             liveTurnOpen = false;
+            liveTurn = false;
+            muted = false;
             // finish_lesson дуудаад дуугүй ээлж дуусгасан: баяртай гэж хэлүүлээд, тэр ээлжийн дараа хаана.
             const silentFinish = liveTool && !liveSpoke;
             liveTool = false;
@@ -405,6 +432,14 @@ async function relay(
       return;
     }
     if (msg?.type === 'mic_off' && ready) sendUp(LIVE_AUDIO_END);
+    // Баавгайн ээлж клиентэд аль хэдийн дууссан бол (сүүлийн дуу нь тоглогдож байсан) тасалж хаях юм алга.
+    if (msg?.type === 'interrupt' && ready && clientTurn) {
+      dropTurn();
+      // Live ээлж үргэлжилж байвал үлдсэнийг нь хаяж, turn_end дээр клиентэд ээлжийг хаана. Live дууссан, зөвхөн TTS
+      // үлдсэн бол (TTS-ийн turnEnd цуцлагдсан) одоо хаана.
+      if (liveTurn) muted = true;
+      else bearTurnEnd();
+    }
   });
   client.addEventListener('close', () => shutdown());
   client.addEventListener('error', () => shutdown());
