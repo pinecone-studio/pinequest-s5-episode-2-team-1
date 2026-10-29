@@ -48,7 +48,7 @@ tutorRoutes.get('/ws', async (c) => {
       key,
       model: c.env.GEMINI_LIVE_MODEL || 'gemini-3.8-live',
       // TTS-ийн өдрийн квот дууссан бол (ttsAvailable) шууд Live-ийн дуугаар ярина.
-      ttsModel: speechMode(c.env.TUTOR_SPEECH) === 'tts' && ttsAvailable() ? c.env.GEMINI_TTS_MODEL || 'gemini-3.8-flash-lite-tts' : null,
+      ttsModel: speechMode(c.env.TUTOR_SPEECH) === 'tts' && ttsAvailable() ? c.env.GEMINI_TTS_MODEL || 'gemini-3.8-flash-tts' : null,
       // Live-ийг үнэгүй багцын түлхүүрээр, TTS-ийг (үнэгүй багцад өдөрт 10 хүсэлт) billing-тэй түлхүүрээр ажиллуулж болно.
       ttsKey: c.env.GEMINI_TTS_API_KEY || key,
       session: {
