@@ -232,6 +232,8 @@ export function useBearTalk(questionId: number | undefined) {
       pcm = [];
       pcmBytes = 0;
       playing = false;
+      // Сервер энэ ээлжийн үлдсэн яриаг үүсгэхээ болино (TTS-ийн зардал, баавгайн хугацаа).
+      if (!turnDone) send({ type: 'interrupt' });
       drop = !turnDone;
       turnDone = true;
       freshTurn = true;

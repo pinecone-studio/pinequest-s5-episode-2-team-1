@@ -607,7 +607,9 @@ export type ServerMsg =
 
 export type TutorClientMsg =
   /** Mic-ийг унтраалаа (баавгай ярих гэж байна): Gemini-ийн VAD-д сонссоноо дуусгахыг мэдэгдэнэ. */
-  { type: 'mic_off' };
+  | { type: 'mic_off' }
+  /** Хүүхэд "Тасал" дарлаа: энэ ээлжийн үлдсэн яриаг (TTS) үүсгэхээ болино; ээлжийн төгсгөлд turn_end ирнэ. */
+  | { type: 'interrupt' };
 
 export type TutorServerMsg =
   /** Gemini бэлэн; баавгай өөрөө мэндэлж эхэлнэ. */

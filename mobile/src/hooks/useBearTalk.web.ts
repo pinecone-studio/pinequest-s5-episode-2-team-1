@@ -10,6 +10,10 @@ import type { TalkPhase } from './useBearTalk';
  * Browser-ийн хувилбар (Metro `.web.ts`-ийг сонгоно): expo-audio-ийн useAudioStream, expo-file-system web-д
  * ажилладаггүй тул Web Audio-гоор. Mic: getUserMedia → AudioWorklet → 16 kHz PCM16. Баавгай: 24 kHz PCM-ийг
  * AudioBuffer болгож тасралтгүй дараалуулна. Ээлжлэх логик нь утасныхтай ижил (useBearTalk.ts).
+ *
+ * Mic нээлттэй байх хооронд утас (iPhone Safari, Android Chrome) дууг "дуудлагын" горимоор, чанга яригчийг
+ * намсгаж тоглуулдаг: баавгай маш сул сонсогддог байсан. Тиймээс mic-ийг зөвхөн хүүхдийн ээлжид нээж, баавгай
+ * ярихад бүрэн хаана (getUserMedia-ийн track-уудыг зогсооно).
  */
 const MIC_RATE = 16_000;
 const BEAR_RATE = 24_000;
@@ -20,6 +24,10 @@ const READY_MS = 20_000;
 
 const within = <T,>(p: Promise<T>, ms: number) =>
   Promise.race([p.then(() => true), new Promise<boolean>((r) => setTimeout(() => r(false), ms))]);
+
+// Echo cancellation асаалттай бол iPhone (Safari) mic нээлттэй байх хугацаанд бусад дууг намсгадаг. Баавгай ярьж
+// байхад mic хаалттай тул (ээлжилнэ) цуурай Gemini-д хүрэхгүй.
+const MIC: MediaStreamConstraints = { audio: { channelCount: 1, echoCancellation: false, noiseSuppression: true, autoGainControl: true } };
 
 // Mic-ийн дууг 128 frame тутам main thread руу дамжуулна.
 const TAP_WORKLET = `class Tap extends AudioWorkletProcessor {
@@ -62,10 +70,17 @@ export function useBearTalk(questionId: number | undefined) {
     let openAt = 0;
     let closedByUs = false;
     let ws: WebSocket | null = null;
+    /** mic-ийн дууг илгээж байна / хүүхдийн ээлж (mic нээгдэж байгаа ч байж болно) */
     let mic = false;
+    let wantMic = false;
     let media: MediaStream | null = null;
+    let source: MediaStreamAudioSourceNode | null = null;
+    let tap: AudioWorkletNode | null = null;
+    let opening: Promise<boolean> | null = null;
     let micCtx: AudioContext | null = null;
     let outCtx: AudioContext | null = null;
+    /** баавгайн дуу энд холбогдоно (compressor → чанга яригч) */
+    let speaker: AudioNode | null = null;
     let nextAt = 0;
     let stall: ReturnType<typeof setTimeout> | undefined;
     const sources = new Set<AudioBufferSourceNode>();
@@ -106,37 +121,79 @@ export function useBearTalk(questionId: number | undefined) {
       lipTrack = [];
     };
 
+    /** Mic-ийг бүрэн хаана: утас дууг энгийн (чанга) горимоор тоглуулна, browser-ийн mic-ийн тэмдэг унтарна. */
+    const releaseMic = () => {
+      source?.disconnect();
+      source = null;
+      media?.getTracks().forEach((t) => t.stop());
+      media = null;
+    };
+
+    /** Mic-ийг нээж worklet-д холбоно. Зөвшөөрлийг эхэнд авсан тул дахин асуухгүй. */
+    const openMic = () =>
+      (opening ??= (async () => {
+        try {
+          if (!media) media = await navigator.mediaDevices.getUserMedia(MIC);
+          if (!alive || !micCtx || !tap) return false;
+          if (!source) {
+            source = micCtx.createMediaStreamSource(media);
+            source.connect(tap);
+          }
+          // Утас дууны горимоо солиход context түр зогсож болно.
+          if (micCtx.state !== 'running') await micCtx.resume();
+          return true;
+        } catch {
+          return false;
+        } finally {
+          opening = null;
+        }
+      })());
+
+    const micOff = () => {
+      wantMic = false;
+      mic = false;
+      releaseMic();
+    };
+
     const end = (message: string) => {
       if (!alive) return;
       clearTimeout(stall);
       setNotice(message);
       setPhase('ended');
-      mic = false;
+      micOff();
       silence();
-      // Browser-ийн mic-ийн тэмдэг асаалттай үлдэхгүйн тулд.
-      media?.getTracks().forEach((t) => t.stop());
       closedByUs = true;
       ws?.close();
     };
 
-    const micOn = () => {
-      if (!alive || mic) return;
+    const micOn = async () => {
+      if (!alive || wantMic) return;
+      wantMic = true;
       setKidText('');
-      setPhase('listening');
+      const ok = await openMic();
+      // Хүлээх хооронд баавгай дахин ярьж эхэлсэн эсвэл дэлгэц хаагдсан.
+      if (!alive || !wantMic) {
+        if (!wantMic) releaseMic();
+        return;
+      }
+      if (!ok) {
+        end(S.tutor.micFailed);
+        return;
+      }
       mic = true;
+      setPhase('listening');
     };
 
     const onDrained = () => {
-      if (turnDone && sources.size === 0) micOn();
+      if (turnDone && sources.size === 0) void micOn();
     };
 
     const onAudio = (buf: ArrayBuffer) => {
-      if (!alive || drop || !outCtx) return;
+      if (!alive || drop || !outCtx || !speaker) return;
       turnDone = false;
-      if (mic) {
-        mic = false;
-        send({ type: 'mic_off' });
-      }
+      if (mic) send({ type: 'mic_off' });
+      if (wantMic) micOff();
+      if (outCtx.state !== 'running') void outCtx.resume().catch(() => {});
       setPhase('bear');
       const pcm = new Int16Array(buf, 0, buf.byteLength >> 1);
       const samples = new Float32Array(pcm.length);
@@ -145,7 +202,7 @@ export function useBearTalk(questionId: number | undefined) {
       audio.copyToChannel(samples, 0);
       const src = outCtx.createBufferSource();
       src.buffer = audio;
-      src.connect(outCtx.destination);
+      src.connect(speaker);
       // Бага зэрэг урьдчилж байрлуулбал сүлжээний хэлбэлзэлд тасрахгүй. Эхний дуу хөшиг нээгдэж дуусахыг хүлээнэ.
       const at = Math.max(outCtx.currentTime + 0.08, nextAt, outCtx.currentTime + (openAt - Date.now()) / 1000);
       src.start(at);
@@ -190,7 +247,7 @@ export function useBearTalk(questionId: number | undefined) {
           freshTurn = true;
           turnDone = true;
           silence();
-          micOn();
+          void micOn();
           break;
         case 'end':
           end(m.reason === 'time' ? S.tutor.timeUp : m.reason === 'done' ? S.tutor.done : (m.message ?? S.tutor.lost));
@@ -201,19 +258,18 @@ export function useBearTalk(questionId: number | undefined) {
     interruptRef.current = () => {
       if (!alive) return;
       silence();
+      // Сервер энэ ээлжийн үлдсэн яриаг үүсгэхээ болино (TTS-ийн зардал, баавгайн хугацаа).
+      if (!turnDone) send({ type: 'interrupt' });
       drop = !turnDone;
       turnDone = true;
       freshTurn = true;
-      micOn();
+      void micOn();
     };
 
     void (async () => {
       try {
-        // Echo cancellation асаалттай бол iPhone (Safari) mic нээлттэй байх хугацаанд бусад дууг намсгадаг: баавгай
-        // сул сонсогддог. Баавгай ярьж байхад mic-ийн дууг илгээдэггүй тул (ээлжилнэ) цуурай Gemini-д хүрэхгүй.
-        media = await navigator.mediaDevices.getUserMedia({
-          audio: { channelCount: 1, echoCancellation: false, noiseSuppression: true, autoGainControl: true },
-        });
+        // Зөвшөөрлийг эхэнд авна; mic-ийг баавгай мэндэлж дууссаны дараа л дахин нээнэ.
+        media = await navigator.mediaDevices.getUserMedia(MIC);
       } catch {
         end(S.tutor.micDenied);
         return;
@@ -245,7 +301,7 @@ export function useBearTalk(questionId: number | undefined) {
       const batch = Math.round(inputRate / 10);
       let pending = new Float32Array(batch);
       let filled = 0;
-      const tap = new AudioWorkletNode(micCtx, 'bear-mic-tap');
+      tap = new AudioWorkletNode(micCtx, 'bear-mic-tap');
       tap.port.onmessage = (e: MessageEvent<Float32Array>) => {
         if (!mic) {
           filled = 0;
@@ -264,10 +320,26 @@ export function useBearTalk(questionId: number | undefined) {
           }
         }
       };
-      // Worklet-ийг ажиллуулахын тулд graph-д холбоно; дууг нь чанга яригч руу гаргахгүй (gain 0).
+      // Worklet-ийг ажиллуулахын тулд graph-д холбоно; дууг нь чанга яригч руу гаргахгүй (gain 0). Mic-ийн
+      // source-ийг хүүхдийн ээлж бүрт openMic холбоно.
       const mute = micCtx.createGain();
       mute.gain.value = 0;
-      micCtx.createMediaStreamSource(media).connect(tap).connect(mute).connect(micCtx.destination);
+      tap.connect(mute).connect(micCtx.destination);
+      // Зөвшөөрөл авагдсан: баавгай мэндэлж байх хооронд mic хаалттай байна.
+      releaseMic();
+
+      // Compressor оргилуудыг дарж, gain нийт чанга байдлыг нэмнэ: баавгайн TTS дуун дээр хэмжихэд ~+3 dB, тасралтгүй
+      // (оргил −0.4 dB).
+      const comp = outCtx.createDynamicsCompressor();
+      comp.threshold.value = -24;
+      comp.knee.value = 12;
+      comp.ratio.value = 4;
+      comp.attack.value = 0.003;
+      comp.release.value = 0.25;
+      const boost = outCtx.createGain();
+      boost.gain.value = 1.35;
+      comp.connect(boost).connect(outCtx.destination);
+      speaker = comp;
 
       const sock = openTutorSocket(questionId);
       sock.binaryType = 'arraybuffer';
@@ -293,11 +365,10 @@ export function useBearTalk(questionId: number | undefined) {
       closedByUs = true;
       clearInterval(lips);
       clearTimeout(stall);
-      mic = false;
       interruptRef.current = null;
+      micOff();
       silence();
       ws?.close();
-      media?.getTracks().forEach((t) => t.stop());
       void micCtx?.close().catch(() => {});
       void outCtx?.close().catch(() => {});
     };
