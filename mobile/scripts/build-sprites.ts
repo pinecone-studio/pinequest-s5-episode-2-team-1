@@ -89,7 +89,7 @@ M.outfit_ninja = [1];
 M.outfit_strawhat = [1];
 M.outfit_wizard = [1];
 // the witch: PixelLab's own motions replace the bear's when worn (scripts/costume-motions.ts), its fur colours made there
-for (const id of ['witch', 'cyborg', 'mummy', 'liquid_cop', 'robot']) {
+for (const id of ['witch', 'cyborg', 'mummy', 'liquid_cop', 'robot', 'wrestler', 'brown_deel', 'khuur', 'archer']) {
   for (const state of ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch', 'welcome']) M[`costume_${id}_${state}`] = [state === 'welcome' ? 3 : 2];
   M[`outfit_${id}`] = [1];
 }
