@@ -1,3 +1,4 @@
+import { CLAN_CODE_LENGTH, CLAN_MAX_MEMBERS } from '../../../shared/clan';
 import { GATE_COUNT, UNITS } from '../../../shared/path';
 
 // Тоглоомын бүх тогтмол энд төвлөрнө. Логик эдгээрээс л уншина.
@@ -100,6 +101,13 @@ export const GAME = {
   FRIENDS: {
     /** Нэг хүүхдийн найз ба хүлээгдэж буй хүсэлтийн нийт дээд тоо (хүсэлтээр spam хийхээс сэргийлнэ). */
     MAX: 100,
+  },
+
+  CLAN: {
+    /** Нэг Ууланд хамгийн ихдээ (нэг анги). */
+    MAX_MEMBERS: CLAN_MAX_MEMBERS,
+    /** Урилгын кодын орон (тулааны кодын адил; профайлын 8 оронтой кодоос ялгагдана). */
+    CODE_LENGTH: CLAN_CODE_LENGTH,
   },
 
   POOL: {

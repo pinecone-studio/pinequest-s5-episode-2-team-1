@@ -1,6 +1,7 @@
 import { type BarcodeScanningResult, CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
-import { router } from 'expo-router';
+import { CLAN_CODE_LENGTH } from '@shared/clan';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Button } from '@/components/Button';
@@ -8,43 +9,52 @@ import { BackButton, Card, Muted, Screen } from '@/components/ui';
 import { colors, fonts, radius } from '@/constants/theme';
 import { type } from '@/constants/type';
 import { S } from '@/i18n/strings';
+import { parseClanLink } from '@/lib/clan';
 import { goBack } from '@/lib/nav';
 import { parseProfileCode, PROFILE_CODE_LENGTH } from '@/lib/profile';
 
-/** Найз нэмэх: найзын профайл дээрх QR-ийг камераар уншуулна (камергүй бол кодыг бичнэ) → найзын профайл нээгдэнэ. */
+/**
+ * Найз нэмэх: найзын профайл дээрх QR-ийг камераар уншуулна (камергүй бол кодыг бичнэ) → найзын профайл нээгдэнэ.
+ * `?for=uul` (Уул → «QR уншуулах»): ангийнхны Уулын QR эсвэл 6 оронтой код → Ууланд нэгдэх. Аль ч горимд Уулын QR-ийг
+ * уншуулбал Уул, профайлынхыг уншуулбал профайл нээгдэнэ.
+ */
 export default function ScanScreen() {
+  const forClan = useLocalSearchParams<{ for?: string }>().for === 'uul';
+  const codeLength = forClan ? CLAN_CODE_LENGTH : PROFILE_CODE_LENGTH;
   const [permission, requestPermission] = useCameraPermissions();
   const [cameraError, setCameraError] = useState(false);
   const [wrongQr, setWrongQr] = useState(false);
   const [codeText, setCodeText] = useState('');
   const handled = useRef(false);
 
-  function openProfile(code: string) {
+  function open(path: string) {
     if (handled.current) return;
     handled.current = true;
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    router.replace(`/u/${code}`);
+    router.replace(path);
   }
 
   function onScanned({ data }: BarcodeScanningResult) {
-    const code = parseProfileCode(data);
-    if (code) openProfile(code);
+    const clan = parseClanLink(data);
+    const profile = clan ? null : parseProfileCode(data);
+    if (clan) open(`/uul/${clan}`);
+    else if (profile) open(`/u/${profile}`);
     else setWrongQr(true);
   }
 
   const submit = () => {
-    if (codeText.length === PROFILE_CODE_LENGTH) openProfile(codeText);
+    if (codeText.length === codeLength) open(forClan ? `/uul/${codeText}` : `/u/${codeText}`);
   };
 
   return (
     <Screen>
       <View style={styles.header}>
-        <BackButton onPress={() => goBack('/profile')} />
+        <BackButton onPress={() => goBack(forClan ? '/uul' : '/profile')} />
         <View style={{ flex: 1, gap: 4 }}>
           <Text accessibilityRole="header" style={type.h1}>
-            {S.friends.scanTitle}
+            {forClan ? S.clan.scanTitle : S.friends.scanTitle}
           </Text>
-          <Text style={type.small}>{S.friends.scanHint}</Text>
+          <Text style={type.small}>{forClan ? S.clan.scanHint : S.friends.scanHint}</Text>
         </View>
       </View>
 
@@ -53,7 +63,7 @@ export default function ScanScreen() {
           <ActivityIndicator color={colors.white} />
         ) : !permission.granted ? (
           <View style={styles.ask}>
-            <Text style={styles.askText}>{permission.canAskAgain ? S.friends.cameraAsk : S.friends.cameraDenied}</Text>
+            <Text style={styles.askText}>{permission.canAskAgain ? (forClan ? S.clan.cameraAsk : S.friends.cameraAsk) : S.friends.cameraDenied}</Text>
             {permission.canAskAgain ? <Button title={S.friends.cameraAllow} variant="lemon" small onPress={requestPermission} /> : null}
           </View>
         ) : cameraError ? (
@@ -85,22 +95,22 @@ export default function ScanScreen() {
       ) : null}
 
       <Card>
-        <Text style={styles.cardTitle}>{S.friends.manualTitle}</Text>
-        <Muted>{S.friends.manualHint}</Muted>
+        <Text style={styles.cardTitle}>{forClan ? S.clan.manualTitle : S.friends.manualTitle}</Text>
+        <Muted>{forClan ? S.clan.manualHint : S.friends.manualHint}</Muted>
         <View style={styles.findRow}>
           <TextInput
             value={codeText}
             // maxLength тавихгүй: хуваалцсан "4821 9137" (зайтай, 9 тэмдэгт)-ийг буулгахад сүүлийн орон тасрахгүй
-            onChangeText={(t) => setCodeText(t.replace(/\D/g, '').slice(0, PROFILE_CODE_LENGTH))}
+            onChangeText={(t) => setCodeText(t.replace(/\D/g, '').slice(0, codeLength))}
             onSubmitEditing={submit}
             keyboardType="number-pad"
             returnKeyType="go"
-            placeholder="0000 0000"
+            placeholder={forClan ? '000 000' : '0000 0000'}
             placeholderTextColor={colors.mutedIcon}
-            accessibilityLabel={S.friends.manualHint}
+            accessibilityLabel={forClan ? S.clan.manualHint : S.friends.manualHint}
             style={styles.input}
           />
-          <Button title={S.friends.manualButton} small disabled={codeText.length !== PROFILE_CODE_LENGTH} onPress={submit} />
+          <Button title={S.friends.manualButton} small disabled={codeText.length !== codeLength} onPress={submit} />
         </View>
       </Card>
     </Screen>
