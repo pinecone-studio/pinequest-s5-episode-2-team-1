@@ -1,4 +1,4 @@
-import { GAME, type Subject } from '../config/game';
+import { ACTIVE_SUBJECTS, GAME, type Subject } from '../config/game';
 import { ubDay } from '../domain/time';
 import { ApiError } from '../lib/errors';
 import type { MissedQuestion, TutorContext } from '../llm/live';
@@ -36,6 +36,7 @@ const SELECT = `SELECT tq.question_id, q.subject, q.prompt, q.options, q.correct
   FROM task_questions tq
   JOIN tasks t ON t.id = tq.task_id
   JOIN questions q ON q.id = tq.question_id`;
+const ACTIVE_FILTER = `q.subject IN (${ACTIVE_SUBJECTS.map(() => '?').join(', ')})`;
 
 /**
  * Баавгайд өгөх бодлогууд. questionId өгвөл зөвхөн хүүхдийн аль хэдийн хариулсан бодлого байх ёстой:
@@ -47,8 +48,8 @@ export async function loadTutorContext(db: D1Database, userId: number, questionI
 
   if (questionId !== undefined) {
     const row = await db
-      .prepare(`${SELECT} WHERE t.user_id = ? AND tq.question_id = ? AND tq.choice IS NOT NULL ORDER BY tq.answered_at DESC LIMIT 1`)
-      .bind(userId, questionId)
+      .prepare(`${SELECT} WHERE t.user_id = ? AND tq.question_id = ? AND tq.choice IS NOT NULL AND ${ACTIVE_FILTER} ORDER BY tq.answered_at DESC LIMIT 1`)
+      .bind(userId, questionId, ...ACTIVE_SUBJECTS)
       .first<Row>();
     if (!row) throw new ApiError(404, 'NOT_FOUND', 'Энэ бодлогод хараахан хариулаагүй байна');
     return { grade: user.grade, questions: [toMissed(row)], focused: true };
@@ -56,8 +57,8 @@ export async function loadTutorContext(db: D1Database, userId: number, questionI
 
   // Нэг асуулт хэд хэдэн даалгаварт орсон байж болох тул илүү авч давхардлыг хасна.
   const { results } = await db
-    .prepare(`${SELECT} WHERE t.user_id = ? AND tq.correct = 0 AND tq.choice >= 0 ORDER BY tq.answered_at DESC LIMIT ?`)
-    .bind(userId, GAME.TUTOR.RECENT_MISSES * 3)
+    .prepare(`${SELECT} WHERE t.user_id = ? AND tq.correct = 0 AND tq.choice >= 0 AND ${ACTIVE_FILTER} ORDER BY tq.answered_at DESC LIMIT ?`)
+    .bind(userId, ...ACTIVE_SUBJECTS, GAME.TUTOR.RECENT_MISSES * 3)
     .all<Row>();
   const seen = new Set<number>();
   const recent = results.filter((r) => !seen.has(r.question_id) && seen.add(r.question_id)).slice(0, GAME.TUTOR.RECENT_MISSES);

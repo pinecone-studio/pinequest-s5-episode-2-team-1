@@ -31,7 +31,9 @@ async function limitsAndEscrow() {
   await expectError(call('POST', '/duels', { token: a.token, body: { subject: 'math', stake: 0 } }), 'STAKE_TOO_LOW', 'Бооцоо 1-ээс бага болохгүй');
   const { duel } = await call<DuelResponse>('POST', '/duels', { token: a.token, body: { subject: 'math', stake: 10 } });
   check(duel.status === 'open' && duel.stake === 10, 'Математикаар 10 онооны сорилт үүслээ');
-  await expectError(call('POST', '/duels', { token: a.token, body: { subject: 'physics', stake: 5 } }), 'DUEL_EXISTS', 'Хоёр дахь нээлттэй сорилт үүсгэхгүй');
+  await expectError(call('POST', '/duels', { token: a.token, body: { subject: 'physics', stake: 5 } }), 'BAD_REQUEST', 'Физикээр тулаан үүсгэхгүй');
+  await expectError(call('POST', '/duels', { token: a.token, body: { subject: 'mongolian', stake: 5 } }), 'BAD_REQUEST', 'Монгол хэлээр тулаан үүсгэхгүй');
+  await expectError(call('POST', '/duels', { token: a.token, body: { subject: 'math', stake: 5 } }), 'DUEL_EXISTS', 'Хоёр дахь нээлттэй сорилт үүсгэхгүй');
 
   const lobbyB = await call<LobbyResponse>('GET', '/duels', { token: b.token });
   check(lobbyB.open.some((d) => d.id === duel.id) && lobbyB.maxStake === 10, 'Ижил ангийн Б лобби дээр харна, дээд бооцоо 10');
@@ -50,7 +52,7 @@ async function limitsAndEscrow() {
 
   // Хүлээн авагчийн онооны 20%-ийг бас шалгана.
   const rich = await register('duel_rich', 7);
-  await doTask(rich.token, 'physics', true); // 50 → 100
+  await doTask(rich.token, 'mongolian', true); // 50 → 100
   const { duel: big } = await call<DuelResponse>('POST', '/duels', { token: rich.token, body: { subject: 'math', stake: 20 } });
   await expectError(call('POST', `/duels/${big.id}/accept`, { token: c.token }), 'STAKE_TOO_HIGH', 'Хүлээн авагчийн онооны 20%-иас их бол хүлээн авахгүй');
   await call('POST', `/duels/${big.id}/cancel`, { token: rich.token });
@@ -78,7 +80,7 @@ async function inviteCode() {
   await expectError(call('POST', '/duels/join', { token: a.token, body: { code } }), 'OWN_DUEL', 'Өөрийн кодоор орохгүй');
 
   // Б өөрийн нээлттэй сорилттой байсан ч кодоор орж болно: Б-гийн сорилт хаагдана.
-  const { duel: own } = await call<DuelResponse>('POST', '/duels', { token: b.token, body: { subject: 'physics', stake: 2 } });
+  const { duel: own } = await call<DuelResponse>('POST', '/duels', { token: b.token, body: { subject: 'math', stake: 2 } });
   const joined = await call<DuelResponse>('POST', '/duels/join', { token: b.token, body: { code: `${code.slice(0, 3)} ${code.slice(3)}` } });
   check(joined.duel.id === duel.id && joined.duel.status === 'accepted', 'Б кодоор (зайтай бичсэн ч) орлоо');
   const ownAfter = await call<DuelResponse>('GET', `/duels/${own.id}`, { token: b.token });
@@ -91,7 +93,7 @@ async function inviteCode() {
   await expectError(call('POST', '/duels/join', { token: c.token, body: { code } }), 'CODE_NOT_FOUND', 'Эхэлсэн тулааны кодоор дахин орохгүй');
 
   // Лобби дээрх (public) сорилт ч кодтой: найзаа кодоор урьж болно.
-  const { duel: pub } = await call<DuelResponse>('POST', '/duels', { token: c.token, body: { subject: 'mongolian', stake: 2 } });
+  const { duel: pub } = await call<DuelResponse>('POST', '/duels', { token: c.token, body: { subject: 'math', stake: 2 } });
   const d = await register('code_d', 7);
   const lobbyD = await call<LobbyResponse>('GET', '/duels', { token: d.token });
   const listed = lobbyD.open.find((o) => o.id === pub.id);

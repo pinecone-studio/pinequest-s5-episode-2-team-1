@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import type { DuelResponse, LobbyResponse } from '../../../shared/types';
-import { GAME, SUBJECTS } from '../config/game';
+import { DUEL_SUBJECTS, GAME } from '../config/game';
 import type { AppEnv } from '../env';
 import { ApiError, parseId, readBody } from '../lib/errors';
 import { requireAuth, userIdForToken } from '../lib/session';
@@ -30,7 +30,7 @@ duelRoutes.post('/', requireAuth, async (c) => {
   const body = await readBody(
     c,
     z.object({
-      subject: z.enum(SUBJECTS),
+      subject: z.enum(DUEL_SUBJECTS),
       stake: z.number(),
       visibility: z.enum(['public', 'private']).default('public'),
       teamSize: z.number().int().min(1).max(GAME.DUEL.TEAM_SIZE_MAX).default(1),

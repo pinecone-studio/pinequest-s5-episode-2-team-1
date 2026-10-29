@@ -34,7 +34,7 @@ export function SubjectPick({ value, onChange }: { value: Subject | null; onChan
             </View>
             <Text style={[styles.cardTitle, { color: t.fg, fontSize: active ? 26 : 24 }]}>{subjectNames[subject]}</Text>
             <Text
-              style={[styles.glyph, { color: t.fg, opacity: subject === 'math' ? 0.12 : 0.18, fontSize: subject === 'physics' ? 62 : subject === 'math' ? 92 : 80 }]}
+              style={[styles.glyph, { color: t.fg, opacity: 0.12, fontSize: 92 }]}
               accessibilityElementsHidden
               importantForAccessibility="no"
             >

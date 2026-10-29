@@ -1,17 +1,15 @@
 import type { Subject } from '@shared/types';
 import { StyleSheet, Text, View } from 'react-native';
 import { PressScale } from '@/components/pixel';
+import { DUEL_SUBJECTS } from '@/constants/subjects';
 import { colors, fonts, hardShadow, radius, subjectTheme } from '@/constants/theme';
 import { S, subjectNames } from '@/i18n/strings';
-
-// shortcut: тулаан одоогоор зөвхөн математикаар; бусад хичээлийг буцаахад энд нэмнэ.
-const SUBJECTS: Subject[] = ['math'];
 
 /** Хичээлийн том хавтангууд (хичээлийн өнгө, тэмдэгтэй). */
 export function SubjectPicker({ value, onChange }: { value: Subject; onChange: (s: Subject) => void }) {
   return (
     <View accessibilityRole="radiogroup" accessibilityLabel={S.duel.subject} style={styles.row}>
-      {SUBJECTS.map((s) => {
+      {DUEL_SUBJECTS.map((s) => {
         const t = subjectTheme[s];
         const on = s === value;
         return (

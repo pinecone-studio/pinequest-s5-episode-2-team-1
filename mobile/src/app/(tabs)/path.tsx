@@ -67,7 +67,7 @@ export default function PathScreen() {
   const [pad, setPad] = useState(false);
   const padNode = useRef(0);
   const reduce = useReducedMotion();
-  // дэлгэцийн төвд хамгийн ойр зангилаа; scroll хийтэл одоогийн зангилаа
+  // дээд баннерын доор хамгийн ойр зангилаа; scroll хийтэл одоогийн зангилаа
   const [visibleNode, setVisibleNode] = useState<number | null>(null);
   const scrollY = useRef(0);
 
@@ -170,7 +170,7 @@ export default function PathScreen() {
 
   function onScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
     scrollY.current = e.nativeEvent.contentOffset.y;
-    setVisibleNode(closestNodeAtY(layout, (scrollY.current + (headerH + viewH - barSpace) / 2 - mapTop) / k));
+    setVisibleNode(closestNodeAtY(layout, (scrollY.current + headerH - mapTop) / k));
     if (sel === null && pad && scrollY.current <= baseMax + 1) setPad(false);
   }
 
@@ -207,7 +207,7 @@ export default function PathScreen() {
   const selUnit = sel === null ? null : layout.units[unitOf(n, sel)];
   const selStatus = sel === null ? null : statusOf(sel, current);
   const selectedGroup = sel === null ? null : lessonGroupAt(lessons, sel);
-  // Дээд баннер: сонгосон эсвэл дэлгэцийн төвд байгаа номын бүлэг; boss нь өмнөх номын бүлэгтээ үлдэнэ.
+  // Дээд баннер: сонгосон эсвэл баннерын доор байгаа номын бүлэг; boss нь өмнөх номын бүлэгтээ үлдэнэ.
   const chapterNode = sel ?? visibleNode ?? current;
   const chapterTitle = layout.chapters.reduce<string | null>((title, chapter) => (chapter.start <= chapterNode ? chapter.title : title), null);
   const over = S.path.chapterOver(chapterIdx + 1);

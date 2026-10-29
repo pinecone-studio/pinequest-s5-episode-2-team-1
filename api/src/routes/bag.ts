@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import type { ChestOpenResponse, HintResponse, MeResponse } from '../../../shared/types';
-import { SUBJECTS } from '../config/game';
+import { ACTIVE_SUBJECTS } from '../config/game';
 import type { AppEnv } from '../env';
 import { readBody } from '../lib/errors';
 import { requireAuth } from '../lib/session';
@@ -13,7 +13,7 @@ bagRoutes.use('*', requireAuth);
 
 /** Давсан зангилааны хайрцгийг нээнэ (дахин дуудахад ижил шагнал, давхар олгохгүй). */
 bagRoutes.post('/chests', async (c) => {
-  const { subject, node } = await readBody(c, z.object({ subject: z.enum(SUBJECTS), node: z.number().int().min(0) }));
+  const { subject, node } = await readBody(c, z.object({ subject: z.enum(ACTIVE_SUBJECTS), node: z.number().int().min(0) }));
   return c.json<ChestOpenResponse>(await openChest(c.env, c.get('userId'), subject, node));
 });
 

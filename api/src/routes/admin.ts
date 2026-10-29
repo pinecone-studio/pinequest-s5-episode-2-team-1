@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { GAME, SUBJECTS, type Subject, type Tier } from '../config/game';
+import { ACTIVE_SUBJECTS, GAME, type Subject, type Tier } from '../config/game';
 import { topicIds } from '../config/topics';
 import type { AppEnv } from '../env';
 import { sha256Hex } from '../lib/auth';
@@ -26,7 +26,7 @@ adminRoutes.use('*', async (c, next) => {
 adminRoutes.route('/books', bookRoutes);
 
 const tierSchema = z.union([z.literal(1), z.literal(2), z.literal(3)]);
-const subjectSchema = z.enum(SUBJECTS);
+const subjectSchema = z.enum(ACTIVE_SUBJECTS);
 
 adminRoutes.post('/generate', async (c) => {
   const body = await readBody(

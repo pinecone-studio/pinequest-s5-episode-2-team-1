@@ -30,7 +30,7 @@ describe('Математик 6–12-ын roadmap', () => {
   it.each([
     [8, MATH8_ROADMAP, [6, 3, 3, 7, 7, 7, 6, 5, 7], 51],
     [9, MATH9_ROADMAP, [4, 2, 1, 6, 4, 3, 4, 7, 4], 35],
-    [10, MATH10_ROADMAP, [5, 4, 4, 6, 5, 4, 3, 4, 6, 6, 5, 2, 2, 3], 59],
+    [10, MATH10_ROADMAP, [1, 5, 4, 4, 6, 5, 4, 3, 4, 6, 6, 5, 2, 2, 3], 60],
   ] as const)('%i-р анги номын бүлэг, хичээлийн бүтэцтэй', (grade, roadmap, chapterSizes, lessons) => {
     expect(roadmap.map((group) => group.nodes.length)).toEqual(chapterSizes);
     expect(mathRoadmapNodes(grade)).toHaveLength(lessons);
@@ -116,7 +116,7 @@ describe('Математик 6–12-ын roadmap', () => {
     expect(seven.lessons).toHaveLength(61);
     expect(eight.lessons).toHaveLength(51);
     expect(nine.lessons).toHaveLength(35);
-    expect(ten.lessons).toHaveLength(59);
+    expect(ten.lessons).toHaveLength(60);
     expect(eleven.lessons).toHaveLength(44);
     expect(twelve.lessons).toHaveLength(37);
     expect(six.lessons[0]).toEqual({
@@ -133,8 +133,13 @@ describe('Математик 6–12-ын roadmap', () => {
     expect(eight.lessons[50].title).toBe('Хүснэгт, диаграммыг тайлбарлах');
     expect(nine.lessons[0].title).toBe('Иррационал тоо');
     expect(nine.lessons[34].title).toBe('Дунджууд ба далайц');
-    expect(ten.lessons[0].title).toBe('Бүхэл тоон илтгэгчтэй зэрэг, түүний чанар');
-    expect(ten.lessons[58].title).toBe('Пирамид, цилиндр, призм, бөмбөрцөг, конусын хавтгай огтлол');
+    expect(ten.lessons[0]).toEqual({
+      chapter: 'I БҮЛЭГ. ОЛОНЛОГ',
+      title: 'Олонлог',
+      page: null,
+    });
+    expect(ten.lessons[1].title).toBe('Бүхэл тоон илтгэгчтэй зэрэг, түүний чанар');
+    expect(ten.lessons[59].title).toBe('Пирамид, цилиндр, призм, бөмбөрцөг, конусын хавтгай огтлол');
     expect(eleven.lessons[0].title).toBe('Квадрат тэгшитгэл');
     expect(eleven.lessons[43].title).toBe('Хазайлт');
     expect(twelve.lessons[0].title).toBe('Тооны модул');

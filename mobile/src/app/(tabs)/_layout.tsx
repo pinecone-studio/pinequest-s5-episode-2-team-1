@@ -19,14 +19,14 @@ export default function TabsLayout() {
   // анх орохдоо асуудаг асуултаа бөглөөгүй (хуучин кэшэд onboarded байхгүй = бөглөсөн гэж үзнэ)
   const needsQuiz = me?.onboarded === false && online;
 
-  // Анх орсон хэрэглэгч эхлээд профайлаа үүсгээд (нэр, баавгай), дараа нь асуултад хариулж, хичээлээ сонгоно.
+  // Анх орсон хэрэглэгч intro ба асуултаа бөглөсний дараа профайлаа (нэр, баавгай) үүсгэнэ.
   // Профайлыг офлайн хадгалж чадахгүй тул сүлжээгүй үед алгасна. Хичээл нь төхөөрөмж дээр хадгалагддаг тул шинэ утас,
   // browser дээр хоосон: асуулгаа бөглөсөн бол дахин асуулгүй серверт хадгалсан хичээлээр (хуучин хэрэглэгчид математик).
   const onboarded = me?.onboarded !== false;
   const savedSubject = me?.subject ?? 'math';
   useEffect(() => {
-    if (needsProfile) router.replace('/avatar');
-    else if (needsQuiz) router.replace('/onboarding');
+    if (needsQuiz) router.replace('/onboarding');
+    else if (needsProfile) router.replace('/avatar');
     else if (ready && subject === null) {
       if (onboarded) setSubject(savedSubject);
       else router.replace('/onboarding');

@@ -27,13 +27,13 @@ export async function runProfilesScenario() {
 
   console.log('\n— Профайл дээрх ахиц');
   await doTask(a.token, 'math', true); // 50 → 100 оноо
-  await doTask(a.token, 'physics', false);
+  await doTask(a.token, 'mongolian', false);
   const grown = (await call<ProfileResponse>('GET', `/profiles/${mine.code}`, { token: b.token })).profile;
   const math = grown.skills.find((s) => s.subject === 'math');
-  const physics = grown.skills.find((s) => s.subject === 'physics');
+  const mongolian = grown.skills.find((s) => s.subject === 'mongolian');
   check(grown.studyDays === 1 && grown.streak === 1, 'Нэг өдөр сурсан, дараалал 1', grown);
   check(math?.correct === 5 && math.answered === 5 && math.level === 1, 'Математик: 5/5 зөв (① Суурь), сурах зам эхний зангилаанд', math);
-  check(physics?.correct === 0 && physics.answered === 5, 'Физик: 0/5', physics);
+  check(mongolian?.correct === 0 && mongolian.answered === 5, 'Монгол хэл: 0/5', mongolian);
   check(grown.duels.played === 0 && grown.duels.won === 0, 'Тулаан хийгээгүй');
 
   console.log('\n— Баавгайн харагдац (/me/look)');

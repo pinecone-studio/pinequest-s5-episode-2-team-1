@@ -294,11 +294,12 @@ export type LookBody = Pick<BearLook, 'bg' | 'outfit'>;
 
 /** PUT /me/onboarding: анги нь зөвхөн анх бөглөхөд хэрэгжинэ (дараа нь өөрчлөгдвөл зам эвдэрнэ) */
 export interface OnboardingBody {
-  heardFrom: HeardFrom;
   grade: number;
-  reason: Reason;
   subject: Subject;
-  level: SelfLevel;
+  /** Хуучин клиентүүд илгээж болно; шинэ богино onboarding-д заавал биш. */
+  heardFrom?: HeardFrom;
+  reason?: Reason;
+  level?: SelfLevel;
 }
 
 /** PUT /me/avatar: профайлын нэр ба баавгайн төрх */

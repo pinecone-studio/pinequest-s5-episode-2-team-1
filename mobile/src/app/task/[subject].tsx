@@ -1,4 +1,4 @@
-import type { AnswerResponse, FlagResponse, Subject, TaskDto, TaskResult } from '@shared/types';
+import type { AnswerResponse, FlagResponse, TaskDto, TaskResult } from '@shared/types';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { type ComponentRef, useCallback, useEffect, useRef, useState } from 'react';
@@ -17,6 +17,7 @@ import { OptionButton, type OptionState } from '@/components/OptionButton';
 import { AnimatedBar, Pop } from '@/components/pixel';
 import { PracticeResultView, RewardView } from '@/components/RewardView';
 import { colors, fonts, radius } from '@/constants/theme';
+import { activeSubject } from '@/constants/subjects';
 import { S, subjectNames } from '@/i18n/strings';
 import { confirm } from '@/lib/confirm';
 import { goBack } from '@/lib/nav';
@@ -34,16 +35,17 @@ const LESSON_WALL = '#3b2a8f';
  * Сервер хүрэхгүй бол офлайн дасгал: апп доторх асуултаар, хариуг утсан дээр шалгана, XP/боргоцой цуглуулахгүй.
  */
 export default function TaskScreen() {
-  const { subject, boss, node, stage, review } = useLocalSearchParams<{
-    subject: Subject;
+  const { subject: rawSubject, boss, node, stage, review } = useLocalSearchParams<{
+    subject: string;
     boss?: string;
     node?: string;
     stage?: string;
     /** өнөөдрийн хичээл: өмнө хийсэн хичээлээс 3 бодлого */
     review?: string;
   }>();
+  const subject = activeSubject(rawSubject);
   const foe = boss === undefined ? undefined : BOSSES[Number(boss)];
-  const { me, setMe } = useAuth();
+  const { me, refreshMe, setMe } = useAuth();
   const online = useOnline();
   const insets = useSafeAreaInsets();
   const { height: windowH } = useWindowDimensions();
@@ -168,6 +170,7 @@ export default function TaskScreen() {
     try {
       const r = await api<AnswerResponse>(`/tasks/${task.id}/answer`, { body: { questionId: q.id, choice: selected } });
       reveal(r);
+      if (!r.correct && !r.result) void refreshMe();
       if (r.result) {
         setPending(r.result);
         setRecovery(!!r.recovery);
@@ -225,7 +228,7 @@ export default function TaskScreen() {
     mood === 'right'
       ? { alt: S.lesson.bearCorrect, bubble: practice ? S.offline.correctBubble : S.lesson.correctBubble(me?.xpPerCorrect ?? 0) }
       : mood === 'wrong'
-        ? { alt: S.lesson.bearWrong, bubble: S.lesson.wrongBubble }
+        ? { alt: S.lesson.bearWrong, bubble: practice ? S.lesson.wrongBubble : S.lesson.wrongLifeBubble }
         : { alt: S.lesson.bearThinking, bubble: error ? error.message : S.lesson.thinking };
 
   const hide = hidden && q && hidden.q === q.id ? hidden.hide : [];

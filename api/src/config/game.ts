@@ -5,6 +5,11 @@ import { GATE_COUNT, UNITS } from '../../../shared/path';
 export const SUBJECTS = ['math', 'mongolian', 'physics'] as const;
 export type Subject = (typeof SUBJECTS)[number];
 
+/** `physics` хуучин DB мөрүүдийг унших үндсэн төрөлд үлдэнэ; шинэ public урсгалууд зөвхөн эдгээрийг авна. */
+export const ACTIVE_SUBJECTS = ['math', 'mongolian'] as const;
+/** Монгол хэлийг тулаанаас тусдаа нуусан. */
+export const DUEL_SUBJECTS = ['math'] as const;
+
 export const TIERS = [1, 2, 3] as const;
 export type Tier = (typeof TIERS)[number];
 
@@ -125,7 +130,7 @@ export const GAME = {
   },
 
   /** Алдсан бодлогоо баавгайтай дуугаар ярилцах (Gemini Live). Загвар: wrangler vars GEMINI_LIVE_MODEL. */
-  /** Амь: зангилаа руу орох бүрт нэг хасагдана, 2 цаг тутамд нэг нөхөгдөнө. */
+  /** Амь: бодлогод буруу хариулах бүрт нэг хасагдана, 2 цаг тутамд нэг нөхөгдөнө. */
   LIVES: {
     MAX: 5,
     REGEN_MS: 2 * 60 * 60_000,

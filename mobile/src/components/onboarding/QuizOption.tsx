@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, fonts, radius } from '@/constants/theme';
+import { colors, fonts, hardShadow, radius } from '@/constants/theme';
+import { ONBOARDING_COLORS } from './OnboardingHeader';
 
 /** Onboarding-ийн нэг сонголт (радио): зүүн талд тэмдэг, сонгогдсон бол ягаан хүрээ, доод сүүдэр нь тод. */
 export function QuizOption({
@@ -24,7 +25,7 @@ export function QuizOption({
       onPress={onPress}
       style={({ pressed }) => [styles.card, selected && styles.selected, pressed && styles.pressed]}
     >
-      <View style={styles.icon}>{icon}</View>
+      <View style={[styles.icon, selected && styles.iconSelected]}>{icon}</View>
       <View style={styles.texts}>
         <Text style={[styles.label, selected && styles.labelSelected]}>{label}</Text>
         {sub ? <Text style={styles.sub}>{sub}</Text> : null}
@@ -61,18 +62,19 @@ const styles = StyleSheet.create({
     gap: 14,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    backgroundColor: colors.white,
+    backgroundColor: ONBOARDING_COLORS.white,
     borderRadius: radius.md,
     borderWidth: 2,
-    borderBottomWidth: 4,
-    borderColor: colors.line,
+    borderColor: ONBOARDING_COLORS.ink,
+    ...hardShadow(4),
   },
-  selected: { borderColor: colors.violet, backgroundColor: '#F1EDFF' },
-  pressed: { transform: [{ translateY: 2 }], borderBottomWidth: 2 },
-  icon: { width: 40, alignItems: 'center', justifyContent: 'center' },
+  selected: { backgroundColor: ONBOARDING_COLORS.lavender },
+  pressed: { transform: [{ translateY: 3 }], shadowOffset: { width: 0, height: 1 }, elevation: 1 },
+  icon: { width: 44, height: 44, borderRadius: radius.sm, borderWidth: 2, borderColor: ONBOARDING_COLORS.ink, alignItems: 'center', justifyContent: 'center', backgroundColor: ONBOARDING_COLORS.yellow },
+  iconSelected: { backgroundColor: ONBOARDING_COLORS.white },
   texts: { flex: 1, gap: 2 },
-  label: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 21, color: colors.ink },
-  labelSelected: { color: colors.indigo },
+  label: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 21, color: ONBOARDING_COLORS.ink },
+  labelSelected: { color: ONBOARDING_COLORS.ink },
   sub: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 19, color: colors.muted },
   bars: { flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 24 },
   bar: { width: 6, borderRadius: 2 },

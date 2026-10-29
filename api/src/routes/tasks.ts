@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import type { AnswerResponse, FlagResponse, MeResponse, TaskDto } from '../../../shared/types';
-import { GAME, SUBJECTS } from '../config/game';
+import { ACTIVE_SUBJECTS, GAME } from '../config/game';
 import { STAGES, UNIT_GATE } from '../../../shared/path';
 import { startReview } from '../services/review';
 import type { AppEnv } from '../env';
@@ -16,7 +16,7 @@ taskRoutes.post('/', async (c) => {
   const { subject, gate, boss, node, stage } = await readBody(
     c,
     z.object({
-      subject: z.enum(SUBJECTS),
+      subject: z.enum(ACTIVE_SUBJECTS),
       /** тулааны хаалга (GAME.BOSS.GATES-ийн индекс) */
       gate: z.number().int().min(0).max(GAME.BOSS.GATES - 1).optional(),
       /** хуучин апп: бүлгийн дугаар → тэр бүлгийн boss-ын хаалга (зүүн/баруун гарыг давалгүй тулалдахыг сервер хаана) */
@@ -31,7 +31,7 @@ taskRoutes.post('/', async (c) => {
 
 /** Өнөөдрийн хичээл: өмнө хийсэн хичээлүүдээс санамсаргүй нэгийг 3 бодлогоор давтана. */
 taskRoutes.post('/review', async (c) => {
-  const { subject } = await readBody(c, z.object({ subject: z.enum(SUBJECTS) }));
+  const { subject } = await readBody(c, z.object({ subject: z.enum(ACTIVE_SUBJECTS) }));
   return c.json<TaskDto>(await startReview(c.env, c.get('userId'), subject));
 });
 

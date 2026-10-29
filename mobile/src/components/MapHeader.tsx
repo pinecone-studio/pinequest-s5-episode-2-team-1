@@ -66,7 +66,7 @@ export function MapHeader({
           <Animated.View style={[styles.panel, { paddingTop: insets.top + 6 }, fade.panel]}>
             <View style={styles.stats}>
               <AvatarLink size={36} border={2} dotBorder={theme.panel} />
-              {/* XP-ийн оронд амь: зангилаа руу орох бүрт нэг хасагдана, 2 цаг тутамд нэг нөхөгдөнө */}
+              {/* XP-ийн оронд амь: бодлогод алдах бүрт нэг хасагдана, 2 цаг тутамд нэг нөхөгдөнө */}
               <View style={styles.stat} accessible accessibilityLabel={S.lives.label(lives, maxLives, clock)}>
                 <View style={{ gap: 4, alignItems: 'center' }}>
                   <View style={styles.hearts}>
