@@ -457,7 +457,11 @@ async function joinTeam(env: Bindings, userId: number, duel: DuelRow, team: Duel
     if (current?.status !== 'open') throw new ApiError(409, 'DUEL_TAKEN', 'Тулаан эхэлчихлээ');
     throw new ApiError(409, 'TEAM_FULL', 'Энэ баг дүүрсэн');
   }
-  await startTeamDuelIfFull(env, duel, now);
+  // Суудал аль хэдийн авсан: эхлүүлж чадаагүй ч нэгдэлт хүчинтэй, тулааны бодит төлөвийг буцаана.
+  await startTeamDuelIfFull(env, duel, now).catch((e) => {
+    if (!(e instanceof ApiError)) throw e;
+    console.warn('[duel] team start failed', duel.id, e.code);
+  });
   return getDuelSummary(db, duel.id, userId);
 }
 
