@@ -1,15 +1,13 @@
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { errorText } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
+import { AuthField, type AuthMood, AuthShell, passwordOk, usernameOk } from '@/components/AuthShell';
 import { Button } from '@/components/Button';
-import { Enter, Sprite } from '@/components/pixel';
-import { BackButton, Card, ErrorText, Muted, Screen, TextField } from '@/components/ui';
-import { colors, fonts } from '@/constants/theme';
-import { type } from '@/constants/type';
+import { BackButton, ErrorText, Muted } from '@/components/ui';
+import { colors } from '@/constants/theme';
 import { S } from '@/i18n/strings';
-
 
 export default function RegisterScreen() {
   const { signUp } = useAuth();
@@ -17,10 +15,15 @@ export default function RegisterScreen() {
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [fails, setFails] = useState(0);
+  const [typingPassword, setTypingPassword] = useState(false);
+  const ready = usernameOk(username) && passwordOk(password);
+  const mood: AuthMood = error ? 'oops' : typingPassword ? 'peek' : ready ? 'yay' : 'idle';
 
   async function submit() {
-    if (!username.trim() || !password) {
+    if (!ready) {
       setError(S.auth.fillAll);
+      setFails((n) => n + 1);
       return;
     }
     setBusy(true);
@@ -29,60 +32,66 @@ export default function RegisterScreen() {
       await signUp(username, password);
     } catch (e) {
       setError(errorText(e));
+      setFails((n) => n + 1);
       setBusy(false);
     }
   }
 
   return (
-    <Screen contentStyle={styles.content}>
-      <View style={styles.top}>
-        {router.canGoBack() ? <BackButton onPress={() => router.back()} /> : null}
-        <View style={styles.progress} accessible accessibilityLabel="Алхам 1/3">
-          <View style={[styles.seg, { backgroundColor: colors.violet }]} />
-          <View style={[styles.seg, { backgroundColor: colors.dashed }]} />
-          <View style={[styles.seg, { backgroundColor: colors.dashed }]} />
+    <AuthShell
+      title={S.auth.registerTitle}
+      top={
+        <View style={styles.top}>
+          {router.canGoBack() ? <BackButton onPress={() => router.back()} /> : null}
+          <View style={styles.progress} accessible accessibilityLabel="Алхам 1/3">
+            <View style={[styles.seg, { backgroundColor: colors.indigo }]} />
+            <View style={[styles.seg, styles.todo]} />
+            <View style={[styles.seg, styles.todo]} />
+          </View>
         </View>
-      </View>
-      <Enter index={0} style={styles.bubbleRow}>
-        <Sprite id="head_idle_112x96" label="Pixel баавгайн толгой" />
-        <View style={styles.bubble}>
-          <Text style={styles.bubbleText}>{S.auth.registerTitle}</Text>
-        </View>
-      </Enter>
-      <Enter index={1}>
-        <Card>
-          <TextField label={S.auth.username} hint={S.auth.usernameHint} value={username} onChangeText={setUsername} maxLength={20} />
-          <TextField label={S.auth.password} hint={S.auth.passwordHint} value={password} onChangeText={setPassword} secureTextEntry />
-          <ErrorText>{error}</ErrorText>
-          <Button title={S.auth.register} onPress={submit} loading={busy} />
-          <Muted center>{S.auth.privacy}</Muted>
-        </Card>
-      </Enter>
-      <Pressable accessibilityRole="link" onPress={() => router.replace('/login')} style={styles.linkWrap}>
-        <Text style={styles.link}>{S.auth.toLogin}</Text>
-      </Pressable>
-    </Screen>
+      }
+      sub={S.auth.registerSub}
+      hello={S.auth.registerHello}
+      mood={mood}
+      shake={fails}
+      busy={busy}
+      link={S.auth.toLogin}
+      onLink={() => router.replace('/login')}
+    >
+      <AuthField
+        label={S.auth.username}
+        hint={S.auth.usernameHint}
+        valid={username ? usernameOk(username) : null}
+        value={username}
+        onChangeText={(v) => {
+          setUsername(v);
+          setError('');
+        }}
+        maxLength={20}
+      />
+      <AuthField
+        label={S.auth.password}
+        hint={S.auth.passwordHint}
+        valid={password ? passwordOk(password) : null}
+        value={password}
+        onChangeText={(v) => {
+          setPassword(v);
+          setError('');
+        }}
+        onFocus={() => setTypingPassword(true)}
+        onBlur={() => setTypingPassword(false)}
+        secureTextEntry
+      />
+      <ErrorText>{error}</ErrorText>
+      <Button title={S.auth.register} onPress={submit} loading={busy} disabled={!ready} />
+      <Muted center>{S.auth.privacy}</Muted>
+    </AuthShell>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { flexGrow: 1, paddingTop: 12 },
   top: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   progress: { flex: 1, flexDirection: 'row', gap: 6 },
   seg: { flex: 1, height: 8, borderRadius: 4 },
-  bubbleRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 6 },
-  bubble: {
-    flex: 1,
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 22,
-    borderTopRightRadius: 22,
-    borderBottomRightRadius: 22,
-    borderBottomLeftRadius: 6,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginBottom: 40,
-  },
-  bubbleText: { ...type.h3 },
-  linkWrap: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  link: { fontFamily: fonts.semibold, fontSize: 16, color: colors.indigo },
+  todo: { backgroundColor: 'rgba(25,21,46,0.12)' },
 });

@@ -1,6 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
 import { BgArt } from '@/components/BgArt';
+import Svg, { Path } from 'react-native-svg';
 import { PressScale, Sprite } from '@/components/pixel';
 import { colors, fonts } from '@/constants/theme';
 import type { BgDef } from '@/lib/pixelBear/catalog';

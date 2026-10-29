@@ -1,13 +1,12 @@
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, type TextInputInstance, View } from 'react-native';
+import { Pressable, StyleSheet, Text, type TextInputInstance } from 'react-native';
 import { errorText } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
+import { AuthField, type AuthMood, AuthShell } from '@/components/AuthShell';
 import { Button } from '@/components/Button';
-import { Enter, Motion, Sprite } from '@/components/pixel';
-import { BackButton, Card, ErrorText, Screen, TextField } from '@/components/ui';
-import { colors, fonts, radius } from '@/constants/theme';
-import { type } from '@/constants/type';
+import { BackButton, ErrorText } from '@/components/ui';
+import { colors, fonts } from '@/constants/theme';
 import { S } from '@/i18n/strings';
 
 export default function LoginScreen() {
@@ -15,13 +14,18 @@ export default function LoginScreen() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [typingPassword, setTypingPassword] = useState(false);
   const passwordRef = useRef<TextInputInstance>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [fails, setFails] = useState(0);
+  const filled = !!username.trim() && !!password;
+  const mood: AuthMood = error ? 'oops' : typingPassword && !showPassword ? 'peek' : filled ? 'yay' : 'idle';
 
   async function submit() {
-    if (!username.trim() || !password) {
+    if (!filled) {
       setError(S.auth.fillAll);
+      setFails((n) => n + 1);
       return;
     }
     setBusy(true);
@@ -30,91 +34,69 @@ export default function LoginScreen() {
       await signIn(username, password);
     } catch (e) {
       setError(errorText(e));
+      setFails((n) => n + 1);
       setBusy(false);
     }
   }
 
   return (
-    <Screen contentStyle={styles.content}>
-      {router.canGoBack() ? <BackButton onPress={() => router.back()} /> : null}
-      <Enter index={0} style={styles.hero}>
-        <Motion preset="bob">
-          <Sprite id="head_idle_112x96" label="Pixel баавгайн толгой" />
-        </Motion>
-        <Text accessibilityRole="header" style={type.h1}>
-          {S.auth.loginTitle}
-        </Text>
-        <Text style={[type.bodyMuted, { textAlign: 'center' }]}>{S.welcome.tagline}</Text>
-      </Enter>
-      <Enter index={1}>
-        <Card>
-          <TextField
-            label={S.auth.username}
-            value={username}
-            onChangeText={setUsername}
-            textContentType="username"
-            returnKeyType="next"
-            blurOnSubmit={false}
-            onSubmitEditing={() => passwordRef.current?.focus()}
-          />
-          <View style={styles.field}>
-            <Text style={styles.label}>{S.auth.password}</Text>
-            <View style={styles.passwordRow}>
-              <TextInput
-                ref={passwordRef}
-                accessibilityLabel={S.auth.password}
-                placeholderTextColor={colors.mutedIcon}
-                autoCapitalize="none"
-                autoCorrect={false}
-                style={styles.input}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-                textContentType="password"
-                onSubmitEditing={submit}
-              />
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={showPassword ? S.auth.hidePassword : S.auth.showPassword}
-                onPress={() => setShowPassword((shown) => !shown)}
-                style={styles.passwordToggle}
-              >
-                <Text style={styles.link}>{showPassword ? S.auth.hide : S.auth.show}</Text>
-              </Pressable>
-            </View>
-          </View>
-          <ErrorText>{error}</ErrorText>
-          <Button title={S.auth.login} onPress={submit} loading={busy} />
-        </Card>
-      </Enter>
-      <Pressable accessibilityRole="link" onPress={() => router.replace('/register')} style={styles.linkWrap}>
-        <Text style={styles.link}>{S.auth.toRegister}</Text>
-      </Pressable>
-    </Screen>
+    <AuthShell
+      title={S.auth.loginTitle}
+      top={router.canGoBack() ? <BackButton onPress={() => router.back()} /> : null}
+      sub={S.auth.loginSub}
+      hello={S.auth.loginHello}
+      mood={mood}
+      shake={fails}
+      busy={busy}
+      link={S.auth.toRegister}
+      onLink={() => router.replace('/register')}
+    >
+      <AuthField
+        label={S.auth.username}
+        valid={null}
+        value={username}
+        onChangeText={(v) => {
+          setUsername(v);
+          setError('');
+        }}
+        textContentType="username"
+        returnKeyType="next"
+        blurOnSubmit={false}
+        onSubmitEditing={() => passwordRef.current?.focus()}
+      />
+      <AuthField
+        label={S.auth.password}
+        valid={null}
+        inputRef={passwordRef}
+        value={password}
+        onChangeText={(v) => {
+          setPassword(v);
+          setError('');
+        }}
+        secureTextEntry={!showPassword}
+        textContentType="password"
+        onFocus={() => setTypingPassword(true)}
+        onBlur={() => setTypingPassword(false)}
+        onSubmitEditing={submit}
+        right={
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={showPassword ? S.auth.hidePassword : S.auth.showPassword}
+            onPress={() => setShowPassword((shown) => !shown)}
+            hitSlop={8}
+            style={styles.toggle}
+          >
+            <Text style={styles.toggleText}>{showPassword ? S.auth.hide : S.auth.show}</Text>
+          </Pressable>
+        }
+      />
+      <ErrorText>{error}</ErrorText>
+      <Button title={S.auth.login} onPress={submit} loading={busy} disabled={!filled} />
+    </AuthShell>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { flexGrow: 1, paddingTop: 28 },
-  hero: { alignItems: 'center', gap: 8 },
-  field: { gap: 6 },
-  label: { fontFamily: fonts.bold, fontSize: 13, color: colors.ink, letterSpacing: 0.3 },
-  passwordRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  input: {
-    flex: 1,
-    minWidth: 0,
-    backgroundColor: colors.white,
-    borderWidth: 2,
-    borderColor: colors.line,
-    borderRadius: radius.md,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    fontFamily: fonts.medium,
-    fontSize: 17,
-    color: colors.ink,
-    minHeight: 54,
-  },
-  passwordToggle: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  linkWrap: { minHeight: 44, alignItems: 'center', justifyContent: 'center' },
-  link: { fontFamily: fonts.semibold, fontSize: 16, color: colors.indigo },
+  toggle: { minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center' },
+  toggleText: { fontFamily: fonts.semibold, fontSize: 15, color: colors.indigo },
 });

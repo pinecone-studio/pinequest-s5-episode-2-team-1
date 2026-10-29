@@ -2,14 +2,37 @@ import { useEffect, useRef } from 'react';
 import { View } from 'react-native';
 import { SheetFrame, Sprite } from '@/components/pixel';
 import { useTagPlayer } from '@/hooks/useTagPlayer';
+import costumes from '@/lib/pixelBear/bear-costumes.json';
 import home from '@/lib/pixelBear/bear-home.json';
 import items from '@/lib/pixelBear/bear-items.json';
 import type { SpriteKey } from '@/sprites';
 
 /** нүүрний баавгайн төлөв бүрийн (BearState) хөдөлгөөн */
 export type BearAnim = keyof typeof home;
-/** баавгайн өмсөх item (scripts/home-sprites.ts-ийн ITEMS) */
-export type ItemId = keyof typeof items;
+/** PixelLab costumes with motions of their own (scripts/costume-motions.ts): worn, their frames replace the bear and its items */
+type CostumeId = keyof typeof costumes;
+/** баавгайн өмсөх item (scripts/home-sprites.ts-ийн ITEMS) эсвэл бүтэн хувцас */
+export type ItemId = keyof typeof items | CostumeId;
+const COSTUME_SHEETS: Record<CostumeId, Record<BearAnim, SpriteKey>> = {
+  witch: {
+    thriving: 'costume_witch_thriving_840x280',
+    happy: 'costume_witch_happy_840x280',
+    tired: 'costume_witch_tired_840x280',
+    neglected: 'costume_witch_neglected_840x280',
+    sleep: 'costume_witch_sleep_1000x296',
+    ouch: 'costume_witch_ouch_840x280',
+    welcome: 'costume_witch_welcome_1008x840',
+  },
+  cyborg: {
+    thriving: 'costume_cyborg_thriving_1000x296',
+    happy: 'costume_cyborg_happy_1000x296',
+    tired: 'costume_cyborg_tired_1000x296',
+    neglected: 'costume_cyborg_neglected_1000x296',
+    sleep: 'costume_cyborg_sleep_970x260',
+    ouch: 'costume_cyborg_ouch_1000x296',
+    welcome: 'costume_cyborg_welcome_1500x888',
+  },
+};
 
 /** scripts/home-sprites.ts: хөдөлгөөн бүрийн нэг мөр sheet (PixelLab animate_image), 2× */
 const SHEETS: Record<BearAnim, SpriteKey> = {
@@ -21,7 +44,7 @@ const SHEETS: Record<BearAnim, SpriteKey> = {
   ouch: 'bear_home_ouch_1092x272',
   welcome: 'bear_home_welcome_1320x1260',
 };
-const ITEM_SPRITES: Record<ItemId, SpriteKey> = {
+const ITEM_SPRITES: Record<keyof typeof items, SpriteKey> = {
   glasses: 'item_glasses_98x44',
   doctor_coat: 'item_doctor_coat_164x280',
   officer_coat: 'item_officer_coat_164x280',
@@ -65,6 +88,8 @@ const ITEM_SPRITES: Record<ItemId, SpriteKey> = {
   sport_hoodie: 'item_sport_hoodie_164x280',
   sport_shorts: 'item_sport_shorts_164x280',
   sport_sneakers: 'item_sport_sneakers_164x280',
+  vampire: 'item_vampire_164x280',
+  cyborg: 'item_cyborg_164x280',
   staff00: 'item_staff00_64x192',
   staff03: 'item_staff03_64x192',
   staff04: 'item_staff04_64x192',
@@ -154,29 +179,37 @@ export function LiveBear({
   /** sheet-ийн pixel → dp (sprite-ийн томруулалт, build-sprites.ts); shortcut: item-үүд 2×-д л бүртгэлтэй */
   px?: number;
 }) {
-  const meta = home[anim];
+  const costume = worn.find((id): id is CostumeId => id in costumes);
+  const meta = costume ? costumes[costume][anim] : home[anim];
   const frame = useTagPlayer(meta, ['in'], 'loop');
-  const head = meta.frames[frame].head;
+  const head = home[anim].frames[frame].head; // a costume has no more frames than the bear
   const prev = useRef(head);
   useEffect(() => {
     prev.current = head;
   }, [head]);
   const shift = meta.offset[0] * px + (meta.frameSize.w * px) / 2 - w / 2; // frame-ийн төв анхны sprite-ийн төвөөс
-  const sheet = worn.includes('doctor_coat') || worn.includes('officer_coat')
+  if (costume)
+    return (
+      <View style={{ marginTop: meta.offset[1] * px, transform: [{ translateX: shift }] }}>
+        <SheetFrame id={COSTUME_SHEETS[costume][anim]} frames={meta.frames.length} cols={meta.columns} frame={frame} label={label} />
+      </View>
+    );
+  const layers = worn.filter((id): id is keyof typeof items => id in items);
+  const sheet = layers.includes('doctor_coat') || layers.includes('officer_coat')
     ? PROFESSIONAL_BASES[anim]
-    : worn.includes('warrior_helmet')
+    : layers.includes('warrior_helmet')
     ? HELMET_BASES[anim]
-    : worn.includes('batman_suit')
+    : layers.includes('batman_suit')
       ? BATMAN_BASES[anim]
-        : worn.includes('mongol_deel')
+        : layers.includes('mongol_deel')
           ? DEEL_BASES[anim]
-          : worn.includes('white_headscarf')
+          : layers.includes('white_headscarf')
             ? HEADSCARF_BASES[anim]
-            : worn.includes('brown_boots')
+            : layers.includes('brown_boots')
               ? BOOT_BASES[anim]
               : SHEETS[anim];
   /** an item pinned to the head (loose ones follow it with a frame of lag) */
-  const pinned = (id: ItemId) => {
+  const pinned = (id: keyof typeof items) => {
     const it = items[id];
     const [x, y] = it.loose ? [0, 1].map((k) => Math.round((head[k] + prev.current[k]) / 2)) : head;
     return (
@@ -188,13 +221,13 @@ export function LiveBear({
   return (
     <View style={{ marginTop: meta.offset[1] * px, transform: [{ translateX: shift }] }}>
       {/* a cape hangs behind the bear */}
-      {worn.filter((id) => 'behind' in items[id]).map(pinned)}
+      {layers.filter((id) => 'behind' in items[id]).map(pinned)}
       <SheetFrame id={sheet} frames={meta.frames.length} cols={meta.columns} frame={frame} label={label} />
-      {worn.filter((id) => id !== 'batman_suit' && id !== 'mongol_deel' && !('behind' in items[id])).map((id) => {
+      {layers.filter((id) => id !== 'batman_suit' && id !== 'mongol_deel' && !('behind' in items[id])).map((id) => {
         const it = items[id];
         if ('fitted' in it) {
           // boots worn under the deel show only below its hem
-          const sheets = worn.includes('mongol_deel') && 'deel' in it.fitted ? it.fitted.deel : it.fitted.sheets;
+          const sheets = layers.includes('mongol_deel') && 'deel' in it.fitted ? it.fitted.deel : it.fitted.sheets;
           return (
             <View key={id} pointerEvents="none" style={{ position: 'absolute', left: 0, top: 0 }}>
               <SheetFrame id={sheets[anim] as SpriteKey} frames={meta.frames.length} cols={meta.columns} frame={frame} />
@@ -202,7 +235,7 @@ export function LiveBear({
           );
         }
         if ('held' in it) {
-          const [x, y] = id === 'bronze_shield' ? meta.frames[frame].shieldHand : meta.frames[frame].hand;
+          const [x, y] = id === 'bronze_shield' ? home[anim].frames[frame].shieldHand : home[anim].frames[frame].hand;
           // Fingers and staff are baked into one frame at this exact hand pivot.
           return (
             <View key={id} pointerEvents="none" style={{ position: 'absolute', left: (x + it.held.at[0]) * px, top: (y + it.held.at[1]) * px }}>

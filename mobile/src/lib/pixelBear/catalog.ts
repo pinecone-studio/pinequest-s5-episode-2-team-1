@@ -84,6 +84,9 @@ export type OutfitId =
   | 'straw_shorts'
   | 'straw_sandals'
   | 'strawhat'
+  | 'vampire'
+  | 'witch'
+  | 'cyborg'
   | 'cowboy_hat'
   | 'white_headscarf'
   | 'brown_boots'
@@ -126,6 +129,10 @@ export const OUTFITS: OutfitDef[] = [
   { id: 'officer_coat', name: 'Офицерын дүрэмт хувцас', tile: '#BCC8DE', imgTop: -40, card: 'outfit_officer_coat_82x140', item: 'officer_coat' },
   { id: 'officer_cap', name: 'Офицерын малгай', tile: '#BCC8DE', imgTop: 0, card: 'outfit_officer_cap_82x140', item: 'officer_cap' },
   { id: 'scarf', name: 'Монгол ороолт', tile: '#D4F55E', imgTop: -26, card: 'outfit_scarf_82x140' },
+  // PixelLab costumes first, so the newest outfits are the first the shop shows
+  { id: 'vampire', name: 'Цус сорогч', tile: '#C9B8E8', imgTop: -26, card: 'outfit_vampire_82x140', item: 'vampire' },
+  { id: 'witch', name: 'Шулам', tile: '#C9B8E8', imgTop: -26, card: 'outfit_witch_82x140', item: 'witch' },
+  { id: 'cyborg', name: 'Терминатор', tile: '#B9B6C8', imgTop: -26, card: 'outfit_cyborg_82x140', item: 'cyborg' },
   { id: 'warrior_helmet', name: 'Баатрын дуулга', tile: '#EBCF9B', imgTop: 0, card: 'outfit_warrior_helmet_82x140', item: 'warrior_helmet' },
   { id: 'hero', name: 'Баатар', tile: '#EBCF9B', imgTop: 0, card: 'outfit_hero_82x140', items: ['warrior_helmet', 'black_sword'] },
   { id: 'pirate_hat', name: 'Далайн дээрэмчний малгай', tile: '#EBCF9B', imgTop: 0, card: 'outfit_pirate_hat_82x140', item: 'pirate_hat' },
@@ -219,7 +226,7 @@ const ITEM_SLOT: Record<ItemId, Slot> = {
   glasses: 'face', snorkel: 'face',
   hiphop_chain: 'neck',
   batman_suit: 'body', mongol_deel: 'body', sport_hoodie: 'body', pirate_shirt: 'body', wizard_robe: 'body',
-  demon_cape: 'body', ninja_jacket: 'body', straw_shirt: 'body',
+  demon_cape: 'body', ninja_jacket: 'body', straw_shirt: 'body', vampire: 'body', witch: 'body', cyborg: 'body',
   puss_cape: 'back', puss_belt: 'waist', sport_shorts: 'legs', ninja_pants: 'legs', straw_shorts: 'legs',
   brown_boots: 'feet', pirate_boots: 'feet', mongol_boots: 'feet', sport_sneakers: 'feet',
   demon_boots: 'feet', ninja_sandals: 'feet', straw_sandals: 'feet',
@@ -238,8 +245,11 @@ export function outfitSlot(id: OutfitId): Slot | null {
   return items.length === 1 ? ITEM_SLOT[items[0]] : null;
 }
 
+/** a costume with its own motions (LiveBear) is the whole bear: it takes every place, so nothing is worn with it */
+const WHOLE_ITEMS: readonly ItemId[] = ['witch', 'cyborg'];
+const ALL_SLOTS = [...new Set(Object.values(ITEM_SLOT)), 'base'];
 const slotsOf = (id: OutfitId): string[] =>
-  outfitItems(outfitById(id)).flatMap((it) => [ITEM_SLOT[it], ...(ALSO_COVERS[it] ?? []), ...(BASE_ITEMS.includes(it) ? ['base'] : [])]);
+  outfitItems(outfitById(id)).flatMap((it) => (WHOLE_ITEMS.includes(it) ? ALL_SLOTS : [ITEM_SLOT[it], ...(ALSO_COVERS[it] ?? []), ...(BASE_ITEMS.includes(it) ? ['base'] : [])]));
 
 /** Өмссөн хувцсуудын хадгалах хэлбэр ('pirate_hat+glasses+staff00'); хоосон бол анхдагч ороолт. */
 export const joinWorn = (ids: readonly OutfitId[]): string => (ids.length ? ids.join('+') : DEFAULT_OUTFIT_ID);

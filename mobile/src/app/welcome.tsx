@@ -1,87 +1,97 @@
 import { router } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import { useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import Animated, { SlideInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
+import { IntroReveal, introPlayed } from '@/components/IntroReveal';
 import { LiveBear } from '@/components/LiveBear';
-import { Motion, Sprite } from '@/components/pixel';
+import { Logo } from '@/components/Logo';
+import { Enter, Motion, Sprite, ZoomEnter } from '@/components/pixel';
 import { APP_NAME } from '@/constants/app';
 import { colors, fonts } from '@/constants/theme';
 import { S } from '@/i18n/strings';
 
-/** 01 · Welcome */
+/**
+ * 01 · Welcome: intro (IntroReveal) дууссаны дараа дээд буланд өнгөт дугуйнууд pop хийж гараад хөвнө, уриа ба товчнууд
+ * шат дараатай орж ирнэ, доод ногоон толгодын цаанаас баавгай дээш гарч ирээд гараа даллана.
+ */
 export default function WelcomeScreen() {
   const insets = useSafeAreaInsets();
-  const sheetHeight = 136 + Math.max(insets.bottom, 16);
+  const [ready, setReady] = useState(introPlayed);
 
   return (
     <View style={styles.root}>
-      <View style={[styles.circle, { left: -60, top: 250, width: 510, height: 510, borderRadius: 255, backgroundColor: '#8C73FF' }]} />
-      <View style={[styles.circle, { left: 30, top: 330, width: 330, height: 330, borderRadius: 165, backgroundColor: '#9C86FF' }]} />
+      {ready ? (
+        <>
+          <ZoomEnter delay={0} style={[styles.abs, { left: -70, top: -80 }]}>
+            <Motion preset="float">
+              <View style={[styles.dot, { width: 240, height: 240, backgroundColor: colors.lime }]} />
+            </Motion>
+          </ZoomEnter>
+          <ZoomEnter delay={120} style={[styles.abs, { right: 96, top: insets.top + 36 }]}>
+            <Motion preset="bob" delay={300}>
+              <View style={[styles.dot, { width: 72, height: 72, backgroundColor: colors.indigo }]} />
+            </Motion>
+          </ZoomEnter>
+          <ZoomEnter delay={220} style={[styles.abs, { right: -56, top: insets.top + 70 }]}>
+            <Motion preset="float" delay={900}>
+              <View style={[styles.dot, { width: 150, height: 150, backgroundColor: colors.violet }]} />
+            </Motion>
+          </ZoomEnter>
 
-      <View style={[styles.head, { top: Math.max(insets.top, 44) + 20 }]}>
-        <Text accessibilityRole="header" style={styles.wordmark}>
-          {APP_NAME}
-        </Text>
-        <Text style={styles.tagline}>{S.welcome.tagline}</Text>
-      </View>
+          <View style={styles.hill} />
+          <Animated.View entering={SlideInDown.delay(380).springify().damping(14)} style={styles.bear}>
+            <LiveBear anim="welcome" w={270} px={3} label="Шинэ найзаа угтаж гараа дэлгэсэн pixel хүрэн баавгай, ногоон ороолттой" />
+          </Animated.View>
+          <ZoomEnter delay={900} style={[styles.abs, { left: 28, bottom: 150 }]}>
+            <Motion preset="twinkle">
+              <Sprite id="icon_star_36x36" />
+            </Motion>
+          </ZoomEnter>
+          <ZoomEnter delay={1050} style={[styles.abs, { right: 28, bottom: 190 }]}>
+            <Motion preset="twinkle" delay={700}>
+              <Sprite id="btn_honey_36x36" />
+            </Motion>
+          </ZoomEnter>
 
-      <View style={[styles.abs, { left: 22, top: 300 }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        <Svg width={64} height={40} viewBox="0 0 64 40">
-          <Path d="M4 30 L18 10 L28 26 L42 6 L56 24" fill="none" stroke={colors.lime} strokeWidth={7} strokeLinecap="round" strokeLinejoin="round" />
-        </Svg>
-      </View>
-      <View style={[styles.abs, { right: 24, top: 270 }]} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-        <Svg width={56} height={36} viewBox="0 0 56 36">
-          <Path d="M4 26 L16 8 L26 22 L38 4 L50 20" fill="none" stroke={colors.lemon} strokeWidth={7} strokeLinecap="round" strokeLinejoin="round" />
-        </Svg>
-      </View>
-
-      <Motion preset="twinkle" style={[styles.abs, { left: 44, top: 410 }]}>
-        <Sprite id="icon_heart_36x36" />
-      </Motion>
-      <Motion preset="twinkle" delay={700} style={[styles.abs, { right: 40, top: 380 }]}>
-        <Sprite id="icon_star_36x36" />
-      </Motion>
-      <Motion preset="twinkle" delay={700} style={[styles.abs, { right: 56, top: 560 }]}>
-        <Sprite id="btn_honey_36x36" />
-      </Motion>
-
-      <View style={[styles.bear, { bottom: sheetHeight - 38 }]}>
-        <LiveBear anim="welcome" w={270} px={3} label="Шинэ найзаа угтаж гараа дэлгээд өөрийгөө тэврэх pixel хүрэн баавгай, ногоон ороолттой" />
-      </View>
-
-      <View style={[styles.sheet, { height: sheetHeight }]}>
-        <Button title={S.welcome.start} onPress={() => router.push('/register')} style={{ alignSelf: 'stretch' }} />
-        <Pressable accessibilityRole="link" onPress={() => router.push('/login')} hitSlop={10} style={styles.linkWrap}>
-          <Text style={styles.link}>{S.welcome.haveAccount}</Text>
-        </Pressable>
-      </View>
+          <View style={[styles.content, { paddingTop: insets.top + 96 }]}>
+            <Enter index={0} style={styles.brand}>
+              <Logo size={48} />
+              <Text style={styles.wordmark}>{APP_NAME}</Text>
+            </Enter>
+            <Enter index={1} style={styles.copy}>
+              <Text accessibilityRole="header" style={styles.headline}>
+                {S.auth.tagline}
+              </Text>
+              <Text style={styles.sub}>{S.welcome.tagline}</Text>
+            </Enter>
+            <Enter index={3} style={styles.actions}>
+              <Button title={S.welcome.start} onPress={() => router.push('/register')} />
+              <Button title={S.welcome.haveAccount} variant="ghost" onPress={() => router.push('/login')} style={styles.outline} />
+            </Enter>
+          </View>
+        </>
+      ) : (
+        <IntroReveal onDone={() => setReady(true)} />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.violet, overflow: 'hidden' },
+  root: { flex: 1, backgroundColor: colors.paper, overflow: 'hidden' },
   abs: { position: 'absolute' },
-  circle: { position: 'absolute' },
-  head: { position: 'absolute', left: 28, right: 28, gap: 14 },
-  wordmark: { fontFamily: fonts.pixel, fontSize: 66, lineHeight: 60, letterSpacing: -1, color: colors.lemon },
-  tagline: { fontFamily: fonts.medium, fontSize: 23, lineHeight: 29, letterSpacing: -0.5, color: colors.white },
-  bear: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
-  sheet: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingTop: 26,
-    paddingHorizontal: 24,
-    backgroundColor: colors.paper,
-    borderTopLeftRadius: 36,
-    borderTopRightRadius: 36,
-    gap: 4,
-    alignItems: 'center',
-  },
-  linkWrap: { minHeight: 44, justifyContent: 'center' },
-  link: { fontFamily: fonts.semibold, fontSize: 16, color: colors.ink },
+  dot: { borderRadius: 999 },
+  content: { paddingHorizontal: 32, gap: 18 },
+  brand: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  wordmark: { fontFamily: fonts.pixel, fontSize: 30, lineHeight: 34, color: colors.violet },
+  copy: { gap: 8 },
+  headline: { fontFamily: fonts.extrabold, fontSize: 28, lineHeight: 33, letterSpacing: -0.6, color: colors.ink },
+  sub: { fontFamily: fonts.medium, fontSize: 16, lineHeight: 22, color: colors.muted },
+  actions: { gap: 12 },
+  outline: { borderWidth: 2, borderColor: colors.indigo },
+  // доод ногоон толгод: баавгайн хөл түүний ард, дэлгэцийн ёроолд тасарна
+  hill: { position: 'absolute', left: -40, right: -40, bottom: -60, height: 200, borderTopLeftRadius: 200, borderTopRightRadius: 200, backgroundColor: colors.lime },
+  bear: { position: 'absolute', left: 0, right: 0, bottom: -135, alignItems: 'center' },
 });

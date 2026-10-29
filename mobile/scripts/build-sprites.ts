@@ -88,6 +88,17 @@ M.outfit_straw_hat = [1];
 M.outfit_ninja = [1];
 M.outfit_strawhat = [1];
 M.outfit_wizard = [1];
+// the witch: PixelLab's own motions replace the bear's when worn (scripts/costume-motions.ts), its fur colours made there
+for (const id of ['witch', 'cyborg']) {
+  for (const state of ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch', 'welcome']) M[`costume_${id}_${state}`] = [state === 'welcome' ? 3 : 2];
+  M[`outfit_${id}`] = [1];
+}
+// PixelLab costumes worn on every frame (home-sprites.ts costumePixels)
+for (const id of ['vampire', 'cyborg']) {
+  M[`item_${id}`] = [2];
+  M[`outfit_${id}`] = [1];
+  for (const state of ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch', 'welcome']) M[`fitted_${id}_${state}`] = [state === 'welcome' ? 3 : 2];
+}
 // Mongolian boots: fitted per state, and cut at the hem for wearing under the deel
 M.item_mongol_boots = [2];
 M.outfit_mongol_boots = [1];
@@ -177,7 +188,7 @@ M.btn_honey_jar = [[12, 12], [24, 24], [30, 30]];
 // the hoodie's and pirate shirt's fitted sheets carry a little fur too (the neck above the lowered collar)
 const FUR_SPRITES = new Set(
   Object.keys(M).filter(
-    (n) => /^(bear_|head_|outfit_|map_bear_small|fitted_sport_hoodie_|fitted_pirate_shirt_|fitted_demon_cape_|fitted_ninja_jacket_|fitted_straw_shirt_)/.test(n) || (n.startsWith('held_') && !n.startsWith('held_bronze_shield_')),
+    (n) => /^(bear_|head_|outfit_|costume_|map_bear_small|fitted_sport_hoodie_|fitted_pirate_shirt_|fitted_demon_cape_|fitted_ninja_jacket_|fitted_straw_shirt_|fitted_vampire_)/.test(n) || (n.startsWith('held_') && !n.startsWith('held_bronze_shield_')),
   ),
 );
 
@@ -240,8 +251,19 @@ const CLOTH_COLORS = new Set([
   ...['10,10,14', '28,28,36', '44,44,56', '62,62,76', '150,60,10', '220,100,24', '246,134,40', '255,170,80', '52,56,66', '120,126,140', '170,176,188', '222,226,234', '22,26,44', '36,42,70', '56,64,100'],
   ...['110,16,20', '178,30,34', '214,48,48', '236,84,76', '176,120,10', '242,196,34', '255,230,110', '24,44,110', '46,84,170', '66,110,200', '96,140,220', '176,182,196', '214,220,232', '244,246,250', '70,40,20', '138,92,50', '190,146,90'],
 ]);
+/** The plain bear's own colours: a PixelLab costume never uses them (home-sprites.ts), so its fur is exactly these pixels */
+const PLAIN = readPng(new URL('bear_idle.png', SRC));
+const PLAIN_COLORS = new Set(Array.from({ length: PLAIN.w * PLAIN.h }, (_, p) => PLAIN.d.slice(p * 4, p * 4 + 3).join()));
+function keepCostume(base: Img, furred: Img): Img {
+  for (let i = 0; i < base.d.length; i += 4)
+    if (base.d[i + 3] && !PLAIN_COLORS.has(`${base.d[i]},${base.d[i + 1]},${base.d[i + 2]}`)) furred.d.set(base.d.subarray(i, i + 4), i);
+  return furred;
+}
 function furred(name: string, base: Img, f: 'black' | 'white'): Img {
+  // a fur colour its generator already made (the witch's own recolouring)
+  if (existsSync(new URL(`${name}_${f}.png`, SRC))) return readPng(new URL(`${name}_${f}.png`, SRC));
   const img = recolorFur(base, f);
+  if (/^(fitted|outfit)_vampire/.test(name)) return keepCostume(base, img);
   if (name.startsWith('fitted_')) {
     for (let i = 0; i < base.d.length; i += 4)
       if (base.d[i + 3] && CLOTH_COLORS.has(`${base.d[i]},${base.d[i + 1]},${base.d[i + 2]}`)) img.d.set(base.d.subarray(i, i + 4), i);

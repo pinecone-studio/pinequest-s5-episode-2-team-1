@@ -11,6 +11,7 @@
  */
 import { PROFESSIONAL_IDS, professionalPixels, professionalBase } from './professional-outfits.ts';
 import { writeFileSync } from 'node:fs';
+import { hsl } from './fur.ts';
 import { blank, type Img, readPng, writeApng, writePng } from './png.ts';
 import { at, bbox, clone, crop, type Frame, scale, source, SPRITES, toSheet } from './sprite-kit.ts';
 
@@ -78,6 +79,9 @@ const ITEMS: Record<string, { loose: boolean; layer?: string; at?: [number, numb
   mongol_boots: { loose: false, layer: 'item_mongol_boots', at: [-6, -14], anchor: 'body' },
   sport_shorts: { loose: false, layer: 'item_sport_shorts', at: [-6, -14], anchor: 'body' },
   sport_sneakers: { loose: false, layer: 'item_sport_sneakers', at: [-6, -14], anchor: 'body' },
+  // PixelLab costumes (costumePixels): the whole outfit, worn on every frame
+  vampire: { loose: false, layer: 'item_vampire', at: [-6, -14], anchor: 'body' },
+  cyborg: { loose: false, layer: 'item_cyborg', at: [-6, -14], anchor: 'body' },
 };
 /** хэд хэдэн item-ийг хамт өмсөх хувцасны карт (доороос дээш дарааллаар) */
 const COMBOS: Record<string, string[]> = { officer: ['officer_coat', 'officer_cap'], batman: ['batman_suit', 'batman_mask'], mongol: ['mongol_deel', 'mongol_boots', 'mongol_hat'], puss: ['puss_cape', 'brown_boots', 'puss_belt', 'puss_hat'],
@@ -1005,8 +1009,280 @@ function headbandPixels(img: Img, head: [number, number], ninja = false): Img {
   return out;
 }
 
+/**
+ * PixelLab costumes: PixelLab dressed the plain bear once (docs/design/pixel-bear/costumes/pixellab/pilot/<id>/
+ * idle-100x148.png, inpainted around bear_idle placed at COSTUME_AT with its head and legs kept). Every frame of every
+ * motion wears those exact pixels, pinned to the frame's head as the idle bear's body is: on the body where the frame
+ * has fur, the cape and collar behind it where the frame is empty. Only the costume's own pixels are worn, the fur
+ * PixelLab redrew (belly, paws) stays the frame's. An arm that moved out of its sleeve gets the sleeve back in the
+ * costume's own whites, shaded like the fur under it; the scarf's hanging end turns into fur.
+ */
+const COSTUME_IDS = ['vampire', 'cyborg'] as const;
+/** `cape`: cloth hangs behind the bear (the vampire's), bared where an arm moves away; the others are worn on the body */
+const COSTUME_CAPE: Record<(typeof COSTUME_IDS)[number], boolean> = { vampire: true, cyborg: false };
+/** a metal half face (REF columns): every pixel PixelLab changed there is metal, its warm reflections of the fur too */
+const COSTUME_METAL_FACE: Partial<Record<(typeof COSTUME_IDS)[number], [number, number]>> = { cyborg: [0, 36] };
+const COSTUME_AT = [9, 8] as const; // bear_idle's top-left in the PixelLab canvas
+const COSTUME_SHOULDERS = [[24, 76], [58, 76]] as const; // where the idle bear's arms join its body (REF)
+const COSTUME_ARM = 7; // an arm's half thickness
+const PLAIN_COLORS = new Set(Array.from({ length: PLAIN.w * PLAIN.h }, (_, p) => PLAIN.d.slice(p * 4, p * 4 + 3).join()));
+function costumeLayer(id: (typeof COSTUME_IDS)[number]): { img: Img; behind: Uint8Array; sleeveMask: Uint8Array; sleeve: (readonly number[])[][]; outline: (readonly number[])[]; fill: readonly number[] | null } {
+  const dir = new URL(`../../docs/design/pixel-bear/costumes/pixellab/pilot/${id}/`, import.meta.url);
+  const [input, dressed] = [readPng(new URL('input-100x148.png', dir)), readPng(new URL('idle-100x148.png', dir))];
+  const n = dressed.w * dressed.h;
+  // changed for real: PixelLab redraws the untouched fur and outline a shade off, which is not the costume
+  const changed = (p: number) =>
+    dressed.d[p * 4 + 3] > 0 &&
+    (!input.d[p * 4 + 3] || [0, 1, 2].reduce((sum, c) => sum + Math.abs(dressed.d[p * 4 + c] - input.d[p * 4 + c]), 0) > 45);
+  // regenerated fur: the bear's mid browns and its belly's saturated cream (a bandage's paler, greyer cream is cloth),
+  // but not where the costume surrounds it (a sleeve's shading)
+  const fur = (p: number) => {
+    const [h, s, l] = hsl([dressed.d[p * 4], dressed.d[p * 4 + 1], dressed.d[p * 4 + 2]]);
+    return (h >= 12 && h <= 30 && s >= 0.3 && s <= 0.8 && l >= 0.13 && l <= 0.55) || (h >= 25 && h <= 36 && s >= 0.8 && l >= 0.65 && l <= 0.88);
+  };
+  const keep = new Uint8Array(n);
+  for (let p = 0; p < n; p++) keep[p] = changed(p) && !fur(p) ? 1 : 0;
+  // a costume's own warm tints (chrome reflecting the fur, a sleeve's crease) are taken back where it surrounds them
+  for (let pass = 0; pass < 3; pass++) {
+    const grown = keep.slice();
+    for (let p = 0; p < n; p++) {
+      if (keep[p] || !changed(p)) continue;
+      const [x, y] = [p % dressed.w, Math.floor(p / dressed.w)];
+      let around = 0;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]])
+        if (x + dx >= 0 && y + dy >= 0 && x + dx < dressed.w && y + dy < dressed.h && keep[(y + dy) * dressed.w + x + dx]) around++;
+      if (around >= 4) grown[p] = 1;
+    }
+    keep.set(grown);
+  }
+  const headRow = (p: number) => Math.floor(p / dressed.w) - COSTUME_AT[1] < SPORT.neck;
+  const metal = COSTUME_METAL_FACE[id];
+  if (metal)
+    for (let p = 0; p < n; p++) {
+      const rx = (p % dressed.w) - COSTUME_AT[0];
+      if (headRow(p) && input.d[p * 4 + 3] && changed(p) && rx >= metal[0] && rx < metal[1]) keep[p] = 1;
+    }
+  // fur tufts PixelLab drew past the head's outline are hair, not costume
+  for (let p = 0; p < n; p++)
+    if (keep[p] && headRow(p) && !input.d[p * 4 + 3]) {
+      const [h, s] = hsl([dressed.d[p * 4], dressed.d[p * 4 + 1], dressed.d[p * 4 + 2]]);
+      if (h >= 10 && h <= 40 && s > 0.3) keep[p] = 0;
+    }
+  // stray specks PixelLab left on the empty canvas
+  const seen = new Uint8Array(n);
+  for (let p = 0; p < n; p++) {
+    if (!keep[p] || seen[p]) continue;
+    const blob = [p];
+    seen[p] = 1;
+    for (let k = 0; k < blob.length; k++) {
+      const [x, y] = [blob[k] % dressed.w, Math.floor(blob[k] / dressed.w)];
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const q = (y + dy) * dressed.w + x + dx;
+        if (x + dx >= 0 && y + dy >= 0 && x + dx < dressed.w && y + dy < dressed.h && keep[q] && !seen[q]) {
+          seen[q] = 1;
+          blob.push(q);
+        }
+      }
+    }
+    if (blob.length < 15) for (const q of blob) keep[q] = 0;
+  }
+  // the sleeves (their whites, with the outline and cufflinks touching them) puff out past the fur: they belong to the
+  // arms, not to the cape behind
+  const tone = (p: number) => hsl([dressed.d[p * 4], dressed.d[p * 4 + 1], dressed.d[p * 4 + 2]]);
+  // by RGB: HSL calls pale lavender-white strongly saturated
+  const rgbSpan = (p: number): [number, number] => {
+    const c = [dressed.d[p * 4], dressed.d[p * 4 + 1], dressed.d[p * 4 + 2]];
+    return [Math.min(...c), Math.max(...c) - Math.min(...c)];
+  };
+  const whiteAt = (p: number) => keep[p] === 1 && rgbSpan(p)[0] > 170 && rgbSpan(p)[1] < 45;
+  // grown from the whites through the sleeves' light shading (lavender greys, warm creases too), then one pixel more for
+  // the outline; the creases the fur test dropped are taken back where the sleeve surrounds them
+  const sleeveMask = new Uint8Array(n);
+  const grow: number[] = [];
+  // without a cape everything beside the torso from the shoulders down is an arm's (a blade held along it too)
+  const armAt = (p: number) => {
+    const [rx, ry] = [(p % dressed.w) - COSTUME_AT[0], Math.floor(p / dressed.w) - COSTUME_AT[1]];
+    return (rx < BODY.torso[0] + 1 || rx > BODY.torso[1] - 2) && ry >= SPORT.neck;
+  };
+  if (!COSTUME_CAPE[id]) for (let p = 0; p < n; p++) if (keep[p] && armAt(p)) sleeveMask[p] = 1;
+  if (COSTUME_CAPE[id]) for (let p = 0; p < n; p++) if (whiteAt(p)) { sleeveMask[p] = 1; grow.push(p); }
+  for (let k = 0; k < grow.length; k++) {
+    const [x, y] = [grow[k] % dressed.w, Math.floor(grow[k] / dressed.w)];
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const q = (y + dy) * dressed.w + x + dx;
+      if (x + dx < 0 || y + dy < 0 || x + dx >= dressed.w || y + dy >= dressed.h || sleeveMask[q] || !changed(q)) continue;
+      const [lo, span] = rgbSpan(q);
+      if (lo > 95 && span < 80) {
+        sleeveMask[q] = 1;
+        keep[q] = 1;
+        grow.push(q);
+      }
+    }
+  }
+  for (const p of grow) {
+    const [x, y] = [p % dressed.w, Math.floor(p / dressed.w)];
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const q = (y + dy) * dressed.w + x + dx;
+      if (x + dx < 0 || y + dy < 0 || x + dx >= dressed.w || y + dy >= dressed.h || !keep[q] || sleeveMask[q]) continue;
+      const [h, s, l] = tone(q);
+      if (l < 0.25 || s < 0.3 || (h > 30 && h < 60)) sleeveMask[q] = 2; // outline, cufflink
+    }
+  }
+  const img = blank(dressed.w, dressed.h);
+  const behind = new Uint8Array(n);
+  const whites: (readonly number[])[] = [];
+  const armColours: (readonly number[])[][] = [[], []];
+  const behindCount = new Map<string, number>();
+  for (let p = 0; p < n; p++) {
+    if (!keep[p]) continue;
+    const c = Array.from(dressed.d.subarray(p * 4, p * 4 + 4));
+    // never one of the plain bear's own colours: build-sprites recolours exactly those for black and white fur
+    if (PLAIN_COLORS.has(c.slice(0, 3).join())) c[2] += c[2] < 255 ? 1 : -1;
+    img.d.set(c, p * 4);
+    behind[p] = input.d[p * 4 + 3] || sleeveMask[p] ? 0 : 1;
+    const [, s, l] = hsl([c[0], c[1], c[2]]);
+    if (!behind[p] && s < 0.25 && l > 0.45) whites.push(c.slice(0, 3));
+    if (sleeveMask[p] === 1) armColours[p % dressed.w < dressed.w / 2 ? 0 : 1].push(c.slice(0, 3));
+    if (behind[p]) behindCount.set(c.slice(0, 3).join(), (behindCount.get(c.slice(0, 3).join()) ?? 0) + 1);
+  }
+  const lumOf = (c: readonly number[]) => 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
+  // a moved arm's sleeve: the vampire's whites, or each arm's own cloth (the cyborg's leather, the cop's chrome), its
+  // lightest few shades from light to dark fur and its darkest as the outline
+  const ramps = (COSTUME_CAPE[id] ? [whites, whites] : armColours).map((cs) => [...cs].sort((a, b) => lumOf(a) - lumOf(b)));
+  const sleeve = ramps.map((cs) => [0.1, 0.6, 0.85, 0.98].map((q) => cs[Math.floor(q * (cs.length - 1))]));
+  const outline = ramps.map((cs) => cs[0]);
+  // the cape's own cloth colour (not its outline): fills where an arm moved out from in front of it
+  const fill = COSTUME_CAPE[id]
+    ? [...behindCount.entries()].filter(([c]) => { const l = lumOf(c.split(',').map(Number)); return l > 25 && l < 100; }).sort((a, b) => b[1] - a[1])[0][0].split(',').map(Number)
+    : null;
+  return { img, behind, sleeveMask, sleeve, outline, fill };
+}
+const costumes: Partial<Record<(typeof COSTUME_IDS)[number], ReturnType<typeof costumeLayer>>> = {}; // built on first use, after BODY
+function costumePixels(id: (typeof COSTUME_IDS)[number], img: Img, head: [number, number], hands: [number, number][], sleeping: boolean): Img {
+  const { img: layer, behind, sleeveMask, sleeve, outline, fill } = (costumes[id] ??= costumeLayer(id));
+  // per row of the costume, how far the cape reaches out on each side: an arm moving away bares the cape inside it
+  const capeSpan = Array.from({ length: layer.h }, (_, ly) => {
+    let [l, r] = [Infinity, -Infinity];
+    for (let lx = 0; lx < layer.w; lx++) if (behind[ly * layer.w + lx]) [l, r] = [Math.min(l, lx), Math.max(r, lx)];
+    return [l, r];
+  });
+  const out = blank(img.w, img.h);
+  const inside = (x: number, y: number) => x >= 0 && y >= 0 && x < img.w && y < img.h;
+  // asleep under the green blanket: nothing below its first row (it is green, so never take it for the scarf)
+  let blanket = img.h;
+  if (sleeping)
+    for (let y = head[1] + SPORT.neck - HEAD[1] + 10; y < img.h && blanket === img.h; y++) {
+      let green = 0;
+      for (let x = 0; x < img.w; x++) if (img.d[at(img, x, y) + 3] && img.d[at(img, x, y) + 1] > img.d[at(img, x, y)]) green++;
+      if (green >= 12) blanket = y;
+    }
+  const solid = (x: number, y: number) => inside(x, y) && y < blanket && img.d[at(img, x, y) + 3] > 128;
+  const paw = (x: number, y: number, r2: number) => hands.some(([hx, hy]) => (x - hx) ** 2 + (y - hy) ** 2 <= r2);
+  const toFrame = (lx: number, ly: number): [number, number] => [lx - COSTUME_AT[0] - HEAD[0] + head[0], ly - COSTUME_AT[1] - HEAD[1] + head[1]];
+  const put = (x: number, y: number, c: ArrayLike<number>) => out.d.set([c[0], c[1], c[2], 255], at(out, x, y));
+  const onHead = (rx: number, ry: number) => {
+    for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
+      const [u, v] = [rx + dx, ry + dy];
+      if (v < SPORT.neck && u >= 0 && v >= 0 && u < REF.w && REF.d[at(REF, u, v) + 3]) return true;
+    }
+    return false;
+  };
+  const lum = (i: number) => 0.3 * img.d[i] + 0.59 * img.d[i + 1] + 0.11 * img.d[i + 2];
+  // each arm: hanging as the idle bear's (its sleeve is PixelLab's, copied) or moved (dressed along shoulder → paw)
+  const center = head[0] - HEAD[0] + 41;
+  const arms = ([-1, 1] as const).map((s) => {
+    const [hx, hy] = hands.find(([x]) => Math.sign(x - center) === s) ?? hands[s < 0 ? 1 : 0];
+    const paw: [number, number] = [hx - head[0] + HEAD[0], hy - head[1] + HEAD[1]];
+    const [ix, iy] = IDLE_HANDS.find(([x]) => Math.sign(x - 41) === s) as [number, number];
+    return { idle: Math.hypot(paw[0] - ix, paw[1] - iy) <= 6, paw, shoulder: (s < 0 ? COSTUME_SHOULDERS[0] : COSTUME_SHOULDERS[1]) as readonly [number, number] };
+  });
+  const sideOf = (rx: number) => arms[rx < 41 ? 0 : 1];
+  const onMovedArm = (rx: number, ry: number) =>
+    arms.some(({ idle, paw: [px, py], shoulder: [sx, sy] }) => {
+      if (idle) return false;
+      const [vx, vy] = [px - sx, py - sy];
+      const t = Math.max(0, Math.min(1, ((rx - sx) * vx + (ry - sy) * vy) / (vx * vx + vy * vy)));
+      return Math.hypot(rx - sx - t * vx, ry - sy - t * vy) <= COSTUME_ARM;
+    });
+  for (let ly = 0; ly < layer.h; ly++)
+    for (let lx = 0; lx < layer.w; lx++) {
+      const p = ly * layer.w + lx;
+      if (!layer.d[p * 4 + 3]) continue;
+      const [x, y] = toFrame(lx, ly);
+      if (!inside(x, y) || y >= blanket) continue;
+      const c = layer.d.subarray(p * 4, p * 4 + 3);
+      const [rx, ry] = [x - head[0] + HEAD[0], y - head[1] + HEAD[1]];
+      const sleevePx = sleeveMask[p] > 0 || rx < BODY.torso[0] + 1 || rx > BODY.torso[1] - 2;
+      const headPx = ly - COSTUME_AT[1] < SPORT.neck; // the costume's own head (bandages, a metal half face) follows the head
+      if (behind[p]) {
+        if (!solid(x, y)) put(x, y, c);
+      } else if (sleevePx && sideOf(rx).idle) {
+        // a sleeve is PixelLab's while that arm hangs as the idle bear's, its puffed edge past the fur included
+        if (!solid(x, y) || (!paw(x, y, 30) && !onHead(rx, ry))) put(x, y, c);
+      } else if (!solid(x, y)) {
+        if (!fill) continue; // no cape behind: open air
+        // the arm left this sleeve: the cape behind it shows, continued from its nearest cloth further out (or its plain cloth; open air past the cape)
+        const dir = lx < layer.w / 2 ? -1 : 1;
+        let k = 1;
+        while (k < 16 && lx + dir * k >= 0 && lx + dir * k < layer.w && !behind[ly * layer.w + lx + dir * k]) k++;
+        const q = ly * layer.w + lx + dir * k;
+        if (k < 16 && lx + dir * k >= 0 && lx + dir * k < layer.w) put(x, y, layer.d.subarray(q * 4, q * 4 + 3));
+        else if (lx > capeSpan[ly][0] && lx < capeSpan[ly][1]) put(x, y, fill);
+      } else if (!sleevePx && !paw(x, y, 30) && (headPx || !onHead(rx, ry)) && !onMovedArm(rx, ry)) put(x, y, c); // vest, shirt, bow
+    }
+  // the costume's nearest pixel to a frame pixel (where the scarf pokes out beyond the plain bear)
+  const nearest = (x: number, y: number) => {
+    const [lx, ly] = [x - head[0] + HEAD[0] + COSTUME_AT[0], y - head[1] + HEAD[1] + COSTUME_AT[1]];
+    for (let r = 1; r <= 3; r++)
+      for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) {
+        const [u, v] = [lx + dx, ly + dy];
+        if (u >= 0 && v >= 0 && u < layer.w && v < layer.h && layer.d[at(layer, u, v) + 3] && !behind[v * layer.w + u]) return layer.d.subarray(at(layer, u, v), at(layer, u, v) + 3);
+      }
+    return null;
+  };
+  const rim = (x: number, y: number) => !solid(x - 1, y) || !solid(x + 1, y) || !solid(x, y - 1) || !solid(x, y + 1);
+  // seal: a fur pixel the costume nearly surrounds (its edge a pixel inside the frame's outline, a sliver between pieces)
+  // takes the costume's colour, its outline at the frame's own edge; on the face only where it is all but enclosed
+  for (let pass = 0; pass < 2; pass++) {
+    const sealed: [number, number, ArrayLike<number>][] = [];
+    for (let y = 0; y < img.h; y++)
+      for (let x = 0; x < img.w; x++) {
+        if (!solid(x, y) || out.d[at(out, x, y) + 3] || paw(x, y, 30)) continue;
+        const near: Uint8Array[] = [];
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]])
+          if (inside(x + dx, y + dy) && out.d[at(out, x + dx, y + dy) + 3]) near.push(out.d.subarray(at(out, x + dx, y + dy), at(out, x + dx, y + dy) + 3));
+        if (near.length < (onHead(x - head[0] + HEAD[0], y - head[1] + HEAD[1]) ? 5 : 3)) continue;
+        near.sort((a, b) => 0.3 * a[0] + 0.59 * a[1] + 0.11 * a[2] - (0.3 * b[0] + 0.59 * b[1] + 0.11 * b[2]));
+        sealed.push([x, y, rim(x, y) ? near[0] : near[near.length >> 1]]);
+      }
+    for (const [x, y, c] of sealed) put(x, y, c);
+  }
+  for (let y = 0; y < img.h; y++)
+    for (let x = 0; x < img.w; x++) {
+      if (!solid(x, y) || out.d[at(out, x, y) + 3] || paw(x, y, 30)) continue;
+      const [rx, ry] = [x - head[0] + HEAD[0], y - head[1] + HEAD[1]];
+      const i = at(img, x, y);
+      if (isScarf(img.d, i)) {
+        // the scarf's hanging end below the vest: the plain bear's fur
+        if (rx >= 0 && ry >= 0 && rx < PLAIN.w && ry < PLAIN.h && PLAIN.d[at(PLAIN, rx, ry) + 3]) out.d.set(PLAIN.d.subarray(at(PLAIN, rx, ry), at(PLAIN, rx, ry) + 4), i);
+        else {
+          const c = nearest(x, y);
+          if (c) put(x, y, c);
+        }
+        continue;
+      }
+      // a moved arm (raised, waving, crossed) wears its sleeve along shoulder → paw, in front of the vest too
+      if (!onMovedArm(rx, ry) || onHead(rx, ry)) continue;
+      const step = [80, 130].findIndex((t) => lum(i) < t);
+      const side = rx < 41 ? 0 : 1;
+      put(x, y, rim(x, y) || paw(x, y, 44) ? outline[side] : sleeve[side][step < 0 ? 3 : step + 1]); // outlined, and round the paw's cuff
+    }
+  return out;
+}
+
 function fitOn(id: string, img: Img, head: [number, number], hands: [number, number][], sleeping: boolean, deel = false): Img {
   if ((PROFESSIONAL_IDS as readonly string[]).includes(id)) return professionalPixels(id, img, head, hands, sleeping);
+  if ((COSTUME_IDS as readonly string[]).includes(id)) return costumePixels(id as (typeof COSTUME_IDS)[number], img, head, hands, sleeping);
   if (id === 'brown_boots') return fittedBootFrame(img);
   if (id === 'headband' || id === 'ninja_headband') return headbandPixels(img, head, id === 'ninja_headband');
   if (id === 'mongol_boots') return sleeping ? blank(img.w, img.h) : mongolBootPixels(img, deel ? head[1] + DEEL.hem - HEAD[1] : 0);
@@ -1361,7 +1637,7 @@ if (preview < 0) {
   const deelCard = deelBase(REF, [HEAD[0], HEAD[1]], IDLE_HANDS);
   items.mongol_deel.img = blank(REF.w, REF.h);
   for (let p = 0; p < REF.w * REF.h * 4; p += 4) if (!sameAt(deelCard, REF, p)) items.mongol_deel.img.d.set(deelCard.d.subarray(p, p + 4), p);
-  for (const id of [...SPORT_IDS, ...PIRATE_IDS, ...WIZARD_IDS, ...DEMON_IDS, ...NINJA_IDS, ...STRAW_IDS, ...PROFESSIONAL_IDS, 'mongol_boots', 'headband', 'ninja_headband']) items[id].img = fitOn(id, REF, [HEAD[0], HEAD[1]], IDLE_HANDS, false);
+  for (const id of [...SPORT_IDS, ...PIRATE_IDS, ...WIZARD_IDS, ...DEMON_IDS, ...NINJA_IDS, ...STRAW_IDS, ...PROFESSIONAL_IDS, ...COSTUME_IDS, 'mongol_boots', 'headband', 'ninja_headband']) items[id].img = fitOn(id, REF, [HEAD[0], HEAD[1]], IDLE_HANDS, false);
   for (const [id, { img }] of Object.entries(items)) writePng(new URL(`item_${id}.png`, SPRITES), img);
   const heldSheets: Record<string, Record<string, string>> = {};
   for (const id of HELD_IDS) {
@@ -1380,7 +1656,7 @@ if (preview < 0) {
     writePng(new URL(`held_paw_${name}.png`, SPRITES), toSheet(frames.map((f, i) => ({ ...f, img: heldFrame(name, i, f.img, 'staff00', true) })), STATES[name].cols ?? frames.length));
   // fitted overlays: one sheet per state, the item drawn on that frame's own body
   const fittedSheets: Record<string, Record<string, string>> = {};
-  for (const id of ['brown_boots', 'mongol_boots', 'mongol_boots_deel', 'headband', 'ninja_headband', ...SPORT_IDS, ...PIRATE_IDS, ...WIZARD_IDS, ...DEMON_IDS, ...NINJA_IDS, ...STRAW_IDS, ...PROFESSIONAL_IDS]) {
+  for (const id of ['brown_boots', 'mongol_boots', 'mongol_boots_deel', 'headband', 'ninja_headband', ...SPORT_IDS, ...PIRATE_IDS, ...WIZARD_IDS, ...DEMON_IDS, ...NINJA_IDS, ...STRAW_IDS, ...PROFESSIONAL_IDS, ...COSTUME_IDS]) {
     fittedSheets[id] = {};
     for (const [name, { frames, heads }] of Object.entries(sheets)) {
       const cols = STATES[name].cols ?? frames.length;

@@ -28,18 +28,22 @@ the existing character.
 - `sleep` starts from the existing seated bear, edited as a witch in job
   `21334ce6-8c90-47cc-a8c8-67d26a145fe4`, then animated in job
   `b26abdb3-d03d-4121-8f70-4ba82a4982c3`.
-- `mobile/scripts/witch-pilot.ts` generates 21 sheets and APNG previews from
+- `mobile/scripts/costume-motions.ts` generates 21 sheets and APNG previews from
   seven motions and three fur colours. Six motions have five frames; `welcome`
   has eight and ends in a hug. The source frame PNGs remain in
   `pixellab/pilot/witch/`; `qa-poses.png` shows their active poses side by side.
   Every frame has transparent background and was visually reviewed. Run
-  `cd mobile && node scripts/witch-pilot.ts` to rebuild them.
+  `cd mobile && node scripts/costume-motions.ts` to rebuild them.
 - `mobile/scripts/costume-fur.ts` preserves the witch's purple and gold while
   changing exposed fur for black and white bears. This mask was visually
   reviewed on the seven generated motions. Other outfits need separate masks.
-- The 84×140 animation canvas touches the hat brim on a few frame edges.
-  These are pilots and are not registered as purchasable outfits. A wider idle
-  study and its three fur variants are also in the pilot folder.
+- The 84×140 animation canvas touches the hat brim on a few frame edges. A
+  wider idle study and its three fur variants are also in the pilot folder.
+- In the shop as `witch`: `costume-motions.ts` also writes `costume_witch_<state>`
+  sheets (with `_black`/`_white`) and `outfit_witch` to the sprites folder and
+  `mobile/src/lib/pixelBear/bear-costumes.json`. Worn, LiveBear plays these
+  frames instead of the bear's, placed on the bear's first frame's bottom-middle,
+  and nothing else is worn with it. Its motions are PixelLab's, not the app's.
 - The PixelLab mummy edit changed the bear's face and was rejected. The
   supplied mummy design and its transparent cutout remain intact.
 - An `animate_image` attempt with a pinned last frame (job
@@ -52,20 +56,16 @@ animations plus 57 battle, 33 lesson, and 49 tutor frames. Finish and inspect
 all contexts and three fur colours before adding an outfit to the shop catalog
 and server cosmetics. Otherwise it would disappear during play.
 
-## Local shop review
+## PixelLab costumes in the shop (vampire)
 
-The shop's `Загварууд` category shows all 16 full costume cutouts as selectable
-previews. App copies live in `mobile/assets/costume-gallery/`; the three parts
-sheets stay in the source pack. The category is preview-only until the costumes
-fit every game animation. `shop-local-review.png` records the local web review.
-
-## Witch motion review page
-
-`pixellab/pilot/witch/review.html` compares all three fur colours for each state;
-`review-local.png` is a local screenshot. To view it from the repository root:
-
-```bash
-python3 -m http.server 8090 --directory docs/design/pixel-bear/costumes/pixellab/pilot/witch
-```
-
-Open `http://localhost:8090/review.html`.
+`pixellab/pilot/vampire/idle-100x148.png` is PixelLab Pro Flash inpaint job
+`9dad16bd-1a46-46f5-b97d-0bccb51ea3e3` (6 generations): `bear_idle` placed at
+[9, 8] on `input-100x148.png`, with `mask-100x148.png` keeping its head and legs
+exactly. `mobile/scripts/home-sprites.ts` (`costumePixels`) wears those pixels on
+all 47 home frames, pinned to each frame's head, so the motions and sizes stay
+the app's own: sleeves copy while an arm hangs as in the idle pose, a moved arm
+gets a sleeve along shoulder → paw, the cape shows behind the bear. Costume
+colours never match the plain bear's, so `build-sprites.ts` recolours only the
+fur for black and white bears. A new costume: inpaint the same canvas, add its
+id to `COSTUME_IDS` and `build-sprites.ts`, then the catalog and
+`api/src/config/cosmetics.ts`.

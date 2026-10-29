@@ -234,9 +234,9 @@ export function Enter({ index = 0, children, style }: { index?: number; children
 }
 
 /** Шинээр гарч ирэх (key солигдох үед) элементийг томруулж үзүүлнэ. */
-export function ZoomEnter({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
+export function ZoomEnter({ children, style, delay = 0 }: { children: ReactNode; style?: StyleProp<ViewStyle>; delay?: number }) {
   return (
-    <Animated.View entering={ZoomIn.springify().damping(12)} style={style}>
+    <Animated.View entering={ZoomIn.delay(delay).springify().damping(12)} style={style}>
       {children}
     </Animated.View>
   );
