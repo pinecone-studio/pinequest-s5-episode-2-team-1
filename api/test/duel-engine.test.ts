@@ -183,6 +183,17 @@ describe('холболт', () => {
     expect(onTick(back.state, t + 1000 + DISCONNECT_GRACE_MS).state.phase).toBe('question');
   });
 
+  it('1 vs 1-д өрсөлдөгч түр салсан үед буруу хариулт асуултыг хаахгүй, буцаж ирээд хариулж болно', () => {
+    const { s, t } = inQuestion0();
+    const d = onDisconnect(s, B, 'cb', t + 1000).state;
+    const wrong = onAnswer(d, A, 0, 3, t + 1500);
+    expect(wrong.state.phase).toBe('question');
+    expect(msgOf(wrong.out, 'reveal', 'all')).toBeUndefined();
+    const back = onConnect(wrong.state, B, 'cb2', t + 3000).state;
+    const b = onAnswer(back, B, 0, 0, t + 3500);
+    expect(msgOf(b.out, 'reveal', 'all')).toMatchObject({ winnerId: B });
+  });
+
   it('шинэ холболтоор солигдсон хуучин socket хаагдахад тооцохгүй', () => {
     const { s, t } = inQuestion0();
     const replaced = onConnect(s, B, 'cb2', t + 100).state;
