@@ -35,6 +35,7 @@ const COSTUMES: Record<string, { idle: string; card: [number, number]; hat: bool
   brown_deel: { idle: 'idle-120x172.png', card: [19, 28], hat: false, furFrames: true },
   khuur: { idle: 'idle-120x172.png', card: [19, 28], hat: false, furFrames: true },
   archer: { idle: 'idle-120x172.png', card: [19, 28], hat: false, furFrames: true },
+  leaf_ninja: { idle: 'idle-120x172.png', card: [19, 28], hat: false, furFrames: true },
 };
 const STATES = ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch', 'welcome'] as const;
 type State = (typeof STATES)[number];

@@ -95,6 +95,15 @@ const COSTUME_SHEETS: Record<CostumeId, Record<BearAnim, SpriteKey>> = {
     ouch: 'costume_archer_ouch_960x688',
     welcome: 'costume_archer_welcome_1800x1032',
   },
+  leaf_ninja: {
+    thriving: 'costume_leaf_ninja_thriving_1200x344',
+    happy: 'costume_leaf_ninja_happy_960x688',
+    tired: 'costume_leaf_ninja_tired_960x688',
+    neglected: 'costume_leaf_ninja_neglected_960x688',
+    sleep: 'costume_leaf_ninja_sleep_1200x344',
+    ouch: 'costume_leaf_ninja_ouch_960x688',
+    welcome: 'costume_leaf_ninja_welcome_1800x1032',
+  },
 };
 
 /** scripts/home-sprites.ts: хөдөлгөөн бүрийн нэг мөр sheet (PixelLab animate_image), 2× */
