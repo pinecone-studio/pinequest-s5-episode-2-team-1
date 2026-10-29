@@ -352,6 +352,8 @@ export function onDisconnect(s0: DuelState, userId: number, connId: string, now:
     s.conn[key(userId)] = null;
     for (const o of othersOf(s, userId)) out.push({ to: o, msg: { type: 'presence', userId, connected: false } });
     if (ACTIVE.includes(s.phase)) s.dropDeadline[key(userId)] = now + GAME.DUEL.DISCONNECT_GRACE_MS;
+    // Багийн тулаанд хариулаагүй сүүлчийн гишүүн салбал бусад нь хугацаа дуустал хүлээхгүй.
+    if (s.phase === 'question' && isTeamDuel(s) && allAnswered(s)) reveal(s, now, out);
   });
 }
 

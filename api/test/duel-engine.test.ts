@@ -251,6 +251,15 @@ describe('багийн тулаан (2 vs 2)', () => {
     expect(msgOf(r.out, 'reveal', 'all')).toMatchObject({ winnerId: A1, correct: [A1, A2, B1], teamScores: { a: 2, b: 1 } });
   });
 
+  it('хариулаагүй сүүлчийн гишүүн салбал хугацаа хүлээлгүй reveal', () => {
+    const { s, t } = teamQuestion0();
+    let st = onAnswer(s, A1, 0, 0, t + 10).state;
+    st = onAnswer(st, A2, 0, 1, t + 20).state;
+    st = onAnswer(st, B1, 0, 0, t + 30).state;
+    const r = onDisconnect(st, B2, 'c22', t + 40);
+    expect(msgOf(r.out, 'reveal', 'all')).toMatchObject({ q: 0, correct: [A1, B1] });
+  });
+
   it('оноо их баг хожиж, гишүүн бүр бооцоо авна', () => {
     let { s, t } = teamQuestion0();
     for (let q = 0; q < init.questions.length; q++) {
