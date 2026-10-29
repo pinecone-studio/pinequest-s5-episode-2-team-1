@@ -2,6 +2,7 @@ import { chestNodes, currentNode as nodeAt, gateNodes, gateOf, isBossNode, lesso
 import type { BookLesson, Subject, SubjectPath } from '@shared/types';
 import type { DefeatKey } from '@/components/DefeatAnim';
 import type { ThemeId } from '@/constants/chapterTheme';
+import { PATH_SUBJECTS } from '@/constants/subjects';
 import { S } from '@/i18n/strings';
 import { type SpriteKey, sprites } from '@/sprites';
 import golems from './golems.json';
@@ -145,9 +146,8 @@ export const HOVER = [0, 1, 2, 1];
 
 export { gateOf, isBossNode, pathLessons, unitOf };
 
-// shortcut: Монгол хэлний замыг түр нуусан; буцаахад 'mongolian'-ийг энд нэмнэ.
 /** Сурах зам, хичээл сонголт, өнөөдрийн хичээлд харагдах хичээлүүд. */
-export const PATH_SUBJECTS: Subject[] = ['math', 'physics'];
+export { PATH_SUBJECTS } from '@/constants/subjects';
 /** Нуусан хичээл хадгалагдсан бол математик. */
 export const pathSubject = (s: Subject | null | undefined): Subject => (s && PATH_SUBJECTS.includes(s) ? s : 'math');
 
@@ -201,7 +201,6 @@ const GUARD_NODE_DX = 20;
 const PAD_BOTTOM = 112;
 /** Олон хичээлтэй замд зангилаа, од, дарах талбай давхцахгүй хамгийн бага босоо зай. */
 const MIN_NODE_GAP = 54;
-
 function chapterStarts(n: number, lessons: readonly BookLesson[]): { title: string; start: number }[] {
   if (lessons.length !== n) return [];
   const out: { title: string; start: number }[] = [];
@@ -267,7 +266,7 @@ export function unitAtY(layout: PathLayout, y: number): number {
   return unit;
 }
 
-/** Дэлгэцийн төвд хамгийн ойр зангилаа; номын бүлгийн дээд гарчгийг scroll-той хамт солино. */
+/** Өгсөн y байрлалд хамгийн ойр зангилаа; номын бүлгийн дээд гарчгийг scroll-той хамт солино. */
 export function closestNodeAtY(layout: PathLayout, y: number): number {
   return layout.nodes.reduce((best, node) => (Math.abs(node.y - y) < Math.abs(layout.nodes[best].y - y) ? node.i : best), 0);
 }

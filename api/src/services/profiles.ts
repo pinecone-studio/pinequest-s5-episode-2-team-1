@@ -1,6 +1,6 @@
 import type { AvatarBody, LookBody, Me, OnboardingBody, MyProfileResponse, ProfileResponse, PublicProfile, SubjectSkill } from '../../../shared/types';
 import { COSMETICS, type Cosmetic, OUTFIT_ITEMS } from '../config/cosmetics';
-import { SUBJECTS, type Subject } from '../config/game';
+import { ACTIVE_SUBJECTS, type Subject } from '../config/game';
 import { bossesIn } from '../domain/boss';
 import { levelProgress, tierForGrade } from '../domain/level';
 import { parseBearLook } from '../domain/profile';
@@ -43,7 +43,7 @@ async function loadSkills(db: D1Database, userId: number): Promise<SubjectSkill[
       .bind(userId)
       .all<{ subject: Subject; correct: number; answered: number }>(),
   ]);
-  return SUBJECTS.map((subject) => {
+  return ACTIVE_SUBJECTS.map((subject) => {
     const row = answers.results.find((r) => r.subject === subject);
     const path = paths[subject];
     return { subject, level: path.level, bossesBeaten: bossesIn(path.bossesBeaten), correct: row?.correct ?? 0, answered: row?.answered ?? 0 };

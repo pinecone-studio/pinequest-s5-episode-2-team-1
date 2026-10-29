@@ -211,6 +211,9 @@ export const MATH9_CURRICULUM: readonly AdvancedMathChapter[] = [
 ];
 
 export const MATH10_CURRICULUM: readonly AdvancedMathChapter[] = [
+  chapter('I БҮЛЭГ. ОЛОНЛОГ', [
+    lesson('Олонлог', 'math-10:5-8', 'set-operation'),
+  ]),
   chapter('II БҮЛЭГ. ТООН БА ҮСЭГТ ИЛЭРХИЙЛЭЛ', [
     lesson('Бүхэл тоон илтгэгчтэй зэрэг, түүний чанар', 'math-10:9-11', 'power'),
     lesson('n зэргийн язгуур ба n зэргийн арифметик язгуур, түүний чанар', 'math-10:12-14', 'root'),

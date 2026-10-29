@@ -2,12 +2,13 @@ import { ActivityIndicator, StyleSheet, Text, type ViewStyle } from 'react-nativ
 import { PressScale } from '@/components/pixel';
 import { colors, fonts, hardShadow, radius } from '@/constants/theme';
 
-type Variant = 'primary' | 'lime' | 'lemon' | 'white' | 'secondary' | 'pink' | 'ghost';
+type Variant = 'primary' | 'lime' | 'lemon' | 'ink' | 'white' | 'secondary' | 'pink' | 'ghost';
 
 const palette: Record<Variant, { bg: string; fg: string; border?: string }> = {
   primary: { bg: colors.indigo, fg: colors.white },
   lime: { bg: colors.lime, fg: colors.ink },
   lemon: { bg: colors.lemon, fg: colors.ink, border: colors.ink },
+  ink: { bg: colors.ink, fg: colors.white, border: colors.ink },
   white: { bg: colors.white, fg: colors.ink },
   secondary: { bg: colors.stoneAlt, fg: colors.ink },
   pink: { bg: colors.pink, fg: colors.dangerText },

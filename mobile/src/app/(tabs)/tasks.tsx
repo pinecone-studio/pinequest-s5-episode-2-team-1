@@ -1,4 +1,3 @@
-import type { Subject } from '@shared/types';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
@@ -9,12 +8,11 @@ import { ShieldCard } from '@/components/ShieldCard';
 import { CountPill } from '@/components/StatPill';
 import { Screen } from '@/components/ui';
 import { colors, fonts, radius, subjectTheme } from '@/constants/theme';
+import { ACTIVE_SUBJECTS } from '@/constants/subjects';
 import { type } from '@/constants/type';
 import { S, subjectGlyphs, subjectNames } from '@/i18n/strings';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 import { useOnline } from '@/lib/online';
-
-const SUBJECTS: Subject[] = ['math', 'mongolian', 'physics'];
 
 /** Өнөөдрийн даалгавар (доод цэсний тусдаа хэсэг). Офлайн үед даалгавар нь XP, боргоцойгүй дасгал болно. */
 export default function TasksScreen() {
@@ -65,7 +63,7 @@ export default function TasksScreen() {
         <Text style={styles.status}>{me.streakDoneToday ? S.home.streakDone : online ? S.home.streakTodo : S.offline.streakTodo}</Text>
       </Enter>
 
-      {SUBJECTS.map((subject, i) => {
+      {ACTIVE_SUBJECTS.map((subject, i) => {
         const t = subjectTheme[subject];
         return (
           <Enter key={subject} index={i + 1}>

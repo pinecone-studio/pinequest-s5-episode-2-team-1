@@ -1,4 +1,4 @@
-import type { RecoveryAnswerResponse, RecoveryDto, Subject } from '@shared/types';
+import type { RecoveryAnswerResponse, RecoveryDto } from '@shared/types';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
@@ -9,6 +9,7 @@ import { Button } from '@/components/Button';
 import { OptionButton, type OptionState } from '@/components/OptionButton';
 import { BackButton, Card, ErrorText, ProgressBar, Screen } from '@/components/ui';
 import { colors, fonts } from '@/constants/theme';
+import { activeSubject } from '@/constants/subjects';
 import { S, subjectNames } from '@/i18n/strings';
 
 /** Сонголтын байрлалыг оролдлого бүрт холино: хариуг байрлалаар нь цээжлэхээс сэргийлнэ. */
@@ -26,7 +27,8 @@ function shuffledOrder(n: number): number[] {
  * тайлбарыг хэлэхгүйгээр холилдсон сонголтоор дахин бодуулна; зөв бол тайлбарыг харуулна.
  */
 export default function RecoveryScreen() {
-  const { subject } = useLocalSearchParams<{ subject: Subject }>();
+  const { subject: rawSubject } = useLocalSearchParams<{ subject: string }>();
+  const subject = activeSubject(rawSubject);
   const { refreshMe } = useAuth();
   const [recovery, setRecovery] = useState<RecoveryDto | null>(null);
   const [order, setOrder] = useState<number[]>([]);
@@ -66,6 +68,7 @@ export default function RecoveryScreen() {
         body: { questionId: recovery.question.id, choice: selected },
       });
       setVerdict({ correct: r.correct, explanation: r.explanation, correctIndex: r.correctIndex, next: r.recovery });
+      if (!r.correct) void refreshMe();
       void Haptics.notificationAsync(r.correct ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error);
     } catch (e) {
       // Өөр төхөөрөмж/давхар хүсэлтээр энэ асуулт аль хэдийн давсан: одоогийн төлвийг дахин ачаална

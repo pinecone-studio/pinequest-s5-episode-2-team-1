@@ -3,7 +3,7 @@ import { z } from 'zod';
 import type { AuthResponse, LessonsResponse, MeResponse, MyProfileResponse, OnboardingBody } from '../../../shared/types';
 import { HEARD_FROM, REASONS, SELF_LEVELS } from '../../../shared/onboarding';
 import { BEAR_FACES, BEAR_FURS } from '../config/cosmetics';
-import { DEFAULT_EQUIPPED, GAME, SUBJECTS } from '../config/game';
+import { ACTIVE_SUBJECTS, DEFAULT_EQUIPPED, GAME } from '../config/game';
 import { tierForGrade } from '../domain/level';
 import { ubDay } from '../domain/time';
 import type { AppEnv } from '../env';
@@ -104,7 +104,7 @@ meRoutes.get('/', requireAuth, async (c) => {
 
 /** Сурах замын хичээлүүд: хэрэглэгчийн ангийн сурах бичгийн гарчгаас. */
 meRoutes.get('/lessons/:subject', requireAuth, async (c) => {
-  const subject = z.enum(SUBJECTS).safeParse(c.req.param('subject'));
+  const subject = z.enum(ACTIVE_SUBJECTS).safeParse(c.req.param('subject'));
   if (!subject.success) throw new ApiError(400, 'BAD_REQUEST', 'Буруу хичээл');
   const user = await c.env.DB.prepare('SELECT grade FROM users WHERE id = ?').bind(c.get('userId')).first<{ grade: number }>();
   if (!user) throw new ApiError(401, 'UNAUTHORIZED', 'Нэвтрэх шаардлагатай');
@@ -128,11 +128,11 @@ meRoutes.put('/onboarding', requireAuth, async (c) => {
   const body = await readBody(
     c,
     z.object({
-      heardFrom: z.enum(HEARD_FROM),
       grade: z.number().int().min(GAME.GRADE_MIN).max(GAME.GRADE_MAX),
-      reason: z.enum(REASONS),
-      subject: z.enum(SUBJECTS),
-      level: z.number().int().refine((v) => (SELF_LEVELS as readonly number[]).includes(v)),
+      subject: z.enum(ACTIVE_SUBJECTS),
+      heardFrom: z.enum(HEARD_FROM).optional(),
+      reason: z.enum(REASONS).optional(),
+      level: z.number().int().refine((v) => (SELF_LEVELS as readonly number[]).includes(v)).optional(),
     }),
   );
   const tier = tierForGrade(body.grade);

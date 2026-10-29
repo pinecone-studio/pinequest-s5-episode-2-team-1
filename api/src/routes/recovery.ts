@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import type { RecoveryAnswerResponse, RecoveryDto } from '../../../shared/types';
-import { SUBJECTS } from '../config/game';
+import { ACTIVE_SUBJECTS } from '../config/game';
 import type { AppEnv } from '../env';
 import { ApiError, readBody } from '../lib/errors';
 import { requireAuth } from '../lib/session';
@@ -17,7 +17,7 @@ recoveryRoutes.use('*', async (c, next) => {
 });
 
 function subjectParam(value: string | undefined) {
-  const parsed = z.enum(SUBJECTS).safeParse(value);
+  const parsed = z.enum(ACTIVE_SUBJECTS).safeParse(value);
   if (!parsed.success) throw new ApiError(400, 'BAD_REQUEST', 'Буруу хичээл');
   return parsed.data;
 }

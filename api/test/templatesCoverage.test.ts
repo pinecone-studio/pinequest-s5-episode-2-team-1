@@ -39,8 +39,8 @@ describe('Математик 6–10-ын бүх хичээлийн template cove
     }
   });
 
-  it('8–10-р ангийн 145 хичээл бүр яг нэг template-тэй', () => {
-    expect([MATH8.length, MATH9.length, MATH10.length]).toEqual([51, 35, 59]);
+  it('8–10-р ангийн 146 хичээл бүр яг нэг template-тэй', () => {
+    expect([MATH8.length, MATH9.length, MATH10.length]).toEqual([51, 35, 60]);
     for (const [grade, templates] of [
       [8, MATH8],
       [9, MATH9],

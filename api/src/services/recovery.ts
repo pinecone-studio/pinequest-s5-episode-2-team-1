@@ -8,6 +8,7 @@ import { lessonIndex } from '../domain/path';
 import { ApiError } from '../lib/errors';
 import { generate, levelOf, shouldGenerateTemplates, type Template, templateById, templatesFor } from '../templates';
 import { generateTemplateSet, IN_RANGE, OWN_GRADE, parseLessonRef, rangeArgs, storeGenerated } from './pool';
+import { spendUserLife } from './users';
 
 interface Missed {
   id: number;
@@ -232,6 +233,7 @@ export async function answerRecovery(
   if (misses < GAME.RECOVERY_MAX_MISSES) {
     const upd = await db.prepare(`UPDATE recoveries SET misses = ? ${guard}`).bind(misses, p.row.task_id, p.row.passed, p.row.misses).run();
     if (!upd.meta.changes) throw STALE();
+    await spendUserLife(db, userId, now);
     return { correct: false, recovery: toDto(subject, p.questions, p.passed) };
   }
 
@@ -273,6 +275,7 @@ export async function answerRecovery(
       : []),
   ]);
   if (!upd.meta.changes) throw STALE();
+  await spendUserLife(db, userId, now);
   const after = next ? await pending(db, userId, subject) : p;
   return { correct: false, correctIndex: q.correct_index, explanation: q.explanation, recovery: toDto(subject, after.questions, after.passed) };
 }

@@ -1,8 +1,8 @@
 import { BAG_ITEMS, type BagItem } from '../../../shared/loot';
 import type { Me, SubjectPath } from '../../../shared/types';
-import { GAME, SUBJECTS, type Subject } from '../config/game';
+import { ACTIVE_SUBJECTS, GAME, SUBJECTS, type Subject } from '../config/game';
 import { levelProgress } from '../domain/level';
-import { type Lives, livesNow, nextLifeAt } from '../domain/lives';
+import { type Lives, livesNow, nextLifeAt, spendLife } from '../domain/lives';
 import { parseBearLook } from '../domain/profile';
 import { shieldBlock, shieldNextBuyDay } from '../domain/shield';
 import { maxStake } from '../domain/stake';
@@ -128,7 +128,7 @@ export async function loadSubjectPaths(db: D1Database, userId: number): Promise<
 export function onboardingSubject(json: string | null): Subject | null {
   try {
     const subject = json ? (JSON.parse(json) as { subject?: unknown }).subject : null;
-    return SUBJECTS.includes(subject as Subject) ? (subject as Subject) : null;
+    return ACTIVE_SUBJECTS.includes(subject as (typeof ACTIVE_SUBJECTS)[number]) ? (subject as Subject) : null;
   } catch {
     return null;
   }
@@ -202,6 +202,15 @@ export async function loadBag(db: D1Database, userId: number): Promise<Record<Ba
 export const livesOf = (u: Pick<UserRow, 'lives' | 'lives_at'>): Lives => ({ lives: u.lives, at: u.lives_at });
 /** users.lives, lives_at-д бичих утга */
 export const livesArgs = (l: Lives) => [l.lives, l.at] as const;
+
+/** Буруу хариултын нэг амийг хасна; аль хэдийн 0 бол доош оруулахгүй. */
+export async function spendUserLife(db: D1Database, userId: number, now = Date.now()): Promise<boolean> {
+  const lives = livesNow(livesOf(await getUserRow(db, userId)), now);
+  if (lives.lives <= 0) return false;
+  const next = spendLife(lives, now);
+  await db.prepare('UPDATE users SET lives = ?, lives_at = ? WHERE id = ?').bind(...livesArgs(next), userId).run();
+  return true;
+}
 
 /**
  * Амьгүй бол (admin биш) NO_LIVES: нөхөгдтөл бодлого, давтлага, баавгайтай ярилцах хаалттай. Одоогийн амийг буцаана.

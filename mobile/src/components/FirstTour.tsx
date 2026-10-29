@@ -17,13 +17,8 @@ interface Step {
 
 const steps = (name: string): Step[] => [
   { title: S.tour.welcomeTitle(name), body: S.tour.welcome },
-  { target: 'xp', title: S.tour.xpTitle, body: S.tour.xp },
-  { target: 'stats', title: S.tour.statsTitle, body: S.tour.stats },
   { target: 'feed', title: S.tour.feedTitle, body: S.tour.feed },
   { target: 'nav.path', title: S.tour.pathTitle, body: S.tour.path },
-  { target: 'nav.shop', title: S.tour.shopTitle, body: S.tour.shop },
-  { target: 'nav.duel', title: S.tour.duelTitle, body: S.tour.duel },
-  { target: 'avatar', title: S.tour.profileTitle, body: S.tour.profile },
   { title: S.tour.doneTitle, body: S.tour.done },
 ];
 

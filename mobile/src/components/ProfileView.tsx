@@ -6,6 +6,7 @@ import { Enter, FurContext, Sprite } from '@/components/pixel';
 import { PreviewStage } from '@/components/PreviewStage';
 import { Card, ProgressBar, SectionTitle } from '@/components/ui';
 import { colors, fonts, radius, subjectTheme } from '@/constants/theme';
+import { isActiveSubject } from '@/constants/subjects';
 import { type } from '@/constants/type';
 import { S, subjectNames } from '@/i18n/strings';
 import { BACKGROUNDS, bgById, OUTFITS, outfitById, parseWorn, wornItems } from '@/lib/pixelBear/catalog';
@@ -60,7 +61,7 @@ export function ProfileView({ profile, index = 0 }: { profile: PublicProfile; in
       <Enter index={index + 3} style={styles.section}>
         <SectionTitle>{S.profile.skills}</SectionTitle>
         <Card style={styles.skills}>
-          {profile.skills.map((s) => (
+          {profile.skills.filter((s) => isActiveSubject(s.subject)).map((s) => (
             <SkillRow key={s.subject} skill={s} />
           ))}
         </Card>
