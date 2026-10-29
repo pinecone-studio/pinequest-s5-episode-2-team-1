@@ -42,6 +42,20 @@ export async function getUserRow(db: D1Database, id: number): Promise<UserRow> {
   return row;
 }
 
+/** Олон хэрэглэгчийг нэг query-гээр, `ids`-ийн дарааллаар уншина. */
+export async function getUserRows(db: D1Database, ids: number[]): Promise<UserRow[]> {
+  const { results } = await db
+    .prepare(`SELECT ${USER_COLUMNS} FROM users WHERE id IN (SELECT value FROM json_each(?))`)
+    .bind(JSON.stringify(ids))
+    .all<UserRow>();
+  const byId = new Map(results.map((r) => [r.id, r]));
+  return ids.map((id) => {
+    const row = byId.get(id);
+    if (!row) throw new ApiError(401, 'UNAUTHORIZED', 'Хэрэглэгч олдсонгүй');
+    return row;
+  });
+}
+
 export function streakStateOf(
   u: Pick<UserRow, 'streak' | 'last_streak_day' | 'shield_held' | 'shield_bought_day' | 'shield_used_day'>,
 ): StreakState {

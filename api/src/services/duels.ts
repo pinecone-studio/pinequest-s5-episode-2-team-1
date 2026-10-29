@@ -9,7 +9,7 @@ import type { Bindings } from '../env';
 import { isConstraintError, newTx } from '../lib/db';
 import { ApiError } from '../lib/errors';
 import { avatarLook, type CatalogItem, getCatalog, parseEquipped } from './items';
-import { getUserRow, type UserRow } from './users';
+import { getUserRow, getUserRows, type UserRow } from './users';
 
 interface DuelRow {
   id: number;
@@ -520,7 +520,7 @@ async function startTeamDuelIfFull(env: Bindings, duel: DuelRow, now: number, re
   const countOf = (t: DuelTeam) => parties.filter((p) => p.team === t).length;
   if (countOf('a') < duel.team_size || countOf('b') < duel.team_size) return;
 
-  const users = await Promise.all(parties.map((p) => getUserRow(db, p.id)));
+  const users = await getUserRows(db, parties.map((p) => p.id));
   const broke = users.filter((u) => stakeError(duel.stake, u.points));
   if (broke.length) {
     if (broke.some((u) => u.id === duel.creator_id)) {
