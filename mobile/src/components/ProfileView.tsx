@@ -1,3 +1,4 @@
+import { clanTitle } from '@shared/clan';
 import type { PublicProfile, SubjectSkill } from '@shared/types';
 import { StyleSheet, Text, View } from 'react-native';
 import { Avatar } from '@/components/Avatar';
@@ -41,6 +42,13 @@ export function ProfileView({ profile, index = 0 }: { profile: PublicProfile; in
         </Text>
         <Text style={type.small}>@{profile.username}</Text>
         <Text style={type.small}>{S.profile.meta(profile.grade, profile.joinedAt)}</Text>
+        {profile.clan ? (
+          <View style={styles.clan}>
+            <Text style={styles.clanText} numberOfLines={1}>
+              {clanTitle(profile.clan)}
+            </Text>
+          </View>
+        ) : null}
         <View style={styles.bar}>
           <BracketBar
             value={profile.levelXp}
@@ -141,6 +149,8 @@ const styles = StyleSheet.create({
   identity: { alignItems: 'center', gap: 2 },
   // профайлын зураг тайзны доод ирмэгт давхарлана
   photo: { marginTop: -48, marginBottom: 6 },
+  clan: { marginTop: 6, paddingHorizontal: 12, paddingVertical: 5, borderRadius: radius.pill, backgroundColor: colors.lavender, maxWidth: '100%' },
+  clanText: { fontFamily: fonts.bold, fontSize: 13, color: colors.indigo },
   bar: { alignSelf: 'stretch', paddingHorizontal: 18, marginTop: 8 },
   tiles: { flexDirection: 'row', gap: 10 },
   tile: { flex: 1, height: 104, padding: 12, borderRadius: 22, backgroundColor: colors.white, justifyContent: 'space-between' },

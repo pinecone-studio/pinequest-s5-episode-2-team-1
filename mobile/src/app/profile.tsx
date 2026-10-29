@@ -1,4 +1,5 @@
-import type { FriendBody, FriendsResponse, MyProfileResponse } from '@shared/types';
+import { clanTitle } from '@shared/clan';
+import type { ClanDto, FriendBody, FriendsResponse, MyClanResponse, MyProfileResponse } from '@shared/types';
 import * as Haptics from 'expo-haptics';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
@@ -7,8 +8,9 @@ import { api, errorText } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
+import { ClanMountain } from '@/components/ClanMountain';
 import { FriendRow } from '@/components/FriendRow';
-import { Enter } from '@/components/pixel';
+import { Enter, PressScale } from '@/components/pixel';
 import { QrIsland } from '@/components/QrIsland';
 import { BackButton, Card, ErrorText, Muted, Screen, SectionTitle } from '@/components/ui';
 import { colors, fonts } from '@/constants/theme';
@@ -34,6 +36,8 @@ export default function ProfileScreen() {
   const { bgId } = usePixelBear();
   const [data, setData] = useState<MyProfileResponse | null>(null);
   const [friends, setFriends] = useState<FriendsResponse | null>(null);
+  // undefined = ачаалж байна, null = Уулгүй
+  const [clan, setClan] = useState<ClanDto | null | undefined>(undefined);
   const [error, setError] = useState('');
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState<string | null>(null);
@@ -62,6 +66,9 @@ export default function ProfileScreen() {
           setError('');
         })
         .catch((e) => setError(errorText(e)));
+      api<MyClanResponse>('/clans/mine')
+        .then((r) => setClan(r.clan))
+        .catch(() => {});
       void loadFriends();
       const timer = setInterval(loadFriends, POLL_MS);
       return () => clearInterval(timer);
@@ -170,6 +177,36 @@ export default function ProfileScreen() {
             </Enter>
           ) : null}
 
+          {clan !== undefined ? (
+            <Enter index={1}>
+              <PressScale
+                accessibilityRole="link"
+                accessibilityLabel={clan ? `${S.clan.cardTitle}: ${clanTitle(clan.name)}, ${S.clan.cardLine(clan.members.length, clan.maxMembers, clan.height)}` : S.clan.cardTitle}
+                onPress={() => router.push('/uul')}
+              >
+                <Card style={styles.clan}>
+                  <View style={styles.clanArt}>
+                    <ClanMountain />
+                  </View>
+                  <View style={{ flex: 1, gap: 3 }}>
+                    <Text style={styles.subTitle}>{S.clan.cardTitle}</Text>
+                    {clan ? (
+                      <>
+                        <Text style={styles.cardTitle} numberOfLines={2}>
+                          {clanTitle(clan.name)}
+                        </Text>
+                        <Text style={type.small}>{S.clan.cardLine(clan.members.length, clan.maxMembers, clan.height)}</Text>
+                      </>
+                    ) : (
+                      <Text style={styles.clanEmpty}>{S.clan.cardEmpty}</Text>
+                    )}
+                  </View>
+                  <Text style={styles.chevron}>›</Text>
+                </Card>
+              </PressScale>
+            </Enter>
+          ) : null}
+
           {incoming.length > 0 ? (
             <Enter index={1}>
               <Card style={styles.requests}>
@@ -269,4 +306,8 @@ const styles = StyleSheet.create({
   section: { gap: 10 },
   subTitle: { fontFamily: fonts.bold, fontSize: 13, color: colors.muted, marginTop: 4 },
   request: { gap: 10 },
+  clan: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  clanArt: { width: 92 },
+  clanEmpty: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 19, color: colors.ink },
+  chevron: { fontFamily: fonts.bold, fontSize: 26, color: colors.mutedIcon },
 });
