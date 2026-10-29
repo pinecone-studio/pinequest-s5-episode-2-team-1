@@ -4,7 +4,8 @@ import { PressScale } from '@/components/pixel';
 import { colors, fonts, hardShadow, radius, subjectTheme } from '@/constants/theme';
 import { S, subjectNames } from '@/i18n/strings';
 
-const SUBJECTS: Subject[] = ['math', 'mongolian', 'physics'];
+// shortcut: тулаан одоогоор зөвхөн математикаар; бусад хичээлийг буцаахад энд нэмнэ.
+const SUBJECTS: Subject[] = ['math'];
 
 /** Хичээлийн том хавтангууд (хичээлийн өнгө, тэмдэгтэй). */
 export function SubjectPicker({ value, onChange }: { value: Subject; onChange: (s: Subject) => void }) {
