@@ -16,8 +16,13 @@ export function avatarSprite({ fur, face, chest }: PortraitLook, px: 48 | 160): 
   return key in sprites ? (key as SpriteKey) : avatarSprite(DEFAULT, px);
 }
 
-/** Профайлын аватар: ягаан тойрог, доороосоо тогтсон баавгайн хөрөг (сонгосон үс, царай, цээж). */
+/**
+ * Профайлын аватар: ягаан тойрог, доороосоо тогтсон баавгайн хөрөг (сонгосон үс, царай, цээж). Хөрөг тойргийн
+ * дотор талыг дүүргэнэ: хэмжээ бүрт (тулааны 22 px-ээс засварын 172 px хүртэл) ижил харагдана. 48 px-ээс том бол
+ * 160-ын зургийг багасгаж зурна (48-ыг томруулбал бүдэг, том пиксел болно).
+ */
 export function Avatar({ size = 48, look = DEFAULT, border, label }: { size?: number; look?: PortraitLook; border?: number; label?: string }) {
+  const inner = size - 2 * (border ?? 0);
   return (
     <View
       style={[
@@ -26,7 +31,7 @@ export function Avatar({ size = 48, look = DEFAULT, border, label }: { size?: nu
         border ? { borderWidth: border, borderColor: colors.white } : null,
       ]}
     >
-      <Sprite id={avatarSprite(look, size > 100 ? 160 : 48)} label={label} />
+      <Sprite id={avatarSprite(look, inner > 48 ? 160 : 48)} label={label} style={{ width: inner, height: inner }} />
     </View>
   );
 }
