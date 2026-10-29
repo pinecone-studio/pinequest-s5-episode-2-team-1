@@ -24,7 +24,8 @@ export function PreviewStage({
 }: {
   bg: BgDef;
   items: ItemId[];
-  name: string;
+  /** stage дээрх нэрийн chip (нэр нь өөр газар бичигдсэн бол орхино) */
+  name?: string;
   alt: string;
   action?: ReactNode;
   height?: number;
@@ -41,9 +42,11 @@ export function PreviewStage({
         {/* дэлгүүрт орж ирсэн хүнтэй мэндэлж даллана; item солиход баавгай тасралтгүй хөдөлсөөр, зөвхөн item солигдоно */}
         <LiveBear anim="happy" w={STAGE_W} items={items} label={alt} />
       </View>
-      <View style={styles.chip}>
-        <Text style={styles.chipText}>{name}</Text>
-      </View>
+      {name ? (
+        <View style={styles.chip}>
+          <Text style={styles.chipText}>{name}</Text>
+        </View>
+      ) : null}
       {action ? <View style={styles.action}>{action}</View> : null}
     </View>
   );

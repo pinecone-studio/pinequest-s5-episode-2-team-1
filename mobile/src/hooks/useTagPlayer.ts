@@ -10,8 +10,10 @@ export function useTagPlayer<M extends SheetMeta>(
   meta: M,
   once: (keyof M['tags'] & string)[],
   loop: (keyof M['tags'] & string) | (keyof M['tags'] & string)[] | null,
+  /** «Motion бууруулах» шиг хөдөлгөөнгүй (жишээ нь дэлгүүрийн олон жижиг карт) */
+  still = false,
 ): number {
-  const reduce = useReducedMotion();
+  const reduce = useReducedMotion() || still;
   const seq = once.flatMap((t) => tagFrames(meta, t));
   const cycle = loop === null ? [] : [loop].flat().flatMap((t) => tagFrames(meta, t));
   const [frame, setFrame] = useState(seq[0] ?? cycle[0] ?? 0);
