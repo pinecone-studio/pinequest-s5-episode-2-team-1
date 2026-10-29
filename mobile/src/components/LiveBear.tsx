@@ -140,6 +140,33 @@ const COSTUME_SHEETS: Record<CostumeId, Record<BearAnim, SpriteKey>> = {
     ouch: 'costume_doctor_ouch_960x688',
     welcome: 'costume_doctor_welcome_1800x1032',
   },
+  glasses_wizard: {
+    thriving: 'costume_glasses_wizard_thriving_1200x344',
+    happy: 'costume_glasses_wizard_happy_960x688',
+    tired: 'costume_glasses_wizard_tired_960x688',
+    neglected: 'costume_glasses_wizard_neglected_960x688',
+    sleep: 'costume_glasses_wizard_sleep_1200x344',
+    ouch: 'costume_glasses_wizard_ouch_960x688',
+    welcome: 'costume_glasses_wizard_welcome_1800x1032',
+  },
+  book_wizard: {
+    thriving: 'costume_book_wizard_thriving_1200x344',
+    happy: 'costume_book_wizard_happy_960x688',
+    tired: 'costume_book_wizard_tired_960x688',
+    neglected: 'costume_book_wizard_neglected_960x688',
+    sleep: 'costume_book_wizard_sleep_1200x344',
+    ouch: 'costume_book_wizard_ouch_960x688',
+    welcome: 'costume_book_wizard_welcome_1800x1032',
+  },
+  ginger_wizard: {
+    thriving: 'costume_ginger_wizard_thriving_1200x344',
+    happy: 'costume_ginger_wizard_happy_960x688',
+    tired: 'costume_ginger_wizard_tired_960x688',
+    neglected: 'costume_ginger_wizard_neglected_960x688',
+    sleep: 'costume_ginger_wizard_sleep_1200x344',
+    ouch: 'costume_ginger_wizard_ouch_960x688',
+    welcome: 'costume_ginger_wizard_welcome_1800x1032',
+  },
 };
 
 /** scripts/home-sprites.ts: хөдөлгөөн бүрийн нэг мөр sheet (PixelLab animate_image), 2× */
