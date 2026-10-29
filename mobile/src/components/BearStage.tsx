@@ -13,6 +13,9 @@ import home from '@/lib/pixelBear/bear-home.json';
 import { bgById, type OutfitId, wornItems } from '@/lib/pixelBear/catalog';
 
 const NIGHT_MOON = '#F3F66C';
+/** stage-ийн бүтэн өндөр ба түүн дээрх сүүдрийн байрлал */
+export const STAGE_H = 330;
+const SHADOW_TOP = 292;
 
 /** Нүүрний баавгайн stage (DESIGN.md §7 BearStage, §8-03). Төлөв = sprite + chip + energy + чимэглэл. */
 export function BearStage({
@@ -20,13 +23,17 @@ export function BearStage({
   bgId,
   outfitIds,
   onLongPress,
+  height = STAGE_H,
 }: {
   view: BearView;
   bgId: string;
   outfitIds: OutfitId[];
   onLongPress?: () => void;
+  /** намхан дэлгэцэнд багасгасан өндөр: баавгай, гэрэл, сүүдэр хамт жижгэрнэ */
+  height?: number;
 }) {
   const bg = bgById(bgId);
+  const s = height / STAGE_H;
   const cfg = BEAR_CONFIG[view.state];
   const ink = bg.dark ? colors.white : colors.ink;
   // өмссөн бүх хувцсаа бүх төлөвт өмсөнө
@@ -41,22 +48,22 @@ export function BearStage({
       delayLongPress={600}
       accessible
       accessibilityLabel={`${cfg.alt}. ${cfg.chip}, энерги ${view.energy}%`}
-      style={styles.stage}
+      style={[styles.stage, { height }]}
     >
       {/* товшилтын байрлал (locationX/Y) stage-ээс тооцогдохын тулд дотор талын зүйлс хүрэлт авахгүй */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
         <ColorFade color={bg.hex} style={StyleSheet.absoluteFill} />
         <BgArt bg={bg} />
         {/* зураг, сансрын дугуй дээр гэрэл хэрэггүй; Код дээр баавгайг тоонуудаас ялгана */}
-        {bg.image || bg.scene === 'space' ? null : <ColorFade color={bg.halo ?? (bg.dark ? haloColors.night : haloColors.light)} style={styles.halo} />}
+        {bg.image || bg.scene === 'space' ? null : <ColorFade color={bg.halo ?? (bg.dark ? haloColors.night : haloColors.light)} style={[styles.halo, { top: 34 * s, transform: [{ scale: s }] }]} />}
         <Decor state={view.state} ink={ink} dark={!!bg.dark} />
 
         {cfg.floatShadow ? (
-          <Motion preset="shadow" style={styles.shadow} />
+          <Motion preset="shadow" style={[styles.shadow, { top: SHADOW_TOP * s }]} />
         ) : (
-          <View style={[styles.shadow, { opacity: 0.18 }]} />
+          <View style={[styles.shadow, { top: SHADOW_TOP * s, opacity: 0.18 }]} />
         )}
-        <View style={[styles.bearWrap, { top: cfg.top }]}>
+        <View style={[styles.bearWrap, { top: cfg.top * s, transform: [{ scale: s }] }]}>
           <Pop trigger={view.state} from={0.6}>
             <LiveBear key={ouch.at ? `ouch${ouch.at.n}` : view.state} anim={ouch.at ? 'ouch' : view.state} w={cfg.w} items={items} />
           </Pop>
@@ -210,12 +217,11 @@ function Decor({ state, ink, dark }: { state: BearView['state']; ink: string; da
 }
 
 const styles = StyleSheet.create({
-  stage: { height: 330, borderRadius: radius.stage, overflow: 'hidden' },
+  stage: { borderRadius: radius.stage, overflow: 'hidden' },
   abs: { position: 'absolute' },
-  halo: { position: 'absolute', top: 34, left: '50%', marginLeft: -120, width: 240, height: 240, borderRadius: 120 },
+  halo: { position: 'absolute', top: 34, left: '50%', marginLeft: -120, width: 240, height: 240, borderRadius: 120, transformOrigin: 'center top' },
   shadow: {
     position: 'absolute',
-    top: 292,
     left: '50%',
     marginLeft: -64,
     width: 128,
@@ -223,7 +229,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: colors.ink,
   },
-  bearWrap: { position: 'absolute', left: 0, right: 0, alignItems: 'center' },
+  bearWrap: { position: 'absolute', left: 0, right: 0, alignItems: 'center', transformOrigin: 'center top' },
   chip: {
     position: 'absolute',
     left: 14,

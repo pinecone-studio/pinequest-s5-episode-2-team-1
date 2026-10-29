@@ -1,10 +1,9 @@
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
-import { type ComponentRef, useRef, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { BgSwatch, type SwatchStatus } from '@/components/BgSwatch';
-import { CostumeGrid, CostumePreview } from '@/components/CostumeGallery';
 import { MagicBurst } from '@/components/MagicBurst';
 import { OutfitCard } from '@/components/OutfitCard';
 import { PressScale, Sprite } from '@/components/pixel';
@@ -22,7 +21,7 @@ import { useOnline } from '@/lib/online';
 import { BACKGROUNDS, bgById, DEFAULT_OUTFIT_ID, isWorn, outfitById, type OutfitId, outfitSlot, toggleWorn, wornItems } from '@/lib/pixelBear/catalog';
 import { type OutfitView, useOutfits } from '@/lib/pixelBear/useOutfits';
 
-type Tab = 'bg' | 'outfit' | 'concept';
+type Tab = 'bg' | 'outfit';
 type OutfitCategory = 'hat' | 'mask' | 'clothes' | 'boots' | 'hand';
 const CATEGORIES: { value: OutfitCategory; label: string }[] = [
   { value: 'hat', label: 'Малгай' },
@@ -62,15 +61,14 @@ export default function ShopScreen() {
   const [outfitCategory, setOutfitCategory] = useState<OutfitCategory>('hat');
   const [selBg, setSelBg] = useState(bear.bgId);
   const [selOutfit, setSelOutfit] = useState<OutfitId>(bear.outfitIds.at(-1) ?? DEFAULT_OUTFIT_ID);
-  const [selConcept, setSelConcept] = useState('witch');
-  const scrollRef = useRef<ComponentRef<typeof ScrollView>>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [castKey, setCastKey] = useState(0);
 
+  // намхан дэлгэцэнд stage-ийг багасгаж доорх сонголтуудад зай үлдээнэ
+  const stageH = Math.round(Math.min(290, Math.max(180, useWindowDimensions().height * 0.3)));
   const isBg = tab === 'bg';
-  const isConcept = tab === 'concept';
   const visibleOutfits = outfits.views.filter((v) => categoryOf(v.def.id) === outfitCategory);
   const bgDef = bgById(isBg ? selBg : bear.bgId);
   const outfitView = outfits.views.find((v) => v.def.id === selOutfit) ?? outfits.views[0];
@@ -145,91 +143,97 @@ export default function ShopScreen() {
   }
 
   return (
-    <Screen tabBar scrollRef={scrollRef}>
-      <View style={styles.header}>
-        <View style={{ flex: 1, gap: 4 }}>
-          <Text accessibilityRole="header" style={type.h1}>
-            {S.shop.title}
-          </Text>
-          <Text style={type.small}>{S.shop.subtitle}</Text>
-        </View>
-        <PressScale accessibilityRole="button" accessibilityLabel={S.bag.title} onPress={() => router.push('/bag')} style={styles.bagBtn}>
-          <Sprite id="nav2_bag_on_30x30" />
-        </PressScale>
-        <CountPill icon="btn_honey_24x24" value={bear.honey} label="Боргоцой" />
-      </View>
-
-      <View>
-        {isConcept ? <CostumePreview selectedId={selConcept} /> : <PreviewStage
-          bg={bgDef}
-          items={previewItems}
-          name={isBg ? S.shop.bgPreview(bgDef.name) : outfitDef.name}
-          alt={S.shop.previewAlt(outfitDef.name, bgDef.name)}
-          action={
-            <PressScale
-              accessibilityRole="button"
-              accessibilityState={{ disabled: action.disabled, busy }}
-              disabled={action.disabled || busy}
-              onPress={onAction}
-              style={[styles.action, { backgroundColor: action.bg }]}
-            >
-              {busy ? <ActivityIndicator color={action.fg} /> : <Text style={[styles.actionText, { color: action.fg }]}>{action.title}</Text>}
-            </PressScale>
-          }
-        />}
-        {!isConcept ? <MagicBurst active={!isBg && outfitDef.id === 'pestilence_staff'} castKey={castKey} /> : null}
-      </View>
-
-      {online ? null : <Text style={styles.offline}>{S.offline.shopNote}</Text>}
-      {message ? (
-        <Animated.Text entering={FadeIn} style={styles.message}>
-          {message}
-        </Animated.Text>
-      ) : null}
-      <ErrorText>{error || (!isBg ? outfits.error : '')}</ErrorText>
-
-      <SegmentedTabs<Tab>
-        label={S.shop.tabs}
-        value={tab}
-        onChange={(next) => {
-          setTab(next);
-          scrollRef.current?.scrollTo({ y: 0, animated: true });
-          if (next === 'outfit' && !visibleOutfits.some((v) => v.def.id === selOutfit)) {
-            const first = visibleOutfits[0];
-            if (first) setSelOutfit(first.def.id);
-          }
-        }}
-        options={[
-          { value: 'bg', label: S.shop.tabBg },
-          { value: 'outfit', label: S.shop.tabOutfit },
-          { value: 'concept', label: S.shop.tabConcept },
-        ]}
-      />
-
-      {tab === 'outfit' && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categories}>
-          <View accessibilityRole="tablist" accessibilityLabel="Хувцасны төрөл" style={styles.categoryRow}>
-            {CATEGORIES.map((category) => {
-              const selected = outfitCategory === category.value;
-              return (
-                <PressScale
-                  key={category.value}
-                  accessibilityRole="tab"
-                  accessibilityState={{ selected }}
-                  onPress={() => {
-                    setOutfitCategory(category.value);
-                    const first = outfits.views.find((v) => categoryOf(v.def.id) === category.value);
-                    if (first) setSelOutfit(first.def.id);
-                  }}
-                  style={[styles.category, selected && styles.categoryOn]}
-                >
-                  <Text style={[styles.categoryText, selected && styles.categoryTextOn]}>{category.label}</Text>
-                </PressScale>
-              );
-            })}
+    // Гарчиг + stage + tab-ууд (1-р хүүхэд) дээр наалдаж, худалдаж авах товч доор тогтмол: зөвхөн жагсаалт scroll хийнэ
+    <Screen
+      tabBar
+      stickyHeaderIndices={[0]}
+      footer={
+        <>
+          {online ? null : <Text style={styles.offline}>{S.offline.shopNote}</Text>}
+          {message ? (
+            <Animated.Text entering={FadeIn} style={styles.message}>
+              {message}
+            </Animated.Text>
+          ) : null}
+          <ErrorText>{error || (!isBg ? outfits.error : '')}</ErrorText>
+          <PressScale
+            accessibilityRole="button"
+            accessibilityState={{ disabled: action.disabled, busy }}
+            disabled={action.disabled || busy}
+            onPress={onAction}
+            style={[styles.action, { backgroundColor: action.bg }]}
+          >
+            {busy ? <ActivityIndicator color={action.fg} /> : <Text style={[styles.actionText, { color: action.fg }]}>{action.title}</Text>}
+          </PressScale>
+        </>
+      }
+    >
+      <View style={styles.sticky}>
+        <View style={styles.header}>
+          <View style={{ flex: 1, gap: 4 }}>
+            <Text accessibilityRole="header" style={type.h1}>
+              {S.shop.title}
+            </Text>
+            <Text style={type.small}>{S.shop.subtitle}</Text>
           </View>
-        </ScrollView>
-      )}
+          <PressScale accessibilityRole="button" accessibilityLabel={S.bag.title} onPress={() => router.push('/bag')} style={styles.bagBtn}>
+            <Sprite id="nav2_bag_on_30x30" />
+          </PressScale>
+          <CountPill icon="btn_honey_24x24" value={bear.honey} label="Боргоцой" />
+        </View>
+
+        <View>
+          <PreviewStage
+            height={stageH}
+            bg={bgDef}
+            items={previewItems}
+            name={isBg ? S.shop.bgPreview(bgDef.name) : outfitDef.name}
+            alt={S.shop.previewAlt(outfitDef.name, bgDef.name)}
+          />
+          <MagicBurst active={!isBg && outfitDef.id === 'pestilence_staff'} castKey={castKey} />
+        </View>
+
+        <SegmentedTabs<Tab>
+          label={S.shop.tabs}
+          value={tab}
+          onChange={(next) => {
+            setTab(next);
+            if (next === 'outfit' && !visibleOutfits.some((v) => v.def.id === selOutfit)) {
+              const first = visibleOutfits[0];
+              if (first) setSelOutfit(first.def.id);
+            }
+          }}
+          options={[
+            { value: 'bg', label: S.shop.tabBg },
+            { value: 'outfit', label: S.shop.tabOutfit },
+          ]}
+        />
+
+        {tab === 'outfit' && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categories}>
+            <View accessibilityRole="tablist" accessibilityLabel="Хувцасны төрөл" style={styles.categoryRow}>
+              {CATEGORIES.map((category) => {
+                const selected = outfitCategory === category.value;
+                return (
+                  <PressScale
+                    key={category.value}
+                    accessibilityRole="tab"
+                    accessibilityState={{ selected }}
+                    onPress={() => {
+                      setOutfitCategory(category.value);
+                      const first = outfits.views.find((v) => categoryOf(v.def.id) === category.value);
+                      if (first) setSelOutfit(first.def.id);
+                    }}
+                    style={[styles.category, selected && styles.categoryOn]}
+                  >
+                    <Text style={[styles.categoryText, selected && styles.categoryTextOn]}>{category.label}</Text>
+                  </PressScale>
+                );
+              })}
+            </View>
+          </ScrollView>
+        )}
+      </View>
 
       {isBg ? (
         <Animated.View key="bg" entering={FadeInDown.duration(260)} style={{ gap: 12 }}>
@@ -256,8 +260,6 @@ export default function ShopScreen() {
             </View>
           ))}
         </Animated.View>
-      ) : isConcept ? (
-        <CostumeGrid selectedId={selConcept} onSelect={(id) => { setSelConcept(id); scrollRef.current?.scrollTo({ y: 0, animated: true }); }} />
       ) : (
         <Animated.View key="outfit" entering={FadeInDown.duration(260)} style={{ gap: 10 }}>
           {!outfits.loaded ? <ActivityIndicator color={colors.violet} /> : null}
@@ -293,6 +295,8 @@ export default function ShopScreen() {
 
 const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: 8 },
+  // доор гүйх жагсаалт stage-ийн булангаар харагдахгүй байх дэвсгэр (Screen-ий 20 padding-ийг нөхнө)
+  sticky: { backgroundColor: colors.paper, marginHorizontal: -20, paddingHorizontal: 20, paddingVertical: 8, marginBottom: -8, gap: 12, zIndex: 1 },
   bagBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
   row: { flexDirection: 'row', gap: 10 },
   categories: { paddingVertical: 4 },
@@ -301,8 +305,8 @@ const styles = StyleSheet.create({
   categoryOn: { backgroundColor: colors.indigo },
   categoryText: { color: colors.ink, fontFamily: fonts.semibold, fontSize: 13 },
   categoryTextOn: { color: colors.white },
-  action: { height: 44, paddingHorizontal: 16, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center', minWidth: 96 },
-  actionText: { fontFamily: fonts.bold, fontSize: 14 },
+  action: { height: 52, paddingHorizontal: 16, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
+  actionText: { fontFamily: fonts.bold, fontSize: 16 },
   message: { fontFamily: fonts.semibold, fontSize: 14, color: colors.okText, textAlign: 'center' },
   offline: { fontFamily: fonts.semibold, fontSize: 14, lineHeight: 19, color: colors.muted, textAlign: 'center' },
 });

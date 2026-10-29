@@ -1,4 +1,4 @@
-import type { ComponentRef, ReactNode, Ref } from 'react';
+import type { ReactNode } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -27,7 +27,8 @@ export function Screen({
   background = colors.paper,
   edges = ['top', 'left', 'right'],
   tabBar,
-  scrollRef,
+  stickyHeaderIndices,
+  footer,
 }: {
   children: ReactNode;
   scroll?: boolean;
@@ -38,20 +39,23 @@ export function Screen({
   edges?: Edge[];
   /** Хөвдөг доод цэсний доор контент нуугдахгүй байх зай */
   tabBar?: boolean;
-  scrollRef?: Ref<ComponentRef<typeof ScrollView>>;
+  /** scroll хийхэд дээр наалдаж үлдэх хүүхдүүдийн индекс */
+  stickyHeaderIndices?: number[];
+  /** scroll-ын доор үргэлж харагдах хэсэг (жишээ нь худалдаж авах товч); доод цэсний дээр байрлана */
+  footer?: ReactNode;
 }) {
   const barSpace = useTabBarSpace();
-  const bottom = tabBar ? { paddingBottom: barSpace + 16 } : null;
+  const bottom = tabBar && !footer ? { paddingBottom: barSpace + 16 } : null;
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: background }]} edges={edges}>
       <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {scroll ? (
           <ScrollView
-            ref={scrollRef}
             contentContainerStyle={[styles.content, bottom, contentStyle]}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}
+            stickyHeaderIndices={stickyHeaderIndices}
             refreshControl={
               onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} tintColor={colors.violet} /> : undefined
             }
@@ -61,6 +65,7 @@ export function Screen({
         ) : (
           <View style={[styles.content, styles.fill, bottom, contentStyle]}>{children}</View>
         )}
+        {footer ? <View style={[styles.footer, { paddingBottom: (tabBar ? barSpace : 0) + 10 }]}>{footer}</View> : null}
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -173,6 +178,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   content: { padding: 20, gap: 16, paddingBottom: 32 },
   fill: { flex: 1 },
+  footer: { paddingHorizontal: 20, paddingTop: 10, gap: 8 },
   card: { backgroundColor: colors.white, borderRadius: radius.card, padding: 16, gap: 12 },
   error: { fontFamily: fonts.semibold, fontSize: 14, color: colors.dangerText, textAlign: 'center' },
   label: { fontFamily: fonts.bold, fontSize: 13, color: colors.ink, letterSpacing: 0.3 },

@@ -34,12 +34,13 @@ function nextToEye(img: Img, x: number, y: number, x0: number, y0: number, cell:
  * crimson, saturated orange and gold remain exact. Dark outlines and eye irises
  * remain exact so every fur colour keeps the character's expression and silhouette.
  */
-export function recolorCostumeFur(src: Img, fur: Exclude<Fur, 'brown'>, cell: Cell = src): Img {
+/** `hat`: the witch's hat band sits above the forehead; costumes without a hat recolour the whole head */
+export function recolorCostumeFur(src: Img, fur: Exclude<Fur, 'brown'>, cell: Cell = src, hat = true): Img {
   if (src.w % cell.w || src.h % cell.h) throw new Error('Costume sheet must contain whole frames');
   const out: Img = { w: src.w, h: src.h, d: src.d.slice() };
   const cols = src.w / cell.w;
   const hats = Array.from({ length: cols * (src.h / cell.h) }, (_, n) =>
-    hatBandBottom(src, (n % cols) * cell.w, Math.floor(n / cols) * cell.h, cell));
+    hat ? hatBandBottom(src, (n % cols) * cell.w, Math.floor(n / cols) * cell.h, cell) : -2);
   for (let y = 0; y < src.h; y++)
     for (let x = 0; x < src.w; x++) {
       const i = (y * src.w + x) * 4;
@@ -49,7 +50,8 @@ export function recolorCostumeFur(src: Img, fur: Exclude<Fur, 'brown'>, cell: Ce
       if (!src.d[i + 3] || y - y0 <= hatBottom + 1) continue;
       const [h, s, l] = hsl([src.d[i], src.d[i + 1], src.d[i + 2]]);
       const cream = h >= 20 && h <= 36 && s >= 0.7 && l >= 0.69 && l <= 0.96;
-      const brown = h >= 14 && h <= 29 && s >= 0.25 && s <= 0.76 && l >= 0.13 && l < 0.69;
+      // the fur's dark brown outline too (leather and metal outlines are grey, not brown)
+      const brown = h >= 6 && h <= 29 && ((s >= 0.25 && s <= 1 && l >= 0.13 && l < 0.69) || (s >= 0.45 && l >= 0.05 && l < 0.13));
       if ((!cream && !brown) || (brown && l < 0.4 && nextToEye(src, x, y, x0, y0, cell))) continue;
       const target = cream ? lerp(CL, MUZZLE[fur]!, l) : lerp(L, FUR[fur], l);
       out.d.set(target, i);

@@ -562,6 +562,44 @@
       }
     }
   },
+  "vampire": {
+    "at": [
+      -6,
+      -14
+    ],
+    "loose": false,
+    "anchor": "body",
+    "fitted": {
+      "sheets": {
+        "thriving": "fitted_vampire_thriving_940x280",
+        "sleep": "fitted_vampire_sleep_970x260",
+        "happy": "fitted_vampire_happy_1260x260",
+        "tired": "fitted_vampire_tired_1092x260",
+        "welcome": "fitted_vampire_welcome_1320x1260",
+        "ouch": "fitted_vampire_ouch_1092x272",
+        "neglected": "fitted_vampire_neglected_1092x260"
+      }
+    }
+  },
+  "cyborg": {
+    "at": [
+      -6,
+      -14
+    ],
+    "loose": false,
+    "anchor": "body",
+    "fitted": {
+      "sheets": {
+        "thriving": "fitted_cyborg_thriving_940x280",
+        "sleep": "fitted_cyborg_sleep_970x260",
+        "happy": "fitted_cyborg_happy_1260x260",
+        "tired": "fitted_cyborg_tired_1092x260",
+        "welcome": "fitted_cyborg_welcome_1320x1260",
+        "ouch": "fitted_cyborg_ouch_1092x272",
+        "neglected": "fitted_cyborg_neglected_1092x260"
+      }
+    }
+  },
   "staff00": {
     "at": [
       -16,
