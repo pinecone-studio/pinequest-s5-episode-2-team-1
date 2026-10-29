@@ -299,7 +299,7 @@ Free plan дээр нэвтрэхэд CPU хязгаарын алдаа (1102) �
 - **Баавгайн дуу (`GAME.TUTOR.SPEECH`):** env-ийн `TUTOR_SPEECH` (`tts` | `live`) үүнийг дарна, жишээ нь local дээр
   `.env.local`-д `TUTOR_SPEECH=tts`, production-д `wrangler.jsonc`-ийн `vars`.
   - `'live'` (анхдагч): Live өөрөө ярина. Хамгийн хурдан, өдрийн хязгааргүй.
-  - `'tts'`: Live хүүхдийг сонсож бодно, хэлэх үгийг нь (transcript) `GEMINI_TTS_MODEL` (`gemini-3.8-flash-lite-tts`)
+  - `'tts'`: Live хүүхдийг сонсож бодно, хэлэх үгийг нь (transcript) `GEMINI_TTS_MODEL` (`gemini-3.8-flash-tts`)
     илүү байгалийн аялгаар дуу болгоно (`api/src/llm/tts.ts`, `speech.ts`). Хариу ~1 сек хойно ирнэ.
     - TTS алдаа (429 ч) өгөх эсвэл анхны дуу нь `GAME.TUTOR.TTS_START_MS` (4 сек)-д ирэхгүй бол дахин оролдож
       хүлээлгэхгүй, тэр ярилцлагын үлдсэнд шууд үнэгүй Live-ийн дуугаар ярина.
