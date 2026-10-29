@@ -33,8 +33,8 @@ export default function DuelLobby() {
 
   const mine = lobby.mine;
   const playing = mine?.status === 'accepted';
-  // Сорилт үүсгэж байхад сонгосон хичээлийн хүлээж буй тулаанууд эхэнд гарна.
-  const open = mine ? lobby.open : [...lobby.open].sort((a, b) => Number(b.subject === subject) - Number(a.subject === subject));
+  // Тулаан зөвхөн математикаар: бусад хичээлийн хуучин сорилтыг жагсаалтад харуулахгүй.
+  const open = lobby.open.filter((d) => d.subject === 'math');
   const matching = mine ? 0 : lobby.open.filter((d) => d.subject === subject && d.stake <= lobby.maxStake).length;
   return (
     <Screen tabBar>
