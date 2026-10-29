@@ -53,7 +53,9 @@ export function Screen({
           <ScrollView
             contentContainerStyle={[styles.content, bottom, contentStyle]}
             keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
+            // web: react-native-web нь 'on-drag'-ийг scroll бүрт keyboard хааж хэрэгжүүлдэг. Утасны browser keyboard
+            // нээгдэхэд input-ийг харагдуулах гэж өөрөө гүйлгэдэг тул нэр, нууц үг бичих гэхэд keyboard шууд хаагддаг байсан.
+            keyboardDismissMode={Platform.OS === 'web' ? 'none' : 'on-drag'}
             showsVerticalScrollIndicator={false}
             stickyHeaderIndices={stickyHeaderIndices}
             refreshControl={
