@@ -185,6 +185,8 @@ export default function PathScreen() {
   const doneAt = (i: number) => stageDone(path?.stages ?? {}, i, current);
   const nextStage = (i: number) => (doneAt(i) >= STAGES ? null : doneAt(i) + 1);
   const xp = me.questionsPerTask * me.xpPerCorrect;
+  /** Admin, шүүгч: бүх зангилаа, шат, хаалга нээлттэй */
+  const free = me.admin || me.judge;
 
   /** Сонгосон зангилааг эхлүүлнэ: хаалга бол тулаан, бусад нь тэр зангилааны дараагийн шат (admin бүгд давсан бол Суурь) */
   function start(i: number) {
@@ -194,8 +196,8 @@ export default function PathScreen() {
   }
 
   function onNode(i: number, _status: NodeStatus) {
-    // Admin: дурын хаалга руу шууд; бусад зангилааны popover-оос дурын шат руу
-    if (me?.admin && gateOf(n, i) >= 0) return router.push(`/task/${subject}?boss=${gateOf(n, i)}`);
+    // Admin, шүүгч: дурын хаалга руу шууд; бусад зангилааны popover-оос дурын шат руу
+    if ((me?.admin || me?.judge) && gateOf(n, i) >= 0) return router.push(`/task/${subject}?boss=${gateOf(n, i)}`);
     padNode.current = i;
     setPad(true);
     setSel(i);
@@ -211,11 +213,11 @@ export default function PathScreen() {
   const chapterNode = sel ?? visibleNode ?? current;
   const chapterTitle = layout.chapters.reduce<string | null>((title, chapter) => (chapter.start <= chapterNode ? chapter.title : title), null);
   const over = S.path.chapterOver(chapterIdx + 1);
-  // Popover: хаалга бол тулаан (зөвхөн одоогийнх), бусад нь дараагийн шат (түгжээтэй бол admin-аас бусад нь хаалттай)
+  // Popover: хаалга бол тулаан (зөвхөн одоогийнх), бусад нь дараагийн шат (түгжээтэй бол admin, шүүгчээс бусдад хаалттай)
   const selGate = sel === null ? -1 : gateOf(n, sel);
   const selNext = sel === null ? null : nextStage(sel);
   const canStart =
-    sel !== null && selStatus !== null && (selGate >= 0 ? selStatus === 'current' && bossFight : (selStatus !== 'lock' || !!me.admin) && (selNext !== null || !!me.admin));
+    sel !== null && selStatus !== null && (selGate >= 0 ? selStatus === 'current' && bossFight : (selStatus !== 'lock' || free) && (selNext !== null || free));
   const action =
     selStatus === null
       ? ''
@@ -225,9 +227,9 @@ export default function PathScreen() {
           : selStatus === 'lock'
             ? S.path.lockedBtn
             : S.path.doneBtn
-        : selStatus === 'lock' && !me.admin
+        : selStatus === 'lock' && !free
           ? S.path.lockedBtn
-          : selNext === null && !me.admin
+          : selNext === null && !free
             ? S.path.allStages
             : S.path.startStage(S.path.stages[(selNext ?? 1) - 1], xp);
 
@@ -242,7 +244,7 @@ export default function PathScreen() {
       >
         {/* хоосон газар дарахад түр карт хураагдана; зангилаа өөрийн дарилтыг авна */}
         <Pressable accessible={false} onPress={closeCard}>
-          <PathMap layout={layout} current={current} stages={path?.stages ?? {}} ring={ring} beaten={path?.bossesBeaten ?? 0} subject={subject} lessons={lessons} selected={sel} onNodePress={onNode} chests={path?.chests ?? []} onChest={(i) => router.push(`/chest?subject=${subject}&node=${i}`)} friends={mapFriends} onFriend={(code) => router.push(`/u/${code}`)} />
+          <PathMap layout={layout} current={current} stages={path?.stages ?? {}} ring={ring} beaten={path?.bossesBeaten ?? 0} subject={subject} lessons={lessons} selected={sel} onNodePress={onNode} chests={path?.chests ?? []} onChest={(i) => router.push(`/chest?subject=${subject}&node=${i}`)} friends={mapFriends} onFriend={(code) => router.push(`/u/${code}`)} open={me.judge} />
         </Pressable>
 
         {sel !== null && selNode && selUnit && selStatus ? (
@@ -253,7 +255,7 @@ export default function PathScreen() {
             arrowX={Math.max(24, Math.min(viewW - POPOVER_INSET * 2 - 24, selNode.x * k - POPOVER_INSET))}
             title={lessonTitle(subject, sel, lessons)}
             sub={
-              selStatus === 'lock' && !me.admin
+              selStatus === 'lock' && !free
                 ? S.path.locked
                 : selGate >= 0
                   ? BOSSES[selGate].soldier

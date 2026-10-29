@@ -90,6 +90,7 @@ export function PathMap({
   onChest,
   friends = [],
   onFriend,
+  open = false,
 }: {
   /** хичээлийн тооноос хамаарсан зам (pathLayout) */
   layout: PathLayout;
@@ -112,6 +113,8 @@ export function PathMap({
   /** ижил ангийн найзуудын баавгай тэдний зангилаан дээр; дарвал профайл */
   friends?: readonly MapFriend[];
   onFriend?: (code: string) => void;
+  /** шүүгч: түгжээтэй алхам цоожгүй, нээлттэй харагдана (дарвал эхлүүлнэ) */
+  open?: boolean;
 }) {
   const curTrail = trailIndex(layout, current);
   /** Хичээлийн зангилааны од = давсан шат (хаалга, түгжээтэй зангилаанд байхгүй) */
@@ -151,16 +154,16 @@ export function PathMap({
         {[...layout.nodes].sort((a, b) => a.y - b.y).map((n) => {
           const status = statusOf(n.i, current);
           const boss = n.kind === 'boss';
-          const tile = tileFor(n, status);
+          const tile = tileFor(n, status, open);
           const stars = starsAt(n.i);
           return (
             <Pressable
               key={n.i}
               accessibilityRole="button"
               accessibilityLabel={`${n.i + 1}. ${lessonTitle(subject, n.i, lessons)}, ${
-                status === 'done' ? S.path.done : status === 'current' ? S.path.youAreHere : S.path.locked
+                status === 'done' ? S.path.done : status === 'current' ? S.path.youAreHere : open ? S.path.open : S.path.locked
               }${stars ? `, ${S.path.stars(stars, STAGES)}` : ''}`}
-              accessibilityState={{ disabled: status === 'lock' }}
+              accessibilityState={{ disabled: status === 'lock' && !open }}
               onPress={() => onNodePress(n.i, status)}
               style={[
                 styles.abs,
@@ -201,7 +204,7 @@ export function PathMap({
         {layout.units.map((u, k) => (
           <UnitProps key={k} unit={u} layout={layout} current={current} />
         ))}
-        <MapChests layout={layout} current={current} opened={chests} onOpen={onChest} />
+        <MapChests layout={layout} current={current} opened={chests} onOpen={onChest} open={open} />
         <MapFriends layout={layout} current={current} friends={friends} onPress={(code) => onFriend?.(code)} />
         {layout.gates.map((_, g) => (
           <GateFigure key={g} g={g} layout={layout} beaten={g < beaten} />

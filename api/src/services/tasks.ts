@@ -29,7 +29,7 @@ import {
   refillPool,
 } from './pool';
 import { hasPendingRecovery, recoveryCertain, recoveryStatements } from './recovery';
-import { countTasksToday, getUserRow, loadMe, loadSubjectPaths, requireLife, spendUserLife, streakStateOf, syncStreak } from './users';
+import { allAccess, countTasksToday, getUserRow, loadMe, loadSubjectPaths, requireLife, spendUserLife, streakStateOf, syncStreak } from './users';
 
 /** Номын сан (замын урт номын хичээлийн тооноос хамаарна). */
 type Books = Pick<Bindings, 'BOOKS'>;
@@ -99,7 +99,7 @@ export async function startTask(
   const user = await getUserRow(db, userId);
   const tier = user.tier as Tier;
   const today = ubDay(now);
-  const admin = user.is_admin === 1;
+  const admin = allAccess(user);
   if (!admin && (await hasPendingRecovery(db, userId, subject))) {
     throw new ApiError(409, 'RECOVERY_REQUIRED', 'Эхлээд давтлагаа дуусгаарай');
   }

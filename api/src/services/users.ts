@@ -28,13 +28,17 @@ export interface UserRow {
   bear_look: string | null;
   created_at: number;
   is_admin: number;
+  is_judge: number;
   lives: number;
   lives_at: number | null;
   onboarding: string | null;
 }
 
 const USER_COLUMNS =
-  'id, username, display_name, grade, tier, xp, points, streak, last_streak_day, shield_held, shield_bought_day, shield_used_day, equipped, bear_look, created_at, is_admin, lives, lives_at, onboarding';
+  'id, username, display_name, grade, tier, xp, points, streak, last_streak_day, shield_held, shield_bought_day, shield_used_day, equipped, bear_look, created_at, is_admin, is_judge, lives, lives_at, onboarding';
+
+/** Тоглоомын бүх боломж нээлттэй: admin эсвэл шүүгч (хувцас, зам, шат, boss, хайрцаг; амь хасагдахгүй, давтлагагүй). */
+export const allAccess = (u: Pick<UserRow, 'is_admin' | 'is_judge'>) => u.is_admin === 1 || u.is_judge === 1;
 
 export async function getUserRow(db: D1Database, id: number): Promise<UserRow> {
   const row = await db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE id = ?`).bind(id).first<UserRow>();
@@ -200,6 +204,7 @@ export function buildMe(
     friendRequests,
     today,
     admin: user.is_admin === 1,
+    judge: user.is_judge === 1,
     lives: lives.lives,
     maxLives: GAME.LIVES.MAX,
     nextLifeAt: nextLifeAt(lives),
@@ -217,12 +222,12 @@ export const livesOf = (u: Pick<UserRow, 'lives' | 'lives_at'>): Lives => ({ liv
 /** users.lives, lives_at-д бичих утга */
 export const livesArgs = (l: Lives) => [l.lives, l.at] as const;
 
-/** Буруу хариултын нэг амийг хасна; аль хэдийн 0 бол доош оруулахгүй. Admin хэрэглэгчийн амийг хасахгүй. */
+/** Буруу хариултын нэг амийг хасна; аль хэдийн 0 бол доош оруулахгүй. Admin, шүүгчийн амийг хасахгүй. */
 export async function spendUserLife(db: D1Database, userId: number, now = Date.now()): Promise<boolean> {
   // Уншсан утга өөрчлөгдөөгүй үед л бичнэ (compare-and-set): зэрэг ирсэн буруу хариулт бүр нэг амь хасна.
   for (let attempt = 0; attempt < 5; attempt++) {
     const user = await getUserRow(db, userId);
-    if (user.is_admin === 1) return false;
+    if (allAccess(user)) return false;
     const read = livesOf(user);
     const lives = livesNow(read, now);
     if (lives.lives <= 0) return false;
@@ -236,11 +241,11 @@ export async function spendUserLife(db: D1Database, userId: number, now = Date.n
 }
 
 /**
- * Амьгүй бол (admin биш) NO_LIVES: нөхөгдтөл бодлого, давтлага, баавгайтай ярилцах хаалттай. Одоогийн амийг буцаана.
+ * Амьгүй бол (admin, шүүгч биш) NO_LIVES: нөхөгдтөл бодлого, давтлага, баавгайтай ярилцах хаалттай. Одоогийн амийг буцаана.
  */
 export function requireLife(user: UserRow, now = Date.now()): Lives {
   const lives = livesNow(livesOf(user), now);
-  if (lives.lives <= 0 && user.is_admin !== 1) throw new ApiError(409, 'NO_LIVES', 'Амь дууссан. Шинэ амь нөхөгдөхийг хүлээнэ үү');
+  if (lives.lives <= 0 && !allAccess(user)) throw new ApiError(409, 'NO_LIVES', 'Амь дууссан. Шинэ амь нөхөгдөхийг хүлээнэ үү');
   return lives;
 }
 

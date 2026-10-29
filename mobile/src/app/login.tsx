@@ -5,6 +5,7 @@ import { errorText } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
 import { AuthField, type AuthMood, AuthShell } from '@/components/AuthShell';
 import { Button } from '@/components/Button';
+import { JudgeButton } from '@/components/JudgeButton';
 import { BackButton, ErrorText } from '@/components/ui';
 import { colors, fonts } from '@/constants/theme';
 import { S } from '@/i18n/strings';
@@ -92,6 +93,7 @@ export default function LoginScreen() {
       />
       <ErrorText>{error}</ErrorText>
       <Button title={S.auth.login} onPress={submit} loading={busy} disabled={!filled} />
+      <JudgeButton />
     </AuthShell>
   );
 }

@@ -64,7 +64,7 @@ export async function recoveryStatements(db: D1Database, userId: number, taskId:
   const task = await db
     .prepare(
       `SELECT t.subject, t.lesson_ref, t.path_lessons, t.node, t.stage, u.grade FROM tasks t JOIN users u ON u.id = t.user_id
-       WHERE t.id = ? AND t.user_id = ? AND u.is_admin = 0 AND t.kind = 'path'`,
+       WHERE t.id = ? AND t.user_id = ? AND u.is_admin = 0 AND u.is_judge = 0 AND t.kind = 'path'`,
     )
     .bind(taskId, userId)
     .first<{ subject: Subject; lesson_ref: string | null; path_lessons: number | null; node: number | null; stage: number | null; grade: number }>();

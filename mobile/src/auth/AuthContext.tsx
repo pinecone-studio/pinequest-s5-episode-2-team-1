@@ -17,6 +17,8 @@ interface AuthValue {
   signIn(username: string, password: string): Promise<void>;
   /** анги нь onboarding-ийн асуултад (тэр хүртэл сервер түр утгатай) */
   signUp(username: string, password: string): Promise<void>;
+  /** Шүүгчээр орох: бүртгэлгүйгээр бүх боломж нээлттэй шинэ бүртгэл (POST /auth/judge). */
+  signInAsJudge(): Promise<void>;
   signOut(): Promise<void>;
   /** Серверээс профайлыг дахин уншина. */
   refreshMe(): Promise<Me | null>;
@@ -116,6 +118,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [finishAuth],
   );
 
+  const signInAsJudge = useCallback(async () => {
+    await finishAuth(await api<AuthResponse>('/auth/judge', { method: 'POST' }));
+  }, [finishAuth]);
+
   const signOut = useCallback(async () => {
     try {
       await api('/auth/logout', { method: 'POST' });
@@ -160,6 +166,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       me,
       signIn,
       signUp,
+      signInAsJudge,
       signOut,
       refreshMe,
       setMe: setMeState,
@@ -168,7 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setBootAttempt((n) => n + 1);
       },
     }),
-    [status, me, signIn, signUp, signOut, refreshMe],
+    [status, me, signIn, signUp, signInAsJudge, signOut, refreshMe],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1285,6 +1285,7 @@ export const sprites = {
   tile_pedestal_end_72x54: { source: require('../../assets/sprites/tile_pedestal_end_72x54.png'), width: 72, height: 54 },
   tile_pedestal_sapling_72x54: { source: require('../../assets/sprites/tile_pedestal_sapling_72x54.png'), width: 72, height: 54 },
   tile_step_lock_48x36: { source: require('../../assets/sprites/tile_step_lock_48x36.png'), width: 48, height: 36 },
+  tile_step_open_48x36: { source: require('../../assets/sprites/tile_step_open_48x36.png'), width: 48, height: 36 },
   tile_step_cur_56x44: { source: require('../../assets/sprites/tile_step_cur_56x44.png'), width: 56, height: 44 },
   map_bear_small_26x46: { source: require('../../assets/sprites/map_bear_small_26x46.png'), width: 26, height: 46 },
   map_bear_small_black_26x46: { source: require('../../assets/sprites/map_bear_small_black_26x46.png'), width: 26, height: 46 },

@@ -284,10 +284,14 @@ export const statusOf = (i: number, current: number): NodeStatus => (i < current
 
 export const trailIndex = (layout: PathLayout, i: number) => layout.trail.findIndex((t) => t.i === i);
 
-/** Алхмын төлөв: дууссан = ногоон ✓, одоогийн = шар хүрээтэй тод, түгжээтэй = бүдэг саарал + цоож; boss = 1.5× том арал. */
-export function tileFor(node: PathNode, status: NodeStatus): SpriteKey {
+/**
+ * Алхмын төлөв: дууссан = ногоон ✓, одоогийн = шар хүрээтэй тод, түгжээтэй = бүдэг саарал + цоож (open: шүүгчид
+ * цоожгүй); boss = 1.5× том арал.
+ */
+export function tileFor(node: PathNode, status: NodeStatus, open = false): SpriteKey {
   if (node.kind === 'boss') return status === 'done' ? 'tile_pedestal_sapling_72x54' : 'tile_pedestal_end_72x54';
-  return status === 'done' ? 'tile_stone_done_48x36' : status === 'current' ? 'tile_step_cur_56x44' : 'tile_step_lock_48x36';
+  if (status === 'lock') return open ? 'tile_step_open_48x36' : 'tile_step_lock_48x36';
+  return status === 'done' ? 'tile_stone_done_48x36' : 'tile_step_cur_56x44';
 }
 
 /** Зангилааны номын хичээл (boss эсвэл номгүй бол null). */
