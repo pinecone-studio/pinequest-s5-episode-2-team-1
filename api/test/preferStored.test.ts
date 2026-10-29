@@ -12,9 +12,12 @@ describe('shouldGenerateTemplates', () => {
     expect(shouldGenerateTemplates([general], 25, 5, 1)).toBe(false);
   });
   it('Суурийн DB асуулт дутвал template нөхнө', () => expect(shouldGenerateTemplates([general], 4, 5, 1)).toBe(true));
-  it('Дунд, Ахисан шат DB-ийн тооноос үл хамааран template ашиглана', () => {
-    expect(shouldGenerateTemplates([general], 25, 5, 2)).toBe(true);
-    expect(shouldGenerateTemplates([general], 25, 5, 3)).toBe(true);
+  it('Дунд, Ахисан шат тэр хүндийн бэлэн бодлогыг түрүүлж, дутвал л template нөхнө', () => {
+    expect(shouldGenerateTemplates([general], 25, 5, 2)).toBe(false);
+    expect(shouldGenerateTemplates([general], 25, 5, 3)).toBe(false);
+    expect(shouldGenerateTemplates([special], 8, 5, 3)).toBe(false);
+    expect(shouldGenerateTemplates([general], 4, 5, 2)).toBe(true);
+    expect(shouldGenerateTemplates([special], 0, 5, 3)).toBe(true);
   });
   it('шатгүй урсгалд тусгай template үргэлж, ерөнхий template зөвхөн DB дутвал', () => {
     expect(shouldGenerateTemplates([special], 25, 5)).toBe(true);
