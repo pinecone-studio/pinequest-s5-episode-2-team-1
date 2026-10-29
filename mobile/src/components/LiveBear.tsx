@@ -122,6 +122,24 @@ const COSTUME_SHEETS: Record<CostumeId, Record<BearAnim, SpriteKey>> = {
     ouch: 'costume_blossom_ninja_ouch_960x688',
     welcome: 'costume_blossom_ninja_welcome_1800x1032',
   },
+  police: {
+    thriving: 'costume_police_thriving_1200x344',
+    happy: 'costume_police_happy_960x688',
+    tired: 'costume_police_tired_960x688',
+    neglected: 'costume_police_neglected_960x688',
+    sleep: 'costume_police_sleep_1200x344',
+    ouch: 'costume_police_ouch_960x688',
+    welcome: 'costume_police_welcome_1800x1032',
+  },
+  doctor: {
+    thriving: 'costume_doctor_thriving_1200x344',
+    happy: 'costume_doctor_happy_960x688',
+    tired: 'costume_doctor_tired_960x688',
+    neglected: 'costume_doctor_neglected_960x688',
+    sleep: 'costume_doctor_sleep_1200x344',
+    ouch: 'costume_doctor_ouch_960x688',
+    welcome: 'costume_doctor_welcome_1800x1032',
+  },
 };
 
 /** scripts/home-sprites.ts: хөдөлгөөн бүрийн нэг мөр sheet (PixelLab animate_image), 2× */
