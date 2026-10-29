@@ -8,7 +8,7 @@ import golems from './golems.json';
 import world from './world.json';
 
 // Адал явдлын газрын зураг: 3 тоглоомын ертөнцөөр дээрээс доош явна (хулууны ой → чулуун балгас, гол → цасан уул).
-// Номын бүлгүүдийг эдгээр ертөнц дотор тусдаа banner, зайгаар харуулна. Зангилаа бүр сурах бичгийн нэг хичээл
+// Номын бүлгийг дээд толгой харуулна. Зангилаа бүр сурах бичгийн нэг хичээл
 // (GET /me/lessons/:subject; ном байхгүй бол доорх TITLES), ертөнц бүрийн төгсгөлд boss байна.
 
 export type NodeKind = 'stone' | 'sapling' | 'gift' | 'myst' | 'chest' | 'boss';
@@ -158,7 +158,7 @@ export interface PathUnit {
   gift: number;
   myst: number;
   boss: number;
-  /** ертөнцийн дэвсгэрийн дээд зах ба номын бүлгийн зайг нэмсэн өндөр */
+  /** ертөнцийн дэвсгэрийн дээд зах ба өндөр */
   top: number;
   /** нууц хайрцагтай зангилаанууд (3-р бүлэг): бэлэг, хэцүү сорилын тэмдгийн оронд */
   chests: number[];
@@ -169,8 +169,6 @@ export interface PathBookChapter {
   title: string;
   /** эхний хичээлийн map node */
   start: number;
-  /** banner-ын босоо төв */
-  y: number;
   /** аль тоглоомын ертөнцөд байгаагийн индекс */
   unit: number;
 }
@@ -184,7 +182,7 @@ export interface PathLayout {
   units: PathUnit[];
   /** API-аас ирсэн номын бүлгүүд; номгүй замд хоосон */
   chapters: PathBookChapter[];
-  /** номын бүлгийн завсрыг оруулсан нийт өндөр */
+  /** нийт өндөр */
   height: number;
   /** тулааны хаалганы зангилаа (BOSSES ижил дараалалтай) */
   gates: number[];
@@ -199,12 +197,10 @@ const PAD_TOP = 70;
 const PAD_FIRST = 220;
 /** 2-р бүлгийн зүүн/баруун гарын зангилаа голдоо ойр: хамгаалагчид газрын зургийн хоёр захад зогсоно (PathMap) */
 const GUARD_NODE_DX = 20;
-/** boss болон түүний доорх шошгонд зай: дараагийн бүлгийн баннер хүртэл */
+/** boss болон түүний доорх шошгонд зай: дараагийн ертөнц хүртэл */
 const PAD_BOTTOM = 112;
 /** Олон хичээлтэй замд зангилаа, од, дарах талбай давхцахгүй хамгийн бага босоо зай. */
 const MIN_NODE_GAP = 54;
-/** Номын хоёр бүлгийн хоорондох banner-ын зай. */
-const BOOK_CHAPTER_GAP = 72;
 
 function chapterStarts(n: number, lessons: readonly BookLesson[]): { title: string; start: number }[] {
   if (lessons.length !== n) return [];
@@ -238,12 +234,10 @@ export function pathLayout(n: number, lessons: readonly BookLesson[] = []): Path
     const baseHeight = chapterHeight(MAP_CHAPTERS[u]);
     const boss = gates[UNIT_GATE[u]];
     const start = u === 0 ? 0 : units[u - 1].boss + 1;
-    const breaks = starts.slice(1).filter((chapter) => chapter.start > start && chapter.start <= boss).map((chapter) => chapter.start);
     const m = boss - start;
-    const contentHeight = Math.max(baseHeight, topPad + m * MIN_NODE_GAP + PAD_BOTTOM);
-    const height = contentHeight + breaks.length * BOOK_CHAPTER_GAP;
+    const height = Math.max(baseHeight, topPad + m * MIN_NODE_GAP + PAD_BOTTOM);
     const y0 = top + topPad;
-    const y1 = top + contentHeight - PAD_BOTTOM;
+    const y1 = top + height - PAD_BOTTOM;
     const at = (f: number) => start + Math.min(m - 1, Math.round(f * m));
     const unit = { start, sapling: at(3 / 15), gift: at(9 / 15), myst: at(12 / 15), boss, top, height, chests: chests.filter((c) => c >= start && c < boss) };
     units.push(unit);
@@ -258,17 +252,11 @@ export function pathLayout(n: number, lessons: readonly BookLesson[] = []): Path
             ? MAP_W / 2 + (BOSSES[g].role === 'left' ? GUARD_NODE_DX : -GUARD_NODE_DX)
             : Math.round(Math.max(X_MIN, Math.min(X_MAX, MAP_W / 2 + ZIG * Math.sin((k * Math.PI) / 4))));
       const i = start + k;
-      const chapterOffset = breaks.filter((chapterStart) => chapterStart <= i).length * BOOK_CHAPTER_GAP;
-      nodes.push({ i, x, y: Math.round(m ? y0 + ((y1 - y0) * k) / m + chapterOffset : y1), kind: kind(i) });
+      nodes.push({ i, x, y: Math.round(m ? y0 + ((y1 - y0) * k) / m : y1), kind: kind(i) });
     }
     top += height;
   }
-  const chapters = starts.map(({ title, start }) => ({
-    title,
-    start,
-    y: Math.round(start === 0 ? nodes[0].y / 2 : (nodes[start - 1].y + nodes[start].y) / 2),
-    unit: unitOf(n, start),
-  }));
+  const chapters = starts.map(({ title, start }) => ({ title, start, unit: unitOf(n, start) }));
   return { n, nodes, trail: nodes.map(({ x, y, i }) => ({ x, y, i })), units, chapters, height: top, gates };
 }
 
