@@ -159,7 +159,11 @@ export function speechBudget(bearMs: number, wrapping: boolean, spokeThisTurn: b
   return bearMs >= GAME.TUTOR.BEAR_SPEECH_MS - GAME.TUTOR.WRAP_UP_MS ? 'wrap' : 'continue';
 }
 
-export function liveSetup(model: string, systemPrompt: string) {
+/**
+ * pushToTalk: хүүхэд товч дарж байх хооронд л ярина (LIVE_ACTIVITY_START/END). Gemini-ийн автомат яриа илрүүлэлтийг
+ * унтраана: гадны чимээг хүүхдийн яриа гэж сонсож хариулахгүй.
+ */
+export function liveSetup(model: string, systemPrompt: string, pushToTalk = false) {
   return {
     setup: {
       model: `models/${model}`,
@@ -172,7 +176,9 @@ export function liveSetup(model: string, systemPrompt: string) {
       tools: [FINISH_LESSON_TOOL],
       // Хүүхэд ярьж дууссаныг ингэж чимээгүй болмогц тооцно: бага бол баавгай хурдан хариулах ч бодож
       // зогссон хүүхдийг тасалж болзошгүй.
-      realtimeInputConfig: { automaticActivityDetection: { silenceDurationMs: GAME.TUTOR.END_OF_SPEECH_MS } },
+      realtimeInputConfig: {
+        automaticActivityDetection: pushToTalk ? { disabled: true } : { silenceDurationMs: GAME.TUTOR.END_OF_SPEECH_MS },
+      },
       inputAudioTranscription: { languageCodes: [GAME.TUTOR.LANGUAGE] },
       outputAudioTranscription: {},
     },
@@ -189,6 +195,9 @@ export function liveAudio(base64Pcm: string) {
 }
 
 export const LIVE_AUDIO_END = { realtimeInput: { audioStreamEnd: true } };
+/** Push-to-talk: хүүхэд товч дарлаа / суллалаа (энэ хооронд ирсэн дуу нь хүүхдийн нэг ээлж). */
+export const LIVE_ACTIVITY_START = { realtimeInput: { activityStart: {} } };
+export const LIVE_ACTIVITY_END = { realtimeInput: { activityEnd: {} } };
 
 export type LiveEvent =
   | { kind: 'ready' }

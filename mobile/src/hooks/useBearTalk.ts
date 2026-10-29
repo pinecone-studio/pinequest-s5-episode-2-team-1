@@ -7,6 +7,7 @@ import { curtainOpenAt } from '@/components/LeafCurtain';
 import { S } from '@/i18n/strings';
 import { MOUTH_STEP, type MouthLevel, mouthLevels } from '@/lib/mouth';
 import { pcmToWav } from '@/lib/wav';
+import { HOLD_MIN_MS, REPLY_MS } from './talkTiming';
 
 /** Сервер mic-ийн дууг 16 kHz гэж Gemini-д дамжуулна; баавгайн дуу 24 kHz ирнэ (shared/types TutorServerMsg). */
 const MIC_RATE = 16_000;
@@ -19,8 +20,12 @@ const START_BYTES = BEAR_RATE * 2 * 0.25;
  */
 const PLAYBACK_MODE = { playsInSilentMode: true, allowsRecording: false, interruptionMode: 'doNotMix' } as const;
 
-/** 'tap': browser хүүхдийн даралтгүйгээр дуу асаахыг зөвшөөрсөнгүй (зөвхөн web); дарвал restart-аар дахин эхэлнэ. */
-export type TalkPhase = 'connecting' | 'tap' | 'bear' | 'listening' | 'ended';
+/**
+ * 'tap': browser хүүхдийн даралтгүйгээр дуу асаахыг зөвшөөрсөнгүй (зөвхөн web); дарвал restart-аар дахин эхэлнэ.
+ * 'listening': хүүхдийн ээлж, товч дарж ярина; 'talking': товч дарсаар ярьж байна; 'thinking': суллалаа, баавгай
+ * хариугаа бэлдэж байна.
+ */
+export type TalkPhase = 'connecting' | 'tap' | 'bear' | 'listening' | 'talking' | 'thinking' | 'ended';
 
 /**
  * Баавгайтай дуугаар ярилцах (GET /tutor/ws). Баавгайн дууг хэсэг хэсгээр нь WAV болгож дараалан тоглуулна:
@@ -37,10 +42,16 @@ export function useBearTalk(questionId: number | undefined) {
   const [ready, setReady] = useState(false);
   /** Баавгайн ам: тоглож буй хэсгийн тэр агшны чанга байдал */
   const [mouth, setMouth] = useState<MouthLevel>(0);
+  /** Товчийг хэт богино дарсан: "дарсаар байгаад ярь" гэж сануулна. */
+  const [hint, setHint] = useState(false);
 
   const wsRef = useRef<WebSocket | null>(null);
   const micRef = useRef(false);
+  /** Push-to-talk (useBearTalk.web.ts-тэй ижил): 'pending' үеийн дууг earlyRef-д хадгална. */
+  const talkRef = useRef<'idle' | 'pending' | 'on'>('idle');
+  const earlyRef = useRef<ArrayBuffer[]>([]);
   const interruptRef = useRef<(() => void) | null>(null);
+  const holdRef = useRef<{ start: () => void; end: () => void } | null>(null);
 
   // Хэсэг дууссаныг (didJustFinish) хурдан мэдэж дараагийнхыг тоглуулахын тулд status-ыг ойр ойрхон авна.
   const player = useAudioPlayer(null, { updateInterval: 100 });
@@ -50,7 +61,9 @@ export function useBearTalk(questionId: number | undefined) {
     encoding: 'int16',
     onBuffer: (b) => {
       const ws = wsRef.current;
-      if (micRef.current && ws?.readyState === WebSocket.OPEN) ws.send(b.data);
+      if (!micRef.current || talkRef.current === 'idle') return;
+      if (talkRef.current === 'pending') earlyRef.current.push(b.data);
+      else if (ws?.readyState === WebSocket.OPEN) ws.send(b.data);
     },
   });
 
@@ -90,7 +103,14 @@ export function useBearTalk(questionId: number | undefined) {
       if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
     };
 
+    let holdTimer: ReturnType<typeof setTimeout> | undefined;
+    let replyTimer: ReturnType<typeof setTimeout> | undefined;
+    setHint(false);
+
     const stopMic = () => {
+      talkRef.current = 'idle';
+      earlyRef.current = [];
+      clearTimeout(holdTimer);
       if (!micRef.current) return;
       micRef.current = false;
       try {
@@ -114,7 +134,7 @@ export function useBearTalk(questionId: number | undefined) {
 
     const micOn = async () => {
       if (!alive || micRef.current) return;
-      setKidText('');
+      clearTimeout(replyTimer);
       setPhase('listening');
       micRef.current = true;
       try {
@@ -170,6 +190,7 @@ export function useBearTalk(questionId: number | undefined) {
     const onAudio = (buf: ArrayBuffer) => {
       if (!alive || drop) return;
       turnDone = false;
+      clearTimeout(replyTimer);
       if (micRef.current) {
         stopMic();
         send({ type: 'mic_off' });
@@ -240,6 +261,39 @@ export function useBearTalk(questionId: number | undefined) {
       void micOn();
     };
 
+    holdRef.current = {
+      start: () => {
+        if (!alive || !micRef.current || talkRef.current !== 'idle') return;
+        talkRef.current = 'pending';
+        earlyRef.current = [];
+        setHint(false);
+        setKidText('');
+        setPhase('talking');
+        holdTimer = setTimeout(() => {
+          if (talkRef.current !== 'pending') return;
+          talkRef.current = 'on';
+          send({ type: 'talk_start' });
+          if (ws?.readyState === WebSocket.OPEN) for (const b of earlyRef.current) ws.send(b);
+          earlyRef.current = [];
+        }, HOLD_MIN_MS);
+      },
+      end: () => {
+        if (!alive || talkRef.current === 'idle') return;
+        clearTimeout(holdTimer);
+        if (talkRef.current === 'pending') {
+          talkRef.current = 'idle';
+          earlyRef.current = [];
+          setHint(true);
+          setPhase('listening');
+          return;
+        }
+        send({ type: 'talk_end' });
+        stopMic();
+        setPhase('thinking');
+        replyTimer = setTimeout(() => void micOn(), REPLY_MS);
+      },
+    };
+
     const sub = player.addListener('playbackStatusUpdate', (status) => {
       if (status.didJustFinish) onSegmentEnd();
     });
@@ -276,7 +330,9 @@ export function useBearTalk(questionId: number | undefined) {
       alive = false;
       closedByUs = true;
       clearInterval(lips);
+      clearTimeout(replyTimer);
       interruptRef.current = null;
+      holdRef.current = null;
       sub.remove();
       stopMic();
       try {
@@ -305,8 +361,12 @@ export function useBearTalk(questionId: number | undefined) {
     kidText,
     topic,
     notice,
+    hint,
     /** Баавгай ярьж байхад: зогсоогоод хүүхдийн mic-ийг асаана. */
     interrupt: () => interruptRef.current?.(),
+    /** Хүүхэд товч дарж ярина: дарахад эхэлж, суллахад баавгай хариулна. */
+    holdStart: () => holdRef.current?.start(),
+    holdEnd: () => holdRef.current?.end(),
     restart: () => setAttempt((n) => n + 1),
   };
 }

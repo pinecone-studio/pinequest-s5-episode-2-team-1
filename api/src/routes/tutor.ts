@@ -7,6 +7,8 @@ import { ApiError, parseId } from '../lib/errors';
 import { socketUserId } from '../lib/session';
 import {
   isQuotaClose,
+  LIVE_ACTIVITY_END,
+  LIVE_ACTIVITY_START,
   LIVE_AUDIO_END,
   LIVE_URL,
   liveAudio,
@@ -37,6 +39,8 @@ tutorRoutes.get('/ws', async (c) => {
   const key = c.env.GEMINI_API_KEY ?? '';
   const raw = c.req.query('questionId');
   const questionId = raw === undefined ? undefined : parseId(raw);
+  // Шинэ апп хүүхдийг товч дарж ярьдаг болгосон (?ptt=1); хуучин (кэшэлсэн) апп Gemini-ийн автомат илрүүлэлтээр.
+  const pushToTalk = c.req.query('ptt') === '1';
 
   const [client, server] = Object.values(new WebSocketPair());
   server.accept();
@@ -51,6 +55,7 @@ tutorRoutes.get('/ws', async (c) => {
       ttsModel: speechMode(c.env.TUTOR_SPEECH) === 'tts' && ttsAvailable() ? c.env.GEMINI_TTS_MODEL || 'gemini-3.8-flash-tts' : null,
       // Live-ийг үнэгүй багцын түлхүүрээр, TTS-ийг (үнэгүй багцад өдөрт 10 хүсэлт) billing-тэй түлхүүрээр ажиллуулж болно.
       ttsKey: c.env.GEMINI_TTS_API_KEY || key,
+      pushToTalk,
       session: {
         start: () => startTutorSession(c.env.DB, userId),
         end: (id, counted, bearMs) =>
@@ -92,6 +97,7 @@ async function relay(
     model: string;
     ttsModel: string | null;
     ttsKey: string;
+    pushToTalk: boolean;
     /** Хэрэглэгчийн өдрийн / зэрэг ярилцлагын хязгаар (services/tutor). */
     session: { start: () => Promise<number>; end: (id: number, counted: boolean, bearMs: number) => void };
     load: () => ReturnType<typeof loadTutorContext>;
@@ -267,7 +273,7 @@ async function relay(
 
   // Gemini Live заримдаа эхлэхдээ "1011 Internal error"-оор хаагддаг: бэлэн болохоос өмнө бол нэг удаа дахин холбогдоно.
   let retried = false;
-  const setup = JSON.stringify(liveSetup(opts.model, tutorSystemPrompt(ctx)));
+  const setup = JSON.stringify(liveSetup(opts.model, tutorSystemPrompt(ctx), opts.pushToTalk));
   const reconnect = async () => {
     try {
       upstream = await connectLive(opts.key);
@@ -431,7 +437,9 @@ async function relay(
     } catch {
       return;
     }
-    if (msg?.type === 'mic_off' && ready) sendUp(LIVE_AUDIO_END);
+    if (msg?.type === 'mic_off' && ready && !opts.pushToTalk) sendUp(LIVE_AUDIO_END);
+    if (msg?.type === 'talk_start' && ready && opts.pushToTalk) sendUp(LIVE_ACTIVITY_START);
+    if (msg?.type === 'talk_end' && ready && opts.pushToTalk) sendUp(LIVE_ACTIVITY_END);
     // Баавгайн ээлж клиентэд аль хэдийн дууссан бол (сүүлийн дуу нь тоглогдож байсан) тасалж хаях юм алга.
     if (msg?.type === 'interrupt' && ready && clientTurn) {
       dropTurn();

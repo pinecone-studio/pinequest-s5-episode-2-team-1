@@ -59,6 +59,17 @@ export default function TutorScreen() {
   const chalk =
     talk.phase === 'ended' ? (talk.notice ?? '') : talk.phase === 'tap' ? S.tutor.tapHint : talk.phase === 'connecting' ? '' : fixTranscript(talk.bearText) || '…';
   const listening = talk.phase === 'listening';
+  const talking = talk.phase === 'talking';
+  const thinking = talk.phase === 'thinking';
+  const status = talking
+    ? S.tutor.holding
+    : listening
+      ? talk.hint
+        ? S.tutor.holdShort
+        : S.tutor.holdTip
+      : thinking
+        ? S.tutor.thinking
+        : S.tutor.speaking;
   const topic = talk.topic ? talk.topic.prompt : questionId ? null : S.tutor.recent;
 
   return (
@@ -111,11 +122,11 @@ export default function TutorScreen() {
       </View>
 
       <View style={[styles.controls, { paddingBottom: insets.bottom + 16 }]}>
-        {talk.phase === 'bear' || listening ? (
+        {talk.phase === 'bear' || listening || talking || thinking ? (
           <View style={styles.status}>
             <View style={styles.statusRow}>
-              <View style={[styles.dot, { backgroundColor: listening ? colors.lime : SOFT }]} />
-              <Text style={styles.statusText}>{listening ? S.tutor.listening : S.tutor.speaking}</Text>
+              <View style={[styles.dot, { backgroundColor: talking ? colors.lime : listening ? colors.lemon : SOFT }]} />
+              <Text style={styles.statusText}>{status}</Text>
             </View>
             {talk.kidText ? (
               <Text style={styles.kid} numberOfLines={2}>
@@ -133,6 +144,7 @@ export default function TutorScreen() {
           ) : (
             <>
               {talk.phase === 'bear' ? <Button title={S.tutor.interrupt} variant="lime" onPress={talk.interrupt} style={styles.main} /> : null}
+              {listening || talking ? <HoldToTalk active={talking} onStart={talk.holdStart} onEnd={talk.holdEnd} /> : null}
               {talk.phase === 'tap' ? <Button title={S.tutor.tap} variant="lime" onPress={talk.restart} style={styles.main} /> : null}
               <Button title={S.tutor.finish} variant="white" onPress={() => goBack()} style={styles.action} />
             </>
@@ -145,6 +157,28 @@ export default function TutorScreen() {
     </View>
   );
 }
+
+/**
+ * Хүүхэд дарсаар байгаад ярина (push-to-talk): дарж байх хооронд л дуу баавгай руу явна, гадны чимээ орохгүй.
+ * Web дээр удаан дарахад сонголт, цэс гарахгүй, хуудас гүйхгүй (тасарвал onPressOut = илгээнэ).
+ */
+function HoldToTalk({ active, onStart, onEnd }: { active: boolean; onStart: () => void; onEnd: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={S.tutor.hold}
+      accessibilityHint={S.tutor.holdTip}
+      onPressIn={onStart}
+      onPressOut={onEnd}
+      delayLongPress={60_000}
+      style={[styles.main, styles.hold, active && styles.holdActive, NO_SELECT]}
+    >
+      <Text style={[styles.holdText, NO_SELECT]}>{active ? S.tutor.holding : S.tutor.hold}</Text>
+    </Pressable>
+  );
+}
+
+const NO_SELECT = { userSelect: 'none', WebkitUserSelect: 'none', WebkitTouchCallout: 'none', touchAction: 'none' } as object;
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: WALL },
@@ -178,4 +212,7 @@ const styles = StyleSheet.create({
   // lime товч том үсэг, зайтай тул илүү өргөн
   main: { flex: 1.8, paddingHorizontal: 12 },
   action: { flex: 1, paddingHorizontal: 12 },
+  hold: { minHeight: 60, borderRadius: radius.pill, backgroundColor: colors.lime, alignItems: 'center', justifyContent: 'center' },
+  holdActive: { backgroundColor: colors.lemon, transform: [{ scale: 1.04 }] },
+  holdText: { fontFamily: fonts.extrabold, fontSize: 16, color: colors.ink, textAlign: 'center' },
 });

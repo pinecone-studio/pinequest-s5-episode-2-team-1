@@ -50,8 +50,9 @@ export function setUnauthorizedHandler(handler: (() => void) | null) {
 }
 
 /** Баавгайтай ярилцах (Gemini Live relay). questionId байхгүй бол сүүлд алдсан бодлогуудын тухай. */
+/** Баавгайтай ярилцах socket: хүүхэд товч дарж ярина (ptt=1, api/src/routes/tutor.ts). */
 export function openTutorSocket(questionId?: number): WebSocket {
-  const query = questionId === undefined ? '' : `?questionId=${questionId}`;
+  const query = questionId === undefined ? '?ptt=1' : `?questionId=${questionId}&ptt=1`;
   return new WebSocket(`${API_URL.replace(/^http/, 'ws')}/tutor/ws${query}`, ['bearer', session.token ?? '']);
 }
 
