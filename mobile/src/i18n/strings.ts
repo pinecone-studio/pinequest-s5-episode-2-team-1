@@ -294,6 +294,7 @@ export const S = {
     tagline: 'Өдөр бүр шинийг сурч,\nбаавгайтайгаа хамт өсөөрэй.',
     start: 'Эхлэх',
     haveAccount: 'Надад бүртгэл байгаа',
+    judge: 'Шүүгчээр орох',
   },
   onboarding: {
     personalized: 'Чамд тохирсон сурах зам',

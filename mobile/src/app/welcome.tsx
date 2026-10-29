@@ -5,6 +5,7 @@ import Animated, { SlideInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Button } from '@/components/Button';
 import { IntroReveal, introPlayed } from '@/components/IntroReveal';
+import { JudgeButton } from '@/components/JudgeButton';
 import { LiveBear } from '@/components/LiveBear';
 import { Logo } from '@/components/Logo';
 import { Enter, Motion, Sprite, ZoomEnter } from '@/components/pixel';
@@ -69,6 +70,7 @@ export default function WelcomeScreen() {
             <Enter index={3} style={styles.actions}>
               <Button title={S.welcome.start} onPress={() => router.push('/register')} />
               <Button title={S.welcome.haveAccount} variant="ghost" onPress={() => router.push('/login')} style={styles.outline} />
+              <JudgeButton />
             </Enter>
           </View>
         </>
