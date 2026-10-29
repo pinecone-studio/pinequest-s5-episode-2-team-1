@@ -4,6 +4,7 @@ import { type ComponentProps, type ReactNode, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Animated, { Easing, Extrapolation, interpolate, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import Svg, { Circle, Path, Polygon, Rect } from 'react-native-svg';
+import { BgArt } from '@/components/BgArt';
 import { ColorFade, Motion } from '@/components/pixel';
 import { colors, fonts, halo, radius } from '@/constants/theme';
 import type { BgDef } from '@/lib/pixelBear/catalog';
@@ -185,7 +186,9 @@ export function QrIsland({
     <View style={{ gap: 8 }}>
       <Pressable accessibilityRole="button" accessibilityLabel={flat ? qrLabel : islandLabel} onPress={toggle} style={styles.stage}>
         <ColorFade color={bg.hex} style={StyleSheet.absoluteFill} />
-        <ColorFade color={bg.dark ? halo.night : halo.light} style={styles.halo} />
+        <BgArt bg={bg} />
+        {/* зураг, сансрын дугуй дээр гэрэл хэрэггүй; Код дээр баавгайг тоонуудаас ялгана */}
+        {bg.image || bg.scene === 'space' ? null : <ColorFade color={bg.halo ?? (bg.dark ? halo.night : halo.light)} style={styles.halo} />}
         {layer(slabStyle, <Rect x={0} y={0} width={size} height={size} fill={C.slab} />)}
         {layer(groundStyle, <Rect x={0} y={0} width={size} height={size} fill={C.ground} />)}
         {layer(groundStyle, <Path d={d} fill={C.side} />)}

@@ -2,6 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { type ComponentRef, useEffect, useRef, useState } from 'react';
 import { type GestureResponderEvent, Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Rect } from 'react-native-svg';
+import { BgArt } from '@/components/BgArt';
 import { LiveBear } from '@/components/LiveBear';
 import { AnimatedBar, ColorFade, Motion, Pop, Sprite, ZoomEnter } from '@/components/pixel';
 import { colors, fonts, halo as haloColors, radius } from '@/constants/theme';
@@ -45,7 +46,9 @@ export function BearStage({
       {/* товшилтын байрлал (locationX/Y) stage-ээс тооцогдохын тулд дотор талын зүйлс хүрэлт авахгүй */}
       <View style={StyleSheet.absoluteFill} pointerEvents="none">
         <ColorFade color={bg.hex} style={StyleSheet.absoluteFill} />
-        <ColorFade color={bg.dark ? haloColors.night : haloColors.light} style={styles.halo} />
+        <BgArt bg={bg} />
+        {/* зураг, сансрын дугуй дээр гэрэл хэрэггүй; Код дээр баавгайг тоонуудаас ялгана */}
+        {bg.image || bg.scene === 'space' ? null : <ColorFade color={bg.halo ?? (bg.dark ? haloColors.night : haloColors.light)} style={styles.halo} />}
         <Decor state={view.state} ink={ink} dark={!!bg.dark} />
 
         {cfg.floatShadow ? (

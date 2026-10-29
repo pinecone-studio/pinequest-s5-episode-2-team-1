@@ -1,7 +1,9 @@
 import { StyleSheet, Text, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { BgArt } from '@/components/BgArt';
 import { PressScale, Sprite } from '@/components/pixel';
 import { colors, fonts } from '@/constants/theme';
+import type { BgDef } from '@/lib/pixelBear/catalog';
 
 export interface SwatchStatus {
   text: string;
@@ -16,6 +18,7 @@ export interface SwatchStatus {
 export function BgSwatch({
   name,
   hex,
+  bg,
   selected,
   equipped,
   status,
@@ -24,6 +27,8 @@ export function BgSwatch({
 }: {
   name: string;
   hex: string;
+  /** зурагтай/pixel үзэгдэлтэй дэвсгэр бол swatch-д нь харуулна */
+  bg?: BgDef;
   selected: boolean;
   equipped: boolean;
   status: SwatchStatus;
@@ -33,6 +38,7 @@ export function BgSwatch({
   return (
     <PressScale accessibilityRole="button" accessibilityLabel={`${label}, ${status.a11y ?? status.text}`} accessibilityState={{ selected }} onPress={onPress} style={styles.item}>
       <View style={[styles.block, { backgroundColor: hex, borderColor: selected ? colors.ink : 'transparent', opacity: status.locked ? 0.55 : 1 }]}>
+        {bg ? <BgArt bg={bg} /> : null}
         {equipped ? (
           <View style={styles.check}>
             <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={colors.white} strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round">
@@ -56,7 +62,7 @@ export function BgSwatch({
 
 const styles = StyleSheet.create({
   item: { flex: 1, gap: 5 },
-  block: { height: 64, borderRadius: 18, borderWidth: 3 },
+  block: { height: 64, borderRadius: 18, borderWidth: 3, overflow: 'hidden' },
   check: {
     position: 'absolute',
     right: 4,

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { BgArt } from '@/components/BgArt';
 import { LiveBear } from '@/components/LiveBear';
 import { ColorFade } from '@/components/pixel';
 import { colors, fonts, halo, radius } from '@/constants/theme';
@@ -16,7 +17,9 @@ export function PreviewStage({ bg, items, name, alt, action }: { bg: BgDef; item
     <View style={[styles.stage, { backgroundColor: bg.hex }]} >
       <View style={styles.scene}>
       <ColorFade color={bg.hex} style={StyleSheet.absoluteFill} />
-      <ColorFade color={bg.dark ? halo.night : halo.light} style={styles.halo} />
+      <BgArt bg={bg} />
+      {/* зураг, сансрын дугуй дээр гэрэл хэрэггүй; Код дээр баавгайг тоонуудаас ялгана */}
+      {bg.image || bg.scene === 'space' ? null : <ColorFade color={bg.halo ?? (bg.dark ? halo.night : halo.light)} style={styles.halo} />}
       <View style={styles.shadow} />
       <View style={[styles.bear, items.includes('warrior_helmet') && { top: 6 }]}>
         {/* дэлгүүрт орж ирсэн хүнтэй мэндэлж даллана; item солиход баавгай тасралтгүй хөдөлсөөр, зөвхөн item солигдоно */}
