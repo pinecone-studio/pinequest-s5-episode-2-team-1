@@ -8,7 +8,7 @@ import { newTx } from '../lib/db';
 import { ApiError } from '../lib/errors';
 import { bookLessons } from './lessons';
 import { findTaskQuestion } from './tasks';
-import { getUserRow, livesArgs, livesOf, loadBag, loadMe, loadSubjectPaths } from './users';
+import { allAccess, getUserRow, livesArgs, livesOf, loadBag, loadMe, loadSubjectPaths } from './users';
 
 // Цүнх: нууц хайрцгаас гарсан хэрэглэгдэхүүн (shared/loot.ts). Шагнал бүр серверт нэг л удаа олгогдоно.
 
@@ -33,7 +33,7 @@ export async function openChest(env: Bindings, userId: number, subject: Subject,
   const n = pathLessons(book?.lessons.length ?? 0);
   if (!chestNodes(n).includes(node)) throw new ApiError(404, 'NOT_FOUND', 'Энд хайрцаг алга');
   const path = (await loadSubjectPaths(db, userId))[subject];
-  if (user.is_admin !== 1 && node >= currentNode(n, path.level, path.bossesBeaten)) {
+  if (!allAccess(user) && node >= currentNode(n, path.level, path.bossesBeaten)) {
     throw new ApiError(409, 'CHEST_LOCKED', 'Энэ хичээлийг давж байж хайрцаг нээгдэнэ');
   }
 

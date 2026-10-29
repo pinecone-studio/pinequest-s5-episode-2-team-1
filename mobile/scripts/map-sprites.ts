@@ -3,6 +3,7 @@
  *
  *   tile_step_lock / tile_step_cur — tile_stone_lock-оос ("+10"-гүй): бүдэг саарал + цоож,
  *                                                     зөөлөн шар хүрээтэй одоогийн чулуу
+ *   tile_step_open          — tile_step_lock цоожгүй: шүүгчид нээлттэй (давж амжаагүй) алхам
  *   map_bear_small(_blink)  — map_bear-ийг 3/4 болгосон (26×46): замын баавгай
  *   map_world_1             — reference/river_map_bg.png (2-р бүлэг, Хадан аваргын бүс); дээд зах нь map_world_2 руу ууссан
  *   map_world_0             — reference/pumpkin_map_bg.png (1-р бүлэг, Хулуун шидтэний бүс); дээд зах нь map_world_1 руу dither-ээр ууссан
@@ -79,6 +80,8 @@ const lockPal: Record<string, RGB> = {
   D: hex('#a77a2c'),
   k: hex('#2b2640'),
 };
+// шүүгчийн замд түгжээгүй ч давж амжаагүй алхам: ижил бүдэг чулуу, цоожгүй
+save('tile_step_open', clone(lock));
 PADLOCK.forEach((row, y) => [...row].forEach((ch, x) => ch !== '.' && put(lock, 8 + x, 0 + y, lockPal[ch])));
 save('tile_step_lock', lock);
 

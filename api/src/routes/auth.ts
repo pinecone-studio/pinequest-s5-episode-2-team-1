@@ -75,8 +75,8 @@ authRoutes.post('/register', async (c) => {
 
 /**
  * Шүүгчээр орох (JUDGE_LOGIN = 'on'): нэр, нууц үг, асуулга, профайл бөглөхгүйгээр шинэ шүүгчийн бүртгэл үүсгэнэ.
- * Admin тул дэлгүүрийн бүх хувцас, замын бүх цэг, шат, boss нээлттэй, амь хасагдахгүй. Шүүгч бүр тусдаа бүртгэлтэй:
- * бие биеийнхээ явцыг өөрчлөхгүй. Нууц үг нь санамсаргүй тул энэ төхөөрөмжөөс гарвал дахин нэвтрэхгүй.
+ * Шүүгч (is_judge) тул дэлгүүрийн бүх хувцас, замын бүх цэг, шат, boss нээлттэй, амь хасагдахгүй (admin-ийн хэрэгсэлгүй). Шүүгч бүр
+ * тусдаа бүртгэлтэй: бие биеийнхээ явцыг өөрчлөхгүй. Нууц үг нь санамсаргүй тул энэ төхөөрөмжөөс гарвал дахин нэвтрэхгүй.
  */
 authRoutes.post('/judge', async (c) => {
   if (c.env.JUDGE_LOGIN !== 'on') throw new ApiError(404, 'NOT_FOUND', 'Шүүгчийн нэвтрэлт хаалттай байна');
@@ -99,7 +99,7 @@ authRoutes.post('/judge', async (c) => {
   await db.batch([
     db
       .prepare(
-        `INSERT INTO users (username, password_hash, display_name, grade, tier, points, equipped, created_at, onboarding, is_admin)
+        `INSERT INTO users (username, password_hash, display_name, grade, tier, points, equipped, created_at, onboarding, is_judge)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
       )
       .bind(

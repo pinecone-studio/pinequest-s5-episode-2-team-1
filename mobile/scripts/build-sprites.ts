@@ -135,7 +135,7 @@ for (const n of ['map_cloud_a', 'map_cloud_b', 'map_ring', 'map_butterfly_sheet'
 for (const n of ['map_gift', 'map_qblock', 'map_sapling']) M[n] = [1];
 for (const n of ['tile_stone_done', 'tile_pedestal_end', 'tile_pedestal_sapling']) M[n] = [2];
 // замын алхмууд ба жижиг баавгай (scripts/map-sprites.ts): баавгай 3/4 хэмжээтэй эх зургаас 1× → 46 dp өндөр
-for (const n of ['tile_step_lock', 'tile_step_cur']) M[n] = [2];
+for (const n of ['tile_step_lock', 'tile_step_open', 'tile_step_cur']) M[n] = [2];
 for (const n of ['map_bear_small', 'map_bear_small_blink']) M[n] = [1];
 // адал явдлын газрын зураг (docs/design/pixel-bear/tools/mapgen_world.py), тулааны баавгай (scripts/bear-sprites.ts)
 // 3-р бүлэг «Нарны элсэн хаант улс» (scripts/sunsands-sprites.ts): газрын зураг, тулааны дэвсгэр 2×; хайрцаг, хэрэглэгдэхүүн

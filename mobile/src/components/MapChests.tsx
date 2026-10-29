@@ -15,12 +15,15 @@ export function MapChests({
   current,
   opened,
   onOpen,
+  open = false,
 }: {
   layout: PathLayout;
   current: number;
   /** нээсэн хайрцгийн зангилаанууд (SubjectPath.chests) */
   opened: readonly number[];
   onOpen: (node: number) => void;
+  /** шүүгч: хичээлээ давахаас өмнө ч нээж болно */
+  open?: boolean;
 }) {
   return (
     <>
@@ -28,7 +31,7 @@ export function MapChests({
         .filter((n) => n.kind === 'chest')
         .map((n) => {
           const done = opened.includes(n.i);
-          const ready = !done && n.i < current;
+          const ready = !done && (open || n.i < current);
           // зам голдоо ойртох талд: зангилаа зүүн талд бол баруун тийш
           const left = n.x < 195 ? n.x + 22 : n.x - 22 - HIT;
           const label = done ? S.path.chestOpened : ready ? S.path.chestReady : S.path.chestLocked;
