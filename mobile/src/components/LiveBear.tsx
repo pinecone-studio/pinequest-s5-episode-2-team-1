@@ -234,17 +234,20 @@ export function LiveBear({
   items: worn = [],
   label,
   px = 2,
+  still,
 }: {
   anim: BearAnim;
   w: number;
   items?: ItemId[];
   label?: string;
+  /** хөдөлгөөнгүй нэг frame (олон жижиг карт) */
+  still?: boolean;
   /** sheet-ийн pixel → dp (sprite-ийн томруулалт, build-sprites.ts); shortcut: item-үүд 2×-д л бүртгэлтэй */
   px?: number;
 }) {
   const costume = worn.find((id): id is CostumeId => id in costumes);
   const meta = costume ? costumes[costume][anim] : home[anim];
-  const frame = useTagPlayer(meta, ['in'], 'loop');
+  const frame = useTagPlayer(meta, ['in'], 'loop', still);
   const head = home[anim].frames[frame].head; // a costume has no more frames than the bear
   const prev = useRef(head);
   useEffect(() => {
