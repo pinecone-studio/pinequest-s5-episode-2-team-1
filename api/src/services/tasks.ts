@@ -180,11 +180,18 @@ export async function startTask(
     }
   }
 
-  // Бэлэн бодлогоос шатны хүндэд ойрыг түрүүлж; шатанд template-ээс үүссэн мөрийг сонгохгүй.
+  // Бэлэн бодлогоос шатны хүндэд ойрыг түрүүлж; шатанд template-ээс үүссэн мөрийг сонгохгүй. Template дутуу
+  // үүссэн бол тэднийг хаялгүй, үлдсэнийг л бэлэн бодлогоор (эсвэл ангийн сангаас) нөхнө.
+  const madeRows = made.map((id) => ({ id }));
   const picked =
     made.length >= GAME.QUESTIONS_PER_TASK
-      ? made.map((id) => ({ id }))
-      : await pickQuestions(db, userId, tier, subject, lesson, GAME.QUESTIONS_PER_TASK, level, staged);
+      ? madeRows
+      : [
+          ...(await pickQuestions(db, userId, tier, subject, lesson, GAME.QUESTIONS_PER_TASK, level, staged))
+            .filter((q) => !made.includes(q.id))
+            .slice(0, GAME.QUESTIONS_PER_TASK - made.length),
+          ...madeRows,
+        ];
   if (picked.length < GAME.QUESTIONS_PER_TASK) {
     ctx.waitUntil(refillPool(env, tier, subject, { grade: user.grade }));
     throw new ApiError(503, 'NO_QUESTIONS', 'Асуулт хүрэлцэхгүй байна');
