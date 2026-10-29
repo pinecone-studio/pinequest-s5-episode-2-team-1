@@ -281,9 +281,12 @@ function teamAlive(s: DuelState, team: DuelTeam): boolean {
   return membersOf(s, team).some((id) => connected(s, id) || s.dropDeadline[key(id)] !== undefined);
 }
 
-/** Холбоотой бүх тоглогч энэ асуултад хариулсан (салсан тоглогчийг хүлээхгүй). */
+/**
+ * Бүх тоглогч энэ асуултад хариулсан. Багийн тулаанд салсан гишүүнийг хүлээхгүй; 1 vs 1-д түр салсан
+ * өрсөлдөгч буцаж ирээд хариулж болно.
+ */
 function allAnswered(s: DuelState): boolean {
-  return s.players.every((p) => s.attempts[key(p.id)] || !connected(s, p.id));
+  return s.players.every((p) => s.attempts[key(p.id)] || (isTeamDuel(s) && !connected(s, p.id)));
 }
 
 /** Хугацаа нь өнгөрсөн бүх deadline-ийг дарааллаар нь боловсруулна. */
