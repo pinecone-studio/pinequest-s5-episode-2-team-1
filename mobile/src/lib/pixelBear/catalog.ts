@@ -94,6 +94,7 @@ export type OutfitId =
   | 'brown_deel'
   | 'khuur'
   | 'archer'
+  | 'leaf_ninja'
   | 'cowboy_hat'
   | 'white_headscarf'
   | 'brown_boots'
@@ -139,6 +140,7 @@ export const OUTFITS: OutfitDef[] = [
   // PixelLab costumes first, so the newest outfits are the first the shop shows
   { id: 'vampire', name: 'Цус сорогч', tile: '#C9B8E8', imgTop: -26, card: 'outfit_vampire_82x140', item: 'vampire' },
   { id: 'witch', name: 'Шулам', tile: '#C9B8E8', imgTop: -26, card: 'outfit_witch_82x140', item: 'witch' },
+  { id: 'leaf_ninja', name: 'Навчны нинжа', tile: '#F7A97E', imgTop: -26, card: 'outfit_leaf_ninja_82x140', item: 'leaf_ninja' },
   { id: 'wrestler', name: 'Бөх', tile: '#BCC8DE', imgTop: -26, card: 'outfit_wrestler_82x140', item: 'wrestler' },
   { id: 'brown_deel', name: 'Хүрэн дээл', tile: '#DDBB8E', imgTop: -26, card: 'outfit_brown_deel_82x140', item: 'brown_deel' },
   { id: 'khuur', name: 'Морин хуурч', tile: '#D4F55E', imgTop: -26, card: 'outfit_khuur_82x140', item: 'khuur' },
@@ -241,7 +243,7 @@ const ITEM_SLOT: Record<ItemId, Slot> = {
   hiphop_chain: 'neck',
   batman_suit: 'body', mongol_deel: 'body', sport_hoodie: 'body', pirate_shirt: 'body', wizard_robe: 'body',
   demon_cape: 'body', ninja_jacket: 'body', straw_shirt: 'body', vampire: 'body', witch: 'body', cyborg: 'body',
-  mummy: 'body', liquid_cop: 'body', robot: 'body', wrestler: 'body', brown_deel: 'body', khuur: 'body', archer: 'body',
+  mummy: 'body', liquid_cop: 'body', robot: 'body', wrestler: 'body', brown_deel: 'body', khuur: 'body', archer: 'body', leaf_ninja: 'body',
   puss_cape: 'back', puss_belt: 'waist', sport_shorts: 'legs', ninja_pants: 'legs', straw_shorts: 'legs',
   brown_boots: 'feet', pirate_boots: 'feet', mongol_boots: 'feet', sport_sneakers: 'feet',
   demon_boots: 'feet', ninja_sandals: 'feet', straw_sandals: 'feet',
@@ -261,7 +263,7 @@ export function outfitSlot(id: OutfitId): Slot | null {
 }
 
 /** a costume with its own motions (LiveBear) is the whole bear: it takes every place, so nothing is worn with it */
-const WHOLE_ITEMS: readonly ItemId[] = ['witch', 'cyborg', 'mummy', 'liquid_cop', 'robot', 'wrestler', 'brown_deel', 'khuur', 'archer'];
+const WHOLE_ITEMS: readonly ItemId[] = ['witch', 'cyborg', 'mummy', 'liquid_cop', 'robot', 'wrestler', 'brown_deel', 'khuur', 'archer', 'leaf_ninja'];
 const ALL_SLOTS = [...new Set(Object.values(ITEM_SLOT)), 'base'];
 const slotsOf = (id: OutfitId): string[] =>
   outfitItems(outfitById(id)).flatMap((it) => (WHOLE_ITEMS.includes(it) ? ALL_SLOTS : [ITEM_SLOT[it], ...(ALSO_COVERS[it] ?? []), ...(BASE_ITEMS.includes(it) ? ['base'] : [])]));
