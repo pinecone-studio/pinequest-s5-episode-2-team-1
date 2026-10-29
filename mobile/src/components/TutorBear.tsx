@@ -23,7 +23,7 @@ const PX = FRAME_W / tutor.frameSize.w;
  */
 export function TutorBear({ phase, mouth, label }: { phase: TalkPhase; mouth: MouthLevel; label: string }) {
   const talking = phase === 'bear';
-  const frame = useTagPlayer(tutor, talking ? ['teachIn'] : [], talking ? [...GESTURES] : phase === 'listening' ? 'listen' : 'idle');
+  const frame = useTagPlayer(tutor, talking ? ['teachIn'] : [], talking ? [...GESTURES] : phase === 'listening' || phase === 'talking' ? 'listen' : 'idle');
   const sheet = Math.floor(frame / PER_SHEET);
   const anchor = (tutor.frames[frame] as { mouth?: number[] }).mouth;
 

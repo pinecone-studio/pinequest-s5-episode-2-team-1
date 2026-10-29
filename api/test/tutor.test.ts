@@ -87,6 +87,11 @@ describe('liveSetup', () => {
     expect(setup.tools).toEqual([FINISH_LESSON_TOOL]);
     expect(setup.outputAudioTranscription).toEqual({});
   });
+
+  it('push-to-talk: Gemini-ийн автомат яриа илрүүлэлт унтарна (гадны чимээг сонсохгүй)', () => {
+    expect(liveSetup('m', 'SYS').setup.realtimeInputConfig.automaticActivityDetection).toEqual({ silenceDurationMs: 600 });
+    expect(liveSetup('m', 'SYS', true).setup.realtimeInputConfig.automaticActivityDetection).toEqual({ disabled: true });
+  });
 });
 
 describe('liveEvents', () => {

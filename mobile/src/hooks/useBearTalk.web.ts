@@ -4,6 +4,7 @@ import { openTutorSocket } from '@/api/client';
 import { curtainOpenAt } from '@/components/LeafCurtain';
 import { S } from '@/i18n/strings';
 import { MOUTH_STEP, type MouthLevel, mouthLevels } from '@/lib/mouth';
+import { HOLD_MIN_MS, REPLY_MS } from './talkTiming';
 import type { TalkPhase } from './useBearTalk';
 
 /**
@@ -61,7 +62,10 @@ export function useBearTalk(questionId: number | undefined) {
   const [ready, setReady] = useState(false);
   /** Баавгайн ам: тоглож буй хэсгийн тэр агшны чанга байдал */
   const [mouth, setMouth] = useState<MouthLevel>(0);
+  /** Товчийг хэт богино дарсан: "дарсаар байгаад ярь" гэж сануулна. */
+  const [hint, setHint] = useState(false);
   const interruptRef = useRef<(() => void) | null>(null);
+  const holdRef = useRef<{ start: () => void; end: () => void } | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -73,6 +77,14 @@ export function useBearTalk(questionId: number | undefined) {
     /** mic-ийн дууг илгээж байна / хүүхдийн ээлж (mic нээгдэж байгаа ч байж болно) */
     let mic = false;
     let wantMic = false;
+    /**
+     * Push-to-talk: 'pending' = товч дарсан ч HOLD_MIN_MS болоогүй (дууг early-д хадгална), 'on' = серверт илгээж байна.
+     * Товч дараагүй үед mic нээлттэй ч дуу явахгүй: гадны чимээг баавгай сонсохгүй.
+     */
+    let talk: 'idle' | 'pending' | 'on' = 'idle';
+    let early: ArrayBuffer[] = [];
+    let holdTimer: ReturnType<typeof setTimeout> | undefined;
+    let replyTimer: ReturnType<typeof setTimeout> | undefined;
     let media: MediaStream | null = null;
     let source: MediaStreamAudioSourceNode | null = null;
     let tap: AudioWorkletNode | null = null;
@@ -102,6 +114,7 @@ export function useBearTalk(questionId: number | undefined) {
     setTopic(null);
     setNotice(null);
     setReady(false);
+    setHint(false);
 
     const send = (msg: TutorClientMsg) => {
       if (ws?.readyState === WebSocket.OPEN) ws.send(JSON.stringify(msg));
@@ -152,12 +165,16 @@ export function useBearTalk(questionId: number | undefined) {
     const micOff = () => {
       wantMic = false;
       mic = false;
+      talk = 'idle';
+      early = [];
+      clearTimeout(holdTimer);
       releaseMic();
     };
 
     const end = (message: string) => {
       if (!alive) return;
       clearTimeout(stall);
+      clearTimeout(replyTimer);
       setNotice(message);
       setPhase('ended');
       micOff();
@@ -168,8 +185,8 @@ export function useBearTalk(questionId: number | undefined) {
 
     const micOn = async () => {
       if (!alive || wantMic) return;
+      clearTimeout(replyTimer);
       wantMic = true;
-      setKidText('');
       const ok = await openMic();
       // Хүлээх хооронд баавгай дахин ярьж эхэлсэн эсвэл дэлгэц хаагдсан.
       if (!alive || !wantMic) {
@@ -191,7 +208,7 @@ export function useBearTalk(questionId: number | undefined) {
     const onAudio = (buf: ArrayBuffer) => {
       if (!alive || drop || !outCtx || !speaker) return;
       turnDone = false;
-      if (mic) send({ type: 'mic_off' });
+      clearTimeout(replyTimer);
       if (wantMic) micOff();
       if (outCtx.state !== 'running') void outCtx.resume().catch(() => {});
       setPhase('bear');
@@ -266,6 +283,41 @@ export function useBearTalk(questionId: number | undefined) {
       void micOn();
     };
 
+    holdRef.current = {
+      // Дарсан: HOLD_MIN_MS дарсаар байвал л серверт "ярьж эхэллээ" гэж, хадгалсан дуутай нь илгээнэ.
+      start: () => {
+        if (!alive || !mic || talk !== 'idle') return;
+        talk = 'pending';
+        early = [];
+        setHint(false);
+        setKidText('');
+        setPhase('talking');
+        holdTimer = setTimeout(() => {
+          if (talk !== 'pending') return;
+          talk = 'on';
+          send({ type: 'talk_start' });
+          if (ws?.readyState === WebSocket.OPEN) for (const b of early) ws.send(b);
+          early = [];
+        }, HOLD_MIN_MS);
+      },
+      // Сулласан: баавгай хариулна (mic хаагдаж, дуу чанга тоглоно). Хэт богино бол юу ч илгээхгүй.
+      end: () => {
+        if (!alive || talk === 'idle') return;
+        clearTimeout(holdTimer);
+        if (talk === 'pending') {
+          talk = 'idle';
+          early = [];
+          setHint(true);
+          setPhase('listening');
+          return;
+        }
+        send({ type: 'talk_end' });
+        micOff();
+        setPhase('thinking');
+        replyTimer = setTimeout(() => void micOn(), REPLY_MS);
+      },
+    };
+
     void (async () => {
       try {
         // Зөвшөөрлийг эхэнд авна; mic-ийг баавгай мэндэлж дууссаны дараа л дахин нээнэ.
@@ -303,7 +355,7 @@ export function useBearTalk(questionId: number | undefined) {
       let filled = 0;
       tap = new AudioWorkletNode(micCtx, 'bear-mic-tap');
       tap.port.onmessage = (e: MessageEvent<Float32Array>) => {
-        if (!mic) {
+        if (!mic || talk === 'idle') {
           filled = 0;
           return;
         }
@@ -314,7 +366,9 @@ export function useBearTalk(questionId: number | undefined) {
           filled += n;
           chunk = chunk.subarray(n);
           if (filled === batch) {
-            if (ws?.readyState === WebSocket.OPEN) ws.send(toPcm16(pending, inputRate));
+            const pcm = toPcm16(pending, inputRate);
+            if (talk === 'pending') early.push(pcm);
+            else if (ws?.readyState === WebSocket.OPEN) ws.send(pcm);
             pending = new Float32Array(batch);
             filled = 0;
           }
@@ -365,7 +419,9 @@ export function useBearTalk(questionId: number | undefined) {
       closedByUs = true;
       clearInterval(lips);
       clearTimeout(stall);
+      clearTimeout(replyTimer);
       interruptRef.current = null;
+      holdRef.current = null;
       micOff();
       silence();
       ws?.close();
@@ -382,7 +438,11 @@ export function useBearTalk(questionId: number | undefined) {
     kidText,
     topic,
     notice,
+    hint,
     interrupt: () => interruptRef.current?.(),
+    /** Хүүхэд товч дарж ярина: дарахад эхэлж, суллахад баавгай хариулна. */
+    holdStart: () => holdRef.current?.start(),
+    holdEnd: () => holdRef.current?.end(),
     restart: () => setAttempt((n) => n + 1),
   };
 }
