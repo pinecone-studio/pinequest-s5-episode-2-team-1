@@ -56,12 +56,13 @@ export async function call<T>(
     headers?: Record<string, string>;
     /** Хариу хэдэн минут хүлээгдэж болох хүсэлт (Gemini OCR): fetch-ийн 5 минутын хязгааргүй. */
     slow?: boolean;
-    /** Даалгавар эхлүүлэхийн өмнө амийг дүүргэхгүй (амийн шалгалтад). */
+    /** Даалгавар, салаа зам эхлүүлэхийн өмнө амийг дүүргэхгүй (амийн шалгалтад). */
     keepLives?: boolean;
   } = {},
 ): Promise<T> {
-  // Сценарийн хэрэглэгчид олон даалгавар хийдэг: зангилаа руу орох бүрт амь хасагддаг тул эхлүүлэхийн өмнө дүүргэнэ.
-  if (method === 'POST' && path === '/tasks' && opts.token && !opts.keepLives && ADMIN_TOKEN) {
+  // Сценарийн хэрэглэгчид олон даалгавар хийж зориуд алддаг: буруу хариулт бүрт амь хасагддаг тул эхлүүлэхийн өмнө дүүргэнэ.
+  const starts = method === 'POST' ? path === '/tasks' || path === '/tasks/review' : method === 'GET' && path.startsWith('/recovery/');
+  if (starts && opts.token && !opts.keepLives && ADMIN_TOKEN) {
     const { me } = await call<{ me: { id: number } }>('GET', '/me', { token: opts.token });
     await call('POST', `/admin/debug/users/${me.id}/lives`, { admin: true, body: { lives: 5 } });
   }

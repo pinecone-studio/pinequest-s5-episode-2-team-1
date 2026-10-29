@@ -72,7 +72,7 @@ async function tasksScenario() {
   const subjects = ['math', 'mongolian'];
   let started = (await me(a.token)).todayTasks;
   while (started < 11) {
-    await doTask(a.token, subjects[started % 3], false);
+    await doTask(a.token, subjects[started % subjects.length], false);
     started++;
   }
   const manyMe = await me(a.token);
@@ -128,17 +128,29 @@ async function livesScenario() {
     call('POST', `/admin/debug/users/${u.me.id}/lives`, { admin: true, body: { lives, livesAt } });
   check(u.me.lives === 5 && u.me.maxLives === 5 && u.me.nextLifeAt === null, 'Шинэ хэрэглэгч 5 амьтай');
   const t = await call<TaskDto>('POST', '/tasks', { token: u.token, body: { subject: 'math' }, keepLives: true });
+  check((await me(u.token)).lives === 5, 'Даалгавар эхлэхэд амь хасагдахгүй');
+  const answer = async (i: number, right: boolean) => {
+    const ci = await correctIndex(t.questions[i].id);
+    return call<AnswerResponse>('POST', `/tasks/${t.id}/answer`, { token: u.token, body: { questionId: t.questions[i].id, choice: right ? ci : (ci + 1) % 4 } });
+  };
+  await answer(0, true);
+  check((await me(u.token)).lives === 5, 'Зөв хариулахад амь хасагдахгүй');
+  await answer(1, false);
   const m1 = await me(u.token);
   check(
     m1.lives === 4 && m1.nextLifeAt !== null && m1.nextLifeAt - Date.now() > 2 * 60 * 60_000 - 60_000,
-    'Зангилаа руу ороход 1 амь хасагдаж, дараагийн амь 2 цагийн дараа',
+    'Буруу хариулахад 1 амь хасагдаж, дараагийн амь 2 цагийн дараа',
     m1,
   );
+  await answer(2, false);
+  check((await me(u.token)).lives === 3, 'Буруу хариулт бүрт дахин 1 амь хасагдана');
+  await expectError(answer(2, false), 'ALREADY_ANSWERED', 'Хариулсан асуултыг дахин илгээхэд');
+  check((await me(u.token)).lives === 3, 'Давхар илгээсэн хариулт амь хасахгүй');
   const again = await call<TaskDto>('POST', '/tasks', { token: u.token, body: { subject: 'math' }, keepLives: true });
-  check(again.id === t.id && (await me(u.token)).lives === 4, 'Дуусаагүй ижил даалгавар руу буцаж ороход амь хасагдахгүй');
+  check(again.id === t.id && (await me(u.token)).lives === 3, 'Дуусаагүй ижил даалгавар руу буцаж ороход амь хасагдахгүй');
   await setLives(0);
   await expectError(call('POST', '/tasks', { token: u.token, body: { subject: 'mongolian' }, keepLives: true }), 'NO_LIVES', 'Амьгүй бол шинэ бодлого хаалттай');
-  await expectError(call('GET', '/recovery/math', { token: u.token }), 'NO_LIVES', 'Амьгүй бол давтлага хаалттай');
+  await expectError(call('GET', '/recovery/math', { token: u.token, keepLives: true }), 'NO_LIVES', 'Амьгүй бол давтлага хаалттай');
   await setLives(0, Date.now() - 2 * 60 * 60_000 - 1000);
   const m2 = await me(u.token);
   check(m2.lives === 1 && m2.nextLifeAt !== null, '2 цагийн дараа нэг амь нөхөгдөнө', m2);
@@ -242,6 +254,8 @@ async function recoveryScenario() {
   let rightOk = true;
   let swapped = false;
   while (r.question) {
+    // Буруу хариулт бүр амь хасдаг: олон асуултад зориуд алдахын өмнө дүүргэнэ.
+    await call('POST', `/admin/debug/users/${u.me.id}/lives`, { admin: true, body: { lives: 5 } });
     const id = r.question.id;
     const ci = await correctIndex(id);
     const bad = await call<RecoveryAnswerResponse>('POST', '/recovery/mongolian/answer', { token: u.token, body: { questionId: id, choice: (ci + 1) % 4 } });
