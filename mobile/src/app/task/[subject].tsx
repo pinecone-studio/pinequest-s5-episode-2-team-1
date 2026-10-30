@@ -1,6 +1,7 @@
 import type { AnswerResponse, FlagResponse, TaskDto, TaskResult } from '@shared/types';
 import * as Haptics from 'expo-haptics';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
+import * as ScreenCapture from 'expo-screen-capture';
 import { type ComponentRef, useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeInDown, useAnimatedStyle, withTiming } from 'react-native-reanimated';
@@ -219,6 +220,17 @@ export default function TaskScreen() {
   useEffect(() => {
     scroll.current?.scrollTo({ y: 0, animated: false });
   }, [index]);
+
+  // Замын (roadmap) хичээл, boss-ын асуултад хариулж байхад screenshot, бичлэг хар гарна. Шагналын дэлгэц,
+  // багш руу шилжихэд (дэлгэц focus алдана) дахин зөвшөөрнө. Web дээр байхгүй тул алдааг үл тооно.
+  const noCapture = (node !== undefined || boss !== undefined) && !result && !showScore;
+  useFocusEffect(
+    useCallback(() => {
+      if (!noCapture) return;
+      ScreenCapture.preventScreenCaptureAsync('lesson').catch(() => {});
+      return () => void ScreenCapture.allowScreenCaptureAsync('lesson').catch(() => {});
+    }, [noCapture]),
+  );
 
   if (showScore && practiceScore !== null) return <PracticeResultView correct={practiceScore} total={total} onAgain={load} />;
   // Шагналаа (XP, шат, streak) эхлээд харуулна; салаа зам нээгдсэн бол тэндээс шууд руу нь орно
