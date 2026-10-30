@@ -35,7 +35,8 @@ export function SegmentedTabs<T extends string>({
 }
 
 const styles = StyleSheet.create({
-  wrap: { height: 46, padding: 4, borderRadius: radius.pill, backgroundColor: colors.white, flexDirection: 'row', gap: 4 },
+  // 52 − 2×4 = 44: таб бүр 44px-ийн хүрэх талбартай
+  wrap: { height: 52, padding: 4, borderRadius: radius.pill, backgroundColor: colors.white, flexDirection: 'row', gap: 4 },
   tab: { flex: 1, borderRadius: radius.pill, alignItems: 'center', justifyContent: 'center' },
   tabOn: { backgroundColor: colors.indigo },
   text: { fontFamily: fonts.bold, fontSize: 14, color: colors.ink },

@@ -1,9 +1,15 @@
-import type { ReactNode } from 'react';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import type { ComponentProps, ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, fonts, hardShadow, radius } from '@/constants/theme';
-import { ONBOARDING_COLORS } from './OnboardingHeader';
+import { ZoomEnter } from '@/components/pixel';
+import { colors, fonts, radius } from '@/constants/theme';
 
-/** Onboarding-ийн нэг сонголт (радио): зүүн талд тэмдэг, сонгогдсон бол ягаан хүрээ, доод сүүдэр нь тод. */
+export type IconName = ComponentProps<typeof Ionicons>['name'];
+
+/**
+ * Onboarding-ийн нэг сонголт (радио): бүртгэлийн талбартай ижил цагаан хайрцаг, зүүн талд нэг загварын icon-той хавтан,
+ * сонгогдвол violet хүрээ ба баруун талд ✓ (талбарын ✓-тэй ижил).
+ */
 export function QuizOption({
   icon,
   label,
@@ -25,13 +31,23 @@ export function QuizOption({
       onPress={onPress}
       style={({ pressed }) => [styles.card, selected && styles.selected, pressed && styles.pressed]}
     >
-      <View style={[styles.icon, selected && styles.iconSelected]}>{icon}</View>
+      <View style={[styles.tile, selected && styles.tileOn]}>{icon}</View>
       <View style={styles.texts}>
-        <Text style={[styles.label, selected && styles.labelSelected]}>{label}</Text>
+        <Text style={styles.label}>{label}</Text>
         {sub ? <Text style={styles.sub}>{sub}</Text> : null}
       </View>
+      {selected ? (
+        <ZoomEnter style={styles.badge}>
+          <Ionicons name="checkmark" size={16} color={colors.white} />
+        </ZoomEnter>
+      ) : null}
     </Pressable>
   );
+}
+
+/** Сонголтын icon: бүх onboarding нэг гэр бүлийн (Ionicons) icon-оор, брэнд бол өөрийн өнгөөр */
+export function Icon({ name, color = colors.indigo, size = 22 }: { name: IconName; color?: string; size?: number }) {
+  return <Ionicons name={name} size={size} color={color} accessibilityElementsHidden importantForAccessibility="no" />;
 }
 
 /** Түвшний 4 босоо зурвас (Duolingo маягийн): `n` нь тод */
@@ -39,44 +55,33 @@ export function LevelBars({ n }: { n: number }) {
   return (
     <View style={styles.bars}>
       {[0, 1, 2, 3].map((i) => (
-        <View key={i} style={[styles.bar, { height: 8 + i * 5, backgroundColor: i < n ? colors.violet : colors.track }]} />
+        <View key={i} style={[styles.bar, { height: 8 + i * 4, backgroundColor: i < n ? colors.violet : colors.lavender }]} />
       ))}
     </View>
   );
 }
 
-/** Сонголтын тэмдэг болох emoji (тогтмол хэмжээтэй) */
-export function Emoji({ children }: { children: string }) {
-  return (
-    <Text style={styles.emoji} accessibilityElementsHidden importantForAccessibility="no">
-      {children}
-    </Text>
-  );
-}
-
 const styles = StyleSheet.create({
   card: {
-    minHeight: 64,
+    minHeight: 60,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: ONBOARDING_COLORS.white,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: colors.white,
     borderRadius: radius.md,
     borderWidth: 2,
-    borderColor: ONBOARDING_COLORS.ink,
-    ...hardShadow(4),
+    borderColor: colors.line,
   },
-  selected: { backgroundColor: ONBOARDING_COLORS.lavender },
-  pressed: { transform: [{ translateY: 3 }], shadowOffset: { width: 0, height: 1 }, elevation: 1 },
-  icon: { width: 44, height: 44, borderRadius: radius.sm, borderWidth: 2, borderColor: ONBOARDING_COLORS.ink, alignItems: 'center', justifyContent: 'center', backgroundColor: ONBOARDING_COLORS.yellow },
-  iconSelected: { backgroundColor: ONBOARDING_COLORS.white },
+  selected: { borderColor: colors.violet, backgroundColor: colors.trackAlt },
+  pressed: { opacity: 0.85 },
+  tile: { width: 40, height: 40, borderRadius: radius.sm, backgroundColor: colors.trackAlt, alignItems: 'center', justifyContent: 'center' },
+  tileOn: { backgroundColor: colors.white },
   texts: { flex: 1, gap: 2 },
-  label: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 21, color: ONBOARDING_COLORS.ink },
-  labelSelected: { color: ONBOARDING_COLORS.ink },
+  label: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 21, color: colors.ink },
   sub: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 19, color: colors.muted },
-  bars: { flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 24 },
-  bar: { width: 6, borderRadius: 2 },
-  emoji: { fontSize: 26, lineHeight: 32 },
+  badge: { width: 24, height: 24, borderRadius: 12, backgroundColor: colors.violet, alignItems: 'center', justifyContent: 'center' },
+  bars: { flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 22 },
+  bar: { width: 5, borderRadius: 2 },
 });

@@ -106,5 +106,6 @@ const styles = StyleSheet.create({
   hint: { fontFamily: fonts.semibold, fontSize: 14, lineHeight: 19, color: colors.white, maxWidth: '64%' },
   chips: { flexDirection: 'row', gap: 6, marginTop: 6 },
   chip: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill, borderWidth: 2, borderColor: colors.ink },
-  chipText: { fontFamily: fonts.bold, fontSize: 12, color: colors.white },
+  // хар бичиг: цагаан нь цэнхэр/ягаан дээр 4.5:1 хүрдэггүй
+  chipText: { fontFamily: fonts.bold, fontSize: 12, color: colors.ink },
 });

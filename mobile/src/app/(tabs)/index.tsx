@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
   counter: { alignItems: 'center', gap: 2, marginTop: 4 },
   level: { fontFamily: fonts.bold, fontSize: 12, letterSpacing: 1, textTransform: 'uppercase', color: colors.muted },
   xp: { fontFamily: fonts.pixelNum, fontSize: 26, lineHeight: 29, color: colors.ink },
-  xpMuted: { fontFamily: fonts.pixelNum, fontSize: 15, color: '#A19DAE' },
+  xpMuted: { fontFamily: fonts.pixelNum, fontSize: 15, color: colors.muted },
   barWrap: { alignSelf: 'stretch', paddingHorizontal: 18, marginTop: 4 },
   mood: { fontFamily: fonts.semibold, fontSize: 17, lineHeight: 23, color: colors.ink, textAlign: 'center', paddingHorizontal: 12 },
   bottom: { flexDirection: 'row', alignItems: 'center', gap: 12 },
