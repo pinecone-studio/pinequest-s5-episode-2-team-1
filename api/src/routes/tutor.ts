@@ -23,7 +23,7 @@ import {
   tutorSystemPrompt,
 } from '../llm/live';
 import { SpeechQueue, speechChunkEnd } from '../llm/speech';
-import { cleanForSpeech, speechMode, ttsAvailable, ttsStream } from '../llm/tts';
+import { cleanForSpeech, speechMode, ttsStream } from '../llm/tts';
 import { endTutorSession, loadTutorContext, startTutorSession } from '../services/tutor';
 import { getUserRow, requireLife } from '../services/users';
 
@@ -51,8 +51,8 @@ tutorRoutes.get('/ws', async (c) => {
     relay(server, {
       key,
       model: c.env.GEMINI_LIVE_MODEL || 'gemini-3.8-live',
-      // TTS-ийн өдрийн квот дууссан бол (ttsAvailable) шууд Live-ийн дуугаар ярина.
-      ttsModel: speechMode(c.env.TUTOR_SPEECH) === 'tts' && ttsAvailable() ? c.env.GEMINI_TTS_MODEL || 'gemini-3.8-flash-tts' : null,
+      // TTS горимд баавгай зөвхөн TTS-ийн дуугаар ярина (квот дууссан ч Live-ийн дуу руу шилжихгүй).
+      ttsModel: speechMode(c.env.TUTOR_SPEECH) === 'tts' ? c.env.GEMINI_TTS_MODEL || 'gemini-3.8-flash-tts' : null,
       // Live-ийг үнэгүй багцын түлхүүрээр, TTS-ийг (үнэгүй багцад өдөрт 10 хүсэлт) billing-тэй түлхүүрээр ажиллуулж болно.
       ttsKey: c.env.GEMINI_TTS_API_KEY || key,
       pushToTalk,
@@ -185,31 +185,20 @@ async function relay(
 
   // TTS горим: ээлж бүрт 2 хүсэлт: эхний хэсгийг (60+ тэмдэгт дэх өгүүлбэрийн төгсгөл хүртэл) бэлэн болмогц, үлдсэнийг Live
   // текстээ дуусгамагц. TTS-ийн өдрийн квот бага (Tier 1-д загвар бүрт 100 хүсэлт) тул хүсэлтийг хэмнэнэ.
-  // TTS алдаа гарвал энэ ярилцлагын үлдсэн хэсэгт Live-ийн өөрийн дууг дамжуулна; тэр ээлжийн TTS дуу хараахан
-  // яваагүй бол хадгалсан Live дууг илгээнэ (баавгай дуугүй болохгүй, давхар ч ярихгүй).
+  // TTS горимд Live-ийн дууг хэзээ ч дамжуулахгүй: ижил нэртэй (Achird) хоолой ч хоёр загварт өөр сонсогддог тул
+  // нэг ярилцлагад хоёр дуу холилдож байсан. TTS алдаа гарвал (квот, хугацаа) тэр хэсэг дуугүй, бичвэр нь харагдсаар.
   const ttsModel = opts.ttsModel;
-  let useLiveVoice = !ttsModel;
-  let liveTurnAudio: Uint8Array[] = [];
-  let liveTurnOpen = false;
-  let ttsAudioInTurn = false;
+  const useLiveVoice = !ttsModel;
+  /** Алдааг ярилцлагад нэг л удаа бичнэ (квот дууссан бол хэсэг бүр алдаа өгнө). */
+  let ttsFailed = false;
   const speech = ttsModel
     ? new SpeechQueue((text, signal) => ttsStream(opts.ttsKey, ttsModel, text, signal), {
-        audio: (pcm) => {
-          ttsAudioInTurn = true;
-          sendAudio(pcm);
-        },
-        turnEnd: () => {
-          ttsAudioInTurn = false;
-          bearTurnEnd();
-        },
+        audio: sendAudio,
+        turnEnd: bearTurnEnd,
         error: (e) => {
-          if (useLiveVoice) return;
-          console.error('[tutor] TTS алдаа, Live-ийн дуу руу шилжлээ:', e);
-          useLiveVoice = true;
-          speech?.clear();
-          if (!ttsAudioInTurn) for (const chunk of liveTurnAudio) sendAudio(chunk);
-          ttsAudioInTurn = false;
-          if (!liveTurnOpen) bearTurnEnd();
+          if (ttsFailed) return;
+          ttsFailed = true;
+          console.error('[tutor] TTS алдаа, хэсэг дуугүй үлдлээ:', e);
         },
       })
     : null;
@@ -231,7 +220,6 @@ async function relay(
     turnText = '';
     spoken = 0;
     saidInTurn = false;
-    liveTurnAudio = [];
   };
   const sayRest = () => {
     const rest = cleanForSpeech(turnText.slice(spoken));
@@ -243,12 +231,11 @@ async function relay(
   /**
    * Live ээлж дууссан (turnComplete): gen_done-ийн дараа хоцорч ирсэн текстийг хэлүүлээд ээлжийг хаана. Ээлжийг
    * gen_done дээр хаавал хоцорсон текст хоёр дахь turn_end үүсгэж, хүүхдийн mic асаад буцаж унтардаг байсан.
-   * Текстгүй ээлж (зөвхөн дуу эсвэл finish_lesson) ч хаагдана: энэ ээлжид Live дуу ирсэн бол тэрийг нь тоглуулна.
+   * Текстгүй ээлж (зөвхөн дуу эсвэл finish_lesson) ч хаагдана: Live-ийн дууг тоглуулахгүй (өөр хоолой).
    */
-  const endSpeechTurn = (hadLiveAudio: boolean) => {
+  const endSpeechTurn = () => {
     if (!speech) return;
     sayRest();
-    if (!saidInTurn && hadLiveAudio) speech.play(liveTurnAudio);
     speech.endTurn();
     turnText = '';
     spoken = 0;
@@ -319,13 +306,7 @@ async function relay(
             liveTurn = true;
             if (muted) break;
             clientTurn = true;
-            const pcm = fromB64(ev.data);
-            if (!liveTurnOpen) {
-              liveTurnOpen = true;
-              liveTurnAudio = [];
-            }
-            if (useLiveVoice) sendAudio(pcm);
-            else liveTurnAudio.push(pcm);
+            if (useLiveVoice) sendAudio(fromB64(ev.data));
             break;
           }
           case 'bear_text':
@@ -356,8 +337,6 @@ async function relay(
             muted = false;
             liveTurn = false;
             clientTurn = false;
-            // Тасалсан ээлжийн Live дууг дараагийн (текстгүй) ээлжид дахин тоглуулахгүй.
-            liveTurnOpen = false;
             dropTurn();
             send({ type: 'interrupted' });
             break;
@@ -366,8 +345,6 @@ async function relay(
             if (speech && !useLiveVoice && !muted) sayRest();
             break;
           case 'turn_end': {
-            const hadLiveAudio = liveTurnOpen && !muted;
-            liveTurnOpen = false;
             liveTurn = false;
             muted = false;
             // finish_lesson дуудаад дуугүй ээлж дуусгасан: баяртай гэж хэлүүлээд, тэр ээлжийн дараа хаана.
@@ -375,7 +352,7 @@ async function relay(
             liveTool = false;
             liveSpoke = false;
             if (silentFinish) sendUp(liveText(TUTOR_SAY_GOODBYE));
-            if (speech && !useLiveVoice) endSpeechTurn(hadLiveAudio);
+            if (speech && !useLiveVoice) endSpeechTurn();
             else bearTurnEnd();
             break;
           }

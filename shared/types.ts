@@ -42,6 +42,7 @@ export type ErrorCode =
   | 'DUEL_TAKEN'
   | 'DUEL_NOT_OPEN'
   | 'WRONG_GRADE'
+  | 'JUDGE_DUEL'
   | 'OWN_DUEL'
   | 'CODE_NOT_FOUND'
   | 'TEAM_FULL'
@@ -62,7 +63,8 @@ export type ErrorCode =
   | 'FRIEND_LIMIT'
   | 'CLAN_NOT_FOUND'
   | 'CLAN_FULL'
-  | 'CLAN_MEMBER';
+  | 'CLAN_MEMBER'
+  | 'JUDGE_LIMIT';
 
 export interface ApiErrorBody {
   error: { code: ErrorCode; message: string };

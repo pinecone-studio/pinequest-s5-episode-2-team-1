@@ -35,12 +35,6 @@ export class SpeechQueue {
     void this.pump();
   }
 
-  /** Бэлэн дууг (TTS-гүй, жишээ нь Live-ийн өөрийн дуу) өмнөх хэсгүүдийн дараа дамжуулна. */
-  play(chunks: Uint8Array[]) {
-    this.jobs.push({ text: '', started: true, turnEnd: false, chunks, done: true, wake: null, ctrl: new AbortController() });
-    void this.pump();
-  }
-
   /** Өмнөх бүх хэсэг дамжсаны дараа turnEnd-ийг дуудна. */
   endTurn() {
     this.jobs.push({ text: '', started: true, turnEnd: true, chunks: [], done: true, wake: null, ctrl: new AbortController() });
