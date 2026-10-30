@@ -93,6 +93,17 @@ export type OutfitId =
   | 'glasses_wizard'
   | 'book_wizard'
   | 'ginger_wizard'
+  | 'footballer_7'
+  | 'footballer_10'
+  | 'pirate_captain'
+  | 'hoop_23'
+  | 'hoop_24'
+  | 'iron_armor'
+  | 'spy_agent'
+  | 'thunder_god'
+  | 'green_giant'
+  | 'shield_hero'
+  | 'violet_archer'
   | 'cowboy_hat'
   | 'white_headscarf'
   | 'brown_boots'
@@ -129,6 +140,17 @@ export const OUTFITS: OutfitDef[] = [
   { id: 'vampire', name: 'Цус сорогч', tile: '#C9B8E8', imgTop: -26, card: 'outfit_vampire_82x140', item: 'vampire' },
   { id: 'witch', name: 'Шулам', tile: '#C9B8E8', imgTop: -26, card: 'outfit_witch_82x140', item: 'witch' },
   { id: 'shadow_ninja', name: 'Сүүдрийн нинжа', tile: '#BCC8DE', imgTop: -26, card: 'outfit_shadow_ninja_82x140', item: 'shadow_ninja' },
+  { id: 'pirate_captain', name: 'Далайн дээрэмчин ахмад', tile: '#EBCF9B', imgTop: -26, card: 'outfit_pirate_captain_82x140', item: 'pirate_captain' },
+  { id: 'hoop_23', name: 'Сагсчин №23', tile: '#F7A97E', imgTop: -26, card: 'outfit_hoop_23_82x140', item: 'hoop_23' },
+  { id: 'hoop_24', name: 'Сагсчин №24', tile: '#D9D2F2', imgTop: -26, card: 'outfit_hoop_24_82x140', item: 'hoop_24' },
+  { id: 'iron_armor', name: 'Төмөр хуяг', tile: '#F7A97E', imgTop: -26, card: 'outfit_iron_armor_82x140', item: 'iron_armor' },
+  { id: 'spy_agent', name: 'Нууц агент', tile: '#B9B6C8', imgTop: -26, card: 'outfit_spy_agent_82x140', item: 'spy_agent' },
+  { id: 'thunder_god', name: 'Аянгын бурхан', tile: '#BCC8DE', imgTop: -26, card: 'outfit_thunder_god_82x140', item: 'thunder_god' },
+  { id: 'green_giant', name: 'Ногоон аварга', tile: '#A9D18E', imgTop: -26, card: 'outfit_green_giant_82x140', item: 'green_giant' },
+  { id: 'violet_archer', name: 'Ягаан харваач', tile: '#D9D2F2', imgTop: -26, card: 'outfit_violet_archer_82x140', item: 'violet_archer' },
+  { id: 'shield_hero', name: 'Бамбайт баатар', tile: '#9FD0F2', imgTop: -26, card: 'outfit_shield_hero_82x140', item: 'shield_hero' },
+  { id: 'footballer_7', name: 'Хөлбөмбөгчин №7', tile: '#A9D18E', imgTop: -26, card: 'outfit_footballer_7_82x140', item: 'footballer_7' },
+  { id: 'footballer_10', name: 'Хөлбөмбөгчин №10', tile: '#9FD0F2', imgTop: -26, card: 'outfit_footballer_10_82x140', item: 'footballer_10' },
   { id: 'glasses_wizard', name: 'Нүдний шилтэй шидтэн', tile: '#C9B8E8', imgTop: -26, card: 'outfit_glasses_wizard_82x140', item: 'glasses_wizard' },
   { id: 'book_wizard', name: 'Номтой шидтэн', tile: '#C9B8E8', imgTop: -26, card: 'outfit_book_wizard_82x140', item: 'book_wizard' },
   { id: 'ginger_wizard', name: 'Улаан үст шидтэн', tile: '#C9B8E8', imgTop: -26, card: 'outfit_ginger_wizard_82x140', item: 'ginger_wizard' },
@@ -219,7 +241,7 @@ const ITEM_SLOT: Record<ItemId, Slot> = {
   hiphop_chain: 'neck',
   batman_suit: 'body', mongol_deel: 'body', sport_hoodie: 'body', pirate_shirt: 'body', wizard_robe: 'body',
   demon_cape: 'body', ninja_jacket: 'body', straw_shirt: 'body', vampire: 'body', witch: 'body', cyborg: 'body',
-  mummy: 'body', liquid_cop: 'body', robot: 'body', wrestler: 'body', brown_deel: 'body', khuur: 'body', archer: 'body', leaf_ninja: 'body', shadow_ninja: 'body', blossom_ninja: 'body', police: 'body', doctor: 'body', glasses_wizard: 'body', book_wizard: 'body', ginger_wizard: 'body',
+  mummy: 'body', liquid_cop: 'body', robot: 'body', wrestler: 'body', brown_deel: 'body', khuur: 'body', archer: 'body', leaf_ninja: 'body', shadow_ninja: 'body', blossom_ninja: 'body', police: 'body', doctor: 'body', glasses_wizard: 'body', book_wizard: 'body', ginger_wizard: 'body', footballer_7: 'body', footballer_10: 'body', pirate_captain: 'body', hoop_23: 'body', hoop_24: 'body', iron_armor: 'body', spy_agent: 'body', thunder_god: 'body', green_giant: 'body', shield_hero: 'body', violet_archer: 'body',
   puss_cape: 'back', puss_belt: 'waist', sport_shorts: 'legs', ninja_pants: 'legs', straw_shorts: 'legs',
   brown_boots: 'feet', pirate_boots: 'feet', mongol_boots: 'feet', sport_sneakers: 'feet',
   demon_boots: 'feet', ninja_sandals: 'feet', straw_sandals: 'feet',
@@ -239,7 +261,7 @@ export function outfitSlot(id: OutfitId): Slot | null {
 }
 
 /** a costume with its own motions (LiveBear) is the whole bear: it takes every place, so nothing is worn with it */
-const WHOLE_ITEMS: readonly ItemId[] = ['witch', 'cyborg', 'mummy', 'liquid_cop', 'robot', 'wrestler', 'brown_deel', 'khuur', 'archer', 'leaf_ninja', 'shadow_ninja', 'blossom_ninja', 'police', 'doctor', 'glasses_wizard', 'book_wizard', 'ginger_wizard'];
+const WHOLE_ITEMS: readonly ItemId[] = ['witch', 'cyborg', 'mummy', 'liquid_cop', 'robot', 'wrestler', 'brown_deel', 'khuur', 'archer', 'leaf_ninja', 'shadow_ninja', 'blossom_ninja', 'police', 'doctor', 'glasses_wizard', 'book_wizard', 'ginger_wizard', 'footballer_7', 'footballer_10', 'pirate_captain', 'hoop_23', 'hoop_24', 'iron_armor', 'spy_agent', 'thunder_god', 'green_giant', 'shield_hero', 'violet_archer'];
 const ALL_SLOTS = [...new Set(Object.values(ITEM_SLOT)), 'base'];
 const slotsOf = (id: OutfitId): string[] =>
   outfitItems(outfitById(id)).flatMap((it) => (WHOLE_ITEMS.includes(it) ? ALL_SLOTS : [ITEM_SLOT[it], ...(ALSO_COVERS[it] ?? []), ...(BASE_ITEMS.includes(it) ? ['base'] : [])]));

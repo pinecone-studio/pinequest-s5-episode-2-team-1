@@ -43,6 +43,17 @@ const COSTUMES: Record<string, { idle: string; card: [number, number]; hat: bool
   glasses_wizard: { idle: 'idle-120x172.png', card: [19, 28], hat: false, furFrames: true },
   book_wizard: { idle: 'idle-120x172.png', card: [19, 28], hat: false, furFrames: true },
   ginger_wizard: { idle: 'idle-120x172.png', card: [19, 28], hat: false, furFrames: true },
+  footballer_7: { idle: 'idle-120x172.png', card: [19, 28], hat: false, furFrames: true },
+  footballer_10: { idle: 'idle-120x172.png', card: [19, 28], hat: false, furFrames: true },
+  pirate_captain: { idle: 'idle-120x172.png', card: [19, 28], hat: false, furFrames: true },
+  hoop_23: { idle: 'idle-120x172.png', card: [19, 28], hat: false, furFrames: true },
+  hoop_24: { idle: 'idle-120x172.png', card: [19, 28], hat: false, furFrames: true },
+  iron_armor: { idle: 'idle-120x172.png', card: [19, 28], hat: false, furFrames: true },
+  spy_agent: { idle: 'idle-120x172.png', card: [19, 28], hat: false, furFrames: true },
+  thunder_god: { idle: 'idle-120x172.png', card: [19, 28], hat: false, furFrames: true },
+  green_giant: { idle: 'idle-120x172.png', card: [19, 28], hat: false },
+  shield_hero: { idle: 'idle-120x172.png', card: [19, 28], hat: false, furFrames: true },
+  violet_archer: { idle: 'idle-120x172.png', card: [19, 28], hat: false, furFrames: true },
 };
 const STATES = ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch', 'welcome'] as const;
 type State = (typeof STATES)[number];
