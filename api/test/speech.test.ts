@@ -71,16 +71,6 @@ describe('SpeechQueue', () => {
     expect(log.join('')).toBe('abcde|');
   });
 
-  it('play() бэлэн дууг TTS-ийн хэсгүүдийн дарааллаар нь дамжуулна', async () => {
-    const { log, out } = collect();
-    const q = new SpeechQueue(fakeSynth({ ab: 20 }), out);
-    q.say('ab');
-    q.play([new Uint8Array([120]), new Uint8Array([121])]);
-    q.endTurn();
-    await tick(60);
-    expect(log.join('')).toBe('abxy|');
-  });
-
   it('TTS алдаа гарвал мэдэгдээд дараагийн хэсэг рүү шилжинэ', async () => {
     const { log, out } = collect();
     const q = new SpeechQueue(
@@ -165,7 +155,7 @@ describe('ttsStream', () => {
     vi.useRealTimers();
   });
 
-  it('анхны дуу TTS_START_MS-д ирэхгүй бол таслана (баавгай Live-ийн дуу руу шилжинэ)', async () => {
+  it('анхны дуу TTS_START_MS-д ирэхгүй бол таслана (тэр хэсэг дуугүй)', async () => {
     vi.useFakeTimers();
     let aborted = false;
     vi.stubGlobal('fetch', (_url: string, init: RequestInit) => {
@@ -193,6 +183,19 @@ describe('ttsStream', () => {
     });
     await expect(ttsStream('key', 'model', 'Сайн уу').next()).rejects.toThrow();
     expect(calls).toBe(1);
+  });
+
+  it('өдрийн квот дууссан бол хүсэлт явуулахгүй шууд алдаа шиднэ', async () => {
+    let calls = 0;
+    vi.stubGlobal('fetch', async () => {
+      calls++;
+      return new Response('', { status: 200 });
+    });
+    vi.useFakeTimers();
+    vi.setSystemTime(60_000);
+    noteQuota('{"quotaId": "GenerateRequestsPerDayPerProjectPerModel", "retryDelay": "120s"}', 0);
+    await expect(ttsStream('key', 'model', 'Сайн уу').next()).rejects.toThrow();
+    expect(calls).toBe(0);
   });
 });
 
