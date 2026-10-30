@@ -197,7 +197,7 @@
 
 ## 5. Өгөгдөл, API, төлөв
 
-### 5.1 Миграци `0035_league.sql`
+### 5.1 Миграци `0036_league.sql`
 
 ```sql
 -- Уулын олон нийтэд харагдах танигч (урилгын кодоос тусдаа, хэзээ ч солигдохгүй), одоогийн лиг
@@ -488,7 +488,7 @@ interface BoutDto { slot: number; grade: number; mixed: boolean; status: BoutSta
 - Эзэн биш гишүүд эзэнд "дуудах санал" илгээх
 
 ### 8.3 Хэрэгжүүлэх дараалал
-1. **Shared + миграци:** `shared/league.ts`, `0035_league.sql`, `public_id` backfill, `ErrorCode`.
+1. **Shared + миграци:** `shared/league.ts`, `0036_league.sql`, `public_id` backfill, `ErrorCode`.
 2. **Улирал/бүлэг (сервер):** `services/league/season.ts` — улирал нээх/хаах, бүлэгт хуваарилах, standings дахин тооцоолох (цэвэр функц + vitest).
 3. **Тоглолт:** challenge/accept/decline/lineup/suggest/sub, хязгаарууд, төлөвийн машин (vitest: шилжилт бүр, давхар сорилт, хязгаарууд).
 4. **Bout ↔ дуэль:** ready → duel үүсгэх, `startDuel`/`settleDuel`-д лигийн салбар (бооцоогүй, bout бичих), грейдийн хослол (vitest).

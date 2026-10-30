@@ -2,7 +2,7 @@ import { clanTitle } from '@shared/clan';
 import { LEAGUE_TIERS, leagueTitle } from '@shared/league';
 import type { LeagueClanDto, LeagueResponse } from '@shared/types';
 import { router, useFocusEffect } from 'expo-router';
-import { type ComponentRef, useCallback, useRef, useState } from 'react';
+import { type ComponentRef, useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { api, errorText } from '@/api/client';
 import { SpeechBubble } from '@/components/AuthShell';
@@ -17,6 +17,10 @@ import { usePixelBear } from '@/lib/mock/pixelBear';
 import { wornItems } from '@/lib/pixelBear/catalog';
 import type { SpriteKey } from '@/sprites';
 
+/** LiveBear-ийн frame (px 2): өргөн ба өндөр, лиг дээрх хэмжээ */
+const BEAR_W = 140;
+const BEAR_H = 260;
+const BEAR_SCALE = 0.75;
 /** carousel-ийн нэг лигийн өргөн (snap) */
 const TIER_W = 96;
 const DAY_MS = 86_400_000;
@@ -54,6 +58,10 @@ export default function LeagueScreen() {
 
   const tier = data?.me.tier ?? 1;
   const shown = view ?? tier;
+  // contentOffset зөвхөн анх mount хийхэд хэрэгжинэ: лиг ирэхэд (1-ээс өөр бол) одоогийн лиг рүү гүйлгэнэ
+  useEffect(() => {
+    scroll.current?.scrollTo({ x: (tier - 1) * TIER_W, animated: false });
+  }, [tier]);
   const stateOf = (t: number): TierState => (t === tier ? 'current' : t < tier ? 'passed' : 'locked');
   const side = Math.max(16, (Math.min(width, 520) - TIER_W) / 2);
 
@@ -66,7 +74,12 @@ export default function LeagueScreen() {
           </Motion>
         </ZoomEnter>
         <Pop trigger={1} from={0.9}>
-          <LiveBear anim="happy" w={120} items={wornItems(outfitIds)} label="Гараа даллаж буй баавгай" />
+          {/* LiveBear-ийн frame 260dp өндөр (w нь зөвхөн төвлөрүүлнэ): доод талаар нь 0.75 болгож бөмбөлөгнөөс доош багтаана */}
+          <View style={styles.bear}>
+            <View style={styles.bearScale}>
+              <LiveBear anim="happy" w={BEAR_W} items={wornItems(outfitIds)} label="Гараа даллаж буй баавгай" />
+            </View>
+          </View>
         </Pop>
         <ZoomEnter delay={250} style={styles.bubbleAt}>
           <SpeechBubble>{S.league.hello}</SpeechBubble>
@@ -82,7 +95,12 @@ export default function LeagueScreen() {
         contentContainerStyle={{ paddingHorizontal: side }}
         style={styles.carousel}
         contentOffset={{ x: (tier - 1) * TIER_W, y: 0 }}
-        onMomentumScrollEnd={(e) => setView(Math.round(e.nativeEvent.contentOffset.x / TIER_W) + 1)}
+        // web дээр onMomentumScrollEnd ирдэггүй тул гүйлгэх бүрт төвийн лигийг тооцно
+        scrollEventThrottle={32}
+        onScroll={(e) => {
+          const t = Math.min(LEAGUE_TIERS.length, Math.max(1, Math.round(e.nativeEvent.contentOffset.x / TIER_W) + 1));
+          if (t !== shown) setView(t);
+        }}
       >
         {LEAGUE_TIERS.map((t) => {
           const st = stateOf(t.tier);
@@ -230,7 +248,9 @@ function ClanSheet({ clan, onClose }: { clan: LeagueClanDto | null; onClose: () 
 const styles = StyleSheet.create({
   content: { gap: 14, paddingTop: 8 },
   center: { alignItems: 'center', gap: 12 },
-  stage: { height: 240, alignItems: 'center', justifyContent: 'flex-end' },
+  stage: { height: 260, alignItems: 'center', justifyContent: 'flex-end' },
+  bear: { height: BEAR_H * BEAR_SCALE, justifyContent: 'flex-end' },
+  bearScale: { transform: [{ scale: BEAR_SCALE }], transformOrigin: 'bottom' },
   halo: { position: 'absolute', bottom: 0, alignSelf: 'center' },
   haloCircle: { width: 190, height: 190, borderRadius: 95, backgroundColor: colors.lavender },
   bubbleAt: { position: 'absolute', top: 0, right: 0, maxWidth: 180 },
