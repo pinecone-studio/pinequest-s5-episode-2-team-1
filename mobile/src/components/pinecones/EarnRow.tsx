@@ -3,9 +3,10 @@ import { StyleSheet, Text, View } from 'react-native';
 import { PressScale, Sprite } from '@/components/pixel';
 import { colors, fonts } from '@/constants/theme';
 import type { SpriteKey } from '@/sprites';
-import { wood, woodPill } from './wood';
+import { PixelBox } from './PixelBox';
+import { wood } from './wood';
 
-const ICON: Record<string, SpriteKey> = { correct: 'icon_star_36x36', chest: 'map_chest_40x30', duel: 'nav2_crew_on_30x30' };
+const ICON: Record<string, SpriteKey> = { correct: 'earn_correct_44x44', chest: 'earn_chest_44x44', duel: 'earn_duel_52x52' };
 
 export interface EarnWay {
   key: string;
@@ -15,34 +16,36 @@ export interface EarnWay {
   to: string;
 }
 
-/** Боргоцой олох нэг арга: дүрс, гарчиг, тайлбар, шагналын pill. Дарахад тухайн хэсэг рүү очно. */
+/** Боргоцой олох нэг арга: pixel хүрээтэй дүрс, гарчиг, тайлбар, шагналын pill. Дарахад тухайн хэсэг рүү очно. */
 export function EarnRow({ way }: { way: EarnWay }) {
   return (
-    <PressScale accessibilityRole="button" accessibilityLabel={`${way.title}. ${way.desc} ${way.reward}`} onPress={() => router.push(way.to)} style={styles.row}>
-      <View style={styles.body}>
-        <View style={styles.head}>
-          <View style={styles.icon}>
-            <Sprite id={ICON[way.key] ?? 'btn_honey_24x24'} style={{ transform: [{ scale: 0.8 }] }} />
+    <PressScale accessibilityRole="button" accessibilityLabel={`${way.title}. ${way.desc} ${way.reward}`} onPress={() => router.push(way.to)}>
+      <PixelBox fill={wood.card} edge={wood.edge} radius={3} shadow={[0, 2]} style={styles.card}>
+        <PixelBox fill={wood.slot} edge={wood.edge} radius={2} style={styles.slot}>
+          <Sprite id={ICON[way.key] ?? 'btn_honey_36x36'} />
+        </PixelBox>
+        <View style={styles.body}>
+          <View style={styles.head}>
+            <Text style={styles.title}>{way.title}</Text>
+            <PixelBox fill={wood.pill} edge={colors.ink} radius={2} shadow={[1, 1]} shadowColor={wood.shade} style={styles.reward}>
+              <Sprite id="btn_honey_24x24" />
+              <Text style={styles.rewardText}>{way.reward}</Text>
+            </PixelBox>
           </View>
-          <Text style={styles.title}>{way.title}</Text>
+          <Text style={styles.desc}>{way.desc}</Text>
         </View>
-        <Text style={styles.desc}>{way.desc}</Text>
-      </View>
-      <View style={styles.reward}>
-        <Sprite id="btn_honey_24x24" />
-        <Text style={styles.rewardText}>{way.reward}</Text>
-      </View>
+      </PixelBox>
     </PressScale>
   );
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 14 },
+  card: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12 },
+  slot: { width: 63, height: 63, alignItems: 'center', justifyContent: 'center' },
   body: { flex: 1, gap: 4 },
-  head: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  icon: { width: 30, height: 30, alignItems: 'center', justifyContent: 'center' },
-  title: { fontFamily: fonts.bold, fontSize: 18, color: colors.ink },
-  desc: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 20, color: wood.desc },
-  reward: { ...woodPill, minWidth: 76, flexDirection: 'row', gap: 6, paddingHorizontal: 12, backgroundColor: wood.pill },
-  rewardText: { fontFamily: fonts.pixelNum, fontSize: 16, color: colors.ink },
+  head: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  title: { flex: 1, fontFamily: fonts.bold, fontSize: 17, color: colors.ink },
+  desc: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 19, color: wood.desc },
+  reward: { height: 33, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 9 },
+  rewardText: { fontFamily: fonts.pixelNum, fontSize: 14, color: colors.ink },
 });
