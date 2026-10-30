@@ -365,8 +365,8 @@ export interface LeagueClanDto {
 /** GET /league. no_clan = Уулгүй, too_small = 5-аас цөөн гишүүнтэй (лигт ороогүй), placed = лигт байна. */
 export interface LeagueResponse {
   season: { week: string; endsAt: number };
-  me: { state: 'no_clan' | 'too_small' | 'placed'; tier: number; members: number; minMembers: number; isOwner: boolean; clanName: string | null; grade: number | null };
-  /** Өөрийн бүлэг (ижил лиг, ижил анги); лигт ороогүй бол хоосон */
+  me: { state: 'no_clan' | 'placed'; members: number; isOwner: boolean; clanName: string | null; grade: number | null };
+  /** Ижил ангийн ангиуд (эхний 10 + миний анги); ангигүй бол хоосон */
   standings: LeagueClanDto[];
 }
 

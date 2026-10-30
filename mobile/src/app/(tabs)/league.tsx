@@ -1,36 +1,27 @@
 import { clanTitle } from '@shared/clan';
-import { LEAGUE_TIERS, leagueTitle } from '@shared/league';
 import type { LeagueClanDto, LeagueResponse } from '@shared/types';
 import { router, useFocusEffect } from 'expo-router';
-import { type ComponentRef, useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { api, errorText } from '@/api/client';
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
-import { Sprite } from '@/components/pixel';
+import { PixelText } from '@/components/pinecones';
 import { Card, ErrorText, Muted, Screen } from '@/components/ui';
 import { colors, fonts, hardShadow, radius } from '@/constants/theme';
 import { S } from '@/i18n/strings';
-import type { SpriteKey } from '@/sprites';
 
-/** carousel-ийн нэг лигийн өргөн (snap) */
-const TIER_W = 96;
 const DAY_MS = 86_400_000;
 
-type TierState = 'current' | 'passed' | 'locked';
-const badge = (key: string, big: boolean) => `league_${key}_${big ? '64x64' : '32x32'}` as SpriteKey;
-
 /**
- * Лиг (доод цэсний 5-р tab): дээр нь лигүүдийн хэвтээ carousel (одоогийн лиг тод), сонгосон лигийн тайлбар, миний Уул, бүлгийн эрэмбэ. Уул дээр дарвал товч
- * мэдээлэл. Чөлөөт тулаан (одоогийн дуэлийн лобби) нь 4-р tab-д хэвээр.
+ * Анги (доод цэсний 5-р tab): ангидаа нэгдээд ижил ангийн бусад ангитай энэ 7 хоногт өрсөлдөнө. Ангигүй бол
+ * байгуулах эсвэл кодоор нэгдэх (/uul). Байвал ангиудын эрэмбэ: миний анги дээр дарвал ангиа нээнэ, өөр анги дээр
+ * дарвал товч мэдээлэл (нэр, байр, гишүүдийн тоо, нэргүй баавгай).
  */
 export default function LeagueScreen() {
-  const { width } = useWindowDimensions();
   const [data, setData] = useState<LeagueResponse | null>(null);
   const [error, setError] = useState('');
-  const [view, setView] = useState<number | null>(null);
   const [open, setOpen] = useState<LeagueClanDto | null>(null);
-  const scroll = useRef<ComponentRef<typeof ScrollView>>(null);
 
   const load = useCallback(async () => {
     try {
@@ -46,74 +37,13 @@ export default function LeagueScreen() {
     }, [load]),
   );
 
-  const tier = data?.me.tier ?? 1;
-  const shown = view ?? tier;
-  // contentOffset зөвхөн анх mount хийхэд хэрэгжинэ: лиг ирэхэд (1-ээс өөр бол) одоогийн лиг рүү гүйлгэнэ
-  useEffect(() => {
-    scroll.current?.scrollTo({ x: (tier - 1) * TIER_W, animated: false });
-  }, [tier]);
-  const stateOf = (t: number): TierState => (t === tier ? 'current' : t < tier ? 'passed' : 'locked');
-  const side = Math.max(16, (Math.min(width, 520) - TIER_W) / 2);
-
   return (
     <Screen tabBar contentStyle={styles.content}>
-      <ScrollView
-        ref={scroll}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        snapToInterval={TIER_W}
-        decelerationRate="fast"
-        contentContainerStyle={{ paddingHorizontal: side }}
-        style={styles.carousel}
-        contentOffset={{ x: (tier - 1) * TIER_W, y: 0 }}
-        // web дээр onMomentumScrollEnd ирдэггүй тул гүйлгэх бүрт төвийн лигийг тооцно
-        scrollEventThrottle={32}
-        onScroll={(e) => {
-          const t = Math.min(LEAGUE_TIERS.length, Math.max(1, Math.round(e.nativeEvent.contentOffset.x / TIER_W) + 1));
-          if (t !== shown) setView(t);
-        }}
-      >
-        {LEAGUE_TIERS.map((t) => {
-          const st = stateOf(t.tier);
-          const focus = t.tier === shown;
-          return (
-            <Pressable
-              key={t.key}
-              accessibilityRole="button"
-              accessibilityState={{ selected: focus }}
-              accessibilityLabel={S.league.tierA11y(t.name, st === 'current' ? S.league.current : st === 'passed' ? S.league.passed : S.league.locked)}
-              onPress={() => {
-                setView(t.tier);
-                scroll.current?.scrollTo({ x: (t.tier - 1) * TIER_W, animated: true });
-              }}
-              style={styles.tier}
-            >
-              <View style={[styles.badgeBox, st === 'locked' && styles.lockedBadge]}>
-                <Sprite id={badge(t.key, focus)} />
-              </View>
-              <Text style={[styles.tierName, focus && styles.tierNameOn]} numberOfLines={1}>
-                {t.name}
-              </Text>
-              <Text style={[styles.tierState, st === 'current' && styles.tierStateOn]} numberOfLines={1}>
-                {st === 'current' ? S.league.current : st === 'passed' ? S.league.passed : S.league.locked}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-
       <View style={styles.head}>
-        <Text accessibilityRole="header" style={styles.title}>
-          {leagueTitle(shown)}
-        </Text>
-        {shown === tier ? (
-          <Text style={styles.sub}>
-            {S.league.rule}
-            {data ? <Text style={styles.days}>{` · ${S.league.daysLeft(Math.ceil((data.season.endsAt - Date.now()) / DAY_MS))}`}</Text> : null}
-          </Text>
-        ) : (
-          <Text style={styles.sub}>{shown > tier ? S.league.lockedHint(LEAGUE_TIERS[shown - 2].name) : S.league.passedHint}</Text>
-        )}
+        <View accessibilityRole="header">
+          <PixelText text={S.league.title.toUpperCase()} px={3} color={colors.ink} shadow={colors.stone} />
+        </View>
+        <Text style={styles.sub}>{S.league.sub}</Text>
       </View>
 
       {!data ? (
@@ -125,26 +55,18 @@ export default function LeagueScreen() {
         ) : (
           <ActivityIndicator color={colors.violet} style={{ marginTop: 24 }} />
         )
-      ) : shown !== tier ? null : data.me.state === 'no_clan' ? (
+      ) : data.me.state === 'no_clan' ? (
         <Card style={styles.cta}>
           <Text style={styles.ctaTitle}>{S.league.noClanTitle}</Text>
           <Muted>{S.league.noClanBody}</Muted>
           <Button title={S.league.toClan} onPress={() => router.push('/uul')} />
         </Card>
-      ) : data.me.state === 'too_small' ? (
-        <Card style={styles.cta}>
-          <Text style={styles.ctaTitle}>{S.league.tooSmallTitle(data.me.members, data.me.minMembers)}</Text>
-          <View style={styles.progress} accessible accessibilityLabel={S.league.tooSmallTitle(data.me.members, data.me.minMembers)}>
-            <View style={[styles.progressFill, { width: `${(Math.min(data.me.members, data.me.minMembers) / data.me.minMembers) * 100}%` }]} />
-          </View>
-          <Muted>{S.league.tooSmallBody}</Muted>
-          <Button title={S.league.invite} onPress={() => router.push('/uul')} />
-        </Card>
       ) : (
         <View style={styles.table}>
+          <MineCard clan={data.standings.find((c) => c.isMine) ?? null} />
           <View style={styles.tableHead}>
-            <Text style={styles.tableTitle}>{S.league.standings}</Text>
-            {data.me.grade !== null ? <Text style={styles.tableNote}>{S.league.groupNote(data.me.grade)}</Text> : null}
+            <Text style={styles.tableTitle}>{data.me.grade !== null ? S.league.standings(data.me.grade) : S.league.standingsAny}</Text>
+            <Text style={styles.tableNote}>{S.league.daysLeft(Math.ceil((data.season.endsAt - Date.now()) / DAY_MS))}</Text>
           </View>
           {data.standings.map((c) => (
             <ClanRow key={c.id} clan={c} onPress={() => (c.isMine ? router.push('/uul') : setOpen(c))} />
@@ -153,14 +75,41 @@ export default function LeagueScreen() {
         </View>
       )}
 
-      <Button title={S.league.freeDuel} variant="secondary" onPress={() => router.navigate('/duel')} />
-
       <ClanSheet clan={open} onClose={() => setOpen(null)} />
     </Screen>
   );
 }
 
 const MEDAL = ['#F2C94C', '#C9CDD6', '#D9935B'];
+
+/** Миний анги: байр, гишүүд, энэ 7 хоногийн метр, ангиа нээх. */
+function MineCard({ clan }: { clan: LeagueClanDto | null }) {
+  if (!clan) return null;
+  return (
+    <Card style={styles.mine}>
+      <View style={styles.mineTop}>
+        <View style={styles.mineLooks}>
+          {clan.looks.slice(0, 3).map((look, i) => (
+            <View key={i} style={i > 0 && styles.overlap}>
+              <Avatar size={44} border={2} look={look} />
+            </View>
+          ))}
+        </View>
+        <View style={styles.minePlace}>
+          <Text style={styles.minePlaceNum}>{clan.rank}</Text>
+          <Text style={styles.minePlaceLabel}>{S.league.place}</Text>
+        </View>
+      </View>
+      <View style={{ gap: 2 }}>
+        <Text style={styles.mineName} numberOfLines={1}>
+          {clanTitle(clan.name)}
+        </Text>
+        <Text style={styles.mineMeta}>{`${S.league.members(clan.members)} · ${S.league.weekMeters(clan.weekHeight)} ${S.league.weekLabel}`}</Text>
+      </View>
+      <Button title={S.league.openClan} variant="lemon" onPress={() => router.push('/uul')} />
+    </Card>
+  );
+}
 
 function ClanRow({ clan, onPress }: { clan: LeagueClanDto; onPress: () => void }) {
   return (
@@ -190,7 +139,7 @@ function ClanRow({ clan, onPress }: { clan: LeagueClanDto; onPress: () => void }
   );
 }
 
-/** Өөр Уулын товч мэдээлэл: зөвхөн нэр, байр, гишүүдийн тоо, нэргүй баавгай (урилгын код, хүүхдийн нэр байхгүй). */
+/** Өөр ангийн товч мэдээлэл: зөвхөн нэр, байр, гишүүдийн тоо, нэргүй баавгай (урилгын код, хүүхдийн нэр байхгүй). */
 function ClanSheet({ clan, onClose }: { clan: LeagueClanDto | null; onClose: () => void }) {
   return (
     <Modal transparent visible={clan !== null} animationType="fade" onRequestClose={onClose}>
@@ -206,8 +155,6 @@ function ClanSheet({ clan, onClose }: { clan: LeagueClanDto | null; onClose: () 
                 <Avatar key={i} size={44} border={2} look={look} />
               ))}
             </View>
-            <Button title={S.league.challenge} disabled onPress={() => undefined} />
-            <Muted center>{S.league.challengeSoon}</Muted>
             <Button title={S.league.close} variant="secondary" onPress={onClose} />
           </Pressable>
         ) : null}
@@ -217,28 +164,25 @@ function ClanSheet({ clan, onClose }: { clan: LeagueClanDto | null; onClose: () 
 }
 
 const styles = StyleSheet.create({
-  content: { gap: 14, paddingTop: 16 },
+  content: { gap: 16, paddingTop: 16 },
   center: { alignItems: 'center', gap: 12 },
-  carousel: { marginHorizontal: -20, flexGrow: 0 },
-  tier: { width: TIER_W, alignItems: 'center', gap: 4, paddingVertical: 4, minHeight: 56 },
-  badgeBox: { height: 64, justifyContent: 'center' },
-  lockedBadge: { opacity: 0.35 },
-  tierName: { fontFamily: fonts.bold, fontSize: 13, color: colors.muted },
-  tierNameOn: { color: colors.ink, fontSize: 14 },
-  tierState: { fontFamily: fonts.medium, fontSize: 12, color: colors.muted },
-  tierStateOn: { color: colors.violet, fontFamily: fonts.bold },
-  head: { alignItems: 'center', gap: 4 },
-  title: { fontFamily: fonts.extrabold, fontSize: 24, lineHeight: 30, color: colors.ink, textAlign: 'center' },
-  sub: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 20, color: colors.muted, textAlign: 'center' },
-  days: { fontFamily: fonts.bold, color: colors.indigo },
+  head: { gap: 8 },
+  mine: { gap: 14, backgroundColor: colors.lavender, marginBottom: 8 },
+  mineTop: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  mineLooks: { flexDirection: 'row' },
+  overlap: { marginLeft: -12 },
+  minePlace: { alignItems: 'center', minWidth: 56 },
+  minePlaceNum: { fontFamily: fonts.pixelNum, fontSize: 28, lineHeight: 32, color: colors.indigo },
+  minePlaceLabel: { fontFamily: fonts.bold, fontSize: 12, color: colors.muted },
+  mineName: { fontFamily: fonts.extrabold, fontSize: 20, color: colors.ink },
+  mineMeta: { fontFamily: fonts.medium, fontSize: 14, color: colors.muted },
+  sub: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 21, color: colors.muted },
   cta: { gap: 12 },
   ctaTitle: { fontFamily: fonts.bold, fontSize: 17, lineHeight: 23, color: colors.ink },
-  progress: { height: 12, borderRadius: 6, backgroundColor: colors.track, overflow: 'hidden' },
-  progressFill: { height: 12, borderRadius: 6, backgroundColor: colors.violet },
   table: { gap: 8 },
-  tableHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between' },
-  tableTitle: { fontFamily: fonts.extrabold, fontSize: 17, color: colors.ink },
-  tableNote: { fontFamily: fonts.medium, fontSize: 13, color: colors.muted },
+  tableHead: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 },
+  tableTitle: { flexShrink: 1, fontFamily: fonts.extrabold, fontSize: 17, color: colors.ink },
+  tableNote: { fontFamily: fonts.bold, fontSize: 13, color: colors.indigo },
   row: {
     minHeight: 64,
     flexDirection: 'row',
@@ -258,7 +202,8 @@ const styles = StyleSheet.create({
   rowName: { fontFamily: fonts.bold, fontSize: 16, color: colors.ink },
   rowMeta: { fontFamily: fonts.medium, fontSize: 12, color: colors.muted },
   rowScore: { alignItems: 'flex-end' },
-  rowMeters: { fontFamily: fonts.pixelNum, fontSize: 15, color: colors.indigo },
+  // Silkscreen-д кирилл "м" байхгүй тул энгийн фонт
+  rowMeters: { fontFamily: fonts.extrabold, fontSize: 15, color: colors.indigo },
   scrim: { flex: 1, backgroundColor: 'rgba(25,21,46,0.5)', justifyContent: 'flex-end' },
   sheet: { backgroundColor: colors.paper, borderTopLeftRadius: radius.lg, borderTopRightRadius: radius.lg, padding: 20, paddingBottom: 32, gap: 12, ...hardShadow(4) },
   sheetTitle: { fontFamily: fonts.extrabold, fontSize: 22, color: colors.ink },

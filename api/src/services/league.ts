@@ -6,15 +6,14 @@ import { parseBearLook } from '../domain/profile';
 import { addDays, ubDay, weekStart } from '../domain/time';
 import { clanOf } from './clans';
 
-// Уулын Лиг (docs/design/clan-league.md). Бүлэг = ижил лиг + ижил "лигийн анги" (гишүүдийн хамгийн олон анги).
-// shortcut: тоглолт (дуэльд дуудах) хараахан байхгүй тул бүлгийн эрэмбэ = энэ 7 хоногийн өндөр; clan_matches нэмэгдэхэд
-// дизайны §1.4-ийн оноогоор солино. Бүх Уулыг нэг query-ээр уншдаг: Уул хэдэн зуу хүрвэл league_entries руу шилжүүлнэ.
+// Анги tab: миний анги (clans) ба ижил ангийн (гишүүдийн хамгийн олон анги) бусад ангитай энэ 7 хоногийн эрэмбэ.
+// Лигийн шатлал (league_tier), гишүүний доод тоо хүүхдийг төөрөгдүүлж байсан тул хэрэглэхгүй. Бүх ангийг нэг query-ээр
+// уншдаг: анги хэдэн зуу хүрвэл тусдаа хүснэгт рүү шилжүүлнэ.
 
 interface ClanStat {
   id: number;
   public_id: string;
   name: string;
-  league_tier: number;
   members: number;
   height: number;
   week_height: number;
@@ -37,13 +36,12 @@ function seasonOf(now: number): LeagueResponse['season'] {
 export async function league(db: D1Database, me: number, now = Date.now()): Promise<LeagueResponse> {
   const season = seasonOf(now);
   const mine = await clanOf(db, me);
-  const empty = { tier: 1, members: 0, minMembers: LEAGUE.MIN_MEMBERS, isOwner: false, clanName: null, grade: null };
-  if (!mine) return { season, me: { state: 'no_clan', ...empty }, standings: [] };
+  if (!mine) return { season, me: { state: 'no_clan', members: 0, isOwner: false, clanName: null, grade: null }, standings: [] };
 
   const [{ results: stats }, { results: grades }] = await Promise.all([
     db
       .prepare(
-        `SELECT c.id, c.public_id, c.name, c.league_tier, COUNT(*) AS members, SUM(u.xp / ?) AS height,
+        `SELECT c.id, c.public_id, c.name, COUNT(*) AS members, SUM(u.xp / ?) AS height,
                 SUM(COALESCE((SELECT SUM(t.xp_awarded) FROM tasks t WHERE t.user_id = u.id AND t.day >= ? AND t.status = 'completed'), 0) / ?) AS week_height
          FROM clans c JOIN clan_members m ON m.clan_id = c.id JOIN users u ON u.id = m.user_id
          GROUP BY c.id`,
@@ -57,18 +55,10 @@ export async function league(db: D1Database, me: number, now = Date.now()): Prom
   const gradeOf = (clanId: number) => modeGrade(grades.filter((g) => g.clan_id === clanId));
   const my = stats.find((s) => s.id === mine.id)!;
   const myGrade = gradeOf(mine.id);
-  const meDto = {
-    tier: my.league_tier,
-    members: my.members,
-    minMembers: LEAGUE.MIN_MEMBERS,
-    isOwner: mine.owner_id === me,
-    clanName: mine.name,
-    grade: myGrade,
-  };
-  if (my.members < LEAGUE.MIN_MEMBERS) return { season, me: { state: 'too_small', ...meDto }, standings: [] };
+  const meDto = { members: my.members, isOwner: mine.owner_id === me, clanName: mine.name, grade: myGrade };
 
   const ranked = stats
-    .filter((s) => s.members >= LEAGUE.MIN_MEMBERS && s.league_tier === my.league_tier && gradeOf(s.id) === myGrade)
+    .filter((s) => gradeOf(s.id) === myGrade)
     .sort((a, b) => b.week_height - a.week_height || b.height - a.height || a.id - b.id);
   const group = ranked.slice(0, LEAGUE.GROUP_MAX);
   // миний Уул эхний 10-д ороогүй бол сүүлчийнхийг орлуулна (өөрийн байраа үргэлж харна)

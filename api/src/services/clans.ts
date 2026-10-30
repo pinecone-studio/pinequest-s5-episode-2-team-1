@@ -34,25 +34,25 @@ export async function clanOf(db: D1Database, userId: number): Promise<ClanRow | 
 
 async function clanByCode(db: D1Database, input: string): Promise<ClanRow> {
   const code = normalizeClanCode(input);
-  if (!code) throw new ApiError(400, 'BAD_REQUEST', `Уулын код ${GAME.CLAN.CODE_LENGTH} оронтой тоо байна`);
+  if (!code) throw new ApiError(400, 'BAD_REQUEST', `Ангийн код ${GAME.CLAN.CODE_LENGTH} оронтой тоо байна`);
   const row = await db.prepare(`SELECT ${CLAN_COLUMNS} FROM clans c WHERE c.code = ?`).bind(code).first<ClanRow>();
-  if (!row) throw new ApiError(404, 'CLAN_NOT_FOUND', 'Ийм кодтой Уул алга');
+  if (!row) throw new ApiError(404, 'CLAN_NOT_FOUND', 'Ийм кодтой анги алга');
   return row;
 }
 
 async function myClanOrThrow(db: D1Database, userId: number): Promise<ClanRow> {
   const clan = await clanOf(db, userId);
-  if (!clan) throw new ApiError(404, 'CLAN_NOT_FOUND', 'Чи одоогоор Ууланд нэгдээгүй байна');
+  if (!clan) throw new ApiError(404, 'CLAN_NOT_FOUND', 'Чи одоогоор ангид нэгдээгүй байна');
   return clan;
 }
 
 function ownerOnly(clan: ClanRow, userId: number) {
-  if (clan.owner_id !== userId) throw new ApiError(403, 'FORBIDDEN', 'Үүнийг зөвхөн Уулын эзэн хийнэ');
+  if (clan.owner_id !== userId) throw new ApiError(403, 'FORBIDDEN', 'Үүнийг зөвхөн ангийн эзэн хийнэ');
 }
 
 function cleanName(input: string): string {
   const name = normalizeClanName(input);
-  if (!name) throw new ApiError(400, 'BAD_REQUEST', 'Уулын нэрээ бичнэ үү');
+  if (!name) throw new ApiError(400, 'BAD_REQUEST', 'Ангийнхаа нэрийг бичнэ үү');
   return name;
 }
 
@@ -115,7 +115,7 @@ export async function clanNameOf(db: D1Database, userId: number): Promise<string
 
 /** Уул байгуулна: үүсгэгч нь эзэн, анхны гишүүн. Нэр өгөөгүй бол "<нэрийн>" (Төгсбилэгийн). */
 export async function createClan(db: D1Database, me: number, name: string | undefined, now = Date.now()): Promise<MyClanResponse> {
-  if (await clanOf(db, me)) throw new ApiError(409, 'CLAN_MEMBER', 'Чи аль хэдийн Ууланд байна. Шинээр байгуулахын өмнө гарна уу');
+  if (await clanOf(db, me)) throw new ApiError(409, 'CLAN_MEMBER', 'Чи аль хэдийн ангид байна. Шинээр байгуулахын өмнө гарна уу');
   const user = await getUserRow(db, me);
   const clanName = name === undefined ? defaultClanName(user.display_name ?? user.username) : cleanName(name);
   // Гишүүд бие биеийнхээ профайлыг кодоор нь нээнэ: код байхгүй бол үүсгэнэ.
@@ -133,7 +133,7 @@ export async function createClan(db: D1Database, me: number, name: string | unde
       break;
     } catch (e) {
       if (!isConstraintError(e, 'UNIQUE')) throw e;
-      if (await clanOf(db, me)) throw new ApiError(409, 'CLAN_MEMBER', 'Чи аль хэдийн Ууланд байна');
+      if (await clanOf(db, me)) throw new ApiError(409, 'CLAN_MEMBER', 'Чи аль хэдийн ангид байна');
       if (attempt >= 4) throw e;
     }
   }
@@ -174,7 +174,7 @@ export async function joinClan(db: D1Database, me: number, input: string, now = 
   const clan = await clanByCode(db, input);
   const current = await clanOf(db, me);
   if (current?.id === clan.id) return myClan(db, me, now);
-  if (current) throw new ApiError(409, 'CLAN_MEMBER', 'Чи өөр Ууланд байна. Эхлээд тэндээсээ гарна уу');
+  if (current) throw new ApiError(409, 'CLAN_MEMBER', 'Чи өөр ангид байна. Эхлээд тэндээсээ гарна уу');
   await ensureProfileCode(db, me);
   let added: D1Result;
   try {
@@ -191,7 +191,7 @@ export async function joinClan(db: D1Database, me: number, input: string, now = 
     if (isConstraintError(e, 'UNIQUE')) return joinClan(db, me, input, now);
     throw e;
   }
-  if (!added.meta.changes) throw new ApiError(409, 'CLAN_FULL', `Энэ Ууланд ${GAME.CLAN.MAX_MEMBERS} сурагч нэгдсэн тул дүүрсэн байна`);
+  if (!added.meta.changes) throw new ApiError(409, 'CLAN_FULL', `Энэ ангид ${GAME.CLAN.MAX_MEMBERS} сурагч нэгдсэн тул дүүрсэн байна`);
   return myClan(db, me, now);
 }
 
@@ -244,7 +244,7 @@ export async function removeMember(db: D1Database, me: number, profileCode: stri
   const clan = await myClanOrThrow(db, me);
   ownerOnly(clan, me);
   const other = await profileOwner(db, profileCode);
-  if (other === me) throw new ApiError(400, 'BAD_REQUEST', 'Уулаас гарах бол «Уулаас гарах»-ыг дарна уу');
+  if (other === me) throw new ApiError(400, 'BAD_REQUEST', 'Ангиас гарах бол «Ангиас гарах»-ыг дарна уу');
   await db.prepare('DELETE FROM clan_members WHERE clan_id = ? AND user_id = ?').bind(clan.id, other).run();
   return myClan(db, me, now);
 }
