@@ -18,6 +18,9 @@ import { useTabBarSpace } from '@/components/BottomNav';
 import { colors, fonts, radius } from '@/constants/theme';
 import { type } from '@/constants/type';
 
+/** web: scroll хүрээний төгсгөлд хүрэхэд хуудсыг (body) татахгүй, rubber-band хийхгүй */
+const NO_OVERSCROLL = Platform.OS === 'web' ? ({ overscrollBehavior: 'none' } as object) : undefined;
+
 export function Screen({
   children,
   scroll = true,
@@ -51,6 +54,10 @@ export function Screen({
       <KeyboardAvoidingView style={styles.fill} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         {scroll ? (
           <ScrollView
+            // Агуулга багтаж байхад доош татахад дээр хоосон зай гарахгүй: iOS-д bounce, web (iPhone Safari)-д
+            // хуудас бүхэлдээ татагдана (overscroll-behavior)
+            alwaysBounceVertical={false}
+            style={NO_OVERSCROLL}
             contentContainerStyle={[styles.content, bottom, contentStyle]}
             keyboardShouldPersistTaps="handled"
             // web: react-native-web нь 'on-drag'-ийг scroll бүрт keyboard хааж хэрэгжүүлдэг. Утасны browser keyboard
