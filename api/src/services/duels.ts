@@ -474,6 +474,14 @@ type PickedQuestion = { id: number; prompt: string; options: string; correct_ind
 const toDuelQuestions = (picked: PickedQuestion[]): DuelQuestion[] =>
   picked.map((q) => ({ id: q.id, prompt: q.prompt, options: JSON.parse(q.options) as string[], correctIndex: q.correct_index, explanation: q.explanation }));
 
+/** Тоглогч бүрт өөр асуулт: сонгосныг ээлжлэн тараана (хараагүй нь эхэнд эрэмбэлэгдсэн тул хүн бүрт тэгш). */
+const dealQuestions = (picked: PickedQuestion[], ids: number[]): Record<string, DuelQuestion[]> =>
+  Object.fromEntries(ids.map((id, i) => [id, toDuelQuestions(picked.filter((_, j) => j % ids.length === i))]));
+
+/** seen_questions-д зөвхөн тоглогчийн өөрт нь ирсэн асуултыг бичих [userId, questionId] хосууд (JSON). */
+const seenPairs = (dealt: Record<string, DuelQuestion[]>) =>
+  JSON.stringify(Object.entries(dealt).flatMap(([id, qs]) => qs.map((q) => [Number(id), q.id])));
+
 async function playerInfo(db: D1Database, users: UserRow[], teamOf: (id: number) => DuelTeam): Promise<DuelPlayerInfo[]> {
   const catalog = await getCatalog(db);
   return users.map((u) => ({
@@ -545,14 +553,15 @@ async function startTeamDuelIfFull(env: Bindings, duel: DuelRow, now: number, re
        ORDER BY (SELECT COUNT(*) FROM seen_questions s WHERE s.question_id = q.id AND s.user_id IN (SELECT value FROM json_each(?))), RANDOM()
        LIMIT ?`,
     )
-    .bind(duel.tier, duel.subject, grade, ids, GAME.DUEL.TEAM_QUESTIONS)
+    .bind(duel.tier, duel.subject, grade, ids, GAME.DUEL.TEAM_QUESTIONS * parties.length)
     .all<PickedQuestion>();
-  if (picked.length < GAME.DUEL.TEAM_QUESTIONS) {
+  if (picked.length < GAME.DUEL.TEAM_QUESTIONS * parties.length) {
     // Дүүрсэн багийг эхлүүлэх өөр оролдлого гарахгүй тул нээлттэй үлдээвэл гацна.
     await cancelChallenge(db, duel.creator_id, duel.id, now).catch(() => undefined);
     throw new ApiError(503, 'NO_QUESTIONS', 'Асуулт хүрэлцэхгүй');
   }
   const questionIds = JSON.stringify(picked.map((q) => q.id));
+  const dealt = dealQuestions(picked, parties.map((p) => p.id));
 
   const tx = newTx();
   const guard = 'EXISTS (SELECT 1 FROM duels WHERE id = ? AND tx = ?)';
@@ -578,10 +587,10 @@ async function startTeamDuelIfFull(env: Bindings, duel: DuelRow, now: number, re
       db
         .prepare(
           `INSERT INTO seen_questions (user_id, question_id, seen_at)
-           SELECT u.value, j.value, ? FROM json_each(?) u, json_each(?) j WHERE ${guard}
+           SELECT json_extract(j.value, '$[0]'), json_extract(j.value, '$[1]'), ? FROM json_each(?) j WHERE ${guard}
            ON CONFLICT (user_id, question_id) DO UPDATE SET seen_at = excluded.seen_at`,
         )
-        .bind(now, ids, questionIds, duel.id, tx),
+        .bind(now, seenPairs(dealt), duel.id, tx),
     ]);
     // Өөр хүсэлт түрүүлж эхлүүлсэн, эсвэл гишүүн өөр тулаанд орсон: тэр гишүүнийг хасч суудлыг нээнэ.
     if (!res[0].meta.changes) return dropPlayingMembers(db, duel, ids, now);
@@ -601,7 +610,7 @@ async function startTeamDuelIfFull(env: Bindings, duel: DuelRow, now: number, re
       stake: duel.stake,
       teamSize: duel.team_size,
       players: await playerInfo(db, users, (id) => teamOf.get(id) ?? 'a'),
-      questions: toDuelQuestions(picked),
+      questions: dealt,
     });
   } catch (e) {
     console.error('[duel] room init failed', e);
@@ -612,7 +621,7 @@ async function startTeamDuelIfFull(env: Bindings, duel: DuelRow, now: number, re
 
 /**
  * 1 vs 1 сорилтыг хүлээн авна: хоёулангийнх нь 20%-ийн хязгаарыг шалгаад, хоёр бооцоог нэг batch-аар
- * түр хасна (оноо хүрэлцэхгүй бол CHECK → rollback), 3 асуулт сонгож DuelRoom-ыг эхлүүлнэ.
+ * түр хасна (оноо хүрэлцэхгүй бол CHECK → rollback), хүн бүрт өөр 3 асуулт сонгож DuelRoom-ыг эхлүүлнэ.
  */
 async function startDuel(env: Bindings, userId: number, duel: DuelRow, now: number): Promise<DuelSummary> {
   const db = env.DB;
@@ -635,10 +644,11 @@ async function startDuel(env: Bindings, userId: number, duel: DuelRow, now: numb
        ORDER BY (SELECT COUNT(*) FROM seen_questions s WHERE s.question_id = q.id AND s.user_id IN (?, ?)), RANDOM()
        LIMIT ?`,
     )
-    .bind(duel.tier, duel.subject, creator.grade, acceptor.grade, creator.id, userId, GAME.DUEL.QUESTIONS)
+    .bind(duel.tier, duel.subject, creator.grade, acceptor.grade, creator.id, userId, GAME.DUEL.QUESTIONS * 2)
     .all<PickedQuestion>();
-  if (picked.length < GAME.DUEL.QUESTIONS) throw new ApiError(503, 'NO_QUESTIONS', 'Асуулт хүрэлцэхгүй');
+  if (picked.length < GAME.DUEL.QUESTIONS * 2) throw new ApiError(503, 'NO_QUESTIONS', 'Асуулт хүрэлцэхгүй');
   const questionIds = JSON.stringify(picked.map((q) => q.id));
+  const dealt = dealQuestions(picked, [creator.id, userId]);
 
   const tx = newTx();
   const guard = 'EXISTS (SELECT 1 FROM duels WHERE id = ? AND tx = ?)';
@@ -670,10 +680,10 @@ async function startDuel(env: Bindings, userId: number, duel: DuelRow, now: numb
       db
         .prepare(
           `INSERT INTO seen_questions (user_id, question_id, seen_at)
-           SELECT u.id, j.value, ? FROM users u, json_each(?) j WHERE u.id IN (?, ?) AND ${guard}
+           SELECT json_extract(j.value, '$[0]'), json_extract(j.value, '$[1]'), ? FROM json_each(?) j WHERE ${guard}
            ON CONFLICT (user_id, question_id) DO UPDATE SET seen_at = excluded.seen_at`,
         )
-        .bind(now, questionIds, creator.id, userId, duelId, tx),
+        .bind(now, seenPairs(dealt), duelId, tx),
     ]);
     if (!res[0].meta.changes) {
       const current = await db.prepare('SELECT status FROM duels WHERE id = ?').bind(duelId).first<{ status: string }>();
@@ -698,7 +708,7 @@ async function startDuel(env: Bindings, userId: number, duel: DuelRow, now: numb
       stake: duel.stake,
       teamSize: 1,
       players: await playerInfo(db, [creator, acceptor], (id) => (id === creator.id ? 'a' : 'b')),
-      questions: toDuelQuestions(picked),
+      questions: dealt,
     });
   } catch (e) {
     console.error('[duel] room init failed', e);

@@ -8,6 +8,15 @@ const A = 1;
 const B = 2;
 const T0 = 1_000_000;
 
+/** Тоглогч бүрт өөр 3 асуулт: p-р тоглогчийн i-р асуултын зөв хариулт = (i + p) % 4. */
+const deal = (ids: number[]) =>
+  Object.fromEntries(
+    ids.map((id, p) => [
+      id,
+      [0, 1, 2].map((i) => ({ id: id * 100 + i, prompt: `Q${id}.${i}`, options: ['а', 'б', 'в', 'г'], correctIndex: (i + p) % 4, explanation: `E${id}.${i}` })),
+    ]),
+  );
+
 const init: DuelInit = {
   duelId: 7,
   subject: 'math',
@@ -16,9 +25,10 @@ const init: DuelInit = {
     { id: A, username: 'aa', name: 'aa', avatar: {} },
     { id: B, username: 'bb', name: 'bb', avatar: {} },
   ],
-  // асуулт i-ийн зөв хариулт = i
-  questions: [0, 1, 2].map((i) => ({ id: 100 + i, prompt: `Q${i}`, options: ['а', 'б', 'в', 'г'], correctIndex: i, explanation: `E${i}` })),
+  questions: deal([A, B]),
 };
+const right = (s: DuelState, id: number, q: number) => s.questions[String(id)][q].correctIndex;
+const wrong = (s: DuelState, id: number, q: number) => (right(s, id, q) + 1) % 4;
 
 const types = (out: Out[]) => out.map((o) => `${o.to}:${o.msg.type}`);
 const msgOf = <T extends ServerMsg['type']>(out: Out[], type: T, to?: number | 'all') =>
@@ -35,7 +45,7 @@ function inQuestion0(): { s: DuelState; t: number } {
 }
 
 describe('эхлэл', () => {
-  it('хоёулаа холбогдмогц 3 сек countdown, дараа нь асуулт хоёуланд зэрэг', () => {
+  it('хоёулаа холбогдмогц 3 сек countdown, дараа нь хүн бүрт өөр асуулт зэрэг', () => {
     let s = createDuel(init, T0);
     expect(s.phase).toBe('waiting');
     const a = onConnect(s, A, 'ca', T0 + 100);
@@ -48,93 +58,87 @@ describe('эхлэл', () => {
     expect(onTick(s, T0 + 200 + COUNTDOWN_MS - 1).state.phase).toBe('countdown');
     const q = onTick(s, T0 + 200 + COUNTDOWN_MS);
     expect(q.state.phase).toBe('question');
-    const question = msgOf(q.out, 'question', 'all');
-    expect(question).toMatchObject({ q: 0, total: 3, prompt: 'Q0', endsAt: T0 + 200 + COUNTDOWN_MS + QUESTION_MS });
-    expect(JSON.stringify(question)).not.toMatch(/correctIndex|explanation/);
+    expect(QUESTION_MS).toBe(30_000);
+    expect(msgOf(q.out, 'question', A)).toMatchObject({ q: 0, total: 3, prompt: `Q${A}.0`, endsAt: T0 + 200 + COUNTDOWN_MS + QUESTION_MS });
+    expect(msgOf(q.out, 'question', B)).toMatchObject({ q: 0, total: 3, prompt: `Q${B}.0` });
+    expect(JSON.stringify(q.out)).not.toMatch(/correctIndex|explanation/);
   });
 
-  it('snapshot асуултын үед зөв хариултыг агуулахгүй', () => {
+  it('snapshot асуултын үед зөв хариулт, зөв эсэхийг агуулахгүй', () => {
     const { s, t } = inQuestion0();
-    expect(JSON.stringify(snapshot(s, A, t))).not.toMatch(/correctIndex|"E0"/);
+    const answered = onAnswer(s, A, 0, right(s, A, 0), t + 100).state;
+    const snap = snapshot(answered, A, t + 200);
+    expect(snap).toMatchObject({ myAnswer: { choice: right(s, A, 0) }, players: [{ score: 0 }, { score: 0 }] });
+    expect(JSON.stringify(snap)).not.toMatch(/correctIndex|correct"|"E/);
   });
 });
 
 describe('асуултын дүрэм', () => {
-  it('хамгийн түрүүнд зөв хариулсан нь авна; дараагийнх нь хүлээж авагдахгүй', () => {
+  it('зөв хариулт асуултыг хаахгүй; зөв эсэхийг хэнд ч хэлэхгүй', () => {
     const { s, t } = inQuestion0();
-    const a = onAnswer(s, A, 0, 0, t + 1000);
-    expect(msgOf(a.out, 'answer_result', A)?.correct).toBe(true);
-    expect(msgOf(a.out, 'opponent_answered', B)?.correct).toBe(true);
-    const reveal = msgOf(a.out, 'reveal', 'all');
-    expect(reveal).toMatchObject({ q: 0, correctIndex: 0, winnerId: A, scores: { [A]: 1, [B]: 0 }, nextAt: t + 1000 + REVEAL_MS });
-    const late = onAnswer(a.state, B, 0, 0, t + 1001);
-    expect(msgOf(late.out, 'error', B)?.code).toBe('NOT_ACCEPTING');
-    expect(late.state.scores[String(B)]).toBe(0);
+    const a = onAnswer(s, A, 0, right(s, A, 0), t + 1000);
+    expect(a.state.phase).toBe('question');
+    expect(msgOf(a.out, 'answer_result', A)).toEqual({ type: 'answer_result', q: 0, choice: right(s, A, 0) });
+    expect(msgOf(a.out, 'opponent_answered', B)).toEqual({ type: 'opponent_answered', q: 0, userId: A });
+    expect(msgOf(a.out, 'reveal')).toBeUndefined();
   });
 
-  it('буруу хариулсан тоглогч тэр асуултад дахин хариулахгүй, өрсөлдөгч нь авч болно', () => {
+  it('тоглогч асуултад нэг л удаа хариулна', () => {
     const { s, t } = inQuestion0();
-    const wrong = onAnswer(s, B, 0, 3, t + 500);
-    expect(msgOf(wrong.out, 'answer_result', B)?.correct).toBe(false);
-    expect(msgOf(wrong.out, 'opponent_answered', A)?.correct).toBe(false);
-    expect(wrong.state.phase).toBe('question');
-    const again = onAnswer(wrong.state, B, 0, 0, t + 600);
+    const first = onAnswer(s, B, 0, wrong(s, B, 0), t + 500).state;
+    const again = onAnswer(first, B, 0, right(s, B, 0), t + 600);
     expect(msgOf(again.out, 'error', B)?.code).toBe('ALREADY_ANSWERED');
-    const win = onAnswer(again.state, A, 0, 0, t + 700);
-    expect(msgOf(win.out, 'reveal', 'all')?.winnerId).toBe(A);
   });
 
-  it('хоёулаа буруу бол хугацаа хүлээлгүй reveal, хэн ч авахгүй', () => {
+  it('хоёулаа хариулмагц reveal: хүн бүр өөрийн асуултын зөв хариултыг авна', () => {
     const { s, t } = inQuestion0();
-    const s1 = onAnswer(s, A, 0, 1, t + 100).state;
-    const r = onAnswer(s1, B, 0, 2, t + 200);
+    const s1 = onAnswer(s, A, 0, right(s, A, 0), t + 100).state;
+    const r = onAnswer(s1, B, 0, wrong(s, B, 0), t + 200);
     expect(r.state.phase).toBe('reveal');
-    expect(msgOf(r.out, 'reveal', 'all')).toMatchObject({ winnerId: null, scores: { [A]: 0, [B]: 0 } });
+    const common = { q: 0, correct: [A], scores: { [A]: 1, [B]: 0 }, nextAt: t + 200 + REVEAL_MS };
+    expect(msgOf(r.out, 'reveal', A)).toMatchObject({ ...common, correctIndex: right(s, A, 0), explanation: `E${A}.0` });
+    expect(msgOf(r.out, 'reveal', B)).toMatchObject({ ...common, correctIndex: right(s, B, 0), explanation: `E${B}.0` });
   });
 
-  it('20 сек дуусвал хэн ч авахгүй', () => {
+  it('30 сек дуусвал хариулаагүй байсан ч reveal', () => {
     const { s, t } = inQuestion0();
-    const r = onTick(s, t + QUESTION_MS);
+    const s1 = onAnswer(s, A, 0, right(s, A, 0), t + 1000).state;
+    expect(onTick(s1, t + QUESTION_MS - 1).state.phase).toBe('question');
+    const r = onTick(s1, t + QUESTION_MS);
     expect(r.state.phase).toBe('reveal');
-    expect(msgOf(r.out, 'reveal', 'all')?.winnerId).toBeNull();
+    expect(msgOf(r.out, 'reveal', B)).toMatchObject({ correct: [A], scores: { [A]: 1, [B]: 0 } });
   });
 
   it('deadline өнгөрсний дараа (alarm-аас өмнө) ирсэн хариултыг хүлээж авахгүй', () => {
     const { s, t } = inQuestion0();
-    const r = onAnswer(s, A, 0, 0, t + QUESTION_MS + 5);
+    const r = onAnswer(s, A, 0, right(s, A, 0), t + QUESTION_MS + 5);
     expect(msgOf(r.out, 'error', A)?.code).toBe('NOT_ACCEPTING');
     expect(r.state.scores[String(A)]).toBe(0);
   });
 
   it('reveal 2 сек → дараагийн асуулт', () => {
     const { s, t } = inQuestion0();
-    const r = onAnswer(s, A, 0, 0, t + 1000);
-    expect(onTick(r.state, t + 1000 + REVEAL_MS - 1).state.phase).toBe('reveal');
-    const next = onTick(r.state, t + 1000 + REVEAL_MS);
-    expect(next.state.q).toBe(1);
-    expect(msgOf(next.out, 'question', 'all')?.q).toBe(1);
+    const r = play(s, t, 0, []);
+    expect(r.s.q).toBe(1);
+    expect(msgOf(r.out, 'question', B)).toMatchObject({ q: 1, prompt: `Q${B}.1` });
   });
 });
 
-/** q асуултад winner (null бол хоёулаа буруу) хариулж, reveal-ийг дуусгана. */
-function play(s: DuelState, t: number, q: number, winner: number | null): { s: DuelState; t: number; out: Out[] } {
+/** q асуултад good доторх тоглогчид зөв, бусад нь буруу хариулж, reveal-ийг дуусгана. */
+function play(s: DuelState, t: number, q: number, good: number[]): { s: DuelState; t: number; out: Out[] } {
   let st = s;
-  if (winner === null) {
-    st = onAnswer(st, A, q, (q + 1) % 4, t + 10).state;
-    st = onAnswer(st, B, q, (q + 1) % 4, t + 20).state;
-  } else {
-    st = onAnswer(st, winner, q, q, t + 10).state;
-  }
-  const r = onTick(st, t + 20 + REVEAL_MS);
-  return { s: r.state, t: t + 20 + REVEAL_MS, out: r.out };
+  for (const id of [A, B]) st = onAnswer(st, id, q, good.includes(id) ? right(s, id, q) : wrong(s, id, q), t + 10).state;
+  expect(onTick(st, t + 10 + REVEAL_MS - 1).state.phase).toBe('reveal');
+  const r = onTick(st, t + 10 + REVEAL_MS);
+  return { s: r.state, t: t + 10 + REVEAL_MS, out: r.out };
 }
 
 describe('үр дүн', () => {
-  it('олон асуулт авсан нь хожиж хоёр бооцоог авна', () => {
+  it('олон зөв хариулсан нь хожиж хоёр бооцоог авна', () => {
     let { s, t } = inQuestion0();
-    ({ s, t } = play(s, t, 0, A));
-    ({ s, t } = play(s, t, 1, B));
-    const last = play(s, t, 2, A);
+    ({ s, t } = play(s, t, 0, [A]));
+    ({ s, t } = play(s, t, 1, [A, B]));
+    const last = play(s, t, 2, []);
     expect(last.s.phase).toBe('finished');
     expect(last.s.outcome).toMatchObject({ winnerId: A, reason: 'score', scores: { [A]: 2, [B]: 1 }, deltas: { [A]: 10, [B]: -10 } });
     expect(last.s.settlement).toEqual({ kind: 'win', winners: [A], losers: [B] });
@@ -143,9 +147,9 @@ describe('үр дүн', () => {
 
   it('тэнцвэл бооцоо буцна', () => {
     let { s, t } = inQuestion0();
-    ({ s, t } = play(s, t, 0, A));
-    ({ s, t } = play(s, t, 1, B));
-    const last = play(s, t, 2, null);
+    ({ s, t } = play(s, t, 0, [A]));
+    ({ s, t } = play(s, t, 1, [B]));
+    const last = play(s, t, 2, []);
     expect(last.s.outcome).toMatchObject({ winnerId: null, reason: 'draw', deltas: { [A]: 0, [B]: 0 } });
     expect(last.s.settlement).toEqual({ kind: 'refund' });
   });
@@ -179,19 +183,19 @@ describe('холболт', () => {
     const back = onConnect(d, B, 'cb2', t + 5000);
     expect(back.state.dropDeadline).toEqual({});
     const snap = msgOf(back.out, 'state', B);
-    expect(snap).toMatchObject({ phase: 'question', question: { q: 0 }, myAnswer: null });
+    expect(snap).toMatchObject({ phase: 'question', question: { q: 0, prompt: `Q${B}.0` }, myAnswer: null });
     expect(onTick(back.state, t + 1000 + DISCONNECT_GRACE_MS).state.phase).toBe('question');
   });
 
-  it('1 vs 1-д өрсөлдөгч түр салсан үед буруу хариулт асуултыг хаахгүй, буцаж ирээд хариулж болно', () => {
+  it('1 vs 1-д өрсөлдөгч түр салсан үед хариулт асуултыг хаахгүй, буцаж ирээд хариулж болно', () => {
     const { s, t } = inQuestion0();
     const d = onDisconnect(s, B, 'cb', t + 1000).state;
-    const wrong = onAnswer(d, A, 0, 3, t + 1500);
-    expect(wrong.state.phase).toBe('question');
-    expect(msgOf(wrong.out, 'reveal', 'all')).toBeUndefined();
-    const back = onConnect(wrong.state, B, 'cb2', t + 3000).state;
-    const b = onAnswer(back, B, 0, 0, t + 3500);
-    expect(msgOf(b.out, 'reveal', 'all')).toMatchObject({ winnerId: B });
+    const a = onAnswer(d, A, 0, wrong(s, A, 0), t + 1500);
+    expect(a.state.phase).toBe('question');
+    expect(msgOf(a.out, 'reveal')).toBeUndefined();
+    const back = onConnect(a.state, B, 'cb2', t + 3000).state;
+    const b = onAnswer(back, B, 0, right(s, B, 0), t + 3500);
+    expect(msgOf(b.out, 'reveal', B)).toMatchObject({ correct: [B] });
   });
 
   it('шинэ холболтоор солигдсон хуучин socket хаагдахад тооцохгүй', () => {
@@ -225,6 +229,7 @@ describe('багийн тулаан (2 vs 2)', () => {
       { id: B1, username: 'b1', name: 'b1', avatar: {}, team: 'b' },
       { id: B2, username: 'b2', name: 'b2', avatar: {}, team: 'b' },
     ],
+    questions: deal([A1, A2, B1, B2]),
   };
   const ALL = [A1, A2, B1, B2];
 
@@ -254,30 +259,30 @@ describe('багийн тулаан (2 vs 2)', () => {
 
   it('зөв хариулт бүр багтаа оноо; бүгд хариулмагц reveal', () => {
     const { s, t } = teamQuestion0();
-    let st = onAnswer(s, A1, 0, 0, t + 10).state;
-    expect(st.phase).toBe('question'); // 1 vs 1-ээс ялгаатай: зөв хариултаар хаагдахгүй
-    st = onAnswer(st, B1, 0, 0, t + 20).state;
-    st = onAnswer(st, A2, 0, 0, t + 30).state;
-    const r = onAnswer(st, B2, 0, 3, t + 40);
-    expect(msgOf(r.out, 'reveal', 'all')).toMatchObject({ winnerId: A1, correct: [A1, A2, B1], teamScores: { a: 2, b: 1 } });
+    let st = onAnswer(s, A1, 0, right(s, A1, 0), t + 10).state;
+    expect(st.phase).toBe('question');
+    st = onAnswer(st, B1, 0, right(s, B1, 0), t + 20).state;
+    st = onAnswer(st, A2, 0, right(s, A2, 0), t + 30).state;
+    const r = onAnswer(st, B2, 0, wrong(s, B2, 0), t + 40);
+    for (const id of ALL) expect(msgOf(r.out, 'reveal', id)).toMatchObject({ correct: [A1, A2, B1], teamScores: { a: 2, b: 1 }, correctIndex: right(s, id, 0) });
   });
 
   it('хариулаагүй сүүлчийн гишүүн салбал хугацаа хүлээлгүй reveal', () => {
     const { s, t } = teamQuestion0();
-    let st = onAnswer(s, A1, 0, 0, t + 10).state;
-    st = onAnswer(st, A2, 0, 1, t + 20).state;
-    st = onAnswer(st, B1, 0, 0, t + 30).state;
+    let st = onAnswer(s, A1, 0, right(s, A1, 0), t + 10).state;
+    st = onAnswer(st, A2, 0, wrong(s, A2, 0), t + 20).state;
+    st = onAnswer(st, B1, 0, right(s, B1, 0), t + 30).state;
     const r = onDisconnect(st, B2, 'c22', t + 40);
-    expect(msgOf(r.out, 'reveal', 'all')).toMatchObject({ q: 0, correct: [A1, B1] });
+    expect(msgOf(r.out, 'reveal', A1)).toMatchObject({ q: 0, correct: [A1, B1] });
   });
 
   it('оноо их баг хожиж, гишүүн бүр бооцоо авна', () => {
     let { s, t } = teamQuestion0();
-    for (let q = 0; q < init.questions.length; q++) {
-      s = onAnswer(s, A1, q, q, t + 10).state;
-      s = onAnswer(s, A2, q, (q + 1) % 4, t + 20).state;
-      s = onAnswer(s, B1, q, (q + 1) % 4, t + 30).state;
-      s = onAnswer(s, B2, q, (q + 1) % 4, t + 40).state;
+    for (let q = 0; q < 3; q++) {
+      s = onAnswer(s, A1, q, right(s, A1, q), t + 10).state;
+      s = onAnswer(s, A2, q, wrong(s, A2, q), t + 20).state;
+      s = onAnswer(s, B1, q, wrong(s, B1, q), t + 30).state;
+      s = onAnswer(s, B2, q, wrong(s, B2, q), t + 40).state;
       t += 40 + REVEAL_MS;
       s = onTick(s, t).state;
     }

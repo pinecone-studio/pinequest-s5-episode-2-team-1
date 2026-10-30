@@ -127,13 +127,13 @@ function play(auth: AuthResponse, duelId: number): Promise<void> {
           void answerLater(msg.q, msg.questionId, msg.options.length);
           break;
         case 'answer_result':
-          log(msg.correct ? '  бот: зөв ✓' : '  бот: буруу ✕');
+          log('  бот хариуллаа');
           break;
         case 'opponent_answered':
-          log(msg.correct ? '  өрсөлдөгч: зөв ✓' : '  өрсөлдөгч: буруу ✕');
+          log('  өрсөлдөгч хариуллаа');
           break;
         case 'reveal': {
-          const who = msg.winnerId === auth.me.id ? 'бот авлаа' : msg.winnerId ? 'өрсөлдөгч авлаа' : 'хэн ч аваагүй';
+          const who = msg.correct.length ? msg.correct.map((id) => (id === auth.me.id ? 'бот' : 'өрсөлдөгч')).join(', ') + ' зөв' : 'хоёулаа буруу';
           log(`  → ${who}. Оноо: бот ${msg.scores[auth.me.id] ?? 0}`);
           break;
         }

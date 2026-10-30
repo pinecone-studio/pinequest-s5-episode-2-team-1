@@ -128,41 +128,34 @@ async function fullDuel(a: AuthResponse, b: AuthResponse, duelId: number) {
   check(rejected, 'Буруу token-той WebSocket холбогдохгүй');
   const { pa, pb } = await connectBoth(duelId, a, b);
 
-  // Асуулт 1: Б буруу → түгжигдэнэ; А зөв → авна
-  const q1 = await pa.waitFor('question', 6_000);
-  await pb.waitFor('question', 1_000);
-  check(!('correctIndex' in q1) && q1.total === 3, 'Асуулт хоёуланд зэрэг, зөв хариултгүй ирнэ');
-  const c1 = await correctIndex(q1.questionId);
-  pb.answer(q1.q, (c1 + 1) % 4);
-  const wrong = await pb.waitFor('answer_result');
-  check(!wrong.correct, 'Б буруу хариулсан');
-  check((await pa.waitFor('opponent_answered')).correct === false, 'А-д өрсөлдөгч буруу хариулсныг мэдэгдэнэ');
-  pb.answer(q1.q, c1);
-  check((await pb.waitFor('error')).code === 'ALREADY_ANSWERED', 'Буруу хариулсан тоглогч дахин хариулахгүй');
+  // Асуулт 1: хүн бүр өөр асуулттай; Б буруу, А зөв. Зөв эсэхийг хоёулаа хариултал хэлэхгүй.
+  const [q1, qb1] = await Promise.all([pa.waitFor('question', 6_000), pb.waitFor('question', 6_000)]);
+  check(!('correctIndex' in q1) && q1.total === 3 && q1.questionId !== qb1.questionId, 'Хүн бүрт өөр асуулт, зөв хариултгүй ирнэ');
+  const [c1, cb1] = await Promise.all([correctIndex(q1.questionId), correctIndex(qb1.questionId)]);
+  pb.answer(qb1.q, (cb1 + 1) % 4);
+  check(!('correct' in (await pb.waitFor('answer_result'))), 'Б-д зөв эсэхийг хэлэхгүй');
+  check(!('correct' in (await pa.waitFor('opponent_answered'))), 'А-д өрсөлдөгч хариулсныг л мэдэгдэнэ');
+  pb.answer(qb1.q, cb1);
+  check((await pb.waitFor('error')).code === 'ALREADY_ANSWERED', 'Хариулсан тоглогч дахин хариулахгүй');
   pa.answer(q1.q, c1);
   const r1 = await pa.waitFor('reveal', 3_000, (m) => m.q === q1.q);
-  check(r1.winnerId === a.me.id && r1.correctIndex === c1, 'А асуултыг авлаа, зөв хариу харагдана');
-  await pb.waitFor('reveal', 3_000, (m) => m.q === q1.q);
+  check(r1.correctIndex === c1 && r1.correct.join() === String(a.me.id), 'Хоёулаа хариулмагц reveal: А зөв, өөрийн асуултын зөв хариу харагдана');
+  check((await pb.waitFor('reveal', 3_000, (m) => m.q === q1.q)).correctIndex === cb1, 'Б өөрийн асуултын зөв хариуг харна');
 
-  // Асуулт 2: хоёулаа зөв, А түрүүлнэ
-  const q2 = await pa.waitFor('question', 5_000);
-  await pb.waitFor('question', 1_000);
-  const c2 = await correctIndex(q2.questionId);
-  pa.answer(q2.q, c2);
-  await sleep(30);
-  pb.answer(q2.q, c2);
-  const r2 = await pb.waitFor('reveal', 3_000, (m) => m.q === q2.q);
+  // Асуулт 2: А зөв, Б буруу
+  const [q2, qb2] = await Promise.all([pa.waitFor('question', 5_000), pb.waitFor('question', 5_000)]);
+  pa.answer(q2.q, await correctIndex(q2.questionId));
+  pb.answer(qb2.q, ((await correctIndex(qb2.questionId)) + 1) % 4);
   await pa.waitFor('reveal', 3_000, (m) => m.q === q2.q);
-  check(r2.winnerId === a.me.id, 'Түрүүлж ирсэн зөв хариулт (сервер хүлээн авсан дарааллаар) авна');
-  check((await pb.waitFor('error')).code === 'NOT_ACCEPTING', 'Хоцорсон хариулт хүлээж авагдахгүй');
+  pa.answer(q2.q, 0);
+  check((await pa.waitFor('error')).code === 'NOT_ACCEPTING', 'Reveal-ийн дараах хариулт хүлээж авагдахгүй');
 
-  // Асуулт 3: хоёулаа буруу → хэн ч авахгүй
-  const q3 = await pa.waitFor('question', 5_000);
-  const c3 = await correctIndex(q3.questionId);
-  pa.answer(q3.q, (c3 + 1) % 4);
-  pb.answer(q3.q, (c3 + 2) % 4);
+  // Асуулт 3: хоёулаа буруу
+  const [q3, qb3] = await Promise.all([pa.waitFor('question', 5_000), pb.waitFor('question', 5_000)]);
+  pa.answer(q3.q, ((await correctIndex(q3.questionId)) + 1) % 4);
+  pb.answer(qb3.q, ((await correctIndex(qb3.questionId)) + 1) % 4);
   const r3 = await pa.waitFor('reveal', 3_000, (m) => m.q === q3.q);
-  check(r3.winnerId === null, 'Хоёулаа буруу бол хэн ч авахгүй', r3);
+  check(r3.correct.length === 0, 'Хоёулаа буруу бол хэн ч оноо авахгүй', r3);
 
   const [fa, fb] = await Promise.all([pa.waitFor('finished', 6_000), pb.waitFor('finished', 6_000)]);
   check(fa.outcome.winnerId === a.me.id && fa.outcome.reason === 'score', 'А 2:0-ээр хожлоо', fa.outcome);
@@ -181,10 +174,9 @@ async function drawDuel() {
   const duelId = await createAndAccept(a, b, 5);
   const { pa, pb } = await connectBoth(duelId, a, b);
   for (let i = 0; i < 3; i++) {
-    const q = await pa.waitFor('question', 6_000);
-    const ci = await correctIndex(q.questionId);
-    pa.answer(q.q, (ci + 1) % 4);
-    pb.answer(q.q, (ci + 2) % 4);
+    const [qa, qb] = await Promise.all([pa.waitFor('question', 6_000), pb.waitFor('question', 6_000)]);
+    pa.answer(qa.q, ((await correctIndex(qa.questionId)) + 1) % 4);
+    pb.answer(qb.q, ((await correctIndex(qb.questionId)) + 1) % 4);
     await pa.waitFor('reveal');
   }
   const f = await pb.waitFor('finished', 6_000);
@@ -265,14 +257,13 @@ async function teamDuel() {
   await Promise.all(players.map((p) => p.waitFor('countdown', 5_000)));
   check(true, 'Дөрвүүлээ холбогдож 3-2-1 эхэллээ');
   for (let i = 0; i < 5; i++) {
-    const q = await pa1.waitFor('question', 6_000);
-    for (const p of [pa2, pb1, pb2]) await p.waitFor('question', 1_000);
-    const ci = await correctIndex(q.questionId);
-    pa1.answer(q.q, ci);
-    pa2.answer(q.q, (ci + 1) % 4);
-    pb1.answer(q.q, i === 0 ? ci : (ci + 1) % 4);
-    pb2.answer(q.q, (ci + 2) % 4);
-    const r = await pa1.waitFor('reveal', 3_000, (m) => m.q === q.q);
+    const qs = await Promise.all(players.map((p) => p.waitFor('question', 6_000)));
+    if (i === 0) check(new Set(qs.map((q) => q.questionId)).size === 4, 'Хүн бүрт өөр асуулт');
+    const ci = await Promise.all(qs.map((q) => correctIndex(q.questionId)));
+    // А1 үргэлж зөв, Б1 зөвхөн эхний асуултад зөв, бусад нь буруу
+    const good = [true, false, i === 0, false];
+    players.forEach((p, j) => p.answer(qs[j].q, good[j] ? ci[j] : (ci[j] + 1) % 4));
+    const r = await pa1.waitFor('reveal', 3_000, (m) => m.q === qs[0].q);
     if (i === 0) check(r.correct.length === 2 && r.teamScores.a === 1 && r.teamScores.b === 1, 'Зөв хариулт бүр багтаа оноо (1:1)', r);
   }
   const f = await pb2.waitFor('finished', 6_000);
