@@ -1,6 +1,6 @@
 import { router } from 'expo-router';
 import { useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, type TextInputInstance } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, type TextInputInstance } from 'react-native';
 import { errorText } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
 import { AuthField, type AuthMood, AuthShell } from '@/components/AuthShell';
@@ -9,6 +9,10 @@ import { JudgeButton } from '@/components/JudgeButton';
 import { BackButton, ErrorText } from '@/components/ui';
 import { colors, fonts } from '@/constants/theme';
 import { S } from '@/i18n/strings';
+
+// web: браузер хадгалсан нууц үгийг өөрөө бөглөж, арилгахад дахин бөглөдөг байсан (сургуулийн хуваалцсан компьютер).
+// Chrome нэвтрэх талбарт "off"-ийг үл тоодог тул нууц үгэнд "new-password". Утсан дээр keychain-ийн бөглөлт хэвээр.
+const WEB = Platform.OS === 'web';
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
@@ -61,7 +65,7 @@ export default function LoginScreen() {
           setError('');
         }}
         textContentType="username"
-        autoComplete="username"
+        autoComplete={WEB ? 'off' : 'username'}
         returnKeyType="next"
         blurOnSubmit={false}
         onSubmitEditing={() => passwordRef.current?.focus()}
@@ -77,7 +81,7 @@ export default function LoginScreen() {
         }}
         secureTextEntry={!showPassword}
         textContentType="password"
-        autoComplete="current-password"
+        autoComplete={WEB ? 'new-password' : 'current-password'}
         returnKeyType="go"
         onFocus={() => setTypingPassword(true)}
         onBlur={() => setTypingPassword(false)}
