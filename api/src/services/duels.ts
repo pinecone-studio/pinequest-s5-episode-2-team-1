@@ -275,11 +275,11 @@ export async function lobby(db: D1Database, userId: number, now = Date.now()): P
   const { results: open } = await db
     .prepare(
       `${SUMMARY_SELECT}
-       WHERE d.status = 'open' AND d.visibility = 'public' AND c.grade = ? AND d.creator_id != ? AND d.creator_seen_at >= ?
+       WHERE d.status = 'open' AND d.visibility = 'public' AND c.grade = ? AND c.is_judge = ? AND d.creator_id != ? AND d.creator_seen_at >= ?
          AND NOT ${IS_MEMBER} AND d.subject IN (SELECT value FROM json_each(?))
        ORDER BY d.created_at DESC LIMIT 30`,
     )
-    .bind(user.grade, userId, now - GAME.DUEL.LOBBY_PRESENCE_MS, userId, JSON.stringify(DUEL_SUBJECTS))
+    .bind(user.grade, user.is_judge, userId, now - GAME.DUEL.LOBBY_PRESENCE_MS, userId, JSON.stringify(DUEL_SUBJECTS))
     .all<SummaryRow>();
   const mine = await db
     .prepare(
@@ -410,6 +410,8 @@ async function checkCanJoin(db: D1Database, userId: number, duel: DuelRow): Prom
   const joiner = await getUserRow(db, userId);
   const creator = await getUserRow(db, duel.creator_id);
   if (joiner.grade !== creator.grade) throw new ApiError(403, 'WRONG_GRADE', 'Өөр ангийн сорилт');
+  // Шүүгч бүр 5000 боргоцойтой тул хүүхэдтэй бооцоотой тулалдвал санаатай ялагдаж боргоцой шилжүүлж болно.
+  if (joiner.is_judge !== creator.is_judge) throw new ApiError(403, 'JUDGE_DUEL', 'Шүүгч зөвхөн шүүгчтэй тулалдана');
   if (await db.prepare(PLAYING_SQL).bind(userId, userId, userId).first()) throw new ApiError(409, 'DUEL_EXISTS', 'Явагдаж буй тулаан байна');
   if (stakeError(duel.stake, joiner.points)) throw new ApiError(400, 'STAKE_TOO_HIGH', 'Таны боргоцойн 20%-иас их бооцоо');
   return joiner;

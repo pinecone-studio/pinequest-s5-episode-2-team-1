@@ -88,6 +88,14 @@ authRoutes.post('/judge', async (c) => {
     .first<{ n: number }>();
   const n = recent?.n ?? 0;
   if (n >= GAME.JUDGE.DAILY_MAX) throw new ApiError(403, 'FORBIDDEN', 'Шүүгчийн бүртгэл хэт олон үүслээ. Дараа дахин оролдоно уу');
+  const ipHash = await sha256Hex(networkOf(c.req.header('cf-connecting-ip')));
+  const fromHere = await db
+    .prepare('SELECT COUNT(*) AS n FROM judge_signups WHERE ip_hash = ? AND created_at > ?')
+    .bind(ipHash, now - 24 * 60 * 60_000)
+    .first<{ n: number }>();
+  if ((fromHere?.n ?? 0) >= GAME.JUDGE.PER_NETWORK_DAILY) {
+    throw new ApiError(429, 'JUDGE_LIMIT', 'Энэ сүлжээнээс шүүгчийн бүртгэл хэт олон үүслээ. Маргааш дахин оролдоно уу');
+  }
 
   const tier = tierForGrade(GAME.JUDGE.GRADE);
   if (!tier) throw new ApiError(500, 'INTERNAL');
@@ -123,11 +131,18 @@ authRoutes.post('/judge', async (c) => {
     db
       .prepare('INSERT INTO user_activity (user_id, day, first_at) SELECT id, ?, ? FROM users WHERE username = ?')
       .bind(ubDay(now), now, username),
+    db.prepare('INSERT INTO judge_signups (ip_hash, created_at) VALUES (?, ?)').bind(ipHash, now),
   ]);
   const row = await db.prepare('SELECT id FROM users WHERE username = ?').bind(username).first<{ id: number }>();
   if (!row) throw new ApiError(500, 'INTERNAL');
   return c.json<AuthResponse>({ token, me: await loadMe(db, row.id, now) }, 201);
 });
+
+/** Хязгаарын түлхүүр: IPv4 бүтнээрээ, IPv6 /64 (нэг гэрийн сүлжээ олон хаягтай). Header байхгүй бол (local) нэг түлхүүр. */
+function networkOf(ip: string | undefined): string {
+  if (!ip) return 'local';
+  return ip.includes(':') ? ip.toLowerCase().split(':').slice(0, 4).join(':') : ip;
+}
 
 authRoutes.post('/login', async (c) => {
   const body = await readBody(c, loginSchema);

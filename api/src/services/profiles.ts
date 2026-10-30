@@ -11,7 +11,7 @@ import { clanNameOf } from './clans';
 import { friendStatus } from './friends';
 import { getCatalog } from './items';
 import { assignProfileCode, ensureProfileCode, profileOwner } from './profileCodes';
-import { getUserRow, loadMe, loadSubjectPaths, streakStateOf } from './users';
+import { allAccess, getUserRow, loadMe, loadSubjectPaths, streakStateOf } from './users';
 
 /** Эзэмшиж буй дэвсгэр, хувцасны key (үнэгүйг оролцуулна; нүдний шил, чихэвч нь items хүснэгтээс). */
 async function loadCollection(db: D1Database, userId: number): Promise<PublicProfile['collection']> {
@@ -122,8 +122,11 @@ export async function setBearLook(db: D1Database, userId: number, look: LookBody
   if (!known('bg', look.bg) || worn.length > MAX_WORN || !worn.every((key) => known('outfit', key))) {
     throw new ApiError(400, 'BAD_REQUEST', 'Дэвсгэр эсвэл хувцас буруу');
   }
-  const { bgs, outfits } = await loadCollection(db, userId);
-  if (!bgs.includes(look.bg) || !worn.every((key) => outfits.includes(key))) throw new ApiError(403, 'NOT_OWNED', 'Эхлээд авна уу');
+  // Admin, шүүгчид дэлгүүр бүх дэвсгэр, хувцсыг эзэмшсэн гэж харуулдаг тул тэднийг шалгахгүй.
+  if (!allAccess(await getUserRow(db, userId))) {
+    const { bgs, outfits } = await loadCollection(db, userId);
+    if (!bgs.includes(look.bg) || !worn.every((key) => outfits.includes(key))) throw new ApiError(403, 'NOT_OWNED', 'Эхлээд авна уу');
+  }
   // үс, царай, цээжний толбыг (PUT /me/avatar) хөндөхгүй
   await db.prepare(`UPDATE users SET bear_look = json_set(${LOOK_JSON}, '$.bg', ?, '$.outfit', ?) WHERE id = ?`).bind(look.bg, worn.join('+'), userId).run();
   return loadMe(db, userId);
