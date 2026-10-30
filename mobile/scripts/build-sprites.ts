@@ -146,7 +146,7 @@ for (const n of ['map_world_snow', 'lair_snow', 'lair_snow_leopard', 'lair_snow_
 for (const n of ['map_chest', 'map_chest_open', 'item_amber', 'item_honey', 'item_bell']) M[n] = [1, 4];
 // боргоцойн дэлгэц (app/pinecones.tsx): олох арга + багцын зураг (PixelLab, flat), арын банз (scripts/pinecone-bg.ts)
 for (const n of ['earn_correct', 'earn_chest', 'earn_duel', 'bundle_pouch', 'bundle_sack', 'bundle_basket', 'bundle_crate', 'bundle_chest']) M[n] = [2];
-for (const n of ['bg_planks', 'wood_boards', 'wood_edge']) M[n] = [3];
+for (const n of ['bg_planks', 'wood_boards', 'wood_edge', 'wall_bricks']) M[n] = [3];
 for (const n of ['map_world_0', 'map_world_1', 'map_world_2', 'map_flag', 'fx_magic', 'lair_0', 'lair_1', 'lair_1_left', 'lair_1_right', 'lair_2', 'bear_battle', 'fx_honey_shatter', 'fx_spark', 'fx_spark_magic', 'fx_slash']) M[n] = [2];
 // boss: тулаанд 4× (boss_pumpkin.py, mapgen_world.py); газрын зураг дээр ~70 dp өндөр (хулуу 1.5×, бусад 2.5×)
 M.boss_pumpkin_sheet = [[376, 71], 4];
