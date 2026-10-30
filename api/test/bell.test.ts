@@ -44,7 +44,7 @@ function setup(bells = 1) {
   sql.prepare("INSERT INTO inventory (user_id, item, qty) VALUES (1, 'bell', ?)").run(bells);
   sql.exec("INSERT INTO subject_progress (user_id, subject, nodes, bosses_beaten) VALUES (1, 'math', 27, 10)");
   sql.exec("INSERT INTO questions (tier, subject, prompt, options, correct_index, explanation, prompt_key, source, created_at) VALUES (1, 'math', 'q', '[]', 0, '', 'q', 'test', 0)");
-  const task = (id = 1, correct = 3, gate = 10) => {
+  const task = (id = 1, correct = 5, gate = 10) => {
     sql.prepare("INSERT INTO tasks (id, user_id, subject, day, boss, path_lessons, created_at) VALUES (?, 1, 'math', '2026-10-27', ?, 24, 0)").run(id, gate);
     for (let position = 0; position < 5; position++) {
       sql.prepare('INSERT INTO task_questions (task_id, position, question_id, correct) VALUES (?, ?, 1, ?)').run(id, position, Number(position < correct));
@@ -124,7 +124,7 @@ describe('Хар Цасан өвгөний шагнал', () => {
   it('өөр хаалганд ялсан ч хонх олгохгүй', async () => {
     const s = setup(0);
     s.sql.exec('UPDATE subject_progress SET bosses_beaten = 9');
-    s.task(1, 3, 9);
+    s.task(1, 5, 9);
     expect((await s.complete()).gateBeaten).toBe(true);
     expect(s.inventory()).toEqual({ qty: 0 });
   });

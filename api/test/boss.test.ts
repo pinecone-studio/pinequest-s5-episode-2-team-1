@@ -59,7 +59,7 @@ describe('boss gate', () => {
     expect([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map(bossesIn)).toEqual([0, 1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 4]);
   });
 
-  it('олонх зөв бол ялна', () => {
-    expect([2, 3, 5].map(bossWon)).toEqual([false, true, true]);
+  it('бүх асуултад зөв хариулбал л ялна', () => {
+    expect([3, 4, 5].map(bossWon)).toEqual([false, false, true]);
   });
 });
