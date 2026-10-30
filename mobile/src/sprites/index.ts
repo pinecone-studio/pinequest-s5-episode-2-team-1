@@ -1804,6 +1804,7 @@ export const sprites = {
   bg_planks_384x288: { source: require('../../assets/sprites/bg_planks_384x288.png'), width: 384, height: 288 },
   wood_boards_144x144: { source: require('../../assets/sprites/wood_boards_144x144.png'), width: 144, height: 144 },
   wood_edge_144x21: { source: require('../../assets/sprites/wood_edge_144x21.png'), width: 144, height: 21 },
+  wall_bricks_144x60: { source: require('../../assets/sprites/wall_bricks_144x60.png'), width: 144, height: 60 },
   map_world_0_390x760: { source: require('../../assets/sprites/map_world_0_390x760.png'), width: 390, height: 760 },
   map_world_1_390x760: { source: require('../../assets/sprites/map_world_1_390x760.png'), width: 390, height: 760 },
   map_world_2_390x448: { source: require('../../assets/sprites/map_world_2_390x448.png'), width: 390, height: 448 },

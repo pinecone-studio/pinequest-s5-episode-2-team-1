@@ -3,10 +3,11 @@
  *   bg_planks   — арын хана: хэвтээ банз, wood.bg-ийн эргэн тойронд бага контрасттай (карт, текст давамгайлна)
  *   wood_boards — толгой ба тавиурын босоо банз
  *   wood_edge   — босоо банзны доод шүдлэг ирмэг (3 банз тутмын нэг нь урт унжина) + сүүдэр
+ *   wall_bricks — дэлгүүрийн хэсгийн гарчгийн тоосгон хана ((tabs)/shop.tsx)
  * wood_boards ба wood_edge нэг өргөнтэй (6 банз) тул хэвтээ чиглэлд хамт давтагдана.
  *
  * Ажиллуулах:  node scripts/pinecone-bg.ts && npm run sprites   (mobile/)
- * Гаралт:      docs/design/pixel-bear/sprites/{bg_planks,wood_boards,wood_edge}.png
+ * Гаралт:      docs/design/pixel-bear/sprites/{bg_planks,wood_boards,wood_edge,wall_bricks}.png
  */
 import { blank, type Img, writePng } from './png.ts';
 
@@ -128,7 +129,31 @@ function edge() {
   return img;
 }
 
-for (const [name, img] of [['bg_planks', planks()], ['wood_boards', boards()], ['wood_edge', edge()]] as const) {
+// дэлгүүрийн хэсгийн (Онцлох, Эрэлттэй…) тоосгон хана: 12×5 тоосго, мөр бүр хагасаар шилжинэ
+function bricks() {
+  const BW_ = 12;
+  const BH = 5;
+  const COLS = 4;
+  const ROWS_ = 4;
+  const MORTAR = hex('#2A1A10');
+  const TONES = ['#6B3F26', '#7E4B2C', '#8F5A34', '#5A3420', '#A06A3C'].map(hex);
+  const img = blank(BW_ * COLS, BH * ROWS_);
+  const put = painter(img);
+  for (let r = 0; r < ROWS_; r++) {
+    const y0 = r * BH;
+    for (let x = 0; x < img.w; x++) put(x, y0 + BH - 1, MORTAR);
+    for (let c = 0; c < COLS; c++) {
+      const x0 = c * BW_ + (r % 2 ? BW_ / 2 : 0);
+      const t = TONES[pick(TONES.length)];
+      const hi = t.map((v) => Math.min(255, v + 24));
+      for (let y = 0; y < BH - 1; y++) for (let x = 1; x < BW_; x++) put(x0 + x, y0 + y, y === 0 ? hi : t);
+      for (let y = 0; y < BH - 1; y++) put(x0, y0 + y, MORTAR);
+    }
+  }
+  return img;
+}
+
+for (const [name, img] of [['bg_planks', planks()], ['wood_boards', boards()], ['wood_edge', edge()], ['wall_bricks', bricks()]] as const) {
   writePng(OUT(name), img);
   console.log(`${name} ${img.w}x${img.h}`);
 }

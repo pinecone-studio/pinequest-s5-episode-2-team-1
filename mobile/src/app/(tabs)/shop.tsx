@@ -1,12 +1,14 @@
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown, SlideInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BgArt } from '@/components/BgArt';
+import { BrickBanner } from '@/components/BrickBanner';
 import type { SwatchStatus } from '@/components/BgSwatch';
 import { MagicBurst } from '@/components/MagicBurst';
+import { PixelText } from '@/components/pinecones';
 import { PressScale, Sprite } from '@/components/pixel';
 import { PreviewStage } from '@/components/PreviewStage';
 import { SegmentedTabs } from '@/components/SegmentedTabs';
@@ -20,9 +22,11 @@ import { S } from '@/i18n/strings';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 import { useOnline } from '@/lib/online';
 import { BACKGROUNDS, bgById, DEFAULT_OUTFIT_ID, isWorn, outfitById, type OutfitId, outfitItems, outfitSlot, toggleWorn, wornItems } from '@/lib/pixelBear/catalog';
+import { OUTFIT_SECTIONS } from '@/lib/pixelBear/shopSections';
 import { type OutfitView, useOutfits } from '@/lib/pixelBear/useOutfits';
 
 type Tab = 'bg' | 'outfit';
+// худалдан авах sheet-д зүйлийн төрлийг харуулна (жагсаалт нь OUTFIT_SECTIONS-оор хуваагдана)
 type OutfitCategory = 'hat' | 'mask' | 'clothes' | 'boots' | 'hand';
 const CATEGORIES: { value: OutfitCategory; label: string }[] = [
   { value: 'hat', label: 'Малгай' },
@@ -61,7 +65,6 @@ export default function ShopScreen() {
   const online = useOnline();
   const insets = useSafeAreaInsets();
   const [tab, setTab] = useState<Tab>('bg');
-  const [outfitCategory, setOutfitCategory] = useState<OutfitCategory>('hat');
   const [selBg, setSelBg] = useState(bear.bgId);
   const [selOutfit, setSelOutfit] = useState<OutfitId>(bear.outfitIds.at(-1) ?? DEFAULT_OUTFIT_ID);
   const [sheet, setSheet] = useState(false);
@@ -73,7 +76,7 @@ export default function ShopScreen() {
   // намхан дэлгэцэнд sheet-ийн stage-ийг багасгаж товч харагдах зай үлдээнэ
   const stageH = Math.round(Math.min(260, Math.max(170, useWindowDimensions().height * 0.28)));
   const isBg = tab === 'bg';
-  const visibleOutfits = outfits.views.filter((v) => categoryOf(v.def.id) === outfitCategory);
+  const viewById = new Map(outfits.views.map((v) => [v.def.id, v]));
   const bgDef = bgById(isBg ? selBg : bear.bgId);
   const outfitView = outfits.views.find((v) => v.def.id === selOutfit) ?? outfits.views[0];
   const outfitDef = outfitById(outfitView.def.id);
@@ -162,9 +165,9 @@ export default function ShopScreen() {
       <View style={styles.sticky}>
         <View style={styles.header}>
           <View style={{ flex: 1, gap: 4 }}>
-            <Text accessibilityRole="header" style={type.h1}>
-              {S.shop.title}
-            </Text>
+            <View accessibilityRole="header">
+              <PixelText text={S.shop.title} px={3} color={colors.ink} shadow={colors.stone} />
+            </View>
             <Text style={type.small}>{S.shop.subtitle}</Text>
           </View>
           <PressScale accessibilityRole="button" accessibilityLabel={S.bag.title} onPress={() => router.push('/bag')} style={styles.bagBtn}>
@@ -185,26 +188,6 @@ export default function ShopScreen() {
           ]}
         />
 
-        {tab === 'outfit' && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categories}>
-            <View accessibilityRole="tablist" accessibilityLabel="Хувцасны төрөл" style={styles.categoryRow}>
-              {CATEGORIES.map((category) => {
-                const selected = outfitCategory === category.value;
-                return (
-                  <PressScale
-                    key={category.value}
-                    accessibilityRole="tab"
-                    accessibilityState={{ selected }}
-                    onPress={() => setOutfitCategory(category.value)}
-                    style={[styles.category, selected && styles.categoryOn]}
-                  >
-                    <Text style={[styles.categoryText, selected && styles.categoryTextOn]}>{category.label}</Text>
-                  </PressScale>
-                );
-              })}
-            </View>
-          </ScrollView>
-        )}
       </View>
 
       {online ? null : <Text style={styles.offline}>{S.offline.shopNote}</Text>}
@@ -237,36 +220,46 @@ export default function ShopScreen() {
           ))}
         </Animated.View>
       ) : (
-        <Animated.View key={`outfit-${outfitCategory}`} entering={FadeInDown.duration(260)} style={styles.grid}>
+        <Animated.View key="outfit" entering={FadeInDown.duration(260)}>
           {!outfits.loaded ? <ActivityIndicator color={colors.violet} /> : null}
-          {chunk(visibleOutfits, COLS).map((row, r) => (
-            <View key={r} style={styles.row}>
-              {pad(row, COLS).map((v, i) =>
-                v ? (
-                  <ShopCard
-                    key={v.def.id}
-                    items={outfitItems(v.def)}
-                    label={v.def.name}
-                    equipped={isWorn(bear.outfitIds, v.def.id)}
-                    status={statusOf({
-                      equipped: isWorn(bear.outfitIds, v.def.id),
-                      owned: v.owned,
-                      price: v.price,
-                      honey: bear.honey,
-                      lockedLevel: v.lockedLevel,
-                    })}
-                    onPress={() => {
-                      setSelOutfit(v.def.id);
-                      if (v.def.id === 'pestilence_staff') setCastKey((k) => k + 1);
-                      open();
-                    }}
-                  />
-                ) : (
-                  <View key={`e${i}`} style={{ flex: 1 }} />
-                ),
-              )}
-            </View>
-          ))}
+          {OUTFIT_SECTIONS.map((section) => {
+            const list = section.ids.flatMap((id) => viewById.get(id) ?? []);
+            return list.length ? (
+              <View key={section.title}>
+                <BrickBanner title={section.title} />
+                <View style={styles.grid}>
+                  {chunk(list, COLS).map((row, r) => (
+                    <View key={r} style={styles.row}>
+                      {pad(row, COLS).map((v, i) =>
+                        v ? (
+                          <ShopCard
+                            key={v.def.id}
+                            items={outfitItems(v.def)}
+                            label={v.def.name}
+                            equipped={isWorn(bear.outfitIds, v.def.id)}
+                            status={statusOf({
+                              equipped: isWorn(bear.outfitIds, v.def.id),
+                              owned: v.owned,
+                              price: v.price,
+                              honey: bear.honey,
+                              lockedLevel: v.lockedLevel,
+                            })}
+                            onPress={() => {
+                              setSelOutfit(v.def.id);
+                              if (v.def.id === 'pestilence_staff') setCastKey((k) => k + 1);
+                              open();
+                            }}
+                          />
+                        ) : (
+                          <View key={`e${i}`} style={{ flex: 1 }} />
+                        ),
+                      )}
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ) : null;
+          })}
         </Animated.View>
       )}
 
@@ -337,12 +330,6 @@ const styles = StyleSheet.create({
   bagBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.white, alignItems: 'center', justifyContent: 'center' },
   grid: { gap: 18 },
   row: { flexDirection: 'row', gap: 10 },
-  categories: { paddingVertical: 4 },
-  categoryRow: { flexDirection: 'row', gap: 8 },
-  category: { backgroundColor: colors.stoneAlt, borderRadius: radius.pill, paddingHorizontal: 16, paddingVertical: 9 },
-  categoryOn: { backgroundColor: colors.indigo },
-  categoryText: { color: colors.ink, fontFamily: fonts.semibold, fontSize: 13 },
-  categoryTextOn: { color: colors.white },
   modal: { flex: 1, justifyContent: 'flex-end' },
   backdrop: { ...StyleSheet.absoluteFill, backgroundColor: 'rgba(25, 21, 46, 0.45)' },
   sheet: { gap: 14, paddingHorizontal: 20, paddingTop: 10, borderTopLeftRadius: radius.sheet, borderTopRightRadius: radius.sheet, backgroundColor: colors.white },
