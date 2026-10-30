@@ -75,6 +75,7 @@ export async function loadTask(db: D1Database, userId: number, taskId: number): 
     })),
     answeredCount: results.filter((r) => r.choice !== null).length,
     correctCount: results.filter((r) => r.correct === 1).length,
+    skippedCount: results.filter((r) => r.choice === -1).length,
   };
 }
 
@@ -348,18 +349,19 @@ export async function completeTask(
   const cc = await db
     .prepare(
       `SELECT t.subject, t.kind, t.boss, t.path_lessons, t.node, t.stage,
-         (SELECT COUNT(*) FROM task_questions WHERE task_id = t.id AND correct = 1) AS n
+         (SELECT COUNT(*) FROM task_questions WHERE task_id = t.id AND correct = 1) AS n,
+         (SELECT COUNT(*) FROM task_questions WHERE task_id = t.id AND choice >= 0 AND correct = 0) AS wrong
        FROM tasks t WHERE t.id = ?`,
     )
     .bind(taskId)
-    .first<{ subject: Subject; kind: string; boss: number | null; path_lessons: number | null; node: number | null; stage: number | null; n: number }>();
+    .first<{ subject: Subject; kind: string; boss: number | null; path_lessons: number | null; node: number | null; stage: number | null; n: number; wrong: number }>();
   if (!cc) throw new ApiError(404, 'NOT_FOUND', 'Даалгавар олдсонгүй');
   const correctCount = cc.n;
   const base = taskReward(correctCount, after.streak);
   const path = (await loadSubjectPaths(db, userId))[cc.subject];
   // Тухайн хичээлийн дараагийн boss-ыг ялбал тэр хичээлийн дараагийн бүлэг нээгдэнэ (bosses_beaten = boss нөхцөл
   // давхар тоолохоос сэргийлнэ).
-  const beatBoss = cc.boss != null && cc.boss === path.bossesBeaten && bossWon(correctCount);
+  const beatBoss = cc.boss != null && cc.boss === path.bossesBeaten && bossWon(correctCount, cc.wrong);
   const gateItem = beatBoss && cc.boss != null ? GATE_ITEM[cc.boss] : undefined;
   // Хаалгыг анх давахад нэг удаагийн шагнал (давсан хаалгатай дахин тулалдах боломжгүй тул давхардахгүй)
   const reward = { ...base, points: base.points + (beatBoss && cc.boss != null ? (GATE_BONUS[cc.boss] ?? 0) : 0) };

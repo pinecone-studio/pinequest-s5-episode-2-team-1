@@ -60,6 +60,13 @@ describe('boss gate', () => {
   });
 
   it('бүх асуултад зөв хариулбал л ялна', () => {
-    expect([3, 4, 5].map(bossWon)).toEqual([false, false, true]);
+    expect([3, 4].map((c) => bossWon(c, 5 - c))).toEqual([false, false]);
+    expect(bossWon(5, 0)).toBe(true);
+  });
+
+  it('мэдээлсэн (flag) асуулт алдаа биш, бүгдийг нь мэдээлбэл ялахгүй', () => {
+    expect(bossWon(4, 0)).toBe(true);
+    expect(bossWon(4, 1)).toBe(false);
+    expect(bossWon(0, 0)).toBe(false);
   });
 });

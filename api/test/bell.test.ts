@@ -47,7 +47,10 @@ function setup(bells = 1) {
   const task = (id = 1, correct = 5, gate = 10) => {
     sql.prepare("INSERT INTO tasks (id, user_id, subject, day, boss, path_lessons, created_at) VALUES (?, 1, 'math', '2026-10-27', ?, 24, 0)").run(id, gate);
     for (let position = 0; position < 5; position++) {
-      sql.prepare('INSERT INTO task_questions (task_id, position, question_id, correct) VALUES (?, ?, 1, ?)').run(id, position, Number(position < correct));
+      // зөв бол 0 (correct_index), буруу бол 1
+      sql
+        .prepare('INSERT INTO task_questions (task_id, position, question_id, choice, correct) VALUES (?, ?, 1, ?, ?)')
+        .run(id, position, position < correct ? 0 : 1, Number(position < correct));
     }
   };
   const inventory = () => sql.prepare("SELECT qty FROM inventory WHERE user_id = 1 AND item = 'bell'").get() as { qty: number };
@@ -92,6 +95,13 @@ describe('Хар Цасан өвгөний шагнал', () => {
     expect(s.inventory()).toEqual({ qty: 3 });
     await expect(s.complete()).rejects.toMatchObject({ code: 'TASK_CLOSED' });
     expect(s.inventory()).toEqual({ qty: 3 });
+  });
+
+  it('мэдээлсэн (flag) асуулт ялагдал биш: үлдсэнд бүгдэд зөв бол ялна', async () => {
+    const s = setup(0);
+    s.task(1, 5);
+    s.sql.exec('UPDATE task_questions SET choice = -1, correct = 0 WHERE task_id = 1 AND position = 4');
+    expect((await s.complete()).gateBeaten).toBe(true);
   });
 
   it('ялагдсан тулаанд хонх олгохгүй', async () => {
