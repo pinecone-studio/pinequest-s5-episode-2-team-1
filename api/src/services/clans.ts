@@ -1,7 +1,7 @@
 import { defaultClanName, normalizeClanName, XP_PER_METER } from '../../../shared/clan';
 import type { BearLook, ClanDto, ClanMemberDto, ClanPreviewResponse, MyClanResponse } from '../../../shared/types';
 import { GAME } from '../config/game';
-import { newClanCode, normalizeClanCode } from '../domain/clanCode';
+import { newClanCode, newClanPublicId, normalizeClanCode } from '../domain/clanCode';
 import { levelFromXp } from '../domain/level';
 import { parseBearLook } from '../domain/profile';
 import { normalizeStreak } from '../domain/streak';
@@ -125,7 +125,9 @@ export async function createClan(db: D1Database, me: number, name: string | unde
     try {
       // Нэг batch = нэг transaction: аль хэдийн гишүүн болсон бол (зэрэг ирсэн хүсэлт) Уул ч үүсэхгүй.
       await db.batch([
-        db.prepare('INSERT INTO clans (name, code, owner_id, created_at) VALUES (?, ?, ?, ?)').bind(clanName, code, me, now),
+        db
+          .prepare('INSERT INTO clans (name, code, public_id, owner_id, created_at) VALUES (?, ?, ?, ?, ?)')
+          .bind(clanName, code, newClanPublicId(), me, now),
         db.prepare('INSERT INTO clan_members (user_id, clan_id, joined_at) SELECT ?, id, ? FROM clans WHERE code = ?').bind(me, now, code),
       ]);
       break;

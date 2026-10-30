@@ -342,6 +342,32 @@ export interface ClanPreview {
   looks: BearLook[];
 }
 
+/**
+ * Лиг дээрх Уул. Өөр Уулын хувьд урилгын код, username, профайлын код, гишүүдийн нэр БАЙХГҮЙ (docs/design/clan-league.md §7):
+ * зөвхөн нэр, тоо, нэргүй баавгайн хөрөг.
+ */
+export interface LeagueClanDto {
+  /** clans.public_id (урилгын код биш) */
+  id: string;
+  name: string;
+  members: number;
+  rank: number;
+  /** Энэ 7 хоногт гишүүдийн нэмсэн метр (тоглолтын оноо гартал эрэмбэ үүгээр) */
+  weekHeight: number;
+  /** Нийт өндөр (тэнцвэл) */
+  height: number;
+  isMine: boolean;
+  looks: BearLook[];
+}
+
+/** GET /league. no_clan = Уулгүй, too_small = 5-аас цөөн гишүүнтэй (лигт ороогүй), placed = лигт байна. */
+export interface LeagueResponse {
+  season: { week: string; endsAt: number };
+  me: { state: 'no_clan' | 'too_small' | 'placed'; tier: number; members: number; minMembers: number; isOwner: boolean; clanName: string | null; grade: number | null };
+  /** Өөрийн бүлэг (ижил лиг, ижил анги); лигт ороогүй бол хоосон */
+  standings: LeagueClanDto[];
+}
+
 /** GET /clans/:code. member = энэ Ууланд байна, elsewhere = өөр Ууланд байна (эхлээд гарах ёстой). */
 export interface ClanPreviewResponse {
   clan: ClanPreview;

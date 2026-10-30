@@ -55,6 +55,7 @@ export default function TabsLayout() {
         <Tabs.Screen name="path" options={{ title: S.tabs.path }} />
         <Tabs.Screen name="shop" options={{ title: S.tabs.shop }} />
         <Tabs.Screen name="duel" options={{ title: S.tabs.duel }} />
+        <Tabs.Screen name="league" options={{ title: S.tabs.league }} />
       </Tabs>
       <FirstTour />
     </View>
