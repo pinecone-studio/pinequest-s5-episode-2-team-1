@@ -6167,5 +6167,4750 @@
         }
       }
     }
+  },
+  "footballer_7": {
+    "thriving": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -14,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "thriving0",
+          "duration": 500
+        },
+        {
+          "name": "thriving1",
+          "duration": 150
+        },
+        {
+          "name": "thriving2",
+          "duration": 150
+        },
+        {
+          "name": "thriving3",
+          "duration": 150
+        },
+        {
+          "name": "thriving4",
+          "duration": 150
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "happy": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "happy0",
+          "duration": 900
+        },
+        {
+          "name": "happy1",
+          "duration": 180
+        },
+        {
+          "name": "happy2",
+          "duration": 180
+        },
+        {
+          "name": "happy3",
+          "duration": 180
+        },
+        {
+          "name": "happy4",
+          "duration": 180
+        },
+        {
+          "name": "happy5",
+          "duration": 180
+        },
+        {
+          "name": "happy6",
+          "duration": 180
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "tired": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "tired0",
+          "duration": 800
+        },
+        {
+          "name": "tired1",
+          "duration": 230
+        },
+        {
+          "name": "tired2",
+          "duration": 230
+        },
+        {
+          "name": "tired3",
+          "duration": 230
+        },
+        {
+          "name": "tired4",
+          "duration": 230
+        },
+        {
+          "name": "tired5",
+          "duration": 230
+        },
+        {
+          "name": "tired6",
+          "duration": 230
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "neglected": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "neglected0",
+          "duration": 750
+        },
+        {
+          "name": "neglected1",
+          "duration": 190
+        },
+        {
+          "name": "neglected2",
+          "duration": 190
+        },
+        {
+          "name": "neglected3",
+          "duration": 190
+        },
+        {
+          "name": "neglected4",
+          "duration": 190
+        },
+        {
+          "name": "neglected5",
+          "duration": 190
+        },
+        {
+          "name": "neglected6",
+          "duration": 190
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 3,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 3,
+          "to": 6,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "sleep": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -12,
+        -41
+      ],
+      "frames": [
+        {
+          "name": "sleep0",
+          "duration": 900
+        },
+        {
+          "name": "sleep1",
+          "duration": 360
+        },
+        {
+          "name": "sleep2",
+          "duration": 360
+        },
+        {
+          "name": "sleep3",
+          "duration": 360
+        },
+        {
+          "name": "sleep4",
+          "duration": 360
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "ouch": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "ouch0",
+          "duration": 600
+        },
+        {
+          "name": "ouch1",
+          "duration": 160
+        },
+        {
+          "name": "ouch2",
+          "duration": 160
+        },
+        {
+          "name": "ouch3",
+          "duration": 160
+        },
+        {
+          "name": "ouch4",
+          "duration": 160
+        },
+        {
+          "name": "ouch5",
+          "duration": 160
+        },
+        {
+          "name": "ouch6",
+          "duration": 160
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 6,
+          "direction": "pingpong"
+        },
+        "loop": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        }
+      }
+    },
+    "welcome": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -14,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "welcome0",
+          "duration": 600
+        },
+        {
+          "name": "welcome1",
+          "duration": 180
+        },
+        {
+          "name": "welcome2",
+          "duration": 180
+        },
+        {
+          "name": "welcome3",
+          "duration": 180
+        },
+        {
+          "name": "welcome4",
+          "duration": 180
+        },
+        {
+          "name": "welcome5",
+          "duration": 180
+        },
+        {
+          "name": "welcome6",
+          "duration": 180
+        },
+        {
+          "name": "welcome7",
+          "duration": 180
+        },
+        {
+          "name": "welcome8",
+          "duration": 700
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 8,
+          "direction": "pingpong"
+        }
+      }
+    }
+  },
+  "footballer_10": {
+    "thriving": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -15,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "thriving0",
+          "duration": 500
+        },
+        {
+          "name": "thriving1",
+          "duration": 150
+        },
+        {
+          "name": "thriving2",
+          "duration": 150
+        },
+        {
+          "name": "thriving3",
+          "duration": 150
+        },
+        {
+          "name": "thriving4",
+          "duration": 150
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "happy": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -19,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "happy0",
+          "duration": 900
+        },
+        {
+          "name": "happy1",
+          "duration": 180
+        },
+        {
+          "name": "happy2",
+          "duration": 180
+        },
+        {
+          "name": "happy3",
+          "duration": 180
+        },
+        {
+          "name": "happy4",
+          "duration": 180
+        },
+        {
+          "name": "happy5",
+          "duration": 180
+        },
+        {
+          "name": "happy6",
+          "duration": 180
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "tired": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -19,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "tired0",
+          "duration": 800
+        },
+        {
+          "name": "tired1",
+          "duration": 230
+        },
+        {
+          "name": "tired2",
+          "duration": 230
+        },
+        {
+          "name": "tired3",
+          "duration": 230
+        },
+        {
+          "name": "tired4",
+          "duration": 230
+        },
+        {
+          "name": "tired5",
+          "duration": 230
+        },
+        {
+          "name": "tired6",
+          "duration": 230
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "neglected": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -19,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "neglected0",
+          "duration": 750
+        },
+        {
+          "name": "neglected1",
+          "duration": 190
+        },
+        {
+          "name": "neglected2",
+          "duration": 190
+        },
+        {
+          "name": "neglected3",
+          "duration": 190
+        },
+        {
+          "name": "neglected4",
+          "duration": 190
+        },
+        {
+          "name": "neglected5",
+          "duration": 190
+        },
+        {
+          "name": "neglected6",
+          "duration": 190
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 3,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 3,
+          "to": 6,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "sleep": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -12,
+        -41
+      ],
+      "frames": [
+        {
+          "name": "sleep0",
+          "duration": 900
+        },
+        {
+          "name": "sleep1",
+          "duration": 360
+        },
+        {
+          "name": "sleep2",
+          "duration": 360
+        },
+        {
+          "name": "sleep3",
+          "duration": 360
+        },
+        {
+          "name": "sleep4",
+          "duration": 360
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "ouch": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -19,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "ouch0",
+          "duration": 600
+        },
+        {
+          "name": "ouch1",
+          "duration": 160
+        },
+        {
+          "name": "ouch2",
+          "duration": 160
+        },
+        {
+          "name": "ouch3",
+          "duration": 160
+        },
+        {
+          "name": "ouch4",
+          "duration": 160
+        },
+        {
+          "name": "ouch5",
+          "duration": 160
+        },
+        {
+          "name": "ouch6",
+          "duration": 160
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 6,
+          "direction": "pingpong"
+        },
+        "loop": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        }
+      }
+    },
+    "welcome": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -15,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "welcome0",
+          "duration": 600
+        },
+        {
+          "name": "welcome1",
+          "duration": 180
+        },
+        {
+          "name": "welcome2",
+          "duration": 180
+        },
+        {
+          "name": "welcome3",
+          "duration": 180
+        },
+        {
+          "name": "welcome4",
+          "duration": 180
+        },
+        {
+          "name": "welcome5",
+          "duration": 180
+        },
+        {
+          "name": "welcome6",
+          "duration": 180
+        },
+        {
+          "name": "welcome7",
+          "duration": 180
+        },
+        {
+          "name": "welcome8",
+          "duration": 700
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 8,
+          "direction": "pingpong"
+        }
+      }
+    }
+  },
+  "pirate_captain": {
+    "thriving": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -15,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "thriving0",
+          "duration": 500
+        },
+        {
+          "name": "thriving1",
+          "duration": 150
+        },
+        {
+          "name": "thriving2",
+          "duration": 150
+        },
+        {
+          "name": "thriving3",
+          "duration": 150
+        },
+        {
+          "name": "thriving4",
+          "duration": 150
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "happy": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -19,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "happy0",
+          "duration": 900
+        },
+        {
+          "name": "happy1",
+          "duration": 180
+        },
+        {
+          "name": "happy2",
+          "duration": 180
+        },
+        {
+          "name": "happy3",
+          "duration": 180
+        },
+        {
+          "name": "happy4",
+          "duration": 180
+        },
+        {
+          "name": "happy5",
+          "duration": 180
+        },
+        {
+          "name": "happy6",
+          "duration": 180
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "tired": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -19,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "tired0",
+          "duration": 800
+        },
+        {
+          "name": "tired1",
+          "duration": 230
+        },
+        {
+          "name": "tired2",
+          "duration": 230
+        },
+        {
+          "name": "tired3",
+          "duration": 230
+        },
+        {
+          "name": "tired4",
+          "duration": 230
+        },
+        {
+          "name": "tired5",
+          "duration": 230
+        },
+        {
+          "name": "tired6",
+          "duration": 230
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "neglected": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -19,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "neglected0",
+          "duration": 750
+        },
+        {
+          "name": "neglected1",
+          "duration": 190
+        },
+        {
+          "name": "neglected2",
+          "duration": 190
+        },
+        {
+          "name": "neglected3",
+          "duration": 190
+        },
+        {
+          "name": "neglected4",
+          "duration": 190
+        },
+        {
+          "name": "neglected5",
+          "duration": 190
+        },
+        {
+          "name": "neglected6",
+          "duration": 190
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 3,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 3,
+          "to": 6,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "sleep": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -12,
+        -41
+      ],
+      "frames": [
+        {
+          "name": "sleep0",
+          "duration": 900
+        },
+        {
+          "name": "sleep1",
+          "duration": 360
+        },
+        {
+          "name": "sleep2",
+          "duration": 360
+        },
+        {
+          "name": "sleep3",
+          "duration": 360
+        },
+        {
+          "name": "sleep4",
+          "duration": 360
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "ouch": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -19,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "ouch0",
+          "duration": 600
+        },
+        {
+          "name": "ouch1",
+          "duration": 160
+        },
+        {
+          "name": "ouch2",
+          "duration": 160
+        },
+        {
+          "name": "ouch3",
+          "duration": 160
+        },
+        {
+          "name": "ouch4",
+          "duration": 160
+        },
+        {
+          "name": "ouch5",
+          "duration": 160
+        },
+        {
+          "name": "ouch6",
+          "duration": 160
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 6,
+          "direction": "pingpong"
+        },
+        "loop": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        }
+      }
+    },
+    "welcome": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -15,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "welcome0",
+          "duration": 600
+        },
+        {
+          "name": "welcome1",
+          "duration": 180
+        },
+        {
+          "name": "welcome2",
+          "duration": 180
+        },
+        {
+          "name": "welcome3",
+          "duration": 180
+        },
+        {
+          "name": "welcome4",
+          "duration": 180
+        },
+        {
+          "name": "welcome5",
+          "duration": 180
+        },
+        {
+          "name": "welcome6",
+          "duration": 180
+        },
+        {
+          "name": "welcome7",
+          "duration": 180
+        },
+        {
+          "name": "welcome8",
+          "duration": 700
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 8,
+          "direction": "pingpong"
+        }
+      }
+    }
+  },
+  "hoop_23": {
+    "thriving": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -15,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "thriving0",
+          "duration": 500
+        },
+        {
+          "name": "thriving1",
+          "duration": 150
+        },
+        {
+          "name": "thriving2",
+          "duration": 150
+        },
+        {
+          "name": "thriving3",
+          "duration": 150
+        },
+        {
+          "name": "thriving4",
+          "duration": 150
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "happy": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -19,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "happy0",
+          "duration": 900
+        },
+        {
+          "name": "happy1",
+          "duration": 180
+        },
+        {
+          "name": "happy2",
+          "duration": 180
+        },
+        {
+          "name": "happy3",
+          "duration": 180
+        },
+        {
+          "name": "happy4",
+          "duration": 180
+        },
+        {
+          "name": "happy5",
+          "duration": 180
+        },
+        {
+          "name": "happy6",
+          "duration": 180
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "tired": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -19,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "tired0",
+          "duration": 800
+        },
+        {
+          "name": "tired1",
+          "duration": 230
+        },
+        {
+          "name": "tired2",
+          "duration": 230
+        },
+        {
+          "name": "tired3",
+          "duration": 230
+        },
+        {
+          "name": "tired4",
+          "duration": 230
+        },
+        {
+          "name": "tired5",
+          "duration": 230
+        },
+        {
+          "name": "tired6",
+          "duration": 230
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "neglected": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -19,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "neglected0",
+          "duration": 750
+        },
+        {
+          "name": "neglected1",
+          "duration": 190
+        },
+        {
+          "name": "neglected2",
+          "duration": 190
+        },
+        {
+          "name": "neglected3",
+          "duration": 190
+        },
+        {
+          "name": "neglected4",
+          "duration": 190
+        },
+        {
+          "name": "neglected5",
+          "duration": 190
+        },
+        {
+          "name": "neglected6",
+          "duration": 190
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 3,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 3,
+          "to": 6,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "sleep": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -12,
+        -41
+      ],
+      "frames": [
+        {
+          "name": "sleep0",
+          "duration": 900
+        },
+        {
+          "name": "sleep1",
+          "duration": 360
+        },
+        {
+          "name": "sleep2",
+          "duration": 360
+        },
+        {
+          "name": "sleep3",
+          "duration": 360
+        },
+        {
+          "name": "sleep4",
+          "duration": 360
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "ouch": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -19,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "ouch0",
+          "duration": 600
+        },
+        {
+          "name": "ouch1",
+          "duration": 160
+        },
+        {
+          "name": "ouch2",
+          "duration": 160
+        },
+        {
+          "name": "ouch3",
+          "duration": 160
+        },
+        {
+          "name": "ouch4",
+          "duration": 160
+        },
+        {
+          "name": "ouch5",
+          "duration": 160
+        },
+        {
+          "name": "ouch6",
+          "duration": 160
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 6,
+          "direction": "pingpong"
+        },
+        "loop": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        }
+      }
+    },
+    "welcome": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -15,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "welcome0",
+          "duration": 600
+        },
+        {
+          "name": "welcome1",
+          "duration": 180
+        },
+        {
+          "name": "welcome2",
+          "duration": 180
+        },
+        {
+          "name": "welcome3",
+          "duration": 180
+        },
+        {
+          "name": "welcome4",
+          "duration": 180
+        },
+        {
+          "name": "welcome5",
+          "duration": 180
+        },
+        {
+          "name": "welcome6",
+          "duration": 180
+        },
+        {
+          "name": "welcome7",
+          "duration": 180
+        },
+        {
+          "name": "welcome8",
+          "duration": 700
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 8,
+          "direction": "pingpong"
+        }
+      }
+    }
+  },
+  "hoop_24": {
+    "thriving": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -14,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "thriving0",
+          "duration": 500
+        },
+        {
+          "name": "thriving1",
+          "duration": 150
+        },
+        {
+          "name": "thriving2",
+          "duration": 150
+        },
+        {
+          "name": "thriving3",
+          "duration": 150
+        },
+        {
+          "name": "thriving4",
+          "duration": 150
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "happy": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "happy0",
+          "duration": 900
+        },
+        {
+          "name": "happy1",
+          "duration": 180
+        },
+        {
+          "name": "happy2",
+          "duration": 180
+        },
+        {
+          "name": "happy3",
+          "duration": 180
+        },
+        {
+          "name": "happy4",
+          "duration": 180
+        },
+        {
+          "name": "happy5",
+          "duration": 180
+        },
+        {
+          "name": "happy6",
+          "duration": 180
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "tired": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "tired0",
+          "duration": 800
+        },
+        {
+          "name": "tired1",
+          "duration": 230
+        },
+        {
+          "name": "tired2",
+          "duration": 230
+        },
+        {
+          "name": "tired3",
+          "duration": 230
+        },
+        {
+          "name": "tired4",
+          "duration": 230
+        },
+        {
+          "name": "tired5",
+          "duration": 230
+        },
+        {
+          "name": "tired6",
+          "duration": 230
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "neglected": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "neglected0",
+          "duration": 750
+        },
+        {
+          "name": "neglected1",
+          "duration": 190
+        },
+        {
+          "name": "neglected2",
+          "duration": 190
+        },
+        {
+          "name": "neglected3",
+          "duration": 190
+        },
+        {
+          "name": "neglected4",
+          "duration": 190
+        },
+        {
+          "name": "neglected5",
+          "duration": 190
+        },
+        {
+          "name": "neglected6",
+          "duration": 190
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 3,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 3,
+          "to": 6,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "sleep": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -12,
+        -41
+      ],
+      "frames": [
+        {
+          "name": "sleep0",
+          "duration": 900
+        },
+        {
+          "name": "sleep1",
+          "duration": 360
+        },
+        {
+          "name": "sleep2",
+          "duration": 360
+        },
+        {
+          "name": "sleep3",
+          "duration": 360
+        },
+        {
+          "name": "sleep4",
+          "duration": 360
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "ouch": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "ouch0",
+          "duration": 600
+        },
+        {
+          "name": "ouch1",
+          "duration": 160
+        },
+        {
+          "name": "ouch2",
+          "duration": 160
+        },
+        {
+          "name": "ouch3",
+          "duration": 160
+        },
+        {
+          "name": "ouch4",
+          "duration": 160
+        },
+        {
+          "name": "ouch5",
+          "duration": 160
+        },
+        {
+          "name": "ouch6",
+          "duration": 160
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 6,
+          "direction": "pingpong"
+        },
+        "loop": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        }
+      }
+    },
+    "welcome": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -14,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "welcome0",
+          "duration": 600
+        },
+        {
+          "name": "welcome1",
+          "duration": 180
+        },
+        {
+          "name": "welcome2",
+          "duration": 180
+        },
+        {
+          "name": "welcome3",
+          "duration": 180
+        },
+        {
+          "name": "welcome4",
+          "duration": 180
+        },
+        {
+          "name": "welcome5",
+          "duration": 180
+        },
+        {
+          "name": "welcome6",
+          "duration": 180
+        },
+        {
+          "name": "welcome7",
+          "duration": 180
+        },
+        {
+          "name": "welcome8",
+          "duration": 700
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 8,
+          "direction": "pingpong"
+        }
+      }
+    }
+  },
+  "iron_armor": {
+    "thriving": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -15,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "thriving0",
+          "duration": 500
+        },
+        {
+          "name": "thriving1",
+          "duration": 150
+        },
+        {
+          "name": "thriving2",
+          "duration": 150
+        },
+        {
+          "name": "thriving3",
+          "duration": 150
+        },
+        {
+          "name": "thriving4",
+          "duration": 150
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "happy": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -19,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "happy0",
+          "duration": 900
+        },
+        {
+          "name": "happy1",
+          "duration": 180
+        },
+        {
+          "name": "happy2",
+          "duration": 180
+        },
+        {
+          "name": "happy3",
+          "duration": 180
+        },
+        {
+          "name": "happy4",
+          "duration": 180
+        },
+        {
+          "name": "happy5",
+          "duration": 180
+        },
+        {
+          "name": "happy6",
+          "duration": 180
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "tired": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -19,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "tired0",
+          "duration": 800
+        },
+        {
+          "name": "tired1",
+          "duration": 230
+        },
+        {
+          "name": "tired2",
+          "duration": 230
+        },
+        {
+          "name": "tired3",
+          "duration": 230
+        },
+        {
+          "name": "tired4",
+          "duration": 230
+        },
+        {
+          "name": "tired5",
+          "duration": 230
+        },
+        {
+          "name": "tired6",
+          "duration": 230
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "neglected": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -19,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "neglected0",
+          "duration": 750
+        },
+        {
+          "name": "neglected1",
+          "duration": 190
+        },
+        {
+          "name": "neglected2",
+          "duration": 190
+        },
+        {
+          "name": "neglected3",
+          "duration": 190
+        },
+        {
+          "name": "neglected4",
+          "duration": 190
+        },
+        {
+          "name": "neglected5",
+          "duration": 190
+        },
+        {
+          "name": "neglected6",
+          "duration": 190
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 3,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 3,
+          "to": 6,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "sleep": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -12,
+        -41
+      ],
+      "frames": [
+        {
+          "name": "sleep0",
+          "duration": 900
+        },
+        {
+          "name": "sleep1",
+          "duration": 360
+        },
+        {
+          "name": "sleep2",
+          "duration": 360
+        },
+        {
+          "name": "sleep3",
+          "duration": 360
+        },
+        {
+          "name": "sleep4",
+          "duration": 360
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "ouch": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -19,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "ouch0",
+          "duration": 600
+        },
+        {
+          "name": "ouch1",
+          "duration": 160
+        },
+        {
+          "name": "ouch2",
+          "duration": 160
+        },
+        {
+          "name": "ouch3",
+          "duration": 160
+        },
+        {
+          "name": "ouch4",
+          "duration": 160
+        },
+        {
+          "name": "ouch5",
+          "duration": 160
+        },
+        {
+          "name": "ouch6",
+          "duration": 160
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 6,
+          "direction": "pingpong"
+        },
+        "loop": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        }
+      }
+    },
+    "welcome": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -15,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "welcome0",
+          "duration": 600
+        },
+        {
+          "name": "welcome1",
+          "duration": 180
+        },
+        {
+          "name": "welcome2",
+          "duration": 180
+        },
+        {
+          "name": "welcome3",
+          "duration": 180
+        },
+        {
+          "name": "welcome4",
+          "duration": 180
+        },
+        {
+          "name": "welcome5",
+          "duration": 180
+        },
+        {
+          "name": "welcome6",
+          "duration": 180
+        },
+        {
+          "name": "welcome7",
+          "duration": 180
+        },
+        {
+          "name": "welcome8",
+          "duration": 700
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 8,
+          "direction": "pingpong"
+        }
+      }
+    }
+  },
+  "spy_agent": {
+    "thriving": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -14,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "thriving0",
+          "duration": 500
+        },
+        {
+          "name": "thriving1",
+          "duration": 150
+        },
+        {
+          "name": "thriving2",
+          "duration": 150
+        },
+        {
+          "name": "thriving3",
+          "duration": 150
+        },
+        {
+          "name": "thriving4",
+          "duration": 150
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "happy": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "happy0",
+          "duration": 900
+        },
+        {
+          "name": "happy1",
+          "duration": 180
+        },
+        {
+          "name": "happy2",
+          "duration": 180
+        },
+        {
+          "name": "happy3",
+          "duration": 180
+        },
+        {
+          "name": "happy4",
+          "duration": 180
+        },
+        {
+          "name": "happy5",
+          "duration": 180
+        },
+        {
+          "name": "happy6",
+          "duration": 180
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "tired": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "tired0",
+          "duration": 800
+        },
+        {
+          "name": "tired1",
+          "duration": 230
+        },
+        {
+          "name": "tired2",
+          "duration": 230
+        },
+        {
+          "name": "tired3",
+          "duration": 230
+        },
+        {
+          "name": "tired4",
+          "duration": 230
+        },
+        {
+          "name": "tired5",
+          "duration": 230
+        },
+        {
+          "name": "tired6",
+          "duration": 230
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "neglected": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "neglected0",
+          "duration": 750
+        },
+        {
+          "name": "neglected1",
+          "duration": 190
+        },
+        {
+          "name": "neglected2",
+          "duration": 190
+        },
+        {
+          "name": "neglected3",
+          "duration": 190
+        },
+        {
+          "name": "neglected4",
+          "duration": 190
+        },
+        {
+          "name": "neglected5",
+          "duration": 190
+        },
+        {
+          "name": "neglected6",
+          "duration": 190
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 3,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 3,
+          "to": 6,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "sleep": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -12,
+        -41
+      ],
+      "frames": [
+        {
+          "name": "sleep0",
+          "duration": 900
+        },
+        {
+          "name": "sleep1",
+          "duration": 360
+        },
+        {
+          "name": "sleep2",
+          "duration": 360
+        },
+        {
+          "name": "sleep3",
+          "duration": 360
+        },
+        {
+          "name": "sleep4",
+          "duration": 360
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "ouch": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "ouch0",
+          "duration": 600
+        },
+        {
+          "name": "ouch1",
+          "duration": 160
+        },
+        {
+          "name": "ouch2",
+          "duration": 160
+        },
+        {
+          "name": "ouch3",
+          "duration": 160
+        },
+        {
+          "name": "ouch4",
+          "duration": 160
+        },
+        {
+          "name": "ouch5",
+          "duration": 160
+        },
+        {
+          "name": "ouch6",
+          "duration": 160
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 6,
+          "direction": "pingpong"
+        },
+        "loop": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        }
+      }
+    },
+    "welcome": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -14,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "welcome0",
+          "duration": 600
+        },
+        {
+          "name": "welcome1",
+          "duration": 180
+        },
+        {
+          "name": "welcome2",
+          "duration": 180
+        },
+        {
+          "name": "welcome3",
+          "duration": 180
+        },
+        {
+          "name": "welcome4",
+          "duration": 180
+        },
+        {
+          "name": "welcome5",
+          "duration": 180
+        },
+        {
+          "name": "welcome6",
+          "duration": 180
+        },
+        {
+          "name": "welcome7",
+          "duration": 180
+        },
+        {
+          "name": "welcome8",
+          "duration": 700
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 8,
+          "direction": "pingpong"
+        }
+      }
+    }
+  },
+  "thunder_god": {
+    "thriving": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -15,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "thriving0",
+          "duration": 500
+        },
+        {
+          "name": "thriving1",
+          "duration": 150
+        },
+        {
+          "name": "thriving2",
+          "duration": 150
+        },
+        {
+          "name": "thriving3",
+          "duration": 150
+        },
+        {
+          "name": "thriving4",
+          "duration": 150
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "happy": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -19,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "happy0",
+          "duration": 900
+        },
+        {
+          "name": "happy1",
+          "duration": 180
+        },
+        {
+          "name": "happy2",
+          "duration": 180
+        },
+        {
+          "name": "happy3",
+          "duration": 180
+        },
+        {
+          "name": "happy4",
+          "duration": 180
+        },
+        {
+          "name": "happy5",
+          "duration": 180
+        },
+        {
+          "name": "happy6",
+          "duration": 180
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "tired": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -19,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "tired0",
+          "duration": 800
+        },
+        {
+          "name": "tired1",
+          "duration": 230
+        },
+        {
+          "name": "tired2",
+          "duration": 230
+        },
+        {
+          "name": "tired3",
+          "duration": 230
+        },
+        {
+          "name": "tired4",
+          "duration": 230
+        },
+        {
+          "name": "tired5",
+          "duration": 230
+        },
+        {
+          "name": "tired6",
+          "duration": 230
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "neglected": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -19,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "neglected0",
+          "duration": 750
+        },
+        {
+          "name": "neglected1",
+          "duration": 190
+        },
+        {
+          "name": "neglected2",
+          "duration": 190
+        },
+        {
+          "name": "neglected3",
+          "duration": 190
+        },
+        {
+          "name": "neglected4",
+          "duration": 190
+        },
+        {
+          "name": "neglected5",
+          "duration": 190
+        },
+        {
+          "name": "neglected6",
+          "duration": 190
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 3,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 3,
+          "to": 6,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "sleep": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -12,
+        -41
+      ],
+      "frames": [
+        {
+          "name": "sleep0",
+          "duration": 900
+        },
+        {
+          "name": "sleep1",
+          "duration": 360
+        },
+        {
+          "name": "sleep2",
+          "duration": 360
+        },
+        {
+          "name": "sleep3",
+          "duration": 360
+        },
+        {
+          "name": "sleep4",
+          "duration": 360
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "ouch": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -19,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "ouch0",
+          "duration": 600
+        },
+        {
+          "name": "ouch1",
+          "duration": 160
+        },
+        {
+          "name": "ouch2",
+          "duration": 160
+        },
+        {
+          "name": "ouch3",
+          "duration": 160
+        },
+        {
+          "name": "ouch4",
+          "duration": 160
+        },
+        {
+          "name": "ouch5",
+          "duration": 160
+        },
+        {
+          "name": "ouch6",
+          "duration": 160
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 6,
+          "direction": "pingpong"
+        },
+        "loop": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        }
+      }
+    },
+    "welcome": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -15,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "welcome0",
+          "duration": 600
+        },
+        {
+          "name": "welcome1",
+          "duration": 180
+        },
+        {
+          "name": "welcome2",
+          "duration": 180
+        },
+        {
+          "name": "welcome3",
+          "duration": 180
+        },
+        {
+          "name": "welcome4",
+          "duration": 180
+        },
+        {
+          "name": "welcome5",
+          "duration": 180
+        },
+        {
+          "name": "welcome6",
+          "duration": 180
+        },
+        {
+          "name": "welcome7",
+          "duration": 180
+        },
+        {
+          "name": "welcome8",
+          "duration": 700
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 8,
+          "direction": "pingpong"
+        }
+      }
+    }
+  },
+  "green_giant": {
+    "thriving": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -14,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "thriving0",
+          "duration": 500
+        },
+        {
+          "name": "thriving1",
+          "duration": 150
+        },
+        {
+          "name": "thriving2",
+          "duration": 150
+        },
+        {
+          "name": "thriving3",
+          "duration": 150
+        },
+        {
+          "name": "thriving4",
+          "duration": 150
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "happy": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "happy0",
+          "duration": 900
+        },
+        {
+          "name": "happy1",
+          "duration": 180
+        },
+        {
+          "name": "happy2",
+          "duration": 180
+        },
+        {
+          "name": "happy3",
+          "duration": 180
+        },
+        {
+          "name": "happy4",
+          "duration": 180
+        },
+        {
+          "name": "happy5",
+          "duration": 180
+        },
+        {
+          "name": "happy6",
+          "duration": 180
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "tired": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "tired0",
+          "duration": 800
+        },
+        {
+          "name": "tired1",
+          "duration": 230
+        },
+        {
+          "name": "tired2",
+          "duration": 230
+        },
+        {
+          "name": "tired3",
+          "duration": 230
+        },
+        {
+          "name": "tired4",
+          "duration": 230
+        },
+        {
+          "name": "tired5",
+          "duration": 230
+        },
+        {
+          "name": "tired6",
+          "duration": 230
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "neglected": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "neglected0",
+          "duration": 750
+        },
+        {
+          "name": "neglected1",
+          "duration": 190
+        },
+        {
+          "name": "neglected2",
+          "duration": 190
+        },
+        {
+          "name": "neglected3",
+          "duration": 190
+        },
+        {
+          "name": "neglected4",
+          "duration": 190
+        },
+        {
+          "name": "neglected5",
+          "duration": 190
+        },
+        {
+          "name": "neglected6",
+          "duration": 190
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 3,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 3,
+          "to": 6,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "sleep": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -12,
+        -41
+      ],
+      "frames": [
+        {
+          "name": "sleep0",
+          "duration": 900
+        },
+        {
+          "name": "sleep1",
+          "duration": 360
+        },
+        {
+          "name": "sleep2",
+          "duration": 360
+        },
+        {
+          "name": "sleep3",
+          "duration": 360
+        },
+        {
+          "name": "sleep4",
+          "duration": 360
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "ouch": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "ouch0",
+          "duration": 600
+        },
+        {
+          "name": "ouch1",
+          "duration": 160
+        },
+        {
+          "name": "ouch2",
+          "duration": 160
+        },
+        {
+          "name": "ouch3",
+          "duration": 160
+        },
+        {
+          "name": "ouch4",
+          "duration": 160
+        },
+        {
+          "name": "ouch5",
+          "duration": 160
+        },
+        {
+          "name": "ouch6",
+          "duration": 160
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 6,
+          "direction": "pingpong"
+        },
+        "loop": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        }
+      }
+    },
+    "welcome": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -14,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "welcome0",
+          "duration": 600
+        },
+        {
+          "name": "welcome1",
+          "duration": 180
+        },
+        {
+          "name": "welcome2",
+          "duration": 180
+        },
+        {
+          "name": "welcome3",
+          "duration": 180
+        },
+        {
+          "name": "welcome4",
+          "duration": 180
+        },
+        {
+          "name": "welcome5",
+          "duration": 180
+        },
+        {
+          "name": "welcome6",
+          "duration": 180
+        },
+        {
+          "name": "welcome7",
+          "duration": 180
+        },
+        {
+          "name": "welcome8",
+          "duration": 700
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 8,
+          "direction": "pingpong"
+        }
+      }
+    }
+  },
+  "shield_hero": {
+    "thriving": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -15,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "thriving0",
+          "duration": 500
+        },
+        {
+          "name": "thriving1",
+          "duration": 150
+        },
+        {
+          "name": "thriving2",
+          "duration": 150
+        },
+        {
+          "name": "thriving3",
+          "duration": 150
+        },
+        {
+          "name": "thriving4",
+          "duration": 150
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "happy": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -19,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "happy0",
+          "duration": 900
+        },
+        {
+          "name": "happy1",
+          "duration": 180
+        },
+        {
+          "name": "happy2",
+          "duration": 180
+        },
+        {
+          "name": "happy3",
+          "duration": 180
+        },
+        {
+          "name": "happy4",
+          "duration": 180
+        },
+        {
+          "name": "happy5",
+          "duration": 180
+        },
+        {
+          "name": "happy6",
+          "duration": 180
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "tired": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -19,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "tired0",
+          "duration": 800
+        },
+        {
+          "name": "tired1",
+          "duration": 230
+        },
+        {
+          "name": "tired2",
+          "duration": 230
+        },
+        {
+          "name": "tired3",
+          "duration": 230
+        },
+        {
+          "name": "tired4",
+          "duration": 230
+        },
+        {
+          "name": "tired5",
+          "duration": 230
+        },
+        {
+          "name": "tired6",
+          "duration": 230
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "neglected": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -19,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "neglected0",
+          "duration": 750
+        },
+        {
+          "name": "neglected1",
+          "duration": 190
+        },
+        {
+          "name": "neglected2",
+          "duration": 190
+        },
+        {
+          "name": "neglected3",
+          "duration": 190
+        },
+        {
+          "name": "neglected4",
+          "duration": 190
+        },
+        {
+          "name": "neglected5",
+          "duration": 190
+        },
+        {
+          "name": "neglected6",
+          "duration": 190
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 3,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 3,
+          "to": 6,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "sleep": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -12,
+        -41
+      ],
+      "frames": [
+        {
+          "name": "sleep0",
+          "duration": 900
+        },
+        {
+          "name": "sleep1",
+          "duration": 360
+        },
+        {
+          "name": "sleep2",
+          "duration": 360
+        },
+        {
+          "name": "sleep3",
+          "duration": 360
+        },
+        {
+          "name": "sleep4",
+          "duration": 360
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "ouch": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -19,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "ouch0",
+          "duration": 600
+        },
+        {
+          "name": "ouch1",
+          "duration": 160
+        },
+        {
+          "name": "ouch2",
+          "duration": 160
+        },
+        {
+          "name": "ouch3",
+          "duration": 160
+        },
+        {
+          "name": "ouch4",
+          "duration": 160
+        },
+        {
+          "name": "ouch5",
+          "duration": 160
+        },
+        {
+          "name": "ouch6",
+          "duration": 160
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 6,
+          "direction": "pingpong"
+        },
+        "loop": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        }
+      }
+    },
+    "welcome": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -15,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "welcome0",
+          "duration": 600
+        },
+        {
+          "name": "welcome1",
+          "duration": 180
+        },
+        {
+          "name": "welcome2",
+          "duration": 180
+        },
+        {
+          "name": "welcome3",
+          "duration": 180
+        },
+        {
+          "name": "welcome4",
+          "duration": 180
+        },
+        {
+          "name": "welcome5",
+          "duration": 180
+        },
+        {
+          "name": "welcome6",
+          "duration": 180
+        },
+        {
+          "name": "welcome7",
+          "duration": 180
+        },
+        {
+          "name": "welcome8",
+          "duration": 700
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 8,
+          "direction": "pingpong"
+        }
+      }
+    }
+  },
+  "violet_archer": {
+    "thriving": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -14,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "thriving0",
+          "duration": 500
+        },
+        {
+          "name": "thriving1",
+          "duration": 150
+        },
+        {
+          "name": "thriving2",
+          "duration": 150
+        },
+        {
+          "name": "thriving3",
+          "duration": 150
+        },
+        {
+          "name": "thriving4",
+          "duration": 150
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "happy": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "happy0",
+          "duration": 900
+        },
+        {
+          "name": "happy1",
+          "duration": 180
+        },
+        {
+          "name": "happy2",
+          "duration": 180
+        },
+        {
+          "name": "happy3",
+          "duration": 180
+        },
+        {
+          "name": "happy4",
+          "duration": 180
+        },
+        {
+          "name": "happy5",
+          "duration": 180
+        },
+        {
+          "name": "happy6",
+          "duration": 180
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "tired": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "tired0",
+          "duration": 800
+        },
+        {
+          "name": "tired1",
+          "duration": 230
+        },
+        {
+          "name": "tired2",
+          "duration": 230
+        },
+        {
+          "name": "tired3",
+          "duration": 230
+        },
+        {
+          "name": "tired4",
+          "duration": 230
+        },
+        {
+          "name": "tired5",
+          "duration": 230
+        },
+        {
+          "name": "tired6",
+          "duration": 230
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "neglected": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "neglected0",
+          "duration": 750
+        },
+        {
+          "name": "neglected1",
+          "duration": 190
+        },
+        {
+          "name": "neglected2",
+          "duration": 190
+        },
+        {
+          "name": "neglected3",
+          "duration": 190
+        },
+        {
+          "name": "neglected4",
+          "duration": 190
+        },
+        {
+          "name": "neglected5",
+          "duration": 190
+        },
+        {
+          "name": "neglected6",
+          "duration": 190
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 3,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 3,
+          "to": 6,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "sleep": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -12,
+        -41
+      ],
+      "frames": [
+        {
+          "name": "sleep0",
+          "duration": 900
+        },
+        {
+          "name": "sleep1",
+          "duration": 360
+        },
+        {
+          "name": "sleep2",
+          "duration": 360
+        },
+        {
+          "name": "sleep3",
+          "duration": 360
+        },
+        {
+          "name": "sleep4",
+          "duration": 360
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "ouch": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "ouch0",
+          "duration": 600
+        },
+        {
+          "name": "ouch1",
+          "duration": 160
+        },
+        {
+          "name": "ouch2",
+          "duration": 160
+        },
+        {
+          "name": "ouch3",
+          "duration": 160
+        },
+        {
+          "name": "ouch4",
+          "duration": 160
+        },
+        {
+          "name": "ouch5",
+          "duration": 160
+        },
+        {
+          "name": "ouch6",
+          "duration": 160
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 6,
+          "direction": "pingpong"
+        },
+        "loop": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        }
+      }
+    },
+    "welcome": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -14,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "welcome0",
+          "duration": 600
+        },
+        {
+          "name": "welcome1",
+          "duration": 180
+        },
+        {
+          "name": "welcome2",
+          "duration": 180
+        },
+        {
+          "name": "welcome3",
+          "duration": 180
+        },
+        {
+          "name": "welcome4",
+          "duration": 180
+        },
+        {
+          "name": "welcome5",
+          "duration": 180
+        },
+        {
+          "name": "welcome6",
+          "duration": 180
+        },
+        {
+          "name": "welcome7",
+          "duration": 180
+        },
+        {
+          "name": "welcome8",
+          "duration": 700
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 8,
+          "direction": "pingpong"
+        }
+      }
+    }
+  },
+  "night_hero": {
+    "thriving": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -14,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "thriving0",
+          "duration": 500
+        },
+        {
+          "name": "thriving1",
+          "duration": 150
+        },
+        {
+          "name": "thriving2",
+          "duration": 150
+        },
+        {
+          "name": "thriving3",
+          "duration": 150
+        },
+        {
+          "name": "thriving4",
+          "duration": 150
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "happy": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "happy0",
+          "duration": 900
+        },
+        {
+          "name": "happy1",
+          "duration": 180
+        },
+        {
+          "name": "happy2",
+          "duration": 180
+        },
+        {
+          "name": "happy3",
+          "duration": 180
+        },
+        {
+          "name": "happy4",
+          "duration": 180
+        },
+        {
+          "name": "happy5",
+          "duration": 180
+        },
+        {
+          "name": "happy6",
+          "duration": 180
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "tired": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "tired0",
+          "duration": 800
+        },
+        {
+          "name": "tired1",
+          "duration": 230
+        },
+        {
+          "name": "tired2",
+          "duration": 230
+        },
+        {
+          "name": "tired3",
+          "duration": 230
+        },
+        {
+          "name": "tired4",
+          "duration": 230
+        },
+        {
+          "name": "tired5",
+          "duration": 230
+        },
+        {
+          "name": "tired6",
+          "duration": 230
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "neglected": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "neglected0",
+          "duration": 750
+        },
+        {
+          "name": "neglected1",
+          "duration": 190
+        },
+        {
+          "name": "neglected2",
+          "duration": 190
+        },
+        {
+          "name": "neglected3",
+          "duration": 190
+        },
+        {
+          "name": "neglected4",
+          "duration": 190
+        },
+        {
+          "name": "neglected5",
+          "duration": 190
+        },
+        {
+          "name": "neglected6",
+          "duration": 190
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 3,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 3,
+          "to": 6,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "sleep": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -12,
+        -41
+      ],
+      "frames": [
+        {
+          "name": "sleep0",
+          "duration": 900
+        },
+        {
+          "name": "sleep1",
+          "duration": 360
+        },
+        {
+          "name": "sleep2",
+          "duration": 360
+        },
+        {
+          "name": "sleep3",
+          "duration": 360
+        },
+        {
+          "name": "sleep4",
+          "duration": 360
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "ouch": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "ouch0",
+          "duration": 600
+        },
+        {
+          "name": "ouch1",
+          "duration": 160
+        },
+        {
+          "name": "ouch2",
+          "duration": 160
+        },
+        {
+          "name": "ouch3",
+          "duration": 160
+        },
+        {
+          "name": "ouch4",
+          "duration": 160
+        },
+        {
+          "name": "ouch5",
+          "duration": 160
+        },
+        {
+          "name": "ouch6",
+          "duration": 160
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 6,
+          "direction": "pingpong"
+        },
+        "loop": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        }
+      }
+    },
+    "welcome": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -14,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "welcome0",
+          "duration": 600
+        },
+        {
+          "name": "welcome1",
+          "duration": 180
+        },
+        {
+          "name": "welcome2",
+          "duration": 180
+        },
+        {
+          "name": "welcome3",
+          "duration": 180
+        },
+        {
+          "name": "welcome4",
+          "duration": 180
+        },
+        {
+          "name": "welcome5",
+          "duration": 180
+        },
+        {
+          "name": "welcome6",
+          "duration": 180
+        },
+        {
+          "name": "welcome7",
+          "duration": 180
+        },
+        {
+          "name": "welcome8",
+          "duration": 700
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 8,
+          "direction": "pingpong"
+        }
+      }
+    }
+  },
+  "sky_hero": {
+    "thriving": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -14,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "thriving0",
+          "duration": 500
+        },
+        {
+          "name": "thriving1",
+          "duration": 150
+        },
+        {
+          "name": "thriving2",
+          "duration": 150
+        },
+        {
+          "name": "thriving3",
+          "duration": 150
+        },
+        {
+          "name": "thriving4",
+          "duration": 150
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "happy": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "happy0",
+          "duration": 900
+        },
+        {
+          "name": "happy1",
+          "duration": 180
+        },
+        {
+          "name": "happy2",
+          "duration": 180
+        },
+        {
+          "name": "happy3",
+          "duration": 180
+        },
+        {
+          "name": "happy4",
+          "duration": 180
+        },
+        {
+          "name": "happy5",
+          "duration": 180
+        },
+        {
+          "name": "happy6",
+          "duration": 180
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "tired": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "tired0",
+          "duration": 800
+        },
+        {
+          "name": "tired1",
+          "duration": 230
+        },
+        {
+          "name": "tired2",
+          "duration": 230
+        },
+        {
+          "name": "tired3",
+          "duration": 230
+        },
+        {
+          "name": "tired4",
+          "duration": 230
+        },
+        {
+          "name": "tired5",
+          "duration": 230
+        },
+        {
+          "name": "tired6",
+          "duration": 230
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 6,
+          "direction": "forward"
+        }
+      }
+    },
+    "neglected": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "neglected0",
+          "duration": 750
+        },
+        {
+          "name": "neglected1",
+          "duration": 190
+        },
+        {
+          "name": "neglected2",
+          "duration": 190
+        },
+        {
+          "name": "neglected3",
+          "duration": 190
+        },
+        {
+          "name": "neglected4",
+          "duration": 190
+        },
+        {
+          "name": "neglected5",
+          "duration": 190
+        },
+        {
+          "name": "neglected6",
+          "duration": 190
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 3,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 3,
+          "to": 6,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "sleep": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -12,
+        -41
+      ],
+      "frames": [
+        {
+          "name": "sleep0",
+          "duration": 900
+        },
+        {
+          "name": "sleep1",
+          "duration": 360
+        },
+        {
+          "name": "sleep2",
+          "duration": 360
+        },
+        {
+          "name": "sleep3",
+          "duration": 360
+        },
+        {
+          "name": "sleep4",
+          "duration": 360
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 4,
+          "direction": "pingpong"
+        }
+      }
+    },
+    "ouch": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 4,
+      "offset": [
+        -18,
+        -28
+      ],
+      "frames": [
+        {
+          "name": "ouch0",
+          "duration": 600
+        },
+        {
+          "name": "ouch1",
+          "duration": 160
+        },
+        {
+          "name": "ouch2",
+          "duration": 160
+        },
+        {
+          "name": "ouch3",
+          "duration": 160
+        },
+        {
+          "name": "ouch4",
+          "duration": 160
+        },
+        {
+          "name": "ouch5",
+          "duration": 160
+        },
+        {
+          "name": "ouch6",
+          "duration": 160
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 6,
+          "direction": "pingpong"
+        },
+        "loop": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        }
+      }
+    },
+    "welcome": {
+      "frameSize": {
+        "w": 120,
+        "h": 172
+      },
+      "columns": 5,
+      "offset": [
+        -14,
+        -42
+      ],
+      "frames": [
+        {
+          "name": "welcome0",
+          "duration": 600
+        },
+        {
+          "name": "welcome1",
+          "duration": 180
+        },
+        {
+          "name": "welcome2",
+          "duration": 180
+        },
+        {
+          "name": "welcome3",
+          "duration": 180
+        },
+        {
+          "name": "welcome4",
+          "duration": 180
+        },
+        {
+          "name": "welcome5",
+          "duration": 180
+        },
+        {
+          "name": "welcome6",
+          "duration": 180
+        },
+        {
+          "name": "welcome7",
+          "duration": 180
+        },
+        {
+          "name": "welcome8",
+          "duration": 700
+        }
+      ],
+      "tags": {
+        "in": {
+          "from": 0,
+          "to": 0,
+          "direction": "forward"
+        },
+        "loop": {
+          "from": 0,
+          "to": 8,
+          "direction": "pingpong"
+        }
+      }
+    }
   }
 }
