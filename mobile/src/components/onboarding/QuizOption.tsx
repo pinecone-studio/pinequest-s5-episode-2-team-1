@@ -1,13 +1,10 @@
-import Ionicons from '@expo/vector-icons/Ionicons';
-import type { ComponentProps, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ZoomEnter } from '@/components/pixel';
 import { colors, fonts, radius } from '@/constants/theme';
 
-export type IconName = ComponentProps<typeof Ionicons>['name'];
-
 /**
- * Onboarding-ийн нэг сонголт (радио): бүртгэлийн талбартай ижил цагаан хайрцаг, зүүн талд нэг загварын icon-той хавтан,
+ * Onboarding-ийн нэг сонголт (радио): бүртгэлийн талбартай ижил цагаан хайрцаг, зүүн талд pixel icon-той хавтан,
  * сонгогдвол violet хүрээ ба баруун талд ✓ (талбарын ✓-тэй ижил).
  */
 export function QuizOption({
@@ -38,16 +35,11 @@ export function QuizOption({
       </View>
       {selected ? (
         <ZoomEnter style={styles.badge}>
-          <Ionicons name="checkmark" size={16} color={colors.white} />
+          <Text style={styles.check}>✓</Text>
         </ZoomEnter>
       ) : null}
     </Pressable>
   );
-}
-
-/** Сонголтын icon: бүх onboarding нэг гэр бүлийн (Ionicons) icon-оор, брэнд бол өөрийн өнгөөр */
-export function Icon({ name, color = colors.indigo, size = 22 }: { name: IconName; color?: string; size?: number }) {
-  return <Ionicons name={name} size={size} color={color} accessibilityElementsHidden importantForAccessibility="no" />;
 }
 
 /** Түвшний 4 босоо зурвас (Duolingo маягийн): `n` нь тод */
@@ -81,6 +73,7 @@ const styles = StyleSheet.create({
   texts: { flex: 1, gap: 2 },
   label: { fontFamily: fonts.bold, fontSize: 16, lineHeight: 21, color: colors.ink },
   sub: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 19, color: colors.muted },
+  check: { fontFamily: fonts.extrabold, fontSize: 13, color: colors.white },
   badge: { width: 24, height: 24, borderRadius: 12, backgroundColor: colors.violet, alignItems: 'center', justifyContent: 'center' },
   bars: { flexDirection: 'row', alignItems: 'flex-end', gap: 3, height: 22 },
   bar: { width: 5, borderRadius: 2 },

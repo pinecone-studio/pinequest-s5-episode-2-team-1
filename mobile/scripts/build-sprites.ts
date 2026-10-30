@@ -176,11 +176,16 @@ for (const n of ['bear_lesson', 'lesson_bg', 'lesson_shadow']) M[n] = [3];
 for (const n of ['bear_tutor_0', 'bear_mouth', 'classroom']) M[n] = [3];
 for (const k of ['leaf', 'blossom', 'pine']) M[`branch_${k}`] = M[`branch_${k}_v`] = [3];
 // v2 (Charlie маягийн) nav icon ба Нүүрний товчнууд: 20px эх, 30dp-ээр (1.5×) — нарийн pixel
-for (const n of ['home', 'tasks', 'path', 'shop', 'crew', 'bag']) {
+for (const n of ['home', 'tasks', 'path', 'shop', 'crew', 'bag', 'league']) {
   M[`nav2_${n}_on`] = [[30, 30]];
   M[`nav2_${n}_off`] = [[30, 30]];
 }
-M.btn_calendar = [[30, 30]];
+// 24dp нь онбоардингийн давуу талын мөрөнд
+M.btn_calendar = [[30, 30], [24, 24]];
+// онбоардингийн сонголтын icon (PixelLab Pro, апп-ын icon-уудыг style болгосон 24px): 1× = 24dp, @2x/@3x бүхэл
+for (const n of ['friends', 'teacher', 'family', 'social', 'other', 'grades', 'exam', 'catchup', 'fun', 'compete']) M[`ob_${n}`] = [1];
+// Лигийн тэмдэг (PixelLab Pro, 32px): carousel-д 32dp, одоогийн лиг 64dp
+for (const k of ['terelj', 'khentii', 'khuvsgul', 'khangai', 'otgontenger', 'khuiten']) M[`league_${k}`] = [1, 2];
 // баавгай бэлдэж байхад эргэх номын хуудас (scripts/book-sprites.ts), 8 frame 28×18 → 2×
 M.fx_book_flip_sheet = [2];
 M.btn_honey = [[12, 12], [24, 24], [30, 30], [36, 36]];

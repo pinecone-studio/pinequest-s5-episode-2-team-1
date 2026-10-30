@@ -7,6 +7,11 @@ export function newClanCode(): string {
   return String(n % max).padStart(GAME.CLAN.CODE_LENGTH, '0');
 }
 
+/** Лиг дээр Уулыг ялгах нийтийн танигч (урилгын кодоос тусдаа): 10 hex тэмдэгт. */
+export function newClanPublicId(): string {
+  return [...crypto.getRandomValues(new Uint8Array(5))].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
 /** Хэрэглэгчийн бичсэн кодоос зай, зураас зэргийг хасна; урт нь таарахгүй бол null. */
 export function normalizeClanCode(input: string): string | null {
   const digits = input.replace(/\D/g, '');
