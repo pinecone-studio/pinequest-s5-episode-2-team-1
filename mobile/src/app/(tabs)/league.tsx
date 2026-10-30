@@ -5,22 +5,14 @@ import { router, useFocusEffect } from 'expo-router';
 import { type ComponentRef, useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { api, errorText } from '@/api/client';
-import { SpeechBubble } from '@/components/AuthShell';
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
-import { LiveBear } from '@/components/LiveBear';
-import { Motion, Pop, Sprite, ZoomEnter } from '@/components/pixel';
+import { Sprite } from '@/components/pixel';
 import { Card, ErrorText, Muted, Screen } from '@/components/ui';
 import { colors, fonts, hardShadow, radius } from '@/constants/theme';
 import { S } from '@/i18n/strings';
-import { usePixelBear } from '@/lib/mock/pixelBear';
-import { wornItems } from '@/lib/pixelBear/catalog';
 import type { SpriteKey } from '@/sprites';
 
-/** LiveBear-ийн frame (px 2): өргөн ба өндөр, лиг дээрх хэмжээ */
-const BEAR_W = 140;
-const BEAR_H = 260;
-const BEAR_SCALE = 0.75;
 /** carousel-ийн нэг лигийн өргөн (snap) */
 const TIER_W = 96;
 const DAY_MS = 86_400_000;
@@ -29,12 +21,10 @@ type TierState = 'current' | 'passed' | 'locked';
 const badge = (key: string, big: boolean) => `league_${key}_${big ? '64x64' : '32x32'}` as SpriteKey;
 
 /**
- * Лиг (доод цэсний 5-р tab): дээр нь гараа даллаж буй баавгай (Нүүрнийх шиг өмссөн хувцастай), доор нь лигүүдийн
- * хэвтээ carousel (одоогийн лиг тод), сонгосон лигийн тайлбар, миний Уул, бүлгийн эрэмбэ. Уул дээр дарвал товч
+ * Лиг (доод цэсний 5-р tab): дээр нь лигүүдийн хэвтээ carousel (одоогийн лиг тод), сонгосон лигийн тайлбар, миний Уул, бүлгийн эрэмбэ. Уул дээр дарвал товч
  * мэдээлэл. Чөлөөт тулаан (одоогийн дуэлийн лобби) нь 4-р tab-д хэвээр.
  */
 export default function LeagueScreen() {
-  const { outfitIds } = usePixelBear();
   const { width } = useWindowDimensions();
   const [data, setData] = useState<LeagueResponse | null>(null);
   const [error, setError] = useState('');
@@ -67,25 +57,6 @@ export default function LeagueScreen() {
 
   return (
     <Screen tabBar contentStyle={styles.content}>
-      <View style={styles.stage}>
-        <ZoomEnter style={styles.halo}>
-          <Motion preset="breathe">
-            <View style={styles.haloCircle} />
-          </Motion>
-        </ZoomEnter>
-        <Pop trigger={1} from={0.9}>
-          {/* LiveBear-ийн frame 260dp өндөр (w нь зөвхөн төвлөрүүлнэ): доод талаар нь 0.75 болгож бөмбөлөгнөөс доош багтаана */}
-          <View style={styles.bear}>
-            <View style={styles.bearScale}>
-              <LiveBear anim="happy" w={BEAR_W} items={wornItems(outfitIds)} label="Гараа даллаж буй баавгай" />
-            </View>
-          </View>
-        </Pop>
-        <ZoomEnter delay={250} style={styles.bubbleAt}>
-          <SpeechBubble>{S.league.hello}</SpeechBubble>
-        </ZoomEnter>
-      </View>
-
       <ScrollView
         ref={scroll}
         horizontal
@@ -246,14 +217,8 @@ function ClanSheet({ clan, onClose }: { clan: LeagueClanDto | null; onClose: () 
 }
 
 const styles = StyleSheet.create({
-  content: { gap: 14, paddingTop: 8 },
+  content: { gap: 14, paddingTop: 16 },
   center: { alignItems: 'center', gap: 12 },
-  stage: { height: 260, alignItems: 'center', justifyContent: 'flex-end' },
-  bear: { height: BEAR_H * BEAR_SCALE, justifyContent: 'flex-end' },
-  bearScale: { transform: [{ scale: BEAR_SCALE }], transformOrigin: 'bottom' },
-  halo: { position: 'absolute', bottom: 0, alignSelf: 'center' },
-  haloCircle: { width: 190, height: 190, borderRadius: 95, backgroundColor: colors.lavender },
-  bubbleAt: { position: 'absolute', top: 0, right: 0, maxWidth: 180 },
   carousel: { marginHorizontal: -20, flexGrow: 0 },
   tier: { width: TIER_W, alignItems: 'center', gap: 4, paddingVertical: 4, minHeight: 56 },
   badgeBox: { height: 64, justifyContent: 'center' },
