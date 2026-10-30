@@ -64,7 +64,8 @@ export default function ShopScreen() {
   const outfits = useOutfits();
   const online = useOnline();
   const insets = useSafeAreaInsets();
-  const [tab, setTab] = useState<Tab>('bg');
+  // Хувцас эхэнд: дэлгүүр нээгдэхэд хувцасны tab
+  const [tab, setTab] = useState<Tab>('outfit');
   const [selBg, setSelBg] = useState(bear.bgId);
   const [selOutfit, setSelOutfit] = useState<OutfitId>(bear.outfitIds.at(-1) ?? DEFAULT_OUTFIT_ID);
   const [sheet, setSheet] = useState(false);
@@ -183,8 +184,8 @@ export default function ShopScreen() {
           value={tab}
           onChange={setTab}
           options={[
-            { value: 'bg', label: S.shop.tabBg },
             { value: 'outfit', label: S.shop.tabOutfit },
+            { value: 'bg', label: S.shop.tabBg },
           ]}
         />
 
