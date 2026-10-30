@@ -283,6 +283,7 @@ export const S = {
   pinecones: {
     title: 'БОРГОЦОЙ',
     bundles: 'БАГЦУУД',
+    best: 'ХАМГИЙН АШИГТАЙ',
     open: 'Боргоцой авах',
     balance: 'Таны боргоцой',
     earn: [
