@@ -585,7 +585,6 @@ export const S = {
     testGradeHint: 'Admin горим: шалгах ангиа сонгоно уу.',
     grade: (n: number) => `${n}-р анги`,
     toProfile: 'Профайл',
-    logout: 'Гарах',
   },
   profile: {
     open: 'Миний профайл',

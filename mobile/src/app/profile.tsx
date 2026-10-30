@@ -32,7 +32,7 @@ const POLL_MS = 3_000;
  * хүсэлт энд гарч ирэхэд «Зөвшөөрөх» дарна.
  */
 export default function ProfileScreen() {
-  const { me, refreshMe } = useAuth();
+  const { me, refreshMe, signOut } = useAuth();
   const { bgId } = usePixelBear();
   const [data, setData] = useState<MyProfileResponse | null>(null);
   const [friends, setFriends] = useState<FriendsResponse | null>(null);
@@ -134,6 +134,10 @@ export default function ProfileScreen() {
       setData(await api<MyProfileResponse>('/me/profile/code', { method: 'POST' }));
       setNote(S.profile.rotated);
     });
+  }
+
+  async function onLogout() {
+    if (await confirm(S.auth.logoutConfirm, S.auth.logout)) await signOut();
   }
 
   const open = (code: string) => router.push(`/u/${code}`);
@@ -287,6 +291,9 @@ export default function ProfileScreen() {
           </Enter>
         </>
       )}
+
+      {/* Профайл ачаалагдаагүй (офлайн) байсан ч гарч болно. */}
+      <Button title={S.auth.logout} variant="white" onPress={onLogout} />
     </Screen>
   );
 }

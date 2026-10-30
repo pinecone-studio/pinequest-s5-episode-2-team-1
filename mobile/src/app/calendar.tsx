@@ -11,7 +11,6 @@ import { Enter, Motion, Sprite } from '@/components/pixel';
 import { Screen } from '@/components/ui';
 import { colors, fonts, radius } from '@/constants/theme';
 import { S } from '@/i18n/strings';
-import { confirm } from '@/lib/confirm';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 import { buildMonth, FACE } from '@/lib/pixelBear/calendar';
 import { goBack } from '@/lib/nav';
@@ -34,9 +33,9 @@ function Chevron({ dir }: { dir: 'left' | 'right' }) {
   );
 }
 
-/** 08 · Хичээлийн хуанли (Нүүрийн хуанли товч) + офлайн горим, гарах. */
+/** 08 · Хичээлийн хуанли (Нүүрийн хуанли товч) + офлайн горим. */
 export default function CalendarScreen() {
-  const { me, setMe, signOut, refreshMe } = useAuth();
+  const { me, setMe, refreshMe } = useAuth();
   const { bear } = usePixelBear();
   const online = useOnline();
   const offlineMode = useOfflineMode();
@@ -54,10 +53,6 @@ export default function CalendarScreen() {
     });
   const isCurrent = ym.y === ty && ym.m === tm;
   const rows = Array.from({ length: month.cells.length / 7 }, (_, i) => month.cells.slice(i * 7, i * 7 + 7));
-
-  async function onLogout() {
-    if (await confirm(S.auth.logoutConfirm, S.auth.logout)) await signOut();
-  }
 
   async function switchGrade(grade: number) {
     if (grade === me?.grade || gradeBusy !== null) return;
@@ -207,7 +202,6 @@ export default function CalendarScreen() {
       <View style={styles.profile}>
         <Text style={styles.profileText}>{S.calendar.profile(me.name ?? me.username, me.grade)}</Text>
         <Button title={S.calendar.toProfile} variant="lemon" small onPress={() => router.push('/profile')} />
-        <Button title={S.calendar.logout} variant="white" small onPress={onLogout} />
       </View>
       <Button
         title={S.tour.replay}
