@@ -1,5 +1,5 @@
 import { type ReactNode, type Ref, useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, TextInput, type TextInputInstance, type TextInputProps, View } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, Text, TextInput, type TextInputInstance, type TextInputProps, View } from 'react-native';
 import Animated, { Easing, interpolate, interpolateColor, useAnimatedStyle, useReducedMotion, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Enter, Motion, Pop, SheetFrame, Shake, Sprite, ZoomEnter } from '@/components/pixel';
 import { Screen } from '@/components/ui';
@@ -156,6 +156,17 @@ function BusyOverlay({ visible }: { visible: boolean }) {
  * Ahead маягийн оролт: шошго нь дотроо, фокуслах эсвэл утгатай үед дээш жижгэрч хөвнө; фокуст нил ягаан хүрээ,
  * `valid` өгвөл баруун талд ✓/✕ pop хийнэ (null = хоосон). `right` = нэмэлт товч (нууц үг харах).
  */
+// web: браузерын автоматаар бөглөсөн (autofill) input-ийн цэнхэр дэвсгэр, focus-ийн дөрвөлжин хүрээ box-ийн дугуй
+// хүрээн дотор харагдахгүй (box нь өөрөө focus-ийг ягаан хүрээгээр харуулна)
+if (Platform.OS === 'web' && typeof document !== 'undefined') {
+  const css = document.createElement('style');
+  css.textContent =
+    `input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus{-webkit-box-shadow:0 0 0 1000px ${colors.white} inset;` +
+    `-webkit-text-fill-color:${colors.ink};caret-color:${colors.ink};transition:background-color 600000s 0s}` +
+    'input:focus,input:focus-visible{outline:none}';
+  document.head.appendChild(css);
+}
+
 export function AuthField({
   label,
   hint,
