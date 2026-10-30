@@ -9,36 +9,22 @@ import { otherTeam } from '@/lib/duelTeams';
 
 type Tone = 'ok' | 'bad' | null;
 
-/** Асуултын доорх төлөвийн мөр: 1 vs 1-д хэн авсныг, багийн тулаанд хоёр багийн нэмсэн оноог. */
-function statusOf(view: DuelView, myId: number, myTeam: DuelTeam): [string | null, Tone] {
+/** Асуултын доорх төлөвийн мөр: зөв эсэхийг бүгд хариулах эсвэл хугацаа дуустал хэлэхгүй, дараа нь хоёр талын нэмсэн оноо. */
+function statusOf(view: DuelView, myTeam: DuelTeam): [string | null, Tone] {
   const reveal = view.phase === 'reveal' ? view.reveal : null;
-  const my = view.myAnswer;
-  if (view.teamSize > 1) {
-    if (reveal) {
-      const gain = (t: DuelTeam) => (reveal.correct ?? []).filter((id) => view.players.find((p) => p.id === id)?.team === t).length;
-      const [mine, theirs] = [gain(myTeam), gain(otherTeam(myTeam))];
-      return [S.duel.teamGain(mine, theirs), mine > theirs ? 'ok' : mine < theirs ? 'bad' : null];
-    }
-    return my ? [S.duel.teamAnswered, my.correct ? 'ok' : 'bad'] : [null, null];
-  }
-  if (reveal) {
-    const name = view.players.find((p) => p.id !== myId)?.name ?? '';
-    if (reveal.winnerId === myId) return [S.duel.youGot, 'ok'];
-    return reveal.winnerId ? [S.duel.theyGot(name), 'bad'] : [S.duel.nobody, null];
-  }
-  if (my && !my.correct) return [S.duel.youWrong, 'bad'];
-  return view.opponentWrong ? [S.duel.opponentWrong, null] : [null, null];
+  if (!reveal) return view.myAnswer ? [S.duel.answerSent, null] : [null, null];
+  const gain = (t: DuelTeam) => (reveal.correct ?? []).filter((id) => view.players.find((p) => p.id === id)?.team === t).length;
+  const [mine, theirs] = [gain(myTeam), gain(otherTeam(myTeam))];
+  return [(view.teamSize > 1 ? S.duel.teamGain : S.duel.gain)(mine, theirs), mine > theirs ? 'ok' : mine < theirs ? 'bad' : null];
 }
 
 export function DuelQuestion({
   view,
-  myId,
   myTeam,
   remainingMs,
   onAnswer,
 }: {
   view: DuelView;
-  myId: number;
   myTeam: DuelTeam;
   remainingMs: number;
   onAnswer: (choice: number) => void;
@@ -47,7 +33,7 @@ export function DuelQuestion({
   const reveal = view.phase === 'reveal' ? view.reveal : null;
   const my = view.myAnswer;
   const locked = !!my || view.phase !== 'question';
-  const [status, tone] = statusOf(view, myId, myTeam);
+  const [status, tone] = statusOf(view, myTeam);
 
   const stateOf = (i: number): OptionState => {
     if (reveal) {
@@ -55,8 +41,8 @@ export function DuelQuestion({
       if (my && i === my.choice) return 'wrong';
       return 'dim';
     }
-    if (my && i === my.choice) return my.correct ? 'correct' : 'wrong';
-    return my ? 'dim' : 'idle';
+    if (my) return i === my.choice ? 'selected' : 'dim';
+    return 'idle';
   };
 
   return (

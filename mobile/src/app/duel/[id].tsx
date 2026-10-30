@@ -50,7 +50,7 @@ export default function DuelRoomScreen() {
   useEffect(() => {
     if (view.reveal && lastReveal.current !== view.reveal.q) {
       lastReveal.current = view.reveal.q;
-      const good = view.reveal.correct?.includes(myId) ?? view.reveal.winnerId === myId;
+      const good = !!view.reveal.correct?.includes(myId);
       void Haptics.impactAsync(good ? Haptics.ImpactFeedbackStyle.Heavy : Haptics.ImpactFeedbackStyle.Light);
     }
   }, [view.reveal, myId]);
@@ -99,7 +99,6 @@ export default function DuelRoomScreen() {
       {(view.phase === 'question' || view.phase === 'reveal') && view.question && (
         <DuelQuestion
           view={view}
-          myId={myId}
           myTeam={myTeam}
           remainingMs={remainingMs}
           onAnswer={(choice) => {

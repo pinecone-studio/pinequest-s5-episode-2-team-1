@@ -639,11 +639,10 @@ export interface WsQuestion {
 
 export interface RevealInfo {
   q: number;
+  /** Хүлээн авагчийн өөрийн асуултын (хүн бүр өөр асуулттай) зөв хариулт, тайлбар. */
   correctIndex: number;
   explanation: string;
-  /** Энэ асуултыг (хамгийн түрүүнд) авсан тоглогч, эсвэл null (хэн ч аваагүй). */
-  winnerId: number | null;
-  /** Зөв хариулсан бүх тоглогч (багийн тулаанд хүн бүр хариулна). */
+  /** Өөрийн асуултад зөв хариулсан бүх тоглогч. */
   correct: number[];
   scores: Record<number, number>;
   teamScores: Record<DuelTeam, number>;
@@ -675,7 +674,8 @@ export type ServerMsg =
       teamSize: number;
       players: WsPlayer[];
       question: WsQuestion | null;
-      myAnswer: { choice: number; correct: boolean } | null;
+      /** Зөв эсэхийг reveal-ээс (correct) л мэднэ. */
+      myAnswer: { choice: number } | null;
       reveal: RevealInfo | null;
       /** Одоогийн үе шатын (эсвэл холбогдох) deadline. */
       deadline: number | null;
@@ -685,9 +685,9 @@ export type ServerMsg =
   | { type: 'presence'; userId: number; connected: boolean }
   | { type: 'countdown'; startsAt: number; serverNow: number }
   | ({ type: 'question'; serverNow: number } & WsQuestion)
-  | { type: 'answer_result'; q: number; choice: number; correct: boolean }
-  /** Өөр тоглогч (өрсөлдөгч эсвэл багийн нөхөр) хариуллаа. */
-  | { type: 'opponent_answered'; q: number; correct: boolean; userId: number }
+  | { type: 'answer_result'; q: number; choice: number }
+  /** Өөр тоглогч (өрсөлдөгч эсвэл багийн нөхөр) хариуллаа; зөв эсэхийг reveal хүртэл хэлэхгүй. */
+  | { type: 'opponent_answered'; q: number; userId: number }
   | ({ type: 'reveal'; nextAt: number; serverNow: number } & RevealInfo)
   | { type: 'finished'; outcome: DuelOutcome }
   | { type: 'cancelled'; outcome: DuelOutcome }

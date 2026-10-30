@@ -27,7 +27,7 @@ export function Scoreboard({ view, myId, myTeam }: { view: DuelView; myId: numbe
         </Pop>
         <View style={[styles.faces, team !== myTeam && styles.facesRight]}>
           {members.map((p) => (
-            <Face key={p.id} player={p} view={view} myId={myId} teammate={team === myTeam} />
+            <Face key={p.id} player={p} view={view} myId={myId} />
           ))}
         </View>
       </View>
@@ -43,14 +43,13 @@ export function Scoreboard({ view, myId, myTeam }: { view: DuelView; myId: numbe
   );
 }
 
-/** Багийн нөхрийн зөв/бурууг шууд, өрсөлдөгчийнхийг зөвхөн reveal-ийн дараа харуулна. */
-function Face({ player: p, view, myId, teammate }: { player: WsPlayer; view: DuelView; myId: number; teammate: boolean }) {
+/** Хэн хариулсныг шууд, хэн зөв хариулсныг зөвхөн reveal-ийн дараа (бүгд хариулах эсвэл хугацаа дуусахад) харуулна. */
+function Face({ player: p, view, myId }: { player: WsPlayer; view: DuelView; myId: number }) {
   const inQuestion = view.phase === 'question';
-  const answered = p.id === myId ? view.myAnswer !== null : p.id in view.answered;
-  const correct = p.id === myId ? view.myAnswer?.correct : teammate || !inQuestion ? view.answered[p.id] : undefined;
+  const answered = p.id === myId ? view.myAnswer !== null : view.answered.includes(p.id);
   let ring = DIM;
   if (view.phase === 'reveal' && view.reveal) ring = view.reveal.correct?.includes(p.id) ? colors.lime : DIM;
-  else if (answered) ring = correct === undefined ? colors.white : correct ? colors.lime : '#F08AB4';
+  else if (answered) ring = colors.white;
   return (
     <View style={[styles.face, { borderColor: ring }, !p.connected && { opacity: 0.4 }]}>
       <Avatar size={view.teamSize > 3 ? 24 : 30} look={p.look} />

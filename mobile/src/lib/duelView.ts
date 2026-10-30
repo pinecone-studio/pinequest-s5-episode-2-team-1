@@ -13,10 +13,10 @@ export interface DuelView {
   question: WsQuestion | null;
   /** Асуултын нийт хугацаа (timer bar-т). */
   questionTotalMs: number;
-  myAnswer: { choice: number; correct: boolean } | null;
-  opponentWrong: boolean;
-  /** Одоогийн асуултад бусад тоглогчийн хариулт: userId → зөв эсэх. */
-  answered: Record<number, boolean>;
+  /** Зөв эсэхийг reveal ирэхэд л мэднэ. */
+  myAnswer: { choice: number } | null;
+  /** Одоогийн асуултад хариулсан бусад тоглогч. */
+  answered: number[];
   reveal: RevealInfo | null;
   /** Одоогийн үе шатын төгсгөл (серверийн цагаар). */
   deadline: number | null;
@@ -31,10 +31,9 @@ export const initialDuelView: DuelView = {
   teamSize: 1,
   players: [],
   question: null,
-  questionTotalMs: 20_000,
+  questionTotalMs: 30_000,
   myAnswer: null,
-  opponentWrong: false,
-  answered: {},
+  answered: [],
   reveal: null,
   deadline: null,
   outcome: null,
@@ -56,8 +55,7 @@ export function reduceDuelView(v: DuelView, msg: ServerMsg): DuelView {
         players: msg.players,
         question: msg.question,
         myAnswer: msg.myAnswer,
-        opponentWrong: false,
-        answered: {},
+        answered: [],
         reveal: msg.reveal,
         deadline: msg.deadline,
         outcome: msg.outcome ?? v.outcome,
@@ -74,17 +72,15 @@ export function reduceDuelView(v: DuelView, msg: ServerMsg): DuelView {
         question,
         questionTotalMs: Math.max(1, question.endsAt - serverNow),
         myAnswer: null,
-        opponentWrong: false,
-        answered: {},
+        answered: [],
         reveal: null,
         deadline: question.endsAt,
       };
     }
     case 'answer_result':
-      return v.question?.q === msg.q ? { ...v, myAnswer: { choice: msg.choice, correct: msg.correct } } : v;
+      return v.question?.q === msg.q ? { ...v, myAnswer: { choice: msg.choice } } : v;
     case 'opponent_answered':
-      if (v.question?.q !== msg.q) return v;
-      return { ...v, opponentWrong: v.opponentWrong || !msg.correct, answered: { ...v.answered, [msg.userId]: msg.correct } };
+      return v.question?.q === msg.q ? { ...v, answered: [...v.answered, msg.userId] } : v;
     case 'reveal': {
       const { type: _t, nextAt, serverNow: _s, ...reveal } = msg;
       return { ...v, phase: 'reveal', reveal, players: withScores(v.players, reveal.scores), deadline: nextAt };

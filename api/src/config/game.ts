@@ -68,7 +68,7 @@ export const GAME = {
 
   DUEL: {
     QUESTIONS: 3,
-    QUESTION_MS: 20_000,
+    QUESTION_MS: 30_000,
     REVEAL_MS: 2_000,
     /** Хоёулаа холбогдсоны дараах 3-2-1. */
     COUNTDOWN_MS: 3_000,

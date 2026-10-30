@@ -1,7 +1,7 @@
 // Тулааны цэвэр state machine. DuelRoom (Durable Object) нь socket, alarm, D1-ийг л хариуцна;
 // бүх дүрэм энд байгаа тул unit тестээр шалгагдана. Функц бүр шинэ state буцаана.
-// 1 vs 1: хамгийн түрүүнд зөв хариулсан нь асуултыг авна. Багийн тулаан (2 vs 2 … 5 vs 5): хүн бүр нэг удаа
-// хариулж, зөв хариулт бүр багтаа 1 оноо; бүх холбогдсон тоглогч хариулмагц (эсвэл хугацаа дуусахад) reveal.
+// 1 vs 1 ба багийн тулаан (2 vs 2 … 5 vs 5): тоглогч бүр өөр асуулт авч нэг удаа хариулна, зөв хариулт бүр 1 оноо.
+// Зөв хариулт, оноог бүх холбогдсон тоглогч хариулмагц (эсвэл хугацаа дуусахад) reveal-ээр л хэлнэ.
 import type { AvatarLook, BearLook, DuelOutcome, DuelPhase, DuelTeam, RevealInfo, ServerMsg, Subject, WsQuestion } from '../../../shared/types';
 import { DEFAULT_LOOK } from '../config/cosmetics';
 import { GAME } from '../config/game';
@@ -32,7 +32,8 @@ export interface DuelInit {
   teamSize?: number;
   /** Үүсгэгч эхэнд. 1 vs 1-д [үүсгэгч, хүлээн авагч]. */
   players: DuelPlayerInfo[];
-  questions: DuelQuestion[];
+  /** userId → тухайн тоглогчийн өөрийн асуултууд (хүн бүрт ижил тоотой). */
+  questions: Record<string, DuelQuestion[]>;
 }
 
 /** D1 дээр хийх эцсийн тооцоо: ялсан багийн гишүүн бүр хоёр бооцоо авна. */
@@ -44,7 +45,8 @@ export interface DuelState {
   stake: number;
   teamSize: number;
   players: DuelPlayerInfo[];
-  questions: DuelQuestion[];
+  /** userId → тухайн тоглогчийн өөрийн асуултууд. */
+  questions: Record<string, DuelQuestion[]>;
   phase: DuelPhase;
   /** Одоогийн асуултын дугаар (эхлэхээс өмнө −1). */
   q: number;
@@ -58,10 +60,8 @@ export interface DuelState {
   /** userId → энэ хугацаанд эргэж холбогдохгүй бол хожигдоно. */
   dropDeadline: Record<string, number>;
   scores: Record<string, number>;
-  /** Одоогийн асуултад өгсөн хариулт (тоглогч бүр нэг л удаа). */
+  /** Одоогийн асуултад өгсөн хариулт (тоглогч бүр нэг л удаа). Зөв эсэхийг reveal хүртэл хэнд ч илгээхгүй. */
   attempts: Record<string, { choice: number; correct: boolean }>;
-  qWinner: number | null;
-  lastReveal: RevealInfo | null;
   outcome: DuelOutcome | null;
   settlement: Settlement | null;
   settled: boolean;
@@ -114,16 +114,34 @@ function teamScores(s: DuelState): Record<DuelTeam, number> {
 
 const connected = (s: DuelState, userId: number) => !!s.conn[key(userId)];
 
-function wsQuestion(s: DuelState): WsQuestion | null {
-  const question = s.questions[s.q];
+/** Асуултын тоо (хүн бүрт ижил). */
+const total = (s: DuelState) => s.questions[key(s.players[0].id)]?.length ?? 0;
+const questionOf = (s: DuelState, userId: number): DuelQuestion | undefined => s.questions[key(userId)]?.[s.q];
+
+function wsQuestion(s: DuelState, userId: number): WsQuestion | null {
+  const question = questionOf(s, userId);
   if (!question) return null;
   return {
     q: s.q,
-    total: s.questions.length,
+    total: total(s),
     questionId: question.id,
     prompt: question.prompt,
     options: question.options,
     endsAt: s.questionEndsAt ?? 0,
+  };
+}
+
+/** Тухайн тоглогчийн өөрийн асуултын зөв хариулт, тайлбар ба бүх тоглогчийн дүн. */
+function revealFor(s: DuelState, userId: number): RevealInfo | null {
+  const question = questionOf(s, userId);
+  if (!question) return null;
+  return {
+    q: s.q,
+    correctIndex: question.correctIndex,
+    explanation: question.explanation,
+    correct: s.players.filter((p) => s.attempts[key(p.id)]?.correct).map((p) => p.id),
+    scores: numericScores(s),
+    teamScores: teamScores(s),
   };
 }
 
@@ -150,8 +168,6 @@ export function createDuel(init: DuelInit, now: number): DuelState {
     dropDeadline: {},
     scores,
     attempts: {},
-    qWinner: null,
-    lastReveal: null,
     outcome: null,
     settlement: null,
     settled: false,
@@ -161,6 +177,7 @@ export function createDuel(init: DuelInit, now: number): DuelState {
 /** Тухайн тоглогчид илгээх бүтэн snapshot (холбогдох, дахин холбогдох үед). */
 export function snapshot(s: DuelState, forUser: number, now: number): ServerMsg {
   const inQuestion = s.phase === 'question' || s.phase === 'reveal';
+  const mine = s.attempts[key(forUser)];
   return {
     type: 'state',
     phase: s.phase,
@@ -179,9 +196,9 @@ export function snapshot(s: DuelState, forUser: number, now: number): ServerMsg 
       connected: connected(s, p.id),
       score: s.scores[key(p.id)] ?? 0,
     })),
-    question: inQuestion ? wsQuestion(s) : null,
-    myAnswer: inQuestion ? (s.attempts[key(forUser)] ?? null) : null,
-    reveal: s.phase === 'reveal' ? s.lastReveal : null,
+    question: inQuestion ? wsQuestion(s, forUser) : null,
+    myAnswer: inQuestion && mine ? { choice: mine.choice } : null,
+    reveal: s.phase === 'reveal' ? revealFor(s, forUser) : null,
     deadline: s.phase === 'waiting' ? s.connectDeadline : s.phaseEndsAt,
     outcome: s.settled ? s.outcome : null,
     serverNow: now,
@@ -211,26 +228,17 @@ function startQuestion(s: DuelState, index: number, now: number, out: Out[]) {
   s.phase = 'question';
   s.q = index;
   s.attempts = {};
-  s.qWinner = null;
   s.questionEndsAt = now + GAME.DUEL.QUESTION_MS;
   s.phaseEndsAt = s.questionEndsAt;
-  out.push({ to: 'all', msg: { type: 'question', serverNow: now, ...wsQuestion(s)! } });
+  for (const p of s.players) out.push({ to: p.id, msg: { type: 'question', serverNow: now, ...wsQuestion(s, p.id)! } });
 }
 
+/** Оноог энд л нэмнэ: асуултын үед snapshot-оор ч зөв эсэх ил гарахгүй. */
 function reveal(s: DuelState, now: number, out: Out[]) {
-  const question = s.questions[s.q];
   s.phase = 'reveal';
   s.phaseEndsAt = now + GAME.DUEL.REVEAL_MS;
-  s.lastReveal = {
-    q: s.q,
-    correctIndex: question.correctIndex,
-    explanation: question.explanation,
-    winnerId: s.qWinner,
-    correct: s.players.filter((p) => s.attempts[key(p.id)]?.correct).map((p) => p.id),
-    scores: numericScores(s),
-    teamScores: teamScores(s),
-  };
-  out.push({ to: 'all', msg: { type: 'reveal', nextAt: s.phaseEndsAt, serverNow: now, ...s.lastReveal } });
+  for (const p of s.players) if (s.attempts[key(p.id)]?.correct) s.scores[key(p.id)] = (s.scores[key(p.id)] ?? 0) + 1;
+  for (const p of s.players) out.push({ to: p.id, msg: { type: 'reveal', nextAt: s.phaseEndsAt, serverNow: now, ...revealFor(s, p.id)! } });
 }
 
 function finish(s: DuelState, winnerTeam: DuelTeam | null, reason: DuelOutcome['reason']) {
@@ -317,8 +325,8 @@ function advance(s: DuelState, now: number, out: Out[]) {
     }
     if (s.phaseEndsAt === null || now < s.phaseEndsAt) return;
     if (s.phase === 'countdown') startQuestion(s, 0, now, out);
-    else if (s.phase === 'question') reveal(s, now, out); // хугацаа дууссан: хэн ч аваагүй
-    else if (s.q + 1 < s.questions.length) startQuestion(s, s.q + 1, now, out);
+    else if (s.phase === 'question') reveal(s, now, out); // хугацаа дууссан
+    else if (s.q + 1 < total(s)) startQuestion(s, s.q + 1, now, out);
     else finishByScore(s);
   }
 }
@@ -361,13 +369,14 @@ export function onDisconnect(s0: DuelState, userId: number, connId: string, now:
 }
 
 /**
- * 1 vs 1: хамгийн түрүүнд ирсэн зөв хариулт асуултыг авна. Багийн тулаан: зөв хариулт бүр 1 оноо.
- * Тоглогч бүр асуулт бүрт нэг л удаа хариулна.
+ * Тоглогч өөрийн асуултад нэг л удаа хариулна; зөв хариулт бүр 1 оноо. Зөв эсэхийг хэнд ч хэлэхгүй,
+ * бүгд хариулмагц (эсвэл хугацаа дуусахад) reveal.
  */
 export function onAnswer(s0: DuelState, userId: number, q: number, choice: number, now: number): Step {
   return step(s0, now, (s, out) => {
     const k = key(userId);
-    if (s.phase !== 'question' || q !== s.q) {
+    const question = questionOf(s, userId);
+    if (s.phase !== 'question' || q !== s.q || !question) {
       out.push({ to: userId, msg: { type: 'error', code: 'NOT_ACCEPTING' } });
       return;
     }
@@ -375,19 +384,13 @@ export function onAnswer(s0: DuelState, userId: number, q: number, choice: numbe
       out.push({ to: userId, msg: { type: 'error', code: 'ALREADY_ANSWERED' } });
       return;
     }
-    if (!Number.isInteger(choice) || choice < 0 || choice >= s.questions[s.q].options.length) {
+    if (!Number.isInteger(choice) || choice < 0 || choice >= question.options.length) {
       out.push({ to: userId, msg: { type: 'error', code: 'BAD_CHOICE' } });
       return;
     }
-    const correct = choice === s.questions[s.q].correctIndex;
-    s.attempts[k] = { choice, correct };
-    out.push({ to: userId, msg: { type: 'answer_result', q, choice, correct } });
-    for (const o of othersOf(s, userId)) out.push({ to: o, msg: { type: 'opponent_answered', q, correct, userId } });
-    if (correct) {
-      s.qWinner ??= userId;
-      s.scores[k] = (s.scores[k] ?? 0) + 1;
-    }
-    // 1 vs 1-д зөв хариулт асуултыг шууд хаана; бусад үед бүгд хариулмагц (хоёулаа буруу бол хэн ч авахгүй).
-    if ((correct && !isTeamDuel(s)) || allAnswered(s)) reveal(s, now, out);
+    s.attempts[k] = { choice, correct: choice === question.correctIndex };
+    out.push({ to: userId, msg: { type: 'answer_result', q, choice } });
+    for (const o of othersOf(s, userId)) out.push({ to: o, msg: { type: 'opponent_answered', q, userId } });
+    if (allAnswered(s)) reveal(s, now, out);
   });
 }
