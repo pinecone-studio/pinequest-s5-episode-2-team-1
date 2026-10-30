@@ -132,7 +132,7 @@ export interface Strike {
 
 /**
  * Boss тулааны самбар (хичээлийн дээд самбарын бүтэн дэвсгэр): boss-ын гэр, дүрүүд, сум, оч, HUD. Boss-ын амь =
- * `needed` зөв хариулт, баавгайн зүрх = `hearts` буруу хариулт. Баавгай frame-ээр (pixel бүхэл алхмаар) амьсгалж,
+ * `needed` зөв хариулт; `hearts` буруу хариултад баавгай ялагдана (амийн зурвасгүй). Баавгай frame-ээр (pixel бүхэл алхмаар) амьсгалж,
  * нүдээ ирмэж, довтолж, цочино; хөвөхгүй. Sheet-тэй boss (Хулуун шидтэн) мөн frame-ээр хөвж, ид шид шидэж, цочино;
  * дан зурагтай boss цагаан дүрсээр анивчина. `insetTop` = төхөөрөмжийн дээд зай (HUD, дүрүүд түүний доор).
  */
@@ -461,7 +461,6 @@ export function BossArena({
   const bearStyle = useAnimatedStyle(() => ({ transform: [{ translateX: bearX.value }] }));
 
   const bossLeft = Math.max(0, needed - hits);
-  const heartsLeft = Math.max(0, hearts - misses);
 
   return (
     <View style={StyleSheet.absoluteFill} pointerEvents="none">
@@ -569,11 +568,10 @@ export function BossArena({
       </View>
 
       <View style={[StyleSheet.absoluteFill, { top: insetTop }]}>
-        {/* Тулааны тоглоомын маягийн амийн зурвас: boss зүүн, баавгай баруун; амь нь голоос гадагш биш, гаднаас голруу хасагдана */}
+        {/* Тулааны тоглоомын маягийн boss-ын амийн зурвас (баавгайнх байхгүй: бүх асуултад зөв хариулж байж ялна) */}
         <View style={styles.bars}>
           <HpBar side="left" name={boss.name} value={bossLeft / needed} segments={needed} label={S.boss.hpLabel(boss.name, bossLeft, needed)} />
           <Sprite id="hud_skull_34x30" style={styles.skull} />
-          <HpBar side="right" name={S.boss.bearName} value={heartsLeft / hearts} segments={hearts} label={S.boss.heartsLabel(heartsLeft, hearts)} />
         </View>
 
         {/* алдаа зэрэг хоосон үед хөөс гарахгүй (тайлбар нь доорх самбарт) */}

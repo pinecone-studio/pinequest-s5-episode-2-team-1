@@ -24,7 +24,7 @@ function pathNote(r: TaskResult): string {
   if (r.review) return S.reward.reviewDone;
   if (r.gate !== null && r.gate !== undefined) {
     const k = UNIT_GATE.indexOf(r.gate as (typeof UNIT_GATE)[number]);
-    if (!r.gateBeaten) return S.reward.gateLost(Math.floor(r.total / 2) + 1);
+    if (!r.gateBeaten) return S.reward.gateLost(r.total);
     return k >= 0 ? S.reward.chapterWon(BOSSES[r.gate].name, k + 1) : S.reward.gateWon(BOSSES[r.gate].name);
   }
   if (r.nodeUp) return S.reward.nodeUp;

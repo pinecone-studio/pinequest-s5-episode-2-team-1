@@ -152,8 +152,10 @@ export default function TaskScreen() {
     setAnswered((n) => n + 1);
     if (r.correct) setHits((n) => n + 1);
     else setMisses((n) => n + 1);
-    // дараалсан зөвийн тоо: баавгайн хүчтэй skill (lib/pixelBear/skills.ts)
-    setStrike((s) => ({ n: answered + 1, correct: r.correct, combo: r.correct ? (s?.correct ? (s.combo ?? 1) : 0) + 1 : 0 }));
+    // Boss тулаанд нэг алдвал ялагдсан: үлдсэн асуултад тулаан тоглохгүй (баавгай хэвтсэн хэвээр)
+    if (!(foe && misses > 0))
+      // дараалсан зөвийн тоо: баавгайн хүчтэй skill (lib/pixelBear/skills.ts)
+      setStrike((s) => ({ n: answered + 1, correct: r.correct, combo: r.correct ? (s?.correct ? (s.combo ?? 1) : 0) + 1 : 0 }));
     void Haptics.notificationAsync(r.correct ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error);
   }
 
@@ -244,9 +246,9 @@ export default function TaskScreen() {
 
   // давсан хаалга руу дахин орох гэсэн (сервер BOSS_LOCKED): ялсан гэж харуулна
   const beaten = !!foe && error?.code === 'BOSS_LOCKED' && (me?.paths[subject]?.bossesBeaten ?? 0) > Number(boss);
-  // Boss тулаан: олонх зөв бол ялна (5 асуултад 3 зөв = boss-ын 3 амь, 3 буруу = баавгайн 3 зүрх)
-  const needed = Math.floor(total / 2) + 1;
-  const hearts = total - needed + 1;
+  // Boss тулаан: бүх асуултад зөв хариулж байж ялна (сервер bossWon): boss-ын амь = асуултын тоо, нэг алдвал ялагдана
+  const needed = total;
+  const hearts = 1;
   const bossMessage =
     !foe || error
       ? ''
