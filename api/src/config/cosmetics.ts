@@ -109,6 +109,8 @@ export const COSMETICS: readonly Cosmetic[] = [
   { id: 'outfit_green_giant', kind: 'outfit', key: 'green_giant', price: 1500 },
   { id: 'outfit_shield_hero', kind: 'outfit', key: 'shield_hero', price: 1500 },
   { id: 'outfit_violet_archer', kind: 'outfit', key: 'violet_archer', price: 1500 },
+  { id: 'outfit_night_hero', kind: 'outfit', key: 'night_hero', price: 1500 },
+  { id: 'outfit_sky_hero', kind: 'outfit', key: 'sky_hero', price: 1500 },
   { id: 'outfit_cowboy_hat', kind: 'outfit', key: 'cowboy_hat', price: 500 },
   { id: 'outfit_white_headscarf', kind: 'outfit', key: 'white_headscarf', price: 500 },
   { id: 'outfit_brown_boots', kind: 'outfit', key: 'brown_boots', price: 600 },

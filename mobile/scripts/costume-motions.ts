@@ -54,6 +54,9 @@ const COSTUMES: Record<string, { idle: string; card: [number, number]; hat: bool
   green_giant: { idle: 'idle-120x172.png', card: [19, 28], hat: false },
   shield_hero: { idle: 'idle-120x172.png', card: [19, 28], hat: false, furFrames: true },
   violet_archer: { idle: 'idle-120x172.png', card: [19, 28], hat: false, furFrames: true },
+  // a full suit: no fur shows but the muzzle, which stays as drawn
+  night_hero: { idle: 'idle-120x172.png', card: [19, 28], hat: false, cream: false },
+  sky_hero: { idle: 'idle-120x172.png', card: [19, 28], hat: false },
 };
 const STATES = ['thriving', 'happy', 'tired', 'neglected', 'sleep', 'ouch', 'welcome'] as const;
 type State = (typeof STATES)[number];

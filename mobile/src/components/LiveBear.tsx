@@ -266,6 +266,24 @@ const COSTUME_SHEETS: Record<CostumeId, Record<BearAnim, SpriteKey>> = {
     ouch: 'costume_violet_archer_ouch_960x688',
     welcome: 'costume_violet_archer_welcome_1800x1032',
   },
+  night_hero: {
+    thriving: 'costume_night_hero_thriving_1200x344',
+    happy: 'costume_night_hero_happy_960x688',
+    tired: 'costume_night_hero_tired_960x688',
+    neglected: 'costume_night_hero_neglected_960x688',
+    sleep: 'costume_night_hero_sleep_1200x344',
+    ouch: 'costume_night_hero_ouch_960x688',
+    welcome: 'costume_night_hero_welcome_1800x1032',
+  },
+  sky_hero: {
+    thriving: 'costume_sky_hero_thriving_1200x344',
+    happy: 'costume_sky_hero_happy_960x688',
+    tired: 'costume_sky_hero_tired_960x688',
+    neglected: 'costume_sky_hero_neglected_960x688',
+    sleep: 'costume_sky_hero_sleep_1200x344',
+    ouch: 'costume_sky_hero_ouch_960x688',
+    welcome: 'costume_sky_hero_welcome_1800x1032',
+  },
 };
 
 /** scripts/home-sprites.ts: хөдөлгөөн бүрийн нэг мөр sheet (PixelLab animate_image), 2× */

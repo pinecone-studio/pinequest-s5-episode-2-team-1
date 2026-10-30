@@ -104,6 +104,8 @@ export type OutfitId =
   | 'green_giant'
   | 'shield_hero'
   | 'violet_archer'
+  | 'night_hero'
+  | 'sky_hero'
   | 'cowboy_hat'
   | 'white_headscarf'
   | 'brown_boots'
@@ -147,6 +149,8 @@ export const OUTFITS: OutfitDef[] = [
   { id: 'spy_agent', name: 'Нууц агент', tile: '#B9B6C8', imgTop: -26, card: 'outfit_spy_agent_82x140', item: 'spy_agent' },
   { id: 'thunder_god', name: 'Аянгын бурхан', tile: '#BCC8DE', imgTop: -26, card: 'outfit_thunder_god_82x140', item: 'thunder_god' },
   { id: 'green_giant', name: 'Ногоон аварга', tile: '#A9D18E', imgTop: -26, card: 'outfit_green_giant_82x140', item: 'green_giant' },
+  { id: 'night_hero', name: 'Шөнийн баатар', tile: '#B9B6C8', imgTop: -26, card: 'outfit_night_hero_82x140', item: 'night_hero' },
+  { id: 'sky_hero', name: 'Тэнгэрийн баатар', tile: '#9FD0F2', imgTop: -26, card: 'outfit_sky_hero_82x140', item: 'sky_hero' },
   { id: 'violet_archer', name: 'Ягаан харваач', tile: '#D9D2F2', imgTop: -26, card: 'outfit_violet_archer_82x140', item: 'violet_archer' },
   { id: 'shield_hero', name: 'Бамбайт баатар', tile: '#9FD0F2', imgTop: -26, card: 'outfit_shield_hero_82x140', item: 'shield_hero' },
   { id: 'footballer_7', name: 'Хөлбөмбөгчин №7', tile: '#A9D18E', imgTop: -26, card: 'outfit_footballer_7_82x140', item: 'footballer_7' },
@@ -241,7 +245,7 @@ const ITEM_SLOT: Record<ItemId, Slot> = {
   hiphop_chain: 'neck',
   batman_suit: 'body', mongol_deel: 'body', sport_hoodie: 'body', pirate_shirt: 'body', wizard_robe: 'body',
   demon_cape: 'body', ninja_jacket: 'body', straw_shirt: 'body', vampire: 'body', witch: 'body', cyborg: 'body',
-  mummy: 'body', liquid_cop: 'body', robot: 'body', wrestler: 'body', brown_deel: 'body', khuur: 'body', archer: 'body', leaf_ninja: 'body', shadow_ninja: 'body', blossom_ninja: 'body', police: 'body', doctor: 'body', glasses_wizard: 'body', book_wizard: 'body', ginger_wizard: 'body', footballer_7: 'body', footballer_10: 'body', pirate_captain: 'body', hoop_23: 'body', hoop_24: 'body', iron_armor: 'body', spy_agent: 'body', thunder_god: 'body', green_giant: 'body', shield_hero: 'body', violet_archer: 'body',
+  mummy: 'body', liquid_cop: 'body', robot: 'body', wrestler: 'body', brown_deel: 'body', khuur: 'body', archer: 'body', leaf_ninja: 'body', shadow_ninja: 'body', blossom_ninja: 'body', police: 'body', doctor: 'body', glasses_wizard: 'body', book_wizard: 'body', ginger_wizard: 'body', footballer_7: 'body', footballer_10: 'body', pirate_captain: 'body', hoop_23: 'body', hoop_24: 'body', iron_armor: 'body', spy_agent: 'body', thunder_god: 'body', green_giant: 'body', shield_hero: 'body', violet_archer: 'body', night_hero: 'body', sky_hero: 'body',
   puss_cape: 'back', puss_belt: 'waist', sport_shorts: 'legs', ninja_pants: 'legs', straw_shorts: 'legs',
   brown_boots: 'feet', pirate_boots: 'feet', mongol_boots: 'feet', sport_sneakers: 'feet',
   demon_boots: 'feet', ninja_sandals: 'feet', straw_sandals: 'feet',
@@ -261,7 +265,7 @@ export function outfitSlot(id: OutfitId): Slot | null {
 }
 
 /** a costume with its own motions (LiveBear) is the whole bear: it takes every place, so nothing is worn with it */
-const WHOLE_ITEMS: readonly ItemId[] = ['witch', 'cyborg', 'mummy', 'liquid_cop', 'robot', 'wrestler', 'brown_deel', 'khuur', 'archer', 'leaf_ninja', 'shadow_ninja', 'blossom_ninja', 'police', 'doctor', 'glasses_wizard', 'book_wizard', 'ginger_wizard', 'footballer_7', 'footballer_10', 'pirate_captain', 'hoop_23', 'hoop_24', 'iron_armor', 'spy_agent', 'thunder_god', 'green_giant', 'shield_hero', 'violet_archer'];
+const WHOLE_ITEMS: readonly ItemId[] = ['witch', 'cyborg', 'mummy', 'liquid_cop', 'robot', 'wrestler', 'brown_deel', 'khuur', 'archer', 'leaf_ninja', 'shadow_ninja', 'blossom_ninja', 'police', 'doctor', 'glasses_wizard', 'book_wizard', 'ginger_wizard', 'footballer_7', 'footballer_10', 'pirate_captain', 'hoop_23', 'hoop_24', 'iron_armor', 'spy_agent', 'thunder_god', 'green_giant', 'shield_hero', 'violet_archer', 'night_hero', 'sky_hero'];
 const ALL_SLOTS = [...new Set(Object.values(ITEM_SLOT)), 'base'];
 const slotsOf = (id: OutfitId): string[] =>
   outfitItems(outfitById(id)).flatMap((it) => (WHOLE_ITEMS.includes(it) ? ALL_SLOTS : [ITEM_SLOT[it], ...(ALSO_COVERS[it] ?? []), ...(BASE_ITEMS.includes(it) ? ['base'] : [])]));
