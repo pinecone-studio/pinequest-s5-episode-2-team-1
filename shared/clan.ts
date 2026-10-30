@@ -9,14 +9,15 @@ export const CLAN_NAME_MAX = 24;
 /** Уулын өндөр: гишүүдийн XP-ийн нийлбэр / энэ (= нэг зөв хариулт 1 метр). */
 export const XP_PER_METER = 10;
 
-export const clanTitle = (name: string) => `${name} Уул`;
+/** "Батын" → "Батын анги". Хуучин нэрэнд "анги", "ангийн" бичсэн бол давхардуулахгүй ("6А ангийн" → "6А анги"). */
+export const clanTitle = (name: string) => `${name.replace(/\s*анги(йн)?$/i, '') || name} анги`;
 
-/** "Уул"-ыг нэрэнд нь давхар бичсэн бол хасна ("6А ангийн Уул" → "6А ангийн"), зайг цэгцэлнэ. */
+/** " анги"-г (хуучин нэрэнд " Уул") нэрэнд нь давхар бичсэн бол хасна ("6А анги" → "6А"), зайг цэгцэлнэ. */
 export function normalizeClanName(input: string): string {
   return input
     .replace(/\s+/g, ' ')
     .trim()
-    .replace(/\s*уул$/i, '')
+    .replace(/\s*(уул|анги)$/i, '')
     .trim()
     .slice(0, CLAN_NAME_MAX)
     .trim();

@@ -33,13 +33,16 @@ describe('Уулын нэр (харьяалахын тийн ялгал)', () =>
   });
 
   it('гарчиг нь " Уул"', () => {
-    expect(clanTitle(defaultClanName('Төгсбилэг'))).toBe('Төгсбилэгийн Уул');
+    expect(clanTitle(defaultClanName('Төгсбилэг'))).toBe('Төгсбилэгийн анги');
   });
 
   it('"Уул"-ыг давхар бичсэнийг хасаж, зайг цэгцэлнэ', () => {
     expect(normalizeClanName('  6А   ангийн Уул ')).toBe('6А ангийн');
     expect(normalizeClanName('Төгсбилэгийн уул')).toBe('Төгсбилэгийн');
     expect(normalizeClanName('Уул')).toBe('');
+    expect(normalizeClanName('6А анги')).toBe('6А');
+    expect(clanTitle('6А ангийн')).toBe('6А анги');
+    expect(clanTitle('6А анги')).toBe('6А анги');
     expect(normalizeClanName('а'.repeat(40))).toHaveLength(24);
   });
 
