@@ -68,10 +68,11 @@ export function noteQuota(body: string, now = Date.now()) {
 
 /**
  * Текстийг 24 kHz PCM16LE хэсгүүдээр дамжуулна. Алдаа (429 ч) гарвал дахин оролдож хүлээлгэхгүй, шууд шиднэ:
- * routes/tutor.ts нь тэр ярилцлагын үлдсэн хэсэгт үнэгүй Live-ийн дуу руу шилжинэ. Анхны дуу
+ * routes/tutor.ts тэр хэсгийг дуугүй үлдээнэ. Өдрийн квот дууссан бол (ttsAvailable) хүсэлт ч явуулахгүй. Анхны дуу
  * GAME.TUTOR.TTS_START_MS-д ирэхгүй бол мөн таслана (баавгай удаан чимээгүй байхгүй).
  */
 export async function* ttsStream(key: string, model: string, text: string, signal?: AbortSignal): AsyncGenerator<Uint8Array> {
+  if (!ttsAvailable()) throw new LlmError('gemini', 429, `${model}: өдрийн квот дууссан`);
   const ctrl = new AbortController();
   const stop = () => ctrl.abort();
   signal?.addEventListener('abort', stop);
@@ -90,7 +91,7 @@ export async function* ttsStream(key: string, model: string, text: string, signa
       }),
     });
     if (res.status === 429) {
-      // Өдрийн квот дууссан бол (PerDay) дараагийн ярилцлагууд ч шууд Live-ийн дуугаар эхэлнэ (ttsAvailable).
+      // Өдрийн квот дууссан бол (PerDay) дараагийн хүсэлтүүдийг явуулахгүй (ttsAvailable).
       const body = await res.text();
       noteQuota(body);
       res = new Response(body, { status: 429 });
