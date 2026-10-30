@@ -1,10 +1,8 @@
 import type { BearLook } from '@shared/types';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { LiveBear } from '@/components/LiveBear';
-import { FurContext } from '@/components/pixel';
+import { Avatar } from '@/components/Avatar';
 import { colors, fonts } from '@/constants/theme';
 import { S } from '@/i18n/strings';
-import { parseWorn, wornItems } from '@/lib/pixelBear/catalog';
 import { MAP_W, type PathLayout } from '@/lib/pixelBear/path';
 
 export interface MapFriend {
@@ -15,29 +13,28 @@ export interface MapFriend {
   node: number;
 }
 
-/** LiveBear-ийн бүтэн stage (164 × 280) → газрын зураг дээр жижиг баавгай */
-const STAGE_W = 164;
-const STAGE_H = 280;
-const SCALE = 0.26;
-const W = STAGE_W * SCALE;
-const H = STAGE_H * SCALE;
-/** нэг зангилаан дээр олон найз байвал (эсвэл миний зангилаа бол) хажуу тийш нь эгнүүлнэ */
-const GAP = 34;
+/** профайл зургийн дугуй (цагаан хүрээтэй): чулуунаас (48 × 36) жижиг */
+const PIN = 28;
+/** чулууны тал өргөн (PathMap: 48 px tile зангилааны x дээр төвлөрнө) */
+const STONE_HALF_W = 24;
+/** чулууны төв зангилааны y-ээс доош (PathMap: tile-ийн дээд ирмэг n.y − 14, өндөр 36) */
+const STONE_CY = 4;
+/** сумны цухуйлт: дугуй чулуунаас ийм зайтай, сум нь чулууны ирмэгт хүрнэ */
+const TAIL = 5;
+/** зангилааны төвөөс дугуйн төв хүртэл */
+const DX = STONE_HALF_W + TAIL + PIN / 2;
 
 /**
- * Газрын зураг дээр найзуудын баавгай (өөрийн үс, өмссөн хувцастайгаа) тэдний одоо байгаа зангилаан дээр зогсоно,
- * нэртэй. Нэг зангилаанд хэд байвал эгнэнэ; миний зангилаа бол миний цагирагийг халхлахгүй баруун тийш шилжинэ.
- * Дарвал найзын профайл нээгдэнэ.
+ * Candy Crush шиг: найз бүрийн профайл зураг тэдний одоогийн зангилааны хажууд, зам руу заасан сумтай дугуйгаар
+ * харагдана. Дугуй нь замын шугамаас холдох талд байрлана (placePin): зам, арлыг халхлахгүй. Нэг зангилаанд
+ * олон бол нэг зураг + «+N». Дарвал (эхний) найзын профайл нээгдэнэ.
  */
 export function MapFriends({
   layout,
-  current,
   friends,
   onPress,
 }: {
   layout: PathLayout;
-  /** миний одоогийн зангилаа */
-  current: number;
   friends: readonly MapFriend[];
   onPress: (code: string) => void;
 }) {
@@ -48,49 +45,79 @@ export function MapFriends({
       {[...byNode].flatMap(([node, here]) => {
         const n = layout.nodes[node];
         if (!n) return [];
-        const mine = node === current ? 1 : 0;
-        return here.map((f, k) => {
-          const x = n.x - W / 2 + (k + mine - (here.length + mine - 1) / 2) * GAP;
-          return (
-            <Pressable
-              key={f.code}
-              accessibilityRole="button"
-              accessibilityLabel={S.path.friendHere(f.name)}
-              onPress={() => onPress(f.code)}
-              style={[styles.friend, { left: Math.max(0, Math.min(MAP_W - W, x)), top: n.y - H + 14, zIndex: 3 + k }]}
-            >
-              <View style={styles.bearBox} pointerEvents="none">
-                <View style={styles.stage}>
-                  <FurContext.Provider value={f.look.fur ?? 'brown'}>
-                    <LiveBear anim="thriving" w={STAGE_W} items={wornItems(parseWorn(f.look.outfit))} />
-                  </FurContext.Provider>
-                </View>
+        const [f] = here;
+        const extra = here.length - 1;
+        const { side, dy } = placePin(layout, node);
+        const cx = Math.max(PIN / 2, Math.min(MAP_W - PIN / 2, n.x + side * DX));
+        return (
+          <Pressable
+            key={f.code}
+            accessibilityRole="button"
+            accessibilityLabel={extra > 0 ? S.path.friendsHere(f.name, extra) : S.path.friendHere(f.name)}
+            onPress={() => onPress(f.code)}
+            // 28 + 2 × 8 = 44 px дарах талбай
+            hitSlop={8}
+            style={[styles.pin, { left: cx - PIN / 2, top: n.y - PIN / 2 + dy }]}
+          >
+            <View style={[styles.tail, side > 0 ? { left: -TAIL } : { right: -TAIL }]} />
+            <Avatar size={PIN} border={2} look={f.look} />
+            {extra > 0 ? (
+              <View style={[styles.more, side > 0 ? { right: -10 } : { left: -10 }]} pointerEvents="none">
+                <Text style={styles.moreText}>+{extra}</Text>
               </View>
-              <Text style={styles.name} numberOfLines={1}>
-                {f.name}
-              </Text>
-            </Pressable>
-          );
-        });
+            ) : null}
+          </Pressable>
+        );
       })}
     </>
   );
 }
 
+/**
+ * Дугуйн тал (−1 зүүн, 1 баруун) ба босоо шилжилт: өмнөх, дараагийн зангилаанаас хамгийн их холдох тал, багтахгүй
+ * бол нөгөө тал. Чулууны төвтэй нэг түвшинд; тэр талд хөрш зангилаа байвал түүн рүү очих шугамаас бага зэрэг холдоно.
+ */
+export function placePin(layout: PathLayout, node: number): { side: -1 | 1; dy: number } {
+  const n = layout.nodes[node];
+  const near = [layout.nodes[node - 1], layout.nodes[node + 1]].filter((m) => m !== undefined);
+  const away = near.reduce((s, m) => s + (n.x - m.x), 0) || n.x - MAP_W / 2;
+  // +N тэмдэг гадагш 10 px цухуйна
+  const reach = DX + PIN / 2 + 10;
+  const fits = (side: number) => n.x + side * reach <= MAP_W && n.x + side * reach >= 0;
+  let side: -1 | 1 = away < 0 ? -1 : 1;
+  if (!fits(side) && fits(-side)) side = side === 1 ? -1 : 1;
+  const onSide = near.find((m) => Math.sign(m.x - n.x) === side);
+  const dy = STONE_CY + (!onSide ? 0 : onSide.y < n.y ? 6 : -6);
+  return { side, dy };
+}
+
 const styles = StyleSheet.create({
-  friend: { position: 'absolute', width: W, alignItems: 'center' },
-  bearBox: { width: W, height: H, overflow: 'visible' },
-  stage: { width: STAGE_W, height: STAGE_H, transform: [{ scale: SCALE }], transformOrigin: 'top left' },
-  name: {
-    marginTop: -6,
-    maxWidth: 64,
-    paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 8,
-    overflow: 'hidden',
-    backgroundColor: colors.white,
-    fontFamily: fonts.bold,
-    fontSize: 9,
-    color: colors.ink,
+  pin: {
+    position: 'absolute',
+    zIndex: 3,
+    width: PIN,
+    height: PIN,
+    borderRadius: PIN / 2,
+    shadowColor: colors.ink,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 2,
+    elevation: 3,
   },
+  // зангилаа руу заасан сум (Candy Crush-ийн pin шиг)
+  tail: { position: 'absolute', top: PIN / 2 - 4.5, width: 9, height: 9, backgroundColor: colors.white, transform: [{ rotate: '45deg' }] },
+  more: {
+    position: 'absolute',
+    top: -8,
+    minWidth: 18,
+    paddingHorizontal: 3,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: colors.ink,
+    borderWidth: 2,
+    borderColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  moreText: { fontFamily: fonts.bold, fontSize: 10, color: colors.white },
 });

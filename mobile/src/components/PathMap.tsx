@@ -205,7 +205,7 @@ export function PathMap({
           <UnitProps key={k} unit={u} layout={layout} current={current} />
         ))}
         <MapChests layout={layout} current={current} opened={chests} onOpen={onChest} open={open} />
-        <MapFriends layout={layout} current={current} friends={friends} onPress={(code) => onFriend?.(code)} />
+        <MapFriends layout={layout} friends={friends} onPress={(code) => onFriend?.(code)} />
         {layout.gates.map((_, g) => (
           <GateFigure key={g} g={g} layout={layout} beaten={g < beaten} />
         ))}

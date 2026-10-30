@@ -420,6 +420,7 @@ export const S = {
   },
   path: {
     friendHere: (name: string) => `${name} энд байна. Дарвал профайл нь нээгдэнэ`,
+    friendsHere: (name: string, more: number) => `${name} болон өөр ${more} найз энд байна. Дарвал эхнийх нь профайл нээгдэнэ`,
     subjectMenu: 'Хичээл солих',
     streak: 'Дараалал',
     chapterOver: (n: number) => `${n}-Р БҮЛЭГ`,
