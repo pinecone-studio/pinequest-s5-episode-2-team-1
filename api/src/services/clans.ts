@@ -115,7 +115,7 @@ export async function clanNameOf(db: D1Database, userId: number): Promise<string
 
 /** Уул байгуулна: үүсгэгч нь эзэн, анхны гишүүн. Нэр өгөөгүй бол "<нэрийн>" (Төгсбилэгийн). */
 export async function createClan(db: D1Database, me: number, name: string | undefined, now = Date.now()): Promise<MyClanResponse> {
-  if (await clanOf(db, me)) throw new ApiError(409, 'CLAN_MEMBER', 'Чи аль хэдийн ангид байна. Шинээр байгуулахын өмнө гарна уу');
+  if (await clanOf(db, me)) throw new ApiError(409, 'CLAN_MEMBER', 'Чи аль хэдийн ангид байна. Шинээр үүсгэхийн өмнө гарна уу');
   const user = await getUserRow(db, me);
   const clanName = name === undefined ? defaultClanName(user.display_name ?? user.username) : cleanName(name);
   // Гишүүд бие биеийнхээ профайлыг кодоор нь нээнэ: код байхгүй бол үүсгэнэ.

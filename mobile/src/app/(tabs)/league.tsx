@@ -60,6 +60,7 @@ export default function LeagueScreen() {
           <Text style={styles.ctaTitle}>{S.league.noClanTitle}</Text>
           <Muted>{S.league.noClanBody}</Muted>
           <Button title={S.league.toClan} onPress={() => router.push('/uul')} />
+          <Button title={S.league.toJoin} variant="secondary" onPress={() => router.push('/uul')} />
         </Card>
       ) : (
         <View style={styles.table}>

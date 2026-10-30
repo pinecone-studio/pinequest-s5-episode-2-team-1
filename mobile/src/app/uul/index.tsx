@@ -113,8 +113,30 @@ function NoClan({ busy, error, act }: { busy: string | null; error: string; act:
         </Card>
       </Enter>
 
-      {/* Ихэнх хүүхэд ангидаа нэгдэнэ (нэг л хүн байгуулна): нэгдэх нь эхэнд */}
       <Enter index={1}>
+        <Card>
+          <Text accessibilityRole="header" style={styles.cardTitle}>
+            {S.clan.createTitle}
+          </Text>
+          <TextField
+            label={S.clan.nameLabel}
+            hint={S.clan.createHint}
+            value={name}
+            onChangeText={setName}
+            autoCapitalize="sentences"
+            maxLength={40}
+            onSubmitEditing={create}
+            returnKeyType="done"
+          />
+          <Text style={styles.preview} numberOfLines={2}>
+            {clanTitle(clean || '…')}
+          </Text>
+          <Button title={S.clan.create} variant="lemon" loading={busy === 'create'} disabled={!clean} onPress={create} />
+          <ErrorText>{error}</ErrorText>
+        </Card>
+      </Enter>
+
+      <Enter index={2}>
         <Card>
           <Text accessibilityRole="header" style={styles.cardTitle}>
             {S.clan.joinTitle}
@@ -136,29 +158,6 @@ function NoClan({ busy, error, act }: { busy: string | null; error: string; act:
             <Button title={S.clan.joinButton} small disabled={code.length !== CLAN_CODE_LENGTH} onPress={view} />
           </View>
           <Button title={S.clan.scan} variant="secondary" small onPress={() => router.push({ pathname: '/scan', params: { for: 'uul' } })} />
-        </Card>
-      </Enter>
-
-      <Enter index={2}>
-        <Card>
-          <Text accessibilityRole="header" style={styles.cardTitle}>
-            {S.clan.createTitle}
-          </Text>
-          <TextField
-            label={S.clan.nameLabel}
-            hint={S.clan.createHint}
-            value={name}
-            onChangeText={setName}
-            autoCapitalize="sentences"
-            maxLength={40}
-            onSubmitEditing={create}
-            returnKeyType="done"
-          />
-          <Text style={styles.preview} numberOfLines={2}>
-            {clanTitle(clean || '…')}
-          </Text>
-          <Button title={S.clan.create} variant="lemon" loading={busy === 'create'} disabled={!clean} onPress={create} />
-          <ErrorText>{error}</ErrorText>
         </Card>
       </Enter>
     </>
