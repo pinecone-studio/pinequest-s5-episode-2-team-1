@@ -4,8 +4,11 @@ import { currentNode, GATE_COUNT, gateNodes, UNIT_GATE } from '../../../shared/p
 /** Давсан `gates` хаалганаас хэд нь жинхэнэ boss вэ (профайл дээр харуулна). */
 export const bossesIn = (gates: number) => UNIT_GATE.filter((g) => g < gates).length;
 
-/** Хаалганы тулааны ялалт: бүх асуултад зөв хариулна (5 асуултад 5). */
-export const bossWon = (correctCount: number) => correctCount >= GAME.QUESTIONS_PER_TASK;
+/**
+ * Хаалганы тулааны ялалт: нэг ч буруу хариултгүй (5 асуултад 5 зөв). "Асуулт буруу байна" гэж мэдээлсэн (flag)
+ * асуулт алдаа биш тул тоологдохгүй; бүгдийг нь мэдээлсэн бол (зөв 0) ялахгүй.
+ */
+export const bossWon = (correctCount: number, wrongCount: number) => wrongCount === 0 && correctCount > 0;
 
 /**
  * `n` хичээлтэй замд `gate`-р хаалгатай тулалдаж болох уу: дараалсан дараагийн хаалга байх ёстой бөгөөд баавгай

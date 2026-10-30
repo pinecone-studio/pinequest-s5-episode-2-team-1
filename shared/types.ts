@@ -413,6 +413,8 @@ export interface TaskDto {
   questions: TaskQuestion[];
   answeredCount: number;
   correctCount: number;
+  /** "Асуулт буруу байна" гэж алгассан асуулт (answeredCount-д орно; алдаа биш). Хуучин сервер илгээхгүй. */
+  skippedCount?: number;
   /** Өнөөдрийн хичээл бол давтаж буй хичээлийн нэр (номгүй бол null). */
   title?: string | null;
 }

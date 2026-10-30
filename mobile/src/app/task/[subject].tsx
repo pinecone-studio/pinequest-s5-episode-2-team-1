@@ -64,6 +64,8 @@ export default function TaskScreen() {
   const [answered, setAnswered] = useState(0);
   const [hits, setHits] = useState(0);
   const [misses, setMisses] = useState(0);
+  /** "Асуулт буруу байна" гэж алгассан (алдаа биш: boss-ын амиас хасагдана) */
+  const [skipped, setSkipped] = useState(0);
   const [strike, setStrike] = useState<Strike | null>(null);
   const [selected, setSelected] = useState<number | null>(null);
   const [feedback, setFeedback] = useState<AnswerResponse | null>(null);
@@ -92,7 +94,8 @@ export default function TaskScreen() {
       setTask(t);
       setAnswered(t.answeredCount);
       setHits(t.correctCount);
-      setMisses(t.answeredCount - t.correctCount);
+      setSkipped(t.skippedCount ?? 0);
+      setMisses(t.answeredCount - t.correctCount - (t.skippedCount ?? 0));
       setStrike(null);
       setIndex(Math.max(0, t.questions.findIndex((q) => !q.answered)));
     };
@@ -195,6 +198,7 @@ export default function TaskScreen() {
       setNote(S.task.flagged);
       if (feedback) return;
       setAnswered((n) => n + 1);
+      setSkipped((n) => n + 1);
       if (r.result) {
         setMe(r.result.me);
         setRecovery(!!r.recovery);
@@ -258,8 +262,8 @@ export default function TaskScreen() {
 
   // давсан хаалга руу дахин орох гэсэн (сервер BOSS_LOCKED): ялсан гэж харуулна
   const beaten = !!foe && error?.code === 'BOSS_LOCKED' && (me?.paths[subject]?.bossesBeaten ?? 0) > Number(boss);
-  // Boss тулаан: бүх асуултад зөв хариулж байж ялна (сервер bossWon): boss-ын амь = асуултын тоо, нэг алдвал ялагдана
-  const needed = total;
+  // Boss тулаан: нэг ч алдаагүй байж ялна (сервер bossWon): boss-ын амь = алгасаагүй асуултын тоо, нэг алдвал ялагдана
+  const needed = Math.max(1, total - skipped);
   const hearts = 1;
   const bossMessage =
     !foe || error
