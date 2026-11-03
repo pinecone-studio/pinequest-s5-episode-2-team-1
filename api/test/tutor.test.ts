@@ -25,7 +25,7 @@ describe('tutorSystemPrompt', () => {
   it('нэг бодлого: хүүхдийн буруу ба зөв хариулт, тайлбар орно', () => {
     const p = tutorSystemPrompt({ grade: 6, questions: [q], focused: true });
     expect(p).toContain('6-р ангийн');
-    expect(p).toContain('үргэлж зөвхөн монгол хэлээр ярь');
+    expect(p).toContain('үргэлж зөвхөн монгол хэлээр хариул');
     expect(p).toContain('[Математик] 1/2 + 1/3 = ?');
     expect(p).toContain('Хүүхдийн хариулт: A) 2/5 (буруу)');
     expect(p).toContain('Зөв хариулт: B) 5/6');
@@ -59,14 +59,22 @@ describe('tutorSystemPrompt хичээлийн урсгал', () => {
     const text = tutorSystemPrompt({ grade: 6, questions: [], focused: false });
     expect(text).toContain('Шинэ бодлого, дасгал бүү өг.');
     expect(text).toContain('6–8 ээлжинд');
-    expect(text.match(/finish_lesson/g)).toHaveLength(2);
+    expect(text).toContain('finish_lesson-ийг дууд. Хүүхэд ядарсан эсвэл дуусгая гэвэл ч ингэ.');
     expect(text).not.toContain('шинэ, тоо нь өөр бодлого өг');
   });
 
   it('тооцоог шалгаж, Тайлбар дахь бодолтыг дагана (баавгай тооцоогоо андуурдаг байсан)', () => {
     const text = tutorSystemPrompt({ grade: 9, questions: [], focused: false });
-    expect(text).toContain('дотроо алхам алхмаар бодож шалгаад хэл');
-    expect(text).toContain('Таны тооцоо Тайлбараас');
+    expect(text).toContain('дотроо алхам алхмаар бодож шалга');
+    expect(text).toContain('Тайлбараас зөрвөл Тайлбар зөв');
+  });
+
+  it('хариу самбар дээр бичгээр гардаг тул томьёог үгээр биш тэмдэгтээр хэлнэ', () => {
+    const text = tutorSystemPrompt({ grade: 7, questions: [], focused: false });
+    expect(text).toContain('самбар дээр бичгээр');
+    expect(text).toContain('x + 8 = 30');
+    expect(text).not.toContain('Тэмдэгтийг үгээр хэл');
+    expect(text).not.toMatch(/Дуу хоолойгоороо|дуу болгож уншдаг/);
   });
 
   it('хүүхдийг "дүү минь" гэж дуудахгүй, ах гэж өөрийгөө нэрлэхгүй', () => {
