@@ -242,6 +242,11 @@ export function useBearTalk(questionId: number | undefined) {
           break;
         case 'bear_text': {
           if (drop) break;
+          // Баавгай зөвхөн бичгээр хариулна (сервер дуу илгээхгүй): бичиж эхэлмэгц mic-ийг хааж ээлжийг өгнө.
+          turnDone = false;
+          clearTimeout(replyTimer);
+          if (wantMic) micOff();
+          setPhase('bear');
           const fresh = freshTurn;
           freshTurn = false;
           setBearText((t) => (fresh ? m.text : t + m.text));
@@ -275,7 +280,7 @@ export function useBearTalk(questionId: number | undefined) {
     interruptRef.current = () => {
       if (!alive) return;
       silence();
-      // Сервер энэ ээлжийн үлдсэн яриаг үүсгэхээ болино (TTS-ийн зардал, баавгайн хугацаа).
+      // Сервер энэ ээлжийн үлдсэн бичвэрийг хүүхэд рүү илгээхээ болино.
       if (!turnDone) send({ type: 'interrupt' });
       drop = !turnDone;
       turnDone = true;
