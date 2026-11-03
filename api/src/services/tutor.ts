@@ -98,7 +98,7 @@ export async function startTutorSession(db: D1Database, userId: number, now = Da
 }
 
 /**
- * Ярилцлага дууссан: баавгайн ярьсан хугацааг (bearMs, TTS-ийн зардал) хадгална. Gemini-тэй холбогдож чадаагүй бол
+ * Ярилцлага дууссан: баавгайн хариултын уртыг (bearMs, Live-ийн дууны хугацаа) хадгална. Gemini-тэй холбогдож чадаагүй бол
  * (counted = false) тоолохгүйн тулд устгана.
  */
 export async function endTutorSession(db: D1Database, id: number, counted: boolean, bearMs = 0, now = Date.now()): Promise<void> {

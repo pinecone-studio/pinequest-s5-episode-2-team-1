@@ -41,7 +41,6 @@
     "GEMINI_MODEL": "gemini-3.8-flash",
     "GEMINI_THINKING_LEVEL": "low",
     "GEMINI_LIVE_MODEL": "gemini-3.8-live",
-    "GEMINI_TTS_MODEL": "gemini-3.8-flash-tts",
     // "on": эхлэх дэлгэцийн "Шүүгчээр орох" товч ажиллана (POST /auth/judge). Тэмцээний дараа "off".
     "JUDGE_LOGIN": "on",
     "WORKERS_AI_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
@@ -77,7 +76,6 @@
         "GEMINI_MODEL": "gemini-3.8-flash",
         "GEMINI_THINKING_LEVEL": "low",
         "GEMINI_LIVE_MODEL": "gemini-3.8-live",
-        "GEMINI_TTS_MODEL": "gemini-3.8-flash-tts",
         "WORKERS_AI_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
       }
     },
@@ -106,7 +104,6 @@
         "GEMINI_MODEL": "gemini-3.8-flash",
         "GEMINI_THINKING_LEVEL": "low",
         "GEMINI_LIVE_MODEL": "gemini-3.8-live",
-        "GEMINI_TTS_MODEL": "gemini-3.8-flash-tts",
         "WORKERS_AI_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
       }
     },
@@ -137,9 +134,6 @@
         "GEMINI_MODEL": "gemini-3.8-flash",
         "GEMINI_THINKING_LEVEL": "low",
         "GEMINI_LIVE_MODEL": "gemini-3.8-live",
-        "GEMINI_TTS_MODEL": "gemini-3.8-flash-tts",
-        // Баавгайн хэлэх үгийг Gemini TTS (Achird) уншина; түлхүүр нь GEMINI_TTS_API_KEY secret.
-        "TUTOR_SPEECH": "tts",
         "JUDGE_LOGIN": "on",
         "WORKERS_AI_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
       }

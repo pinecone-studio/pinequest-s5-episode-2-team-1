@@ -22,16 +22,15 @@ import {
   tutorKickoff,
   tutorSystemPrompt,
 } from '../llm/live';
-import { SpeechQueue, speechChunkEnd } from '../llm/speech';
-import { cleanForSpeech, speechMode, ttsStream } from '../llm/tts';
 import { endTutorSession, loadTutorContext, startTutorSession } from '../services/tutor';
 import { getUserRow, requireLife } from '../services/users';
 
 export const tutorRoutes = new Hono<AppEnv>();
 
 /**
- * Баавгайтай дуугаар ярилцах: утас ↔ энэ Worker ↔ Gemini Live. GEMINI_API_KEY болон system prompt (хүүхдийн
- * алдсан бодлого) серверээс гарахгүй; клиент зөвхөн mic-ийн PCM илгээж, баавгайн PCM-ийг хүлээн авна.
+ * Баавгайтай ярилцах: утас ↔ энэ Worker ↔ Gemini Live. Хүүхэд дуугаар асууна; баавгай зөвхөн бичгээр хариулна
+ * (Live-ийн дууг клиентэд илгээхгүй, TTS байхгүй). GEMINI_API_KEY болон system prompt (хүүхдийн алдсан бодлого)
+ * серверээс гарахгүй; клиент mic-ийн PCM илгээж, баавгайн бичвэрийг (bear_text) хүлээн авна.
  * `?questionId=` өгвөл тэр бодлогын тухай, үгүй бол сүүлд алдсан хэдэн бодлогын тухай ярина.
  */
 tutorRoutes.get('/ws', async (c) => {
@@ -51,10 +50,6 @@ tutorRoutes.get('/ws', async (c) => {
     relay(server, {
       key,
       model: c.env.GEMINI_LIVE_MODEL || 'gemini-3.8-live',
-      // TTS горимд баавгай зөвхөн TTS-ийн дуугаар ярина (квот дууссан ч Live-ийн дуу руу шилжихгүй).
-      ttsModel: speechMode(c.env.TUTOR_SPEECH) === 'tts' ? c.env.GEMINI_TTS_MODEL || 'gemini-3.8-flash-tts' : null,
-      // Live-ийг үнэгүй багцын түлхүүрээр, TTS-ийг (үнэгүй багцад өдөрт 10 хүсэлт) billing-тэй түлхүүрээр ажиллуулж болно.
-      ttsKey: c.env.GEMINI_TTS_API_KEY || key,
       pushToTalk,
       session: {
         start: () => startTutorSession(c.env.DB, userId),
@@ -95,8 +90,6 @@ async function relay(
   opts: {
     key: string;
     model: string;
-    ttsModel: string | null;
-    ttsKey: string;
     pushToTalk: boolean;
     /** Хэрэглэгчийн өдрийн / зэрэг ярилцлагын хязгаар (services/tutor). */
     session: { start: () => Promise<number>; end: (id: number, counted: boolean, bearMs: number) => void };
@@ -143,9 +136,12 @@ async function relay(
     return;
   }
 
-  /** Баавгайн ярьсан хугацаа (зардал) ба клиент дээр дуу нь тоглож дуусах агшин (ойролцоогоор). */
+  /**
+   * Баавгайн хариултын урт: Live-ийн (клиентэд илгээдэггүй) дууны хугацаагаар хэмжинэ. Ярилцлагын хугацааны хязгаар,
+   * сүүлийн хариултыг уншиж амжих хугацаанд (readUntil) ашиглана.
+   */
   let bearMs = 0;
-  let playedUntil = 0;
+  let readUntil = 0;
   /** Энэ Live ээлжид баавгай ярьсан (дуу эсвэл текст) / finish_lesson дуудсан эсэх. */
   let liveSpoke = false;
   let liveTool = false;
@@ -154,15 +150,10 @@ async function relay(
   /** Дуусгах заавар (TUTOR_WRAP_UP) өгсөн; turnStartMs = энэ ээлж эхлэхэд bearMs. */
   let wrapping = false;
   let turnStartMs = 0;
-  const sendAudio = (pcm: Uint8Array) => {
+  const countAudio = (pcm: Uint8Array) => {
     const ms = pcm.byteLength / ((GAME.TUTOR.OUTPUT_RATE * 2) / 1000);
     bearMs += ms;
-    playedUntil = Math.max(playedUntil, Date.now()) + ms;
-    try {
-      client.send(pcm);
-    } catch {
-      // клиент салсан
-    }
+    readUntil = Math.max(readUntil, Date.now()) + ms;
     // Дуусгах ээлж ч хэт удаан бол хүлээхгүй.
     if (bearMs >= GAME.TUTOR.BEAR_SPEECH_MS + GAME.TUTOR.WRAP_UP_MS) shutdown({ type: 'end', reason: 'time' });
   };
@@ -177,70 +168,19 @@ async function relay(
       wrapping = true;
       sendUp(liveText(TUTOR_WRAP_UP, false));
     } else if (next === 'end' && endTimer === undefined) {
-      // Клиент баавгайн сүүлийн үгийг тоглож дуусахыг хүлээнэ.
+      // Хүүхэд баавгайн сүүлийн хариултыг уншиж амжтал хүлээнэ (хэлсэн бол хэр удаан ярих байсантай ойролцоо).
       const end: TutorServerMsg = { type: 'end', reason: finishing ? 'done' : 'time' };
-      endTimer = setTimeout(() => shutdown(end), Math.max(0, playedUntil - Date.now()) + 500);
+      endTimer = setTimeout(() => shutdown(end), Math.max(0, readUntil - Date.now()) + 500);
     }
   };
 
-  // TTS горим: ээлж бүрт 2 хүсэлт: эхний хэсгийг (60+ тэмдэгт дэх өгүүлбэрийн төгсгөл хүртэл) бэлэн болмогц, үлдсэнийг Live
-  // текстээ дуусгамагц. TTS-ийн өдрийн квот бага (Tier 1-д загвар бүрт 100 хүсэлт) тул хүсэлтийг хэмнэнэ.
-  // TTS горимд Live-ийн дууг хэзээ ч дамжуулахгүй: ижил нэртэй (Achird) хоолой ч хоёр загварт өөр сонсогддог тул
-  // нэг ярилцлагад хоёр дуу холилдож байсан. TTS алдаа гарвал (квот, хугацаа) тэр хэсэг дуугүй, бичвэр нь харагдсаар.
-  const ttsModel = opts.ttsModel;
-  const useLiveVoice = !ttsModel;
-  /** Алдааг ярилцлагад нэг л удаа бичнэ (квот дууссан бол хэсэг бүр алдаа өгнө). */
-  let ttsFailed = false;
-  const speech = ttsModel
-    ? new SpeechQueue((text, signal) => ttsStream(opts.ttsKey, ttsModel, text, signal), {
-        audio: sendAudio,
-        turnEnd: bearTurnEnd,
-        error: (e) => {
-          if (ttsFailed) return;
-          ttsFailed = true;
-          console.error('[tutor] TTS алдаа, хэсэг дуугүй үлдлээ:', e);
-        },
-      })
-    : null;
-  let turnText = '';
-  /** turnText-ийн TTS-д өгсөн хэсгийн урт; saidInTurn = энэ ээлжид TTS-д текст өгсөн эсэх. */
-  let spoken = 0;
-  let saidInTurn = false;
   /**
-   * Хүүхэд "Тасал" дарсан: энэ Live ээлжийн үлдсэн дуу, текстийг хаяна (клиент тоглуулахгүй, TTS-д мөнгө, баавгайн
-   * хугацаа зарцуулахгүй). Ээлж дуусахад (turn_end, interrupted) буцаад сонсоно.
+   * Хүүхэд "Би ярья" дарсан: энэ Live ээлжийн үлдсэн бичвэрийг хаяна. Ээлж дуусахад (turn_end, interrupted) буцаад
+   * дамжуулна. liveTurn = Live энэ ээлжийг үүсгэж байна; clientTurn = клиентэд энэ ээлжийн turn_end хараахан очоогүй.
    */
   let muted = false;
-  /** Live энэ ээлжийг үүсгэж байна (turn_end ирээгүй); clientTurn = клиентэд энэ ээлжийн turn_end хараахан очоогүй. */
   let liveTurn = false;
   let clientTurn = false;
-  /** Энэ Live ээлжийн хуримтлуулсан бүх зүйлийг хаяна. */
-  const dropTurn = () => {
-    speech?.clear();
-    turnText = '';
-    spoken = 0;
-    saidInTurn = false;
-  };
-  const sayRest = () => {
-    const rest = cleanForSpeech(turnText.slice(spoken));
-    spoken = turnText.length;
-    if (!rest || !speech) return;
-    speech.say(rest);
-    saidInTurn = true;
-  };
-  /**
-   * Live ээлж дууссан (turnComplete): gen_done-ийн дараа хоцорч ирсэн текстийг хэлүүлээд ээлжийг хаана. Ээлжийг
-   * gen_done дээр хаавал хоцорсон текст хоёр дахь turn_end үүсгэж, хүүхдийн mic асаад буцаж унтардаг байсан.
-   * Текстгүй ээлж (зөвхөн дуу эсвэл finish_lesson) ч хаагдана: Live-ийн дууг тоглуулахгүй (өөр хоолой).
-   */
-  const endSpeechTurn = () => {
-    if (!speech) return;
-    sayRest();
-    speech.endTurn();
-    turnText = '';
-    spoken = 0;
-    saidInTurn = false;
-  };
 
   let ready = false;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -250,7 +190,6 @@ async function relay(
     closed = true;
     // Gemini бэлэн болоогүй (хүүхэд баавгайтай ярьж амжаагүй) ярилцлагыг тоолохгүй.
     if (sessionId !== null) opts.session.end(sessionId, ready, Math.round(bearMs));
-    speech?.clear();
     if (timer !== undefined) clearTimeout(timer);
     if (endTimer !== undefined) clearTimeout(endTimer);
     if (msg) send(msg);
@@ -302,11 +241,12 @@ async function relay(
             break;
           }
           case 'audio': {
+            // Live зөвхөн дуу үүсгэдэг: хариултын уртыг хэмжээд дууг хаяна, хүүхэд бичвэрийг нь л харна.
             liveSpoke = true;
             liveTurn = true;
             if (muted) break;
             clientTurn = true;
-            if (useLiveVoice) sendAudio(fromB64(ev.data));
+            countAudio(fromB64(ev.data));
             break;
           }
           case 'bear_text':
@@ -315,18 +255,6 @@ async function relay(
             if (muted) break;
             clientTurn = true;
             send({ type: 'bear_text', text: ev.text.replace(/[*#_`]/g, '') });
-            if (speech && !useLiveVoice) {
-              turnText += ev.text;
-              const end = spoken === 0 ? speechChunkEnd(turnText, true) : -1;
-              if (end > 0) {
-                const chunk = cleanForSpeech(turnText.slice(0, end));
-                if (chunk) {
-                  speech.say(chunk);
-                  saidInTurn = true;
-                }
-                spoken = end;
-              }
-            }
             break;
           case 'kid_text':
             send({ type: 'kid_text', text: ev.text });
@@ -337,12 +265,7 @@ async function relay(
             muted = false;
             liveTurn = false;
             clientTurn = false;
-            dropTurn();
             send({ type: 'interrupted' });
-            break;
-          case 'gen_done':
-            // Үлдсэн текстийг TTS-д шууд өгнө (turn_end хэдэн арван секундын дараа ирдэг); ээлжийг turn_end хаана.
-            if (speech && !useLiveVoice && !muted) sayRest();
             break;
           case 'turn_end': {
             liveTurn = false;
@@ -352,8 +275,7 @@ async function relay(
             liveTool = false;
             liveSpoke = false;
             if (silentFinish) sendUp(liveText(TUTOR_SAY_GOODBYE));
-            if (speech && !useLiveVoice) endSpeechTurn();
-            else bearTurnEnd();
+            bearTurnEnd();
             break;
           }
           case 'finish':
@@ -417,14 +339,8 @@ async function relay(
     if (msg?.type === 'mic_off' && ready && !opts.pushToTalk) sendUp(LIVE_AUDIO_END);
     if (msg?.type === 'talk_start' && ready && opts.pushToTalk) sendUp(LIVE_ACTIVITY_START);
     if (msg?.type === 'talk_end' && ready && opts.pushToTalk) sendUp(LIVE_ACTIVITY_END);
-    // Баавгайн ээлж клиентэд аль хэдийн дууссан бол (сүүлийн дуу нь тоглогдож байсан) тасалж хаях юм алга.
-    if (msg?.type === 'interrupt' && ready && clientTurn) {
-      dropTurn();
-      // Live ээлж үргэлжилж байвал үлдсэнийг нь хаяж, turn_end дээр клиентэд ээлжийг хаана. Live дууссан, зөвхөн TTS
-      // үлдсэн бол (TTS-ийн turnEnd цуцлагдсан) одоо хаана.
-      if (liveTurn) muted = true;
-      else bearTurnEnd();
-    }
+    // Live ээлж үргэлжилж байвал үлдсэн бичвэрийг хаяж, turn_end дээр клиентэд ээлжийг хаана.
+    if (msg?.type === 'interrupt' && ready && clientTurn && liveTurn) muted = true;
   });
   client.addEventListener('close', () => shutdown());
   client.addEventListener('error', () => shutdown());
