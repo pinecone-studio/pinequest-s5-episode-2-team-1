@@ -93,7 +93,7 @@ describe('liveSetup', () => {
     expect(setup.inputAudioTranscription).toEqual({ languageCodes: ['mn-MN'] });
     expect(setup.generationConfig.speechConfig).toEqual({ voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Achird' } } });
     expect(setup.tools).toEqual([FINISH_LESSON_TOOL]);
-    expect(setup.outputAudioTranscription).toEqual({});
+    expect(setup.outputAudioTranscription).toEqual({ languageCodes: ['mn-MN'] });
   });
 
   it('push-to-talk: Gemini-ийн автомат яриа илрүүлэлт унтарна (гадны чимээг сонсохгүй)', () => {
