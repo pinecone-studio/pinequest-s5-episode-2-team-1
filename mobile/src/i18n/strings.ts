@@ -5,6 +5,7 @@ export const subjectNames: Record<Subject, string> = {
   math: 'Математик',
   mongolian: 'Монгол хэл',
   physics: 'Физик',
+  social: 'Нийгэм судлал',
 };
 
 /** Үйлдэх тийн ялгал: "Математикаар тулалдъя". */
@@ -12,6 +13,7 @@ const subjectBy: Record<Subject, string> = {
   math: 'Математикаар',
   mongolian: 'Монгол хэлээр',
   physics: 'Физикээр',
+  social: 'Нийгэм судлалаар',
 };
 
 /** Картын арын том бүдэг тэмдэг (emoji ашиглахгүй). */
@@ -19,6 +21,7 @@ export const subjectGlyphs: Record<Subject, string> = {
   math: '½',
   mongolian: 'Өө',
   physics: 'F=ma',
+  social: 'НС',
 };
 
 /** 1284 → "1 284 м" */

@@ -5,7 +5,14 @@ import fixtures from '../../seed/fixtures.json';
 
 const GRADES: Record<Tier, string> = { 1: '6–7-р анги', 2: '8–9-р анги', 3: '10–12-р анги' };
 
-const SUBJECT_NAMES: Record<Subject, string> = { math: 'Математик', mongolian: 'Монгол хэл', physics: 'Физик' };
+export type Difficulty = 1 | 2 | 3;
+const LEVELS: Record<Difficulty, string> = {
+  1: 'basic level: recall and recognise one key fact, term or definition',
+  2: 'medium level: understand and apply a concept to a short everyday situation',
+  3: 'advanced level: analyse, compare or reason across several ideas in a realistic case',
+};
+
+const SUBJECT_NAMES: Record<Subject, string> = { math: 'Математик', mongolian: 'Монгол хэл', physics: 'Физик', social: 'Нийгэм судлал' };
 
 const SYSTEM = `You write multiple-choice quiz questions for students of Mongolian general secondary schools (ЕБС).
 
@@ -33,7 +40,10 @@ export function buildPrompt(
   avoid: string[],
   /** Сурах бичгийн сангаас: байвал асуултыг энэ хэсэгт үндэслэнэ. */
   excerpt: Excerpt | null = null,
+  /** Сурах замын шат (1 Суурь, 2 Дунд, 3 Ахисан); өгөөгүй бол хялбар-дунд холимог. */
+  difficulty: Difficulty | null = null,
 ): { system: string; user: string } {
+  const level = difficulty ? LEVELS[difficulty] : 'easy to medium difficulty';
   const example = (fixtures as Array<{ tier: number; subject: string; prompt: string; options: string[]; correctIndex: number; explanation: string }>)
     .find((f) => f.tier === tier && f.subject === subject);
   const topics = TOPICS[tier][subject];
@@ -45,12 +55,12 @@ export function buildPrompt(
   if (excerpt) {
     lines.push(
       `Base every question on this excerpt from the official Mongolian ЕБС textbook "${excerpt.title}". The student never sees it.\n<<<\n${excerpt.text}\n>>>`,
-      'Use the concepts, rules, methods and exercise types taught in the excerpt (easy to medium difficulty); every question must be ' +
-        'answerable with them alone. Do not copy exercises verbatim: change the numbers, names and contexts. Never mention the ' +
+      `Use the concepts, rules, methods and exercise types taught in the excerpt (${level}); every question must be ` +
+        `answerable with them alone. Do not copy exercises verbatim: change the numbers, names and contexts. Never mention the ` +
         'textbook, pages, exercise numbers, figures or tables. The excerpt may contain transcription artefacts or missing formulas; skip those parts.',
     );
   } else {
-    lines.push(`Topics (spread the questions across different topics, easy to medium difficulty): ${topics.map((t) => t.name).join(', ')}.`);
+    lines.push(`Topics (spread the questions across different topics, ${level}): ${topics.map((t) => t.name).join(', ')}.`);
   }
   lines.push(
     `Set "topic" of each question to the id of the one curriculum topic it practises (pick the closest): ${topics.map((t) => `${t.id} = ${t.name}`).join('; ')}.`,

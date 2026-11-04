@@ -66,12 +66,14 @@ export const subjectTheme: Record<Subject, SubjectTheme> = {
   math: { bg: colors.lemon, fg: colors.ink, glyph: '½' },
   mongolian: { bg: colors.violet, fg: colors.white, glyph: 'Өө' },
   physics: { bg: colors.lime, fg: colors.ink, glyph: 'F=ma' },
+  social: { bg: colors.sky, fg: colors.ink, glyph: 'НС' },
 };
 
 export const subjectColors: Record<Subject, string> = {
   math: colors.lemon,
   mongolian: colors.violet,
   physics: colors.lime,
+  social: colors.sky,
 };
 
 /**

@@ -47,6 +47,16 @@ export const TOPICS: Record<Tier, Record<Subject, readonly Topic[]>> = {
       { id: 'light_shadow', name: 'Гэрлийн шулуун тархалт ба сүүдэр' },
       { id: 'sound', name: 'Дуу' },
     ],
+    social: [
+      { id: 'social_groups', name: 'Нийгмийн бүлэг ба хувь хүн' },
+      { id: 'conflict_resolution', name: 'Зөрчил маргааныг шийдвэрлэх' },
+      { id: 'personal_culture', name: 'Хувь хүн ба соёл' },
+      { id: 'household_economy', name: 'Өрхийн эдийн засаг, төсөв' },
+      { id: 'division_of_labor', name: 'Хөдөлмөрийн хуваарь' },
+      { id: 'child_rights', name: 'Хүүхдийн эрх ба үүрэг' },
+      { id: 'law_basics', name: 'Хууль гэж юу вэ' },
+      { id: 'self_government', name: 'Хамтын удирдлага, шийдвэр' },
+    ],
   },
   2: {
     math: [
@@ -84,6 +94,17 @@ export const TOPICS: Record<Tier, Record<Subject, readonly Topic[]>> = {
       { id: 'reflection_refraction', name: 'Гэрлийн ойлт ба хугарал' },
       { id: 'lenses', name: 'Линз' },
     ],
+    social: [
+      { id: 'local_community', name: 'Орон нутаг, түүний асуудал' },
+      { id: 'cultural_heritage', name: 'Өв соёл ба хэм хэмжээ' },
+      { id: 'local_economy', name: 'Орон нутгийн эдийн засаг, зах зээл' },
+      { id: 'labor_market', name: 'Хөдөлмөрийн зах зээл, цалин, ажилгүйдэл' },
+      { id: 'money_banks', name: 'Мөнгө ба банк' },
+      { id: 'human_rights', name: 'Хүний эрхийн зарчим, ангилал' },
+      { id: 'citizen_duties', name: 'Иргэний үүрэг' },
+      { id: 'local_government', name: 'Орон нутгийн удирдлага' },
+      { id: 'courts', name: 'Шүүх ба шийдвэр гаргалт' },
+    ],
   },
   3: {
     math: [
@@ -116,6 +137,18 @@ export const TOPICS: Record<Tier, Record<Subject, readonly Topic[]>> = {
       { id: 'molecular_kinetic', name: 'Молекул кинетик онол' },
       { id: 'gas_laws', name: 'Хийн хуулиуд' },
       { id: 'thermodynamics', name: 'Термодинамикийн нэгдүгээр хууль' },
+    ],
+    social: [
+      { id: 'socialization', name: 'Нийгэмшилт, нийгмийн бүтэц' },
+      { id: 'stratification', name: 'Нийгмийн давхраажилт ба өөрчлөлт' },
+      { id: 'culture_theory', name: 'Соёлын бүрдэл, ангилал, даяаршил' },
+      { id: 'constitution', name: 'Үндсэн хууль ба хүний эрх' },
+      { id: 'civil_labor_law', name: 'Иргэний ба хөдөлмөрийн эрх зүй' },
+      { id: 'macroeconomics', name: 'Макро эдийн засаг' },
+      { id: 'economic_policy', name: 'Төрийн эдийн засгийн бодлого, гадаад худалдаа' },
+      { id: 'democracy', name: 'Ардчилал, засаглал, сонгууль' },
+      { id: 'civil_society', name: 'Иргэний нийгэм, хэвлэл мэдээлэл' },
+      { id: 'foreign_relations', name: 'Монгол Улсын гадаад харилцаа' },
     ],
   },
 };

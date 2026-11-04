@@ -1,8 +1,9 @@
 // Сурах замын хичээлүүд: номын «Гарчиг/Агуулга» хуудаснаас бүлэг, хичээл, хуудсыг уншина. Сан дахь
 // хамгийн сүүлийн хуудаснаас хойших хичээл замд орохгүй: ном дутуу орсон бол зам тэнд дуусна.
 import type { BookLesson, LessonsResponse } from '../../../shared/types';
+import { BOOK_SUBJECT_TITLES } from '../config/books';
 import type { Subject } from '../config/game';
-import { mathRoadmapNodes } from '../config/mathRoadmap';
+import { roadmapNodes } from '../config/roadmap';
 import { lessonAt } from '../domain/path';
 import type { Bindings } from '../env';
 import type { PageRange } from './grounding';
@@ -96,10 +97,10 @@ export async function bookLessons(env: Pick<Bindings, 'BOOKS'>, subject: Subject
 }
 
 export async function loadLessons(env: Pick<Bindings, 'BOOKS'>, subject: Subject, grade: number): Promise<LessonsResponse> {
-  const roadmap = subject === 'math' ? mathRoadmapNodes(grade) : [];
+  const roadmap = roadmapNodes(subject, grade);
   if (roadmap.length > 0) {
     return {
-      book: `Математик ${grade}`,
+      book: `${BOOK_SUBJECT_TITLES[subject]} ${grade}`,
       lessons: roadmap.map(({ chapter, title }) => ({ chapter, title, page: null })),
     };
   }

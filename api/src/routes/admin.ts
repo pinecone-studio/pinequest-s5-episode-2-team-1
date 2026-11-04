@@ -9,6 +9,7 @@ import { pickProvider } from '../llm';
 import { validateDrafts } from '../llm/validate';
 import { pickExcerpts } from '../services/grounding';
 import { generateAndStore, insertDrafts } from '../services/pool';
+import { templateRange } from '../templates';
 import { bookRoutes } from './books';
 
 // Зөвхөн хөгжүүлэлт, seed скрипт, duel-bot-д. `X-Admin-Token` = ADMIN_TOKEN (.dev.vars).
@@ -40,13 +41,21 @@ adminRoutes.post('/generate', async (c) => {
       model: z.string().regex(/^[a-z0-9.-]+$/).optional(),
       /** false бол сурах бичгийн сангүйгээр, хөтөлбөрийн сэдвээр (seed скриптийн --no-books). */
       books: z.boolean().default(true),
+      /** Сурах замын нэг хичээлийн хуудсаар: 'social-7:7-9' (номын анги, хуудас нь асуултад хадгалагдана). */
+      ref: z.string().optional(),
+      /** Тэр хичээлийн шат: 1 Суурь, 2 Дунд, 3 Ахисан. */
+      difficulty: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
     }),
   );
+  const book = body.ref === undefined ? null : bookOfRef(body.ref);
+  const range = body.ref === undefined ? null : templateRange(body.ref);
+  if (body.ref !== undefined && (!book || !range)) throw new ApiError(400, 'BAD_REQUEST', "ref: 'social-7:7-9'");
   if (!pickProvider(c.env)) {
     throw new ApiError(503, 'LLM_UNAVAILABLE', 'GEMINI_API_KEY (.env.local / .dev.vars) эсвэл `npm run dev:ai` (Workers AI) хэрэгтэй');
   }
   const env = body.model ? { ...c.env, GEMINI_MODEL: body.model } : c.env;
-  const report = await generateAndStore(env, body.tier, body.subject, body.count, body.chunk, body.books);
+  const scope = book && range ? { grade: book.grade, range } : null;
+  const report = await generateAndStore(env, body.tier, body.subject, body.count, body.chunk, body.books, scope, body.difficulty ?? null);
   if (report.inserted === 0 && report.errors.length > 0) throw new ApiError(502, 'LLM_FAILED', report.errors[0]);
   return c.json(report);
 });
@@ -109,19 +118,36 @@ adminRoutes.get('/pool', async (c) => {
 
 /** Идэвхтэй (flag-гүй) асуултуудыг export хийх (seed/questions.json-д хадгалж git-д оруулна). */
 adminRoutes.get('/export', async (c) => {
+  // ?subject=social: зөвхөн тэр хичээл (сурах замын bookRef, difficulty-тай: seed/*-lesson-questions.json)
+  const subject = c.req.query('subject') ?? null;
   const { results } = await c.env.DB.prepare(
-    `SELECT tier, subject, topic, prompt, options, correct_index, explanation, source
-     FROM questions WHERE flagged = 0 ORDER BY tier, subject, id`,
-  ).all<{ tier: number; subject: string; topic: string | null; prompt: string; options: string; correct_index: number; explanation: string; source: string }>();
+    `SELECT tier, subject, topic, prompt, options, correct_index, explanation, source, book_ref, difficulty
+     FROM questions WHERE flagged = 0 AND (?1 IS NULL OR subject = ?1) ORDER BY tier, subject, id`,
+  )
+    .bind(subject)
+    .all<{
+      tier: number;
+      subject: string;
+      topic: string | null;
+      prompt: string;
+      options: string;
+      correct_index: number;
+      explanation: string;
+      source: string;
+      book_ref: string | null;
+      difficulty: number | null;
+    }>();
   return c.json({
     questions: results.map((r) => ({
       tier: r.tier,
       subject: r.subject,
+      ...(r.book_ref ? { bookRef: r.book_ref } : {}),
       ...(r.topic ? { topic: r.topic } : {}),
       prompt: r.prompt,
       options: JSON.parse(r.options) as string[],
       correctIndex: r.correct_index,
       explanation: r.explanation,
+      ...(r.difficulty ? { difficulty: r.difficulty } : {}),
       source: r.source,
     })),
   });
