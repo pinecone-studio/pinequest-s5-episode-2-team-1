@@ -1,16 +1,17 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GAME } from '../src/config/game';
 import {
+  askTutor,
   isForeignTranscript,
-  isQuotaClose,
-  liveEvents,
-  liveSetup,
   type MissedQuestion,
-  FINISH_LESSON_TOOL,
-  speechBudget,
+  parseTutorReply,
+  pcmToWav,
+  TUTOR_LAST_TURN,
+  TutorBusyError,
   tutorKickoff,
+  tutorRequest,
   tutorSystemPrompt,
-} from '../src/llm/live';
+} from '../src/llm/tutor';
 
 const q: MissedQuestion = {
   subject: 'math',
@@ -25,7 +26,7 @@ describe('tutorSystemPrompt', () => {
   it('нэг бодлого: хүүхдийн буруу ба зөв хариулт, тайлбар орно', () => {
     const p = tutorSystemPrompt({ grade: 6, questions: [q], focused: true });
     expect(p).toContain('6-р ангийн');
-    expect(p).toContain('үргэлж зөвхөн монгол хэлээр ярь');
+    expect(p).toContain('үргэлж зөвхөн монгол хэлээр хариул');
     expect(p).toContain('[Математик] 1/2 + 1/3 = ?');
     expect(p).toContain('Хүүхдийн хариулт: A) 2/5 (буруу)');
     expect(p).toContain('Зөв хариулт: B) 5/6');
@@ -55,18 +56,26 @@ describe('tutorSystemPrompt', () => {
 });
 
 describe('tutorSystemPrompt хичээлийн урсгал', () => {
-  it('шинэ бодлого өгөхгүй, 6–8 ээлжинд тайлбарлаад finish_lesson дуудна; "дуусгая" гэхэд ч', () => {
+  it('шинэ бодлого өгөхгүй, 6–8 ээлжинд тайлбарлаад done = true болгоно; "дуусгая" гэхэд ч', () => {
     const text = tutorSystemPrompt({ grade: 6, questions: [], focused: false });
     expect(text).toContain('Шинэ бодлого, дасгал бүү өг.');
     expect(text).toContain('6–8 ээлжинд');
-    expect(text.match(/finish_lesson/g)).toHaveLength(2);
+    expect(text).toContain('done = true болго. Хүүхэд ядарсан эсвэл дуусгая гэвэл ч ингэ.');
     expect(text).not.toContain('шинэ, тоо нь өөр бодлого өг');
   });
 
   it('тооцоог шалгаж, Тайлбар дахь бодолтыг дагана (баавгай тооцоогоо андуурдаг байсан)', () => {
     const text = tutorSystemPrompt({ grade: 9, questions: [], focused: false });
-    expect(text).toContain('дотроо алхам алхмаар бодож шалгаад хэл');
-    expect(text).toContain('Таны тооцоо Тайлбараас');
+    expect(text).toContain('дотроо алхам алхмаар бодож шалга');
+    expect(text).toContain('Тайлбараас зөрвөл Тайлбар зөв');
+  });
+
+  it('хариу самбар дээр бичгээр гардаг тул томьёог үгээр биш тэмдэгтээр хэлнэ', () => {
+    const text = tutorSystemPrompt({ grade: 7, questions: [], focused: false });
+    expect(text).toContain('самбар дээр бичгээр');
+    expect(text).toContain('x + 8 = 30');
+    expect(text).not.toContain('Тэмдэгтийг үгээр хэл');
+    expect(text).not.toMatch(/Дуу хоолойгоороо|дуу болгож уншдаг/);
   });
 
   it('хүүхдийг "дүү минь" гэж дуудахгүй, ах гэж өөрийгөө нэрлэхгүй', () => {
@@ -76,91 +85,111 @@ describe('tutorSystemPrompt хичээлийн урсгал', () => {
   });
 });
 
-describe('liveSetup', () => {
-  it('зөвхөн дуу, хоёр талын transcript, system prompt', () => {
-    const { setup } = liveSetup('gemini-3.8-live', 'SYS');
-    expect(setup.model).toBe('models/gemini-3.8-live');
-    expect(setup.generationConfig.responseModalities).toEqual(['AUDIO']);
-    expect(setup.systemInstruction.parts[0].text).toBe('SYS');
-    expect(setup.inputAudioTranscription).toEqual({ languageCodes: ['mn-MN'] });
-    expect(setup.generationConfig.speechConfig).toEqual({ voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Achird' } } });
-    expect(setup.tools).toEqual([FINISH_LESSON_TOOL]);
-    expect(setup.outputAudioTranscription).toEqual({});
+describe('tutorRequest', () => {
+  it('system prompt, яриа түүх, JSON хариуны загвар, токены хязгаар', () => {
+    const contents = [{ role: 'user' as const, parts: [{ text: 'сайн уу' }] }];
+    const body = tutorRequest('SYS', contents);
+    expect(body.systemInstruction.parts[0].text).toBe('SYS');
+    expect(body.contents).toEqual(contents);
+    expect(body.generationConfig.maxOutputTokens).toBe(GAME.TUTOR.MAX_OUTPUT_TOKENS);
+    expect(body.generationConfig.responseMimeType).toBe('application/json');
+    expect(body.generationConfig.responseSchema.required).toEqual(['heard', 'reply', 'done']);
   });
 
-  it('push-to-talk: Gemini-ийн автомат яриа илрүүлэлт унтарна (гадны чимээг сонсохгүй)', () => {
-    expect(liveSetup('m', 'SYS').setup.realtimeInputConfig.automaticActivityDetection).toEqual({ silenceDurationMs: 600 });
-    expect(liveSetup('m', 'SYS', true).setup.realtimeInputConfig.automaticActivityDetection).toEqual({ disabled: true });
+  it('сүүлийн хариултын заавар хичээлийг дуусгуулна', () => {
+    expect(TUTOR_LAST_TURN).toContain('done = true');
   });
 });
 
-describe('liveEvents', () => {
-  it('setupComplete → ready', () => {
-    expect(liveEvents({ setupComplete: {} })).toEqual([{ kind: 'ready' }]);
+describe('pcmToWav', () => {
+  it('хэсгүүдийг дарааллаар нь 44 байтын толгойтой WAV болгоно', () => {
+    const wav = pcmToWav([new Uint8Array([1, 2]), new Uint8Array([3, 4])], 16_000);
+    const v = new DataView(wav.buffer);
+    expect(wav.byteLength).toBe(48);
+    expect(String.fromCharCode(...wav.subarray(0, 4))).toBe('RIFF');
+    expect(v.getUint32(24, true)).toBe(16_000);
+    expect(v.getUint32(28, true)).toBe(32_000);
+    expect(v.getUint32(40, true)).toBe(4);
+    expect([...wav.subarray(44)]).toEqual([1, 2, 3, 4]);
   });
+});
 
-  it('finish_lesson функцийн дуудлагыг ярилцлага дуусгах үйл явдал болгоно, бусдыг алгасна', () => {
-    const toolCall = { functionCalls: [{ id: 'a1', name: 'finish_lesson' }, { id: 'a2', name: 'other' }] };
-    expect(liveEvents({ toolCall })).toEqual([{ kind: 'finish', id: 'a1' }]);
-  });
-
-  it('нэг мессеж дэх дуу, transcript, ээлжийн төгсгөлийг дарааллаар нь', () => {
-    const events = liveEvents({
-      serverContent: {
-        inputTranscription: { text: 'ойлгохгүй' },
-        modelTurn: { parts: [{ inlineData: { mimeType: 'audio/pcm;rate=24000', data: 'AAA=' } }, { text: 'бодол' }] },
-        outputTranscription: { text: 'Сайн уу' },
-        turnComplete: true,
-      },
+describe('parseTutorReply', () => {
+  it('JSON-ийг уншиж, тэмдэгтийг цэвэрлэнэ', () => {
+    expect(parseTutorReply('{"heard":"x нь 6 юу?","reply":"**Зөв**, яаж олсон бэ?","done":false}')).toEqual({
+      heard: 'x нь 6 юу?',
+      reply: 'Зөв, яаж олсон бэ?',
+      done: false,
     });
-    expect(events).toEqual([
-      { kind: 'kid_text', text: 'ойлгохгүй' },
-      { kind: 'audio', data: 'AAA=' },
-      { kind: 'bear_text', text: 'Сайн уу' },
-      { kind: 'turn_end' },
-    ]);
   });
 
-  it('interrupted, goAway; танихгүй мессежийг алгасна', () => {
-    expect(liveEvents({ serverContent: { interrupted: true } })).toEqual([{ kind: 'interrupted' }]);
-    expect(liveEvents({ serverContent: { generationComplete: true } })).toEqual([{ kind: 'gen_done' }]);
-    expect(liveEvents({ goAway: { timeLeft: '10s' } })).toEqual([{ kind: 'go_away' }]);
-    expect(liveEvents({ sessionResumptionUpdate: {} })).toEqual([]);
-    expect(liveEvents(null)).toEqual([]);
+  it('JSON эвдэрсэн бол бичвэрийг нь хариу гэж үзнэ', () => {
+    expect(parseTutorReply('Сайн уу')).toEqual({ heard: '', reply: 'Сайн уу', done: false });
+  });
+
+  it('токены хязгаарт таслагдсан JSON-оос бүтэн өгүүлбэрүүдийг авна', () => {
+    expect(parseTutorReply('{"heard":"x нь 6 юу?","reply":"Зөв. Яаж олсноо хэл? Тэгээд дараагийн а')).toEqual({
+      heard: 'x нь 6 юу?',
+      reply: 'Зөв. Яаж олсноо хэл?',
+      done: false,
+    });
+    expect(parseTutorReply('{"heard":"x нь 6')).toBeNull();
+  });
+
+  it('хоосон хариу бол null, өөр бичгээр сонссоныг харуулахгүй', () => {
+    expect(parseTutorReply('{"heard":"x","reply":"  ","done":true}')).toBeNull();
+    expect(parseTutorReply('{"heard":"3분의 2 더하기","reply":"Зөв","done":true}')).toEqual({ heard: '', reply: 'Зөв', done: true });
+  });
+});
+
+describe('askTutor', () => {
+  afterEach(() => vi.useRealTimers());
+
+  const ok = (reply: string) =>
+    new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: JSON.stringify({ heard: '', reply, done: false }) }] } }] }));
+  const body = tutorRequest('SYS', []);
+
+  it('хариуг уншиж, түлхүүрийг толгойд илгээнэ', async () => {
+    const fetchImpl = vi.fn(async (_url: unknown, _init?: RequestInit) => ok('Сайн уу'));
+    const out = await askTutor('KEY', 'm', body, fetchImpl as unknown as typeof fetch);
+    expect(out.reply).toBe('Сайн уу');
+    const [url, init] = fetchImpl.mock.calls[0];
+    expect(String(url)).toContain('/m:generateContent');
+    expect(String(url)).not.toContain('KEY');
+    expect((init?.headers as Record<string, string>)['x-goog-api-key']).toBe('KEY');
+  });
+
+  it('503 бол дахин оролдоно', async () => {
+    vi.useFakeTimers();
+    const fetchImpl = vi.fn().mockResolvedValueOnce(new Response('busy', { status: 503 })).mockResolvedValueOnce(ok('За'));
+    const p = askTutor('KEY', 'm', body, fetchImpl as unknown as typeof fetch);
+    await vi.runAllTimersAsync();
+    await expect(p).resolves.toMatchObject({ reply: 'За' });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
+  });
+
+  it('оролдлого дуусвал TutorBusyError', async () => {
+    vi.useFakeTimers();
+    const fetchImpl = vi.fn(async () => new Response('busy', { status: 429 }));
+    const p = askTutor('KEY', 'm', body, fetchImpl as unknown as typeof fetch);
+    const check = expect(p).rejects.toBeInstanceOf(TutorBusyError);
+    await vi.runAllTimersAsync();
+    await check;
+    expect(fetchImpl).toHaveBeenCalledTimes(GAME.TUTOR.RETRIES);
+  });
+
+  it('400 бол дахин оролдохгүй', async () => {
+    const fetchImpl = vi.fn(async () => new Response('bad', { status: 400 }));
+    await expect(askTutor('KEY', 'm', body, fetchImpl as unknown as typeof fetch)).rejects.toThrow('HTTP 400');
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 });
 
 describe('isForeignTranscript', () => {
-  it('монгол, тоо, цөөн латин үсгийг үлдээнэ', () => {
-    expect(isForeignTranscript('Би ойлгохгүй байна')).toBe(false);
-    expect(isForeignTranscript('5x - 8 = 22')).toBe(false);
-    expect(isForeignTranscript(' вэ?')).toBe(false);
-  });
-
-  it('буруу хэлээр сонссоныг хаяна', () => {
-    expect(isForeignTranscript('더하기는 곱하기를 왜')).toBe(true);
-    expect(isForeignTranscript('Mr. Hag nimmt Tee.')).toBe(true);
-    expect(liveEvents({ serverContent: { inputTranscription: { text: '3분의 2 더하기' } } })).toEqual([]);
-  });
-});
-
-describe('isQuotaClose', () => {
-  it('Gemini-ийн квот дүүрснийг түр алдаанаас ялгана', () => {
-    expect(isQuotaClose(1011, 'You exceeded your current quota, please check your plan and billing details.')).toBe(true);
-    expect(isQuotaClose(1011, 'Internal error encountered.')).toBe(false);
-    expect(isQuotaClose(1000, '')).toBe(false);
-  });
-});
-
-describe('speechBudget', () => {
-  const cap = GAME.TUTOR.BEAR_SPEECH_MS;
-  it('баавгай 2:30 хүртэл ярьсан бол үргэлжилнэ, түүнээс хойш дуусгах заавар, дараа нь ярьсан ээлжийн төгсгөлд хаана', () => {
-    expect(speechBudget(cap - GAME.TUTOR.WRAP_UP_MS - 1, false, true)).toBe('continue');
-    expect(speechBudget(cap - GAME.TUTOR.WRAP_UP_MS, false, true)).toBe('wrap');
-    expect(speechBudget(cap - GAME.TUTOR.WRAP_UP_MS + 5_000, true, true)).toBe('end');
-  });
-
-  it('дуусгах зааврын дараах хоосон ээлжид (хүүхдийн чимээ) хаахгүй', () => {
-    expect(speechBudget(cap - GAME.TUTOR.WRAP_UP_MS + 5_000, true, false)).toBe('continue');
+  it('өөр бичгийг таньж, цөөн латин үсэгтэй монгол бичвэрийг үлдээнэ', () => {
+    expect(isForeignTranscript('3분의 2 더하기')).toBe(true);
+    expect(isForeignTranscript('Ich weiß nicht')).toBe(true);
+    expect(isForeignTranscript('5x - 8 гэж бодсон')).toBe(false);
+    expect(isForeignTranscript('12')).toBe(false);
   });
 });

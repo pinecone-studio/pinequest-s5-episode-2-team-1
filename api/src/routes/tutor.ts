@@ -2,55 +2,51 @@ import { Hono } from 'hono';
 import type { TutorClientMsg, TutorServerMsg } from '../../../shared/types';
 import { GAME } from '../config/game';
 import type { AppEnv } from '../env';
-import { fromB64, toB64 } from '../lib/auth';
+import { toB64 } from '../lib/auth';
 import { ApiError, parseId } from '../lib/errors';
 import { socketUserId } from '../lib/session';
 import {
-  isQuotaClose,
-  LIVE_ACTIVITY_END,
-  LIVE_ACTIVITY_START,
-  LIVE_AUDIO_END,
-  LIVE_URL,
-  liveAudio,
-  liveEvents,
-  liveSetup,
-  liveText,
-  liveToolResponse,
-  speechBudget,
-  TUTOR_SAY_GOODBYE,
-  TUTOR_WRAP_UP,
+  askTutor,
+  pcmToWav,
+  TUTOR_LAST_TURN,
+  TutorBusyError,
+  type TutorContent,
   tutorKickoff,
+  tutorRequest,
   tutorSystemPrompt,
-} from '../llm/live';
+} from '../llm/tutor';
 import { endTutorSession, loadTutorContext, startTutorSession } from '../services/tutor';
 import { getUserRow, requireLife } from '../services/users';
 
 export const tutorRoutes = new Hono<AppEnv>();
 
+const BUSY = 'Баавгай түр завгүй байна. Хэдэн минутын дараа дахин оролдоорой.';
+const LOST = 'Баавгайтай холбогдож чадсангүй';
+/** Хүүхдийн яриа нэг ээлжинд ийм хэмжээнээс их бол илүүг нь хаяна (PCM16 = нэг sample 2 байт). */
+const MAX_TALK_BYTES = (GAME.TUTOR.INPUT_RATE * 2 * GAME.TUTOR.MAX_TALK_MS) / 1000;
+
 /**
- * Баавгайтай ярилцах: утас ↔ энэ Worker ↔ Gemini Live. Хүүхэд дуугаар асууна; баавгай зөвхөн бичгээр хариулна
- * (Live-ийн дууг клиентэд илгээхгүй, TTS байхгүй). GEMINI_API_KEY болон system prompt (хүүхдийн алдсан бодлого)
- * серверээс гарахгүй; клиент mic-ийн PCM илгээж, баавгайн бичвэрийг (bear_text) хүлээн авна.
- * `?questionId=` өгвөл тэр бодлогын тухай, үгүй бол сүүлд алдсан хэдэн бодлогын тухай ярина.
+ * Баавгайтай ярилцах: утас ↔ энэ Worker ↔ Gemini Flash Lite. Хүүхэд товч дарж ярина; Worker дууг нь хураагаад,
+ * суллахад нэг HTTP хүсэлтээр яриа түүхтэй нь Gemini-д өгнө, баавгай зөвхөн бичгээр хариулна. Gemini-тэй холболт
+ * барьдаггүй тул зэрэг ярих хүүхдийн тоог зөвхөн minute/day квот хязгаарлана. Түлхүүр, system prompt (хүүхдийн алдсан
+ * бодлого) серверээс гарахгүй. `?questionId=` өгвөл тэр бодлогын тухай, үгүй бол сүүлд алдсан хэдэн бодлогын тухай ярина.
  */
 tutorRoutes.get('/ws', async (c) => {
   const userId = await socketUserId(c);
-  const key = c.env.GEMINI_API_KEY ?? '';
+  // Хүүхдийн ярианд төлбөртэй түлхүүр тусдаа байж болно; үгүй бол ерөнхий түлхүүр.
+  const key = c.env.GEMINI_TUTOR_API_KEY || c.env.GEMINI_API_KEY || '';
   const raw = c.req.query('questionId');
   const questionId = raw === undefined ? undefined : parseId(raw);
-  // Шинэ апп хүүхдийг товч дарж ярьдаг болгосон (?ptt=1); хуучин (кэшэлсэн) апп Gemini-ийн автомат илрүүлэлтээр.
-  const pushToTalk = c.req.query('ptt') === '1';
 
   const [client, server] = Object.values(new WebSocketPair());
   server.accept();
   // compatibility_date-аас хамаарч binary нь Blob ирдэг тул ArrayBuffer болгоно (дуу дараалал алдагдахгүй, sync).
   server.binaryType = 'arraybuffer';
-  // Upgrade-ийн дараах алдааг (бодлого олдсонгүй, Gemini татгалзсан) клиент socket-оор уншиж харуулна.
+  // Upgrade-ийн дараах алдааг (бодлого олдсонгүй, хязгаар) клиент socket-оор уншиж харуулна.
   c.executionCtx.waitUntil(
     relay(server, {
       key,
-      model: c.env.GEMINI_LIVE_MODEL || 'gemini-3.8-live',
-      pushToTalk,
+      model: c.env.GEMINI_TUTOR_MODEL || 'gemini-3.5-flash-lite',
       session: {
         start: () => startTutorSession(c.env.DB, userId),
         end: (id, counted, bearMs) =>
@@ -68,15 +64,6 @@ tutorRoutes.get('/ws', async (c) => {
   return new Response(null, { status: 101, webSocket: client, headers: { 'Sec-WebSocket-Protocol': 'bearer' } });
 });
 
-async function connectLive(key: string): Promise<WebSocket> {
-  const res = await fetch(LIVE_URL, { headers: { Upgrade: 'websocket', 'x-goog-api-key': key } });
-  const ws = res.webSocket;
-  if (!ws) throw new Error(`Gemini Live: HTTP ${res.status} ${(await res.text().catch(() => '')).slice(0, 200)}`);
-  ws.accept();
-  ws.binaryType = 'arraybuffer';
-  return ws;
-}
-
 function safeClose(ws: WebSocket, code = 1000, reason = 'closed') {
   try {
     ws.close(code, reason);
@@ -90,14 +77,12 @@ async function relay(
   opts: {
     key: string;
     model: string;
-    pushToTalk: boolean;
     /** Хэрэглэгчийн өдрийн / зэрэг ярилцлагын хязгаар (services/tutor). */
     session: { start: () => Promise<number>; end: (id: number, counted: boolean, bearMs: number) => void };
     load: () => ReturnType<typeof loadTutorContext>;
   },
 ) {
   let closed = false;
-  // Gemini-тэй холбогдох хооронд хүүхэд дэлгэцээ хааж болно: тэгвэл Live session нээлгүй орхино.
   let clientGone = false;
   const onEarlyClose = () => {
     clientGone = true;
@@ -111,9 +96,8 @@ async function relay(
     }
   };
 
-  let upstream: WebSocket;
   let ctx: Awaited<ReturnType<typeof loadTutorContext>>;
-  let sessionId: number | null = null;
+  let sessionId: number;
   try {
     ctx = await opts.load();
     if (clientGone) return;
@@ -122,202 +106,80 @@ async function relay(
       opts.session.end(sessionId, false, 0);
       return;
     }
-    upstream = await connectLive(opts.key);
-    if (clientGone) {
-      opts.session.end(sessionId, false, 0);
-      safeClose(upstream);
-      return;
-    }
   } catch (e) {
-    if (sessionId !== null) opts.session.end(sessionId, false, 0);
     if (!(e instanceof ApiError)) console.error('[tutor]', e);
-    send({ type: 'end', reason: 'error', message: e instanceof ApiError ? e.message : 'Баавгайтай холбогдож чадсангүй' });
+    send({ type: 'end', reason: 'error', message: e instanceof ApiError ? e.message : LOST });
     safeClose(client, 1011, 'error');
     return;
   }
 
-  /**
-   * Баавгайн хариултын урт: Live-ийн (клиентэд илгээдэггүй) дууны хугацаагаар хэмжинэ. Ярилцлагын хугацааны хязгаар,
-   * сүүлийн хариултыг уншиж амжих хугацаанд (readUntil) ашиглана.
-   */
+  const system = tutorSystemPrompt(ctx);
+  /** Өмнөх ээлжүүд бичвэрээр: дууг дахин илгээвэл зардал нь ээлж бүрт өснө. */
+  const history: TutorContent[] = [];
+  let replies = 0;
+  /** Gemini-д явуулсан хүсэлтийн тоо: хүүхэд тасалсан, гарсан ч төлбөр гардаг тул хязгаарт тоолно. */
+  let requests = 0;
+  /** Gemini алдаа өгсөн: баавгай хариулж амжаагүй бол ярилцлагыг тоолохгүй. */
+  let failed = false;
+  /** Хүүхдийн уншсан хугацааны тооцоо (`bear_ms`). */
   let bearMs = 0;
-  let readUntil = 0;
-  /** Энэ Live ээлжид баавгай ярьсан (дуу эсвэл текст) / finish_lesson дуудсан эсэх. */
-  let liveSpoke = false;
-  let liveTool = false;
-  /** Баавгай тайлбараа дуусгасан (finish_lesson): баяртай гэсэн ээлжийн дараа хаана. */
-  let finishing = false;
-  /** Дуусгах заавар (TUTOR_WRAP_UP) өгсөн; turnStartMs = энэ ээлж эхлэхэд bearMs. */
-  let wrapping = false;
-  let turnStartMs = 0;
-  const countAudio = (pcm: Uint8Array) => {
-    const ms = pcm.byteLength / ((GAME.TUTOR.OUTPUT_RATE * 2) / 1000);
-    bearMs += ms;
-    readUntil = Math.max(readUntil, Date.now()) + ms;
-    // Дуусгах ээлж ч хэт удаан бол хүлээхгүй.
-    if (bearMs >= GAME.TUTOR.BEAR_SPEECH_MS + GAME.TUTOR.WRAP_UP_MS) shutdown({ type: 'end', reason: 'time' });
-  };
-  /** Баавгайн ээлж клиентэд дууссан: хугацаа нь дуусах гэж байвал дуусгах ээлж, дууссан бол баяртай гэснийх нь дараа хаана. */
-  const bearTurnEnd = () => {
-    clientTurn = false;
-    send({ type: 'turn_end' });
-    const spoke = bearMs > turnStartMs;
-    const next = finishing ? (spoke ? 'end' : 'continue') : speechBudget(bearMs, wrapping, spoke);
-    turnStartMs = bearMs;
-    if (next === 'wrap') {
-      wrapping = true;
-      sendUp(liveText(TUTOR_WRAP_UP, false));
-    } else if (next === 'end' && endTimer === undefined) {
-      // Хүүхэд баавгайн сүүлийн хариултыг уншиж амжтал хүлээнэ (хэлсэн бол хэр удаан ярих байсантай ойролцоо).
-      const end: TutorServerMsg = { type: 'end', reason: finishing ? 'done' : 'time' };
-      endTimer = setTimeout(() => shutdown(end), Math.max(0, readUntil - Date.now()) + 500);
-    }
-  };
-
-  /**
-   * Хүүхэд "Би ярья" дарсан: энэ Live ээлжийн үлдсэн бичвэрийг хаяна. Ээлж дуусахад (turn_end, interrupted) буцаад
-   * дамжуулна. liveTurn = Live энэ ээлжийг үүсгэж байна; clientTurn = клиентэд энэ ээлжийн turn_end хараахан очоогүй.
-   */
+  /** Gemini хариу үүсгэж байна: энэ хооронд хүүхдийн дууг авахгүй. */
+  let busy = false;
+  /** Хүүхэд "Тасал" дарсан: энэ ээлжийн хариуг хаяна. */
   let muted = false;
-  let liveTurn = false;
-  let clientTurn = false;
-
-  let ready = false;
+  let talking = false;
+  let finishing = false;
+  let chunks: Uint8Array[] = [];
+  let bytes = 0;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let endTimer: ReturnType<typeof setTimeout> | undefined;
+
   const shutdown = (msg?: TutorServerMsg) => {
     if (closed) return;
     closed = true;
-    // Gemini бэлэн болоогүй (хүүхэд баавгайтай ярьж амжаагүй) ярилцлагыг тоолохгүй.
-    if (sessionId !== null) opts.session.end(sessionId, ready, Math.round(bearMs));
+    // Gemini-ийн алдаанаас болж баавгай нэг ч хариулж амжаагүй бол тоолохгүй. Хүүхэд өөрөө гарсан бол тоолно: хүсэлт явсан.
+    opts.session.end(sessionId, replies > 0 || !failed, Math.round(bearMs));
     if (timer !== undefined) clearTimeout(timer);
     if (endTimer !== undefined) clearTimeout(endTimer);
     if (msg) send(msg);
     safeClose(client);
-    safeClose(upstream);
   };
 
-  // Gemini Live заримдаа эхлэхдээ "1011 Internal error"-оор хаагддаг: бэлэн болохоос өмнө бол нэг удаа дахин холбогдоно.
-  let retried = false;
-  const setup = JSON.stringify(liveSetup(opts.model, tutorSystemPrompt(ctx), opts.pushToTalk));
-  const reconnect = async () => {
+  /** Баавгайн нэг ээлж. asked = хүүхдийн хүсэлт (дуу эсвэл заавар), said = түүхэнд үлдэх бичвэр (дуу бол heard-ээр солигдоно). */
+  const turn = async (asked: TutorContent, said: string) => {
+    busy = true;
+    requests++;
+    const last = requests >= GAME.TUTOR.MAX_REPLIES;
     try {
-      upstream = await connectLive(opts.key);
+      const body = tutorRequest(last ? system + TUTOR_LAST_TURN : system, [...history, asked]);
+      const out = await askTutor(opts.key, opts.model, body);
+      if (closed) return;
+      busy = false;
+      if (muted) {
+        muted = false;
+        send({ type: 'turn_end' });
+        if (!last) return;
+        finishing = true;
+        endTimer = setTimeout(() => shutdown({ type: 'end', reason: 'done' }), 500);
+        return;
+      }
+      replies++;
+      history.push({ role: 'user', parts: [{ text: out.heard || said }] }, { role: 'model', parts: [{ text: out.reply }] });
+      if (out.heard) send({ type: 'kid_text', text: out.heard });
+      send({ type: 'bear_text', text: out.reply });
+      send({ type: 'turn_end' });
+      const readMs = Math.min(out.reply.length * GAME.TUTOR.READ_MS_PER_CHAR, GAME.TUTOR.READ_MAX_MS);
+      bearMs += readMs;
+      if (out.done || last) {
+        // Хүүхэд баавгайн сүүлийн хариултыг уншиж амжтал хүлээнэ.
+        finishing = true;
+        endTimer = setTimeout(() => shutdown({ type: 'end', reason: 'done' }), readMs + 500);
+      }
     } catch (e) {
+      busy = false;
+      failed = true;
       console.error('[tutor]', e);
-      shutdown({ type: 'end', reason: 'error', message: 'Баавгайтай холбогдож чадсангүй' });
-      return;
-    }
-    if (closed) {
-      safeClose(upstream);
-      return;
-    }
-    attach(upstream);
-    upstream.send(setup);
-  };
-
-  const attach = (up: WebSocket) => {
-    up.addEventListener('message', (e) => {
-      let parsed: unknown;
-      try {
-        parsed = JSON.parse(typeof e.data === 'string' ? e.data : new TextDecoder().decode(e.data as ArrayBuffer));
-      } catch {
-        return;
-      }
-      for (const ev of liveEvents(parsed)) {
-        switch (ev.kind) {
-          case 'ready': {
-            ready = true;
-            const now = Date.now();
-            const first = ctx.focused ? ctx.questions[0] : undefined;
-            send({
-              type: 'ready',
-              topic: first ? { subject: first.subject, prompt: first.prompt } : null,
-              endsAt: now + GAME.TUTOR.MAX_SESSION_MS,
-              serverNow: now,
-            });
-            timer = setTimeout(() => shutdown({ type: 'end', reason: 'time' }), GAME.TUTOR.MAX_SESSION_MS);
-            upstream.send(JSON.stringify(liveText(tutorKickoff(ctx))));
-            break;
-          }
-          case 'audio': {
-            // Live зөвхөн дуу үүсгэдэг: хариултын уртыг хэмжээд дууг хаяна, хүүхэд бичвэрийг нь л харна.
-            liveSpoke = true;
-            liveTurn = true;
-            if (muted) break;
-            clientTurn = true;
-            countAudio(fromB64(ev.data));
-            break;
-          }
-          case 'bear_text':
-            liveSpoke = true;
-            liveTurn = true;
-            if (muted) break;
-            clientTurn = true;
-            send({ type: 'bear_text', text: ev.text.replace(/[*#_`]/g, '') });
-            break;
-          case 'kid_text':
-            send({ type: 'kid_text', text: ev.text });
-            break;
-          case 'interrupted':
-            liveSpoke = false;
-            liveTool = false;
-            muted = false;
-            liveTurn = false;
-            clientTurn = false;
-            send({ type: 'interrupted' });
-            break;
-          case 'turn_end': {
-            liveTurn = false;
-            muted = false;
-            // finish_lesson дуудаад дуугүй ээлж дуусгасан: баяртай гэж хэлүүлээд, тэр ээлжийн дараа хаана.
-            const silentFinish = liveTool && !liveSpoke;
-            liveTool = false;
-            liveSpoke = false;
-            if (silentFinish) sendUp(liveText(TUTOR_SAY_GOODBYE));
-            bearTurnEnd();
-            break;
-          }
-          case 'finish':
-            liveTool = true;
-            finishing = true;
-            sendUp(liveToolResponse(ev.id));
-            break;
-          case 'go_away':
-            shutdown({ type: 'end', reason: 'time' });
-            break;
-        }
-      }
-    });
-    up.addEventListener('close', (e) => {
-      if (closed || up !== upstream) return;
-      if (isQuotaClose(e.code, e.reason)) {
-        console.error(`[tutor] Gemini-ийн квот дүүрсэн: ${e.reason}`);
-        shutdown({ type: 'end', reason: 'error', message: 'Баавгай түр завгүй байна. Хэдэн минутын дараа дахин оролдоорой.' });
-        return;
-      }
-      if (!ready && !retried) {
-        retried = true;
-        console.error(`[tutor] Gemini эхлэхдээ хаалаа (${e.code} ${e.reason}), дахин холбогдож байна`);
-        void reconnect();
-        return;
-      }
-      console.error(`[tutor] Gemini хаалаа: ${e.code} ${e.reason}`);
-      shutdown({ type: 'end', reason: 'error', message: 'Баавгайтай холбоо тасарлаа' });
-    });
-    // error-ийн дараа close ирнэ: дахин холбогдох эсэхийг тэнд шийднэ.
-    up.addEventListener('error', () => {
-      if (up === upstream && ready) shutdown({ type: 'end', reason: 'error', message: 'Баавгайтай холбоо тасарлаа' });
-    });
-  };
-  attach(upstream);
-
-  /** Gemini хаагдаж байх үед send() алдаа шиддэг: тэр тохиолдолд close event shutdown хийнэ. */
-  const sendUp = (msg: unknown) => {
-    try {
-      upstream.send(JSON.stringify(msg));
-    } catch {
-      // хаагдаж байна
+      shutdown({ type: 'end', reason: 'error', message: e instanceof TutorBusyError ? BUSY : LOST });
     }
   };
 
@@ -325,9 +187,10 @@ async function relay(
   client.addEventListener('message', (e) => {
     if (closed) return;
     if (typeof e.data !== 'string') {
-      // Gemini бэлэн болохоос өмнөх mic-ийн дууг хаяна (баавгай эхэлж мэндэлнэ).
-      if (!ready) return;
-      sendUp(liveAudio(toB64(new Uint8Array(e.data))));
+      if (!talking || bytes >= MAX_TALK_BYTES) return;
+      const piece = new Uint8Array(e.data).subarray(0, MAX_TALK_BYTES - bytes);
+      chunks.push(piece);
+      bytes += piece.byteLength;
       return;
     }
     let msg: TutorClientMsg;
@@ -336,14 +199,36 @@ async function relay(
     } catch {
       return;
     }
-    if (msg?.type === 'mic_off' && ready && !opts.pushToTalk) sendUp(LIVE_AUDIO_END);
-    if (msg?.type === 'talk_start' && ready && opts.pushToTalk) sendUp(LIVE_ACTIVITY_START);
-    if (msg?.type === 'talk_end' && ready && opts.pushToTalk) sendUp(LIVE_ACTIVITY_END);
-    // Live ээлж үргэлжилж байвал үлдсэн бичвэрийг хаяж, turn_end дээр клиентэд ээлжийг хаана.
-    if (msg?.type === 'interrupt' && ready && clientTurn && liveTurn) muted = true;
+    if (msg?.type === 'talk_start' && !busy && !finishing) {
+      talking = true;
+      chunks = [];
+      bytes = 0;
+    }
+    if (msg?.type === 'talk_end' && talking) {
+      talking = false;
+      if (bytes === 0) {
+        send({ type: 'turn_end' });
+        return;
+      }
+      const data = toB64(pcmToWav(chunks, GAME.TUTOR.INPUT_RATE));
+      chunks = [];
+      bytes = 0;
+      void turn({ role: 'user', parts: [{ inlineData: { mimeType: 'audio/wav', data } }] }, '(хүүхдийн яриа сонсогдсонгүй)');
+    }
+    if (msg?.type === 'interrupt' && busy) muted = true;
   });
   client.addEventListener('close', () => shutdown());
   client.addEventListener('error', () => shutdown());
 
-  upstream.send(setup);
+  const now = Date.now();
+  const first = ctx.focused ? ctx.questions[0] : undefined;
+  send({
+    type: 'ready',
+    topic: first ? { subject: first.subject, prompt: first.prompt } : null,
+    endsAt: now + GAME.TUTOR.MAX_SESSION_MS,
+    serverNow: now,
+  });
+  timer = setTimeout(() => shutdown({ type: 'end', reason: 'time' }), GAME.TUTOR.MAX_SESSION_MS);
+  const kickoff = tutorKickoff(ctx);
+  await turn({ role: 'user', parts: [{ text: kickoff }] }, kickoff);
 }

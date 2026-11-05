@@ -697,27 +697,27 @@ export type ServerMsg =
   | { type: 'cancelled'; outcome: DuelOutcome }
   | { type: 'error'; code: string };
 
-// ---------- Баавгайтай ярилцах (GET /tutor/ws, Gemini Live) ----------
-// Binary frame: клиент → сервер PCM16LE mono 16 kHz (mic), сервер → клиент PCM16LE mono 24 kHz (баавгайн дуу).
+// ---------- Баавгайтай ярилцах (GET /tutor/ws, Gemini Flash Lite) ----------
+// Binary frame: клиент → сервер PCM16LE mono 16 kHz (mic). Баавгай зөвхөн бичгээр хариулна.
 // Text frame: доорх JSON.
 
 export type TutorClientMsg =
-  /** Mic-ийг унтраалаа (баавгай ярих гэж байна): Gemini-ийн VAD-д сонссоноо дуусгахыг мэдэгдэнэ. */
+  /** Mic-ийг унтраалаа (хуучин клиент илгээдэг, сервер үл тооно). */
   | { type: 'mic_off' }
   /** Push-to-talk (`?ptt=1`): хүүхэд товч дарж ярьж эхэллээ / суллалаа: баавгай суллахад хариулна. */
   | { type: 'talk_start' }
   | { type: 'talk_end' }
-  /** Хүүхэд "Тасал" дарлаа: энэ ээлжийн үлдсэн яриаг (TTS) үүсгэхээ болино; ээлжийн төгсгөлд turn_end ирнэ. */
+  /** Хүүхэд "Тасал" дарлаа: энэ ээлжийн хариуг хаяна; ээлжийн төгсгөлд turn_end ирнэ. */
   | { type: 'interrupt' };
 
 export type TutorServerMsg =
-  /** Gemini бэлэн; баавгай өөрөө мэндэлж эхэлнэ. */
+  /** Ярилцлага нээгдлээ; баавгай өөрөө мэндэлж эхэлнэ. */
   | { type: 'ready'; topic: { subject: Subject; prompt: string } | null; endsAt: number; serverNow: number }
-  /** Баавгайн хэлж буй үгийн текст (хэсэг хэсгээр нэмэгдэнэ). */
+  /** Баавгайн хариулт (нэг ээлжид бүтнээрээ ирнэ; клиент нэмж залгадаг). */
   | { type: 'bear_text'; text: string }
-  /** Хүүхдийн хэлснийг Gemini ингэж сонссон (хэсэг хэсгээр). */
+  /** Хүүхдийн хэлснийг Gemini ингэж сонссон. */
   | { type: 'kid_text'; text: string }
-  /** Баавгай ярьж дууслаа (дууны бүх хэсэг ирсэн). */
+  /** Баавгайн ээлж дууслаа. */
   | { type: 'turn_end' }
   /** Хүүхэд яриаг тасалсан тул баавгай зогсов: тоглуулж буй дуугаа хаяна. */
   | { type: 'interrupted' }
