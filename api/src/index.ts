@@ -5,13 +5,15 @@ import { ubDay } from './domain/time';
 import type { AppEnv } from './env';
 import { errorHandler } from './lib/errors';
 import { adminRoutes } from './routes/admin';
-import { authRoutes, meRoutes } from './routes/auth';
+import { authRoutes } from './routes/auth';
 import { bagRoutes } from './routes/bag';
 import { clanRoutes } from './routes/clans';
 import { leagueRoutes } from './routes/league';
 import { dashboardRoutes } from './routes/dashboard';
 import { duelRoutes } from './routes/duels';
 import { friendRoutes } from './routes/friends';
+import { judgeRoutes } from './routes/judge';
+import { meRoutes } from './routes/me';
 import { profileRoutes } from './routes/profiles';
 import { recoveryRoutes } from './routes/recovery';
 import { avatarRoutes, cosmeticRoutes, shopRoutes } from './routes/shop';
@@ -36,6 +38,7 @@ app.get('/health', async (c) => {
 });
 
 app.route('/auth', authRoutes);
+app.route('/auth/judge', judgeRoutes);
 app.route('/me', meRoutes);
 app.route('/profiles', profileRoutes);
 app.route('/friends', friendRoutes);

@@ -1,17 +1,14 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
-import type { AuthResponse, LessonsResponse, MeResponse, MyProfileResponse, OnboardingBody } from '../../../shared/types';
-import { HEARD_FROM, REASONS, SELF_LEVELS } from '../../../shared/onboarding';
-import { BEAR_FACES, BEAR_FURS } from '../config/cosmetics';
-import { ACTIVE_SUBJECTS, DEFAULT_EQUIPPED, GAME } from '../config/game';
+import type { AuthResponse } from '../../../shared/types';
+import { DEFAULT_EQUIPPED, GAME } from '../config/game';
 import { tierForGrade } from '../domain/level';
 import { ubDay } from '../domain/time';
 import type { AppEnv } from '../env';
 import { hashPassword, newSessionToken, normalizeUsername, sha256Hex, usernameError, verifyPassword } from '../lib/auth';
 import { ApiError, readBody } from '../lib/errors';
 import { bearerToken, createSession, requireAuth, trackActive } from '../lib/session';
-import { loadLessons } from '../services/lessons';
-import { myProfile, rotateProfileCode, setAdminGrade, setAvatar, setBearLook, setOnboarding } from '../services/profiles';
+import { assertUnderLimits, loginLimits, recordAttempts, registerLimits } from '../services/authLimits';
 import { loadMe } from '../services/users';
 
 const registerSchema = z.object({
@@ -40,6 +37,10 @@ authRoutes.post('/register', async (c) => {
 
   const db = c.env.DB;
   const now = Date.now();
+  // Бүртгэл бүр PBKDF2 боддог тул нэг сүлжээнээс олон удаа үүсгэж CPU дүүргэхээс сэргийлнэ.
+  const limits = await registerLimits(c.req.header('cf-connecting-ip'));
+  await assertUnderLimits(db, limits, now);
+  await recordAttempts(db, limits, now);
   const passwordHash = await hashPassword(body.password);
   const token = newSessionToken();
   const tokenHash = await sha256Hex(token);
@@ -73,87 +74,21 @@ authRoutes.post('/register', async (c) => {
   return c.json<AuthResponse>({ token, me: await loadMe(db, row.id, now) }, 201);
 });
 
-/**
- * Шүүгчээр орох (JUDGE_LOGIN = 'on'): нэр, нууц үг, асуулга, профайл бөглөхгүйгээр шинэ шүүгчийн бүртгэл үүсгэнэ.
- * Шүүгч (is_judge) тул дэлгүүрийн бүх хувцас, замын бүх цэг, шат, boss нээлттэй, амь хасагдахгүй (admin-ийн хэрэгсэлгүй). Шүүгч бүр
- * тусдаа бүртгэлтэй: бие биеийнхээ явцыг өөрчлөхгүй. Нууц үг нь санамсаргүй тул энэ төхөөрөмжөөс гарвал дахин нэвтрэхгүй.
- */
-authRoutes.post('/judge', async (c) => {
-  if (c.env.JUDGE_LOGIN !== 'on') throw new ApiError(404, 'NOT_FOUND', 'Шүүгчийн нэвтрэлт хаалттай байна');
-  const db = c.env.DB;
-  const now = Date.now();
-  const recent = await db
-    .prepare(`SELECT COUNT(*) AS n FROM users WHERE username LIKE 'judge\\_%' ESCAPE '\\' AND created_at > ?`)
-    .bind(now - 24 * 60 * 60_000)
-    .first<{ n: number }>();
-  const n = recent?.n ?? 0;
-  if (n >= GAME.JUDGE.DAILY_MAX) throw new ApiError(403, 'FORBIDDEN', 'Шүүгчийн бүртгэл хэт олон үүслээ. Дараа дахин оролдоно уу');
-  const ipHash = await sha256Hex(networkOf(c.req.header('cf-connecting-ip')));
-  const fromHere = await db
-    .prepare('SELECT COUNT(*) AS n FROM judge_signups WHERE ip_hash = ? AND created_at > ?')
-    .bind(ipHash, now - 24 * 60 * 60_000)
-    .first<{ n: number }>();
-  if ((fromHere?.n ?? 0) >= GAME.JUDGE.PER_NETWORK_DAILY) {
-    throw new ApiError(429, 'JUDGE_LIMIT', 'Энэ сүлжээнээс шүүгчийн бүртгэл хэт олон үүслээ. Маргааш дахин оролдоно уу');
-  }
-
-  const tier = tierForGrade(GAME.JUDGE.GRADE);
-  if (!tier) throw new ApiError(500, 'INTERNAL');
-  const username = `judge_${newSessionToken().slice(0, 8).toLowerCase().replace(/[^a-z0-9]/g, '0')}`;
-  const passwordHash = await hashPassword(newSessionToken());
-  const token = newSessionToken();
-  const tokenHash = await sha256Hex(token);
-  // Асуулга (хичээл) бөглөсөн, профайлын нэртэй: апп асуулга, профайл үүсгэх дэлгэцийг алгасна.
-  await db.batch([
-    db
-      .prepare(
-        `INSERT INTO users (username, password_hash, display_name, grade, tier, points, equipped, created_at, onboarding, is_judge)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-      )
-      .bind(
-        username,
-        passwordHash,
-        `Шүүгч ${n + 1}`,
-        GAME.JUDGE.GRADE,
-        tier,
-        GAME.JUDGE.POINTS,
-        JSON.stringify(DEFAULT_EQUIPPED),
-        now,
-        JSON.stringify({ subject: 'math' }),
-      ),
-    db
-      .prepare(
-        `INSERT INTO point_ledger (user_id, delta, reason, ref_type, ref_id, created_at)
-         SELECT id, ?, 'signup_bonus', 'user', id, ? FROM users WHERE username = ?`,
-      )
-      .bind(GAME.JUDGE.POINTS, now, username),
-    db.prepare('INSERT INTO sessions (token_hash, user_id, created_at) SELECT ?, id, ? FROM users WHERE username = ?').bind(tokenHash, now, username),
-    db
-      .prepare('INSERT INTO user_activity (user_id, day, first_at) SELECT id, ?, ? FROM users WHERE username = ?')
-      .bind(ubDay(now), now, username),
-    db.prepare('INSERT INTO judge_signups (ip_hash, created_at) VALUES (?, ?)').bind(ipHash, now),
-  ]);
-  const row = await db.prepare('SELECT id FROM users WHERE username = ?').bind(username).first<{ id: number }>();
-  if (!row) throw new ApiError(500, 'INTERNAL');
-  return c.json<AuthResponse>({ token, me: await loadMe(db, row.id, now) }, 201);
-});
-
-/** Хязгаарын түлхүүр: IPv4 бүтнээрээ, IPv6 /64 (нэг гэрийн сүлжээ олон хаягтай). Header байхгүй бол (local) нэг түлхүүр. */
-function networkOf(ip: string | undefined): string {
-  if (!ip) return 'local';
-  return ip.includes(':') ? ip.toLowerCase().split(':').slice(0, 4).join(':') : ip;
-}
-
 authRoutes.post('/login', async (c) => {
   const body = await readBody(c, loginSchema);
   const db = c.env.DB;
+  const username = normalizeUsername(body.username);
+  // Зөвхөн буруу оролдлого тоологдоно: зөв нууц үгтэй анги бүхэлдээ нэг Wi-Fi-аас саадгүй нэвтэрнэ.
+  const limits = await loginLimits(username, c.req.header('cf-connecting-ip'));
+  await assertUnderLimits(db, limits);
   const user = await db
     .prepare('SELECT id, password_hash FROM users WHERE username = ?')
-    .bind(normalizeUsername(body.username))
+    .bind(username)
     .first<{ id: number; password_hash: string }>();
   // Нэр олдоогүй ч hash бодно: хариуны хугацаагаар бүртгэлтэй нэрийг таахгүй.
   if (!user) await hashPassword(body.password);
   if (!user || !(await verifyPassword(body.password, user.password_hash))) {
+    await recordAttempts(db, limits);
     throw new ApiError(401, 'INVALID_CREDENTIALS', 'Нэр эсвэл нууц үг буруу');
   }
   const token = await createSession(db, user.id);
@@ -165,77 +100,4 @@ authRoutes.post('/logout', requireAuth, async (c) => {
   const token = bearerToken(c);
   if (token) await c.env.DB.prepare('DELETE FROM sessions WHERE token_hash = ?').bind(await sha256Hex(token)).run();
   return c.body(null, 204);
-});
-
-export const meRoutes = new Hono<AppEnv>();
-
-meRoutes.get('/', requireAuth, async (c) => {
-  return c.json<MeResponse>({ me: await loadMe(c.env.DB, c.get('userId')) });
-});
-
-/** Сурах замын хичээлүүд: хэрэглэгчийн ангийн сурах бичгийн гарчгаас. */
-meRoutes.get('/lessons/:subject', requireAuth, async (c) => {
-  const subject = z.enum(ACTIVE_SUBJECTS).safeParse(c.req.param('subject'));
-  if (!subject.success) throw new ApiError(400, 'BAD_REQUEST', 'Буруу хичээл');
-  const user = await c.env.DB.prepare('SELECT grade FROM users WHERE id = ?').bind(c.get('userId')).first<{ grade: number }>();
-  if (!user) throw new ApiError(401, 'UNAUTHORIZED', 'Нэвтрэх шаардлагатай');
-  return c.json<LessonsResponse>(await loadLessons(c.env, subject.data, user.grade));
-});
-
-/** Миний профайл (бусдад ингэж харагдана) ба хуваалцах код. */
-meRoutes.get('/profile', requireAuth, async (c) => c.json<MyProfileResponse>(await myProfile(c.env.DB, c.get('userId'))));
-
-/** Кодоо солино: хуучин кодоор профайл олдохоо болино. */
-meRoutes.post('/profile/code', requireAuth, async (c) => c.json<MyProfileResponse>(await rotateProfileCode(c.env.DB, c.get('userId'))));
-
-/** Нүүрэн дээр сонгосон дэвсгэр, хувцас (профайл дээр бусдад харагдана). */
-meRoutes.put('/look', requireAuth, async (c) => {
-  const body = await readBody(c, z.object({ bg: z.string().min(1).max(40), outfit: z.string().min(1).max(400) }));
-  return c.json<MeResponse>({ me: await setBearLook(c.env.DB, c.get('userId'), body) });
-});
-
-/** Анх орохдоо асуудаг асуултын хариулт (анги нь зөвхөн анх удаа хэрэгжинэ). */
-meRoutes.put('/onboarding', requireAuth, async (c) => {
-  const body = await readBody(
-    c,
-    z.object({
-      grade: z.number().int().min(GAME.GRADE_MIN).max(GAME.GRADE_MAX),
-      subject: z.enum(ACTIVE_SUBJECTS),
-      heardFrom: z.enum(HEARD_FROM).optional(),
-      reason: z.enum(REASONS).optional(),
-      level: z.number().int().refine((v) => (SELF_LEVELS as readonly number[]).includes(v)).optional(),
-    }),
-  );
-  const tier = tierForGrade(body.grade);
-  if (!tier) throw new ApiError(400, 'BAD_REQUEST', 'Анги буруу');
-  return c.json<MeResponse>({ me: await setOnboarding(c.env.DB, c.get('userId'), body as OnboardingBody, tier) });
-});
-
-/** Хөгжүүлэгчийн бүртгэлээр 6–12-р ангийн агуулгыг шалгана. */
-meRoutes.put('/grade', requireAuth, async (c) => {
-  const { grade } = await readBody(
-    c,
-    z.object({ grade: z.number().int().min(GAME.GRADE_MIN).max(GAME.GRADE_MAX) }),
-  );
-  return c.json<MeResponse>({ me: await setAdminGrade(c.env.DB, c.get('userId'), grade) });
-});
-
-/** Профайлын нэр (хоч) ба баавгайн үс, царай, цээжний толбо. */
-meRoutes.put('/avatar', requireAuth, async (c) => {
-  const body = await readBody(
-    c,
-    z.object({
-      // хоч: зай, кирилл зөвшөөрнө; удирдах тэмдэгт (шинэ мөр г.м.) үгүй
-      name: z
-        .string()
-        .trim()
-        .min(1)
-        .max(GAME.AUTH.USERNAME_MAX)
-        .regex(/^[^\p{C}]+$/u),
-      fur: z.enum(BEAR_FURS),
-      face: z.enum(BEAR_FACES),
-      chest: z.boolean(),
-    }),
-  );
-  return c.json<MeResponse>({ me: await setAvatar(c.env.DB, c.get('userId'), body) });
 });
