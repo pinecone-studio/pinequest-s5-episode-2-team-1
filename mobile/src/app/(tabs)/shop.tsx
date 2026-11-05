@@ -7,7 +7,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BgArt } from '@/components/BgArt';
 import { BrickBanner } from '@/components/BrickBanner';
 import type { SwatchStatus } from '@/components/BgSwatch';
-import { MagicBurst } from '@/components/MagicBurst';
 import { PixelText } from '@/components/pinecones';
 import { PressScale, Sprite } from '@/components/pixel';
 import { PreviewStage } from '@/components/PreviewStage';
@@ -72,7 +71,6 @@ export default function ShopScreen() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
-  const [castKey, setCastKey] = useState(0);
 
   // намхан дэлгэцэнд sheet-ийн stage-ийг багасгаж товч харагдах зай үлдээнэ
   const stageH = Math.round(Math.min(260, Math.max(170, useWindowDimensions().height * 0.28)));
@@ -135,10 +133,7 @@ export default function ShopScreen() {
     setError('');
     if (cur.owned) {
       if (isBg) bear.equipBg(bgDef.id);
-      else {
-        bear.equipOutfit(outfitDef.id);
-        if (outfitDef.id === 'pestilence_staff') setCastKey((k) => k + 1);
-      }
+      else bear.equipOutfit(outfitDef.id);
       void Haptics.selectionAsync();
       return;
     }
@@ -155,7 +150,6 @@ export default function ShopScreen() {
       setError(err);
       return;
     }
-    if (!isBg && outfitDef.id === 'pestilence_staff') setCastKey((k) => k + 1);
     setMessage(S.shop.bought(cur.name));
     void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   }
@@ -247,7 +241,6 @@ export default function ShopScreen() {
                             })}
                             onPress={() => {
                               setSelOutfit(v.def.id);
-                              if (v.def.id === 'pestilence_staff') setCastKey((k) => k + 1);
                               open();
                             }}
                           />
@@ -276,7 +269,6 @@ export default function ShopScreen() {
             </Text>
             <View>
               <PreviewStage height={stageH} bg={bgDef} items={previewItems} alt={S.shop.previewAlt(outfitDef.name, bgDef.name)} />
-              <MagicBurst active={!isBg && outfitDef.id === 'pestilence_staff'} castKey={castKey} />
             </View>
             <View style={styles.itemRow}>
               <View style={[styles.thumb, { backgroundColor: isBg ? bgDef.hex : outfitDef.tile }]}>
