@@ -47,8 +47,11 @@ duelRoutes.post('/join', requireAuth, async (c) => {
   return c.json<DuelResponse>({ duel: await joinByCode(c.env, c.get('userId'), body.code, body.team) });
 });
 
+/** Зөвхөн оролцогчид: id дараалсан тул гадны хүн тулаан бүрээр гүйж бусдын нэвтрэх нэрийг цуглуулахгүй. */
 duelRoutes.get('/:id', requireAuth, async (c) => {
-  return c.json<DuelResponse>({ duel: await getDuelSummary(c.env.DB, parseId(c.req.param('id')), c.get('userId')) });
+  const duelId = parseId(c.req.param('id'));
+  if (!(await isParticipant(c.env.DB, duelId, c.get('userId')))) throw new ApiError(404, 'NOT_FOUND', 'Тулаан олдсонгүй');
+  return c.json<DuelResponse>({ duel: await getDuelSummary(c.env.DB, duelId, c.get('userId')) });
 });
 
 duelRoutes.post('/:id/accept', requireAuth, async (c) => {
