@@ -29,6 +29,7 @@ export const BOOK_SUBJECT_TITLES: Record<string, string> = {
   math: 'Математик',
   mongolian: 'Монгол хэл',
   physics: 'Физик',
+  social: 'Нийгэм судлал',
 };
 
 /** api/books/<slug>/book.json */

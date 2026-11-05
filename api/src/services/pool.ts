@@ -1,6 +1,7 @@
 import { GAME, type Subject, type Tier } from '../config/game';
 import type { Bindings } from '../env';
 import { generateQuestions, pickProvider } from '../llm';
+import type { Difficulty } from '../llm/prompt';
 import type { QuestionDraft } from '../llm/types';
 import { promptKey } from '../llm/validate';
 import { generate, type Level, type Template } from '../templates';
@@ -216,6 +217,7 @@ export async function generateAndStore(
   chunk: number = GAME.POOL.LLM_CHUNK,
   useBooks = true,
   scope: Scope | null = null,
+  difficulty: Difficulty | null = null,
 ): Promise<GenerateReport> {
   const { results } = await env.DB.prepare('SELECT prompt FROM questions WHERE tier = ? AND subject = ? ORDER BY id DESC')
     .bind(tier, subject)
@@ -229,7 +231,7 @@ export async function generateAndStore(
   // Номын хэсэг дуудлагын тооноос цөөн бол давтан ашиглана (тус бүр өөр асуулт гарна).
   const excerptOf = (i: number) => (excerpts.length ? excerpts[i % excerpts.length] : null);
   // Хичээлийн хуудсууд санд (уншигдахуйц) байхгүй бол номгүй асуулт зохиохгүй.
-  const settled = scope?.range && excerpts.length === 0 ? [] : await Promise.allSettled(sizes.map((n, i) => generateQuestions(env, tier, subject, n, avoid, excerptOf(i))));
+  const settled = scope?.range && excerpts.length === 0 ? [] : await Promise.allSettled(sizes.map((n, i) => generateQuestions(env, tier, subject, n, avoid, excerptOf(i), difficulty)));
 
   const report: GenerateReport = {
     source: null,

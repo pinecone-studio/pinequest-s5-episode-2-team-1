@@ -1,7 +1,7 @@
 import { GATE_ITEM } from '../../../shared/loot';
 import type { AnswerResponse, FlagResponse, Me, TaskDto, TaskResult } from '../../../shared/types';
 import { GAME, type Subject, type Tier } from '../config/game';
-import { mathRoadmapNodes } from '../config/mathRoadmap';
+import { roadmapNodes } from '../config/roadmap';
 import { bossBlock, bossWon } from '../domain/boss';
 import { levelFromXp } from '../domain/level';
 import { currentNode, gateNodes, gateOf, lessonIndex, nodesAfter, pathLessons, taskPathLessons } from '../domain/path';
@@ -105,8 +105,8 @@ export async function startTask(
     throw new ApiError(409, 'RECOVERY_REQUIRED', 'Эхлээд давтлагаа дуусгаарай');
   }
   const path = (await loadSubjectPaths(db, userId))[subject];
-  // Математик 6–12 нь анги тус бүрийн тогтмол roadmap; бусад нь номын хичээл бүр нэг зангилаа.
-  const roadmap = subject === 'math' ? mathRoadmapNodes(user.grade) : [];
+  // Математик 6–12, нийгэм судлал 7–11 нь анги тус бүрийн тогтмол roadmap; бусад нь номын хичээл бүр нэг зангилаа.
+  const roadmap = roadmapNodes(subject, user.grade);
   const book = roadmap.length > 0 ? null : await bookLessons(env, subject, user.grade).catch(() => null);
   const pathLen = roadmap.length || pathLessons(book?.lessons.length ?? 0);
   if (boss !== undefined && !admin) {

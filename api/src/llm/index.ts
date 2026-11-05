@@ -5,7 +5,7 @@ import { topicIds } from '../config/topics';
 import type { Bindings } from '../env';
 import type { Excerpt } from '../services/grounding';
 import { geminiGenerate } from './gemini';
-import { buildPrompt } from './prompt';
+import { buildPrompt, type Difficulty } from './prompt';
 import { LlmError, type LlmProvider, type QuestionDraft } from './types';
 import { type Rejection, validateDrafts } from './validate';
 import { workersAiGenerate } from './workersAi';
@@ -33,11 +33,12 @@ export async function generateQuestions(
   count: number,
   avoid: string[] = [],
   excerpt: Excerpt | null = null,
+  difficulty: Difficulty | null = null,
 ): Promise<{ drafts: QuestionDraft[]; rejected: Rejection[]; source: string }> {
   const provider = pickProvider(env);
   if (!provider) throw new LlmError(env.LLM_PROVIDER === 'workers-ai' ? 'workers-ai' : 'gemini', 0, 'LLM тохируулаагүй');
-  const { system, user } = buildPrompt(tier, subject, count, avoid, excerpt);
+  const { system, user } = buildPrompt(tier, subject, count, avoid, excerpt, difficulty);
   const raw = provider === 'gemini' ? await geminiGenerate(env, { system, user }) : await workersAiGenerate(env, system, user);
   const { drafts, rejected } = validateDrafts(raw, topicIds(tier, subject));
-  return { drafts, rejected, source: sourceLabel(env, provider) };
+  return { drafts: difficulty ? drafts.map((d) => ({ ...d, difficulty })) : drafts, rejected, source: sourceLabel(env, provider) };
 }

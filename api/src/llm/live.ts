@@ -3,7 +3,7 @@ import { GAME, type Subject } from '../config/game';
 
 export const LIVE_URL = 'https://generativelanguage.googleapis.com/ws/google.ai.generativelanguage.v1beta.GenerativeService.BidiGenerateContent';
 
-const SUBJECT_NAMES: Record<Subject, string> = { math: 'Математик', mongolian: 'Монгол хэл', physics: 'Физик' };
+const SUBJECT_NAMES: Record<Subject, string> = { math: 'Математик', mongolian: 'Монгол хэл', physics: 'Физик', social: 'Нийгэм судлал' };
 const LETTERS = ['A', 'B', 'C', 'D'];
 
 /** Хүүхдийн хариулсан (ихэвчлэн алдсан) бодлого. */

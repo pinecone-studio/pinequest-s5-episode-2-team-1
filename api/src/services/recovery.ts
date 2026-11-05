@@ -2,7 +2,7 @@
 // өөр асуултууд бодуулж, бүгдийг зөв хариулсны дараа л тухайн хичээлийн дараагийн даалгавар нээгдэнэ.
 import type { RecoveryAnswerResponse, RecoveryDto, Subject } from '../../../shared/types';
 import { GAME, type Tier } from '../config/game';
-import { mathRoadmapNodes } from '../config/mathRoadmap';
+import { roadmapNodes } from '../config/roadmap';
 import { TOPICS } from '../config/topics';
 import { lessonIndex } from '../domain/path';
 import { ApiError } from '../lib/errors';
@@ -85,7 +85,7 @@ export async function recoveryStatements(db: D1Database, userId: number, taskId:
   const group = mainGroup(missed);
   // Хамгийн олон алдсан хичээлийн тусгай загвараар шинэ бодлого үүсгэнэ. Ерөнхий загвар нь хадгалсан бодлого
   // хүрэлцэхгүй үед л нөөц болно.
-  const roadmap = task.subject === 'math' ? mathRoadmapNodes(task.grade) : [];
+  const roadmap = roadmapNodes(task.subject, task.grade);
   const mappedIndex = task.path_lessons === roadmap.length && task.node !== null ? lessonIndex(roadmap.length, task.node) : null;
   const mapped = mappedIndex === null ? null : (roadmap[mappedIndex] ?? null);
   const mappedTemplates = mapped?.templateIds.flatMap((id) => {
