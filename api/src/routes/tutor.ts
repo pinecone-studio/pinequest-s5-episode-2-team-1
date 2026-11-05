@@ -117,7 +117,11 @@ async function relay(
   /** Өмнөх ээлжүүд бичвэрээр: дууг дахин илгээвэл зардал нь ээлж бүрт өснө. */
   const history: TutorContent[] = [];
   let replies = 0;
-  /** Хүүхдийн уншсан хугацааны тооцоо (`bear_ms`), сүүлийн хариултыг уншиж амжих хугацаа. */
+  /** Gemini-д явуулсан хүсэлтийн тоо: хүүхэд тасалсан, гарсан ч төлбөр гардаг тул хязгаарт тоолно. */
+  let requests = 0;
+  /** Gemini алдаа өгсөн: баавгай хариулж амжаагүй бол ярилцлагыг тоолохгүй. */
+  let failed = false;
+  /** Хүүхдийн уншсан хугацааны тооцоо (`bear_ms`). */
   let bearMs = 0;
   /** Gemini хариу үүсгэж байна: энэ хооронд хүүхдийн дууг авахгүй. */
   let busy = false;
@@ -133,8 +137,8 @@ async function relay(
   const shutdown = (msg?: TutorServerMsg) => {
     if (closed) return;
     closed = true;
-    // Баавгай нэг ч хариулж амжаагүй ярилцлагыг тоолохгүй.
-    opts.session.end(sessionId, replies > 0, Math.round(bearMs));
+    // Gemini-ийн алдаанаас болж баавгай нэг ч хариулж амжаагүй бол тоолохгүй. Хүүхэд өөрөө гарсан бол тоолно: хүсэлт явсан.
+    opts.session.end(sessionId, replies > 0 || !failed, Math.round(bearMs));
     if (timer !== undefined) clearTimeout(timer);
     if (endTimer !== undefined) clearTimeout(endTimer);
     if (msg) send(msg);
@@ -144,7 +148,8 @@ async function relay(
   /** Баавгайн нэг ээлж. asked = хүүхдийн хүсэлт (дуу эсвэл заавар), said = түүхэнд үлдэх бичвэр (дуу бол heard-ээр солигдоно). */
   const turn = async (asked: TutorContent, said: string) => {
     busy = true;
-    const last = replies + 1 >= GAME.TUTOR.MAX_REPLIES;
+    requests++;
+    const last = requests >= GAME.TUTOR.MAX_REPLIES;
     try {
       const body = tutorRequest(last ? system + TUTOR_LAST_TURN : system, [...history, asked]);
       const out = await askTutor(opts.key, opts.model, body);
@@ -153,6 +158,9 @@ async function relay(
       if (muted) {
         muted = false;
         send({ type: 'turn_end' });
+        if (!last) return;
+        finishing = true;
+        endTimer = setTimeout(() => shutdown({ type: 'end', reason: 'done' }), 500);
         return;
       }
       replies++;
@@ -169,6 +177,7 @@ async function relay(
       }
     } catch (e) {
       busy = false;
+      failed = true;
       console.error('[tutor]', e);
       shutdown({ type: 'end', reason: 'error', message: e instanceof TutorBusyError ? BUSY : LOST });
     }
@@ -179,7 +188,7 @@ async function relay(
     if (closed) return;
     if (typeof e.data !== 'string') {
       if (!talking || bytes >= MAX_TALK_BYTES) return;
-      const piece = new Uint8Array(e.data);
+      const piece = new Uint8Array(e.data).subarray(0, MAX_TALK_BYTES - bytes);
       chunks.push(piece);
       bytes += piece.byteLength;
       return;
