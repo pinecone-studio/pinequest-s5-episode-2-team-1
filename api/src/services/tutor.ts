@@ -1,7 +1,7 @@
 import { ACTIVE_SUBJECTS, GAME, type Subject } from '../config/game';
 import { ubDay } from '../domain/time';
 import { ApiError } from '../lib/errors';
-import type { MissedQuestion, TutorContext } from '../llm/live';
+import type { MissedQuestion, TutorContext } from '../llm/tutor';
 import { recoveryCertain } from './recovery';
 
 interface Row {
@@ -98,7 +98,7 @@ export async function startTutorSession(db: D1Database, userId: number, now = Da
 }
 
 /**
- * Ярилцлага дууссан: баавгайн хариултын уртыг (bearMs, Live-ийн дууны хугацаа) хадгална. Gemini-тэй холбогдож чадаагүй бол
+ * Ярилцлага дууссан: баавгайн хариултыг унших хугацааны тооцоог (bearMs) хадгална. Баавгай нэг ч хариулж амжаагүй бол
  * (counted = false) тоолохгүйн тулд устгана.
  */
 export async function endTutorSession(db: D1Database, id: number, counted: boolean, bearMs = 0, now = Date.now()): Promise<void> {
