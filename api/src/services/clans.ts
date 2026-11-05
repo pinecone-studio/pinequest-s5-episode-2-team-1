@@ -204,7 +204,10 @@ export async function leaveClan(db: D1Database, me: number): Promise<MyClanRespo
   if (!clan) return { clan: null };
   await db.batch([
     db.prepare('DELETE FROM clan_members WHERE user_id = ?').bind(me),
-    db.prepare('DELETE FROM clans WHERE id = ? AND NOT EXISTS (SELECT 1 FROM clan_members WHERE clan_id = ?)').bind(clan.id, clan.id),
+    // багшийн анги сүүлчийн сурагч гарсан ч үлдэнэ
+    db
+      .prepare('DELETE FROM clans WHERE id = ? AND NOT EXISTS (SELECT 1 FROM clan_members WHERE clan_id = ?) AND owner_id NOT IN (SELECT id FROM users WHERE is_teacher = 1)')
+      .bind(clan.id, clan.id),
     db
       .prepare(
         `UPDATE clans SET owner_id = (SELECT user_id FROM clan_members WHERE clan_id = ? ORDER BY joined_at, user_id LIMIT 1)

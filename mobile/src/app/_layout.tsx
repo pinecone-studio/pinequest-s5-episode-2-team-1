@@ -101,7 +101,13 @@ function RootNavigator() {
     // баавгайн бүх animation нь профайлд сонгосон үсний өнгөөр (хуучин кэшэлсэн профайлд look.fur байхгүй)
     <FurContext.Provider value={me?.look?.fur ?? 'brown'}>
       <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }}>
-        <Stack.Protected guard={signedIn}>
+        {/* багшийн бүртгэл: сурагчийн апп-ын оронд зөвхөн багшийн хэсэг */}
+        <Stack.Protected guard={signedIn && !!me?.teacher}>
+          <Stack.Screen name="teacher/index" />
+          <Stack.Screen name="teacher/[code]" />
+          <Stack.Screen name="teacher/quiz/[id]" options={{ gestureEnabled: false }} />
+        </Stack.Protected>
+        <Stack.Protected guard={signedIn && !me?.teacher}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="avatar" />
           <Stack.Screen name="onboarding" />
@@ -118,6 +124,7 @@ function RootNavigator() {
           <Stack.Screen name="recovery/[subject]" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />
           <Stack.Screen name="duel/[id]" options={{ gestureEnabled: false }} />
           <Stack.Screen name="tutor" options={{ animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="quiz/[id]" options={{ gestureEnabled: false }} />
         </Stack.Protected>
         <Stack.Protected guard={!signedIn}>
           <Stack.Screen name="welcome" />

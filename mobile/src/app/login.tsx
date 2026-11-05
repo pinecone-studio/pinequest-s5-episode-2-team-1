@@ -9,6 +9,7 @@ import { JudgeButton } from '@/components/JudgeButton';
 import { BackButton, ErrorText } from '@/components/ui';
 import { colors, fonts } from '@/constants/theme';
 import { S } from '@/i18n/strings';
+import { T } from '@/i18n/teacher';
 
 // web: браузер хадгалсан нууц үгийг өөрөө бөглөж, арилгахад дахин бөглөдөг байсан (сургуулийн хуваалцсан компьютер).
 // Chrome нэвтрэх талбарт "off"-ийг үл тоодог тул нууц үгэнд "new-password". Утсан дээр keychain-ийн бөглөлт хэвээр.
@@ -100,6 +101,7 @@ export default function LoginScreen() {
       />
       <ErrorText>{error}</ErrorText>
       <Button title={S.auth.login} onPress={submit} loading={busy} disabled={!filled} />
+      <Button title={T.loginAsTeacher} variant="ghost" small onPress={() => router.push('/register?role=teacher')} />
       <JudgeButton />
     </AuthShell>
   );

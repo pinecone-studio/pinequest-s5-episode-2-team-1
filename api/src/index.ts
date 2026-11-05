@@ -15,9 +15,11 @@ import { friendRoutes } from './routes/friends';
 import { judgeRoutes } from './routes/judge';
 import { meRoutes } from './routes/me';
 import { profileRoutes } from './routes/profiles';
+import { quizRoutes } from './routes/quiz';
 import { recoveryRoutes } from './routes/recovery';
 import { avatarRoutes, cosmeticRoutes, shopRoutes } from './routes/shop';
 import { questionRoutes, shieldRoutes, taskRoutes } from './routes/tasks';
+import { teacherRoutes } from './routes/teacher';
 import { tutorRoutes } from './routes/tutor';
 
 export { DuelRoom } from './duel/DuelRoom';
@@ -56,5 +58,7 @@ app.route('/cosmetics', cosmeticRoutes);
 app.route('/admin', adminRoutes);
 app.route('/dashboard', dashboardRoutes);
 app.route('/tutor', tutorRoutes);
+app.route('/teacher', teacherRoutes);
+app.route('/quiz', quizRoutes);
 
 export default app;

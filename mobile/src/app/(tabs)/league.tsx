@@ -7,6 +7,7 @@ import { api, errorText } from '@/api/client';
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { PixelText } from '@/components/pinecones';
+import { LiveQuizBanner } from '@/components/teacher/LiveQuizBanner';
 import { Card, ErrorText, Muted, Screen } from '@/components/ui';
 import { colors, fonts, hardShadow, radius } from '@/constants/theme';
 import { S } from '@/i18n/strings';
@@ -45,6 +46,7 @@ export default function LeagueScreen() {
         </View>
         <Text style={styles.sub}>{S.league.sub}</Text>
       </View>
+      <LiveQuizBanner />
 
       {!data ? (
         error ? (
