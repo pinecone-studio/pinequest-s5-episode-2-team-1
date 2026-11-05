@@ -5,6 +5,7 @@
 //   npm run questions:export / questions:import   # шалгасан сангаа seed/questions.json-д хадгалах / сэргээх
 //   npm run lessons:import                 # сурах замын хичээлийн бодлого: seed/lesson-questions.json (bookRef-тэй)
 //   npm run social:import                  # нийгэм судлалын хичээлийн асуулт: seed/social-lesson-questions.json
+//   npm run english:import                 # англи хэлний хичээлийн асуулт: seed/english-lesson-questions.json
 //   --url https://...workers.dev           # deploy хийсэн сервер рүү
 //   --model gemini-3.6-flash,gemini-3.5-flash-lite
 //                                          # загвар(ууд): эхнийх нь өдрийн квот дуусахад дараагийнх руу
@@ -19,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 import { ADMIN_TOKEN, API_URL, arg, call, flag, HttpError, sleep } from './lib';
 
 const TIERS = [1, 2, 3] as const;
-const SUBJECTS = ['math', 'mongolian', 'physics', 'social'] as const;
+const SUBJECTS = ['math', 'mongolian', 'physics', 'social', 'english'] as const;
 const TARGET = Number(arg('target', '40'));
 const DELAY_MS = Number(arg('delay', '4000')); // Gemini free tier-ийн минутын хязгаарт багтаах завсар
 // Таслалаар хэд хэдэн загвар: эхнийх нь өдрийн квот (free tier) дуусахад дараагийнх руу шилжинэ.

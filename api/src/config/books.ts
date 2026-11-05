@@ -30,6 +30,7 @@ export const BOOK_SUBJECT_TITLES: Record<string, string> = {
   mongolian: 'Монгол хэл',
   physics: 'Физик',
   social: 'Нийгэм судлал',
+  english: 'Англи хэл',
 };
 
 /** api/books/<slug>/book.json */

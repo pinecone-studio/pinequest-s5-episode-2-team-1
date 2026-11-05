@@ -4,7 +4,7 @@ import type { HeardFrom, Reason, SelfLevel } from './onboarding';
 // API ба WebSocket-ийн гэрээ. api/ болон mobile/ хоёулаа зөвхөн `import type`-аар ашиглана
 // (runtime код энд байхгүй тул Metro энэ файлыг bundle хийх шаардлагагүй).
 
-export type Subject = 'math' | 'mongolian' | 'physics' | 'social';
+export type Subject = 'math' | 'mongolian' | 'physics' | 'social' | 'english';
 export type Slot = 'skin' | 'hair' | 'top' | 'bottom' | 'shoes' | 'accessory';
 
 export interface ItemStyle {

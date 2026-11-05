@@ -9,7 +9,7 @@ describe('тулааны хичээл', () => {
   });
 
   it('физикийг public урсгалаас хассан ч хуучин өгөгдлийн төрөлд хэвээр үлдээнэ', () => {
-    expect(ACTIVE_SUBJECTS).toEqual(['math', 'mongolian', 'social']);
+    expect(ACTIVE_SUBJECTS).toEqual(['math', 'mongolian', 'social', 'english']);
     expect(ACTIVE_SUBJECTS).not.toContain('physics');
     expect(SUBJECTS).toContain('physics');
   });
