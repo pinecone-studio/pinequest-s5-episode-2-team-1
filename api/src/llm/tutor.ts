@@ -178,13 +178,21 @@ export function pcmToWav(chunks: Uint8Array[], rate: number): Uint8Array {
   return wav;
 }
 
+/** Токены хязгаарт таслагдсан JSON: дуусаагүй өгүүлбэрийг хасаад хариуг нь авна. */
+function cutReply(raw: string): Partial<TutorReply> {
+  const field = (name: string) => raw.match(new RegExp(`"${name}"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)`))?.[1]?.replace(/\\(.)/g, '$1') ?? '';
+  const reply = field('reply');
+  const end = Math.max(reply.lastIndexOf('.'), reply.lastIndexOf('?'), reply.lastIndexOf('!'));
+  return { heard: field('heard'), reply: end > 0 ? reply.slice(0, end + 1) : reply };
+}
+
 /** Загварын хариуг уншина: JSON эвдэрсэн бол бичвэрийг нь баавгайн хариу гэж үзнэ. */
 export function parseTutorReply(raw: string): TutorReply | null {
   let parsed: Partial<TutorReply> | null = null;
   try {
     parsed = JSON.parse(raw) as Partial<TutorReply>;
   } catch {
-    parsed = { reply: raw };
+    parsed = raw.trimStart().startsWith('{') ? cutReply(raw) : { reply: raw };
   }
   const reply = String(parsed?.reply ?? '').replace(/[*#_`]/g, '').trim();
   if (!reply) return null;

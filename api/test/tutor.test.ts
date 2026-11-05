@@ -127,6 +127,15 @@ describe('parseTutorReply', () => {
     expect(parseTutorReply('Сайн уу')).toEqual({ heard: '', reply: 'Сайн уу', done: false });
   });
 
+  it('токены хязгаарт таслагдсан JSON-оос бүтэн өгүүлбэрүүдийг авна', () => {
+    expect(parseTutorReply('{"heard":"x нь 6 юу?","reply":"Зөв. Яаж олсноо хэл? Тэгээд дараагийн а')).toEqual({
+      heard: 'x нь 6 юу?',
+      reply: 'Зөв. Яаж олсноо хэл?',
+      done: false,
+    });
+    expect(parseTutorReply('{"heard":"x нь 6')).toBeNull();
+  });
+
   it('хоосон хариу бол null, өөр бичгээр сонссоныг харуулахгүй', () => {
     expect(parseTutorReply('{"heard":"x","reply":"  ","done":true}')).toBeNull();
     expect(parseTutorReply('{"heard":"3분의 2 더하기","reply":"Зөв","done":true}')).toEqual({ heard: '', reply: 'Зөв', done: true });
