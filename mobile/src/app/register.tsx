@@ -1,4 +1,4 @@
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useRef, useState } from 'react';
 import type { TextInputInstance } from 'react-native';
 import { errorText } from '@/api/client';
@@ -9,9 +9,12 @@ import { JudgeButton } from '@/components/JudgeButton';
 import { FlowTop } from '@/components/onboarding/FlowTop';
 import { ErrorText, Muted } from '@/components/ui';
 import { S } from '@/i18n/strings';
+import { T } from '@/i18n/teacher';
 
 export default function RegisterScreen() {
   const { signUp } = useAuth();
+  // /register?role=teacher: нэвтрэх дэлгэцийн "Би багш"-аас
+  const teacher = useLocalSearchParams<{ role?: string }>().role === 'teacher';
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
@@ -31,7 +34,7 @@ export default function RegisterScreen() {
     setBusy(true);
     setError('');
     try {
-      await signUp(username, password);
+      await signUp(username, password, teacher);
     } catch (e) {
       setError(errorText(e));
       setFails((n) => n + 1);
@@ -41,10 +44,10 @@ export default function RegisterScreen() {
 
   return (
     <AuthShell
-      title={S.auth.registerTitle}
-      top={<FlowTop step={1} onBack={router.canGoBack() ? () => router.back() : undefined} />}
-      sub={S.auth.registerSub}
-      hello={S.auth.registerHello}
+      title={teacher ? T.registerTitle : S.auth.registerTitle}
+      top={teacher ? null : <FlowTop step={1} onBack={router.canGoBack() ? () => router.back() : undefined} />}
+      sub={teacher ? T.registerSub : S.auth.registerSub}
+      hello={teacher ? T.registerHello : S.auth.registerHello}
       mood={mood}
       shake={fails}
       busy={busy}
@@ -88,7 +91,7 @@ export default function RegisterScreen() {
       <ErrorText>{error}</ErrorText>
       <Button title={S.auth.register} onPress={submit} loading={busy} disabled={!ready} />
       <Muted center>{S.auth.privacy}</Muted>
-      <JudgeButton />
+      {teacher ? null : <JudgeButton />}
     </AuthShell>
   );
 }

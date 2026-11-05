@@ -29,13 +29,14 @@ export interface UserRow {
   created_at: number;
   is_admin: number;
   is_judge: number;
+  is_teacher: number;
   lives: number;
   lives_at: number | null;
   onboarding: string | null;
 }
 
 const USER_COLUMNS =
-  'id, username, display_name, grade, tier, xp, points, streak, last_streak_day, shield_held, shield_bought_day, shield_used_day, equipped, bear_look, created_at, is_admin, is_judge, lives, lives_at, onboarding';
+  'id, username, display_name, grade, tier, xp, points, streak, last_streak_day, shield_held, shield_bought_day, shield_used_day, equipped, bear_look, created_at, is_admin, is_judge, is_teacher, lives, lives_at, onboarding';
 
 /** Тоглоомын бүх боломж нээлттэй: admin эсвэл шүүгч (хувцас, зам, шат, boss, хайрцаг; амь хасагдахгүй, давтлагагүй). */
 export const allAccess = (u: Pick<UserRow, 'is_admin' | 'is_judge'>) => u.is_admin === 1 || u.is_judge === 1;
@@ -205,6 +206,7 @@ export function buildMe(
     today,
     admin: user.is_admin === 1,
     judge: user.is_judge === 1,
+    teacher: user.is_teacher === 1,
     lives: lives.lives,
     maxLives: GAME.LIVES.MAX,
     nextLifeAt: nextLifeAt(lives),

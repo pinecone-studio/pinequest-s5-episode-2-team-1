@@ -16,7 +16,7 @@ interface AuthValue {
   me: Me | null;
   signIn(username: string, password: string): Promise<void>;
   /** анги нь onboarding-ийн асуултад (тэр хүртэл сервер түр утгатай) */
-  signUp(username: string, password: string): Promise<void>;
+  signUp(username: string, password: string, teacher?: boolean): Promise<void>;
   /** Шүүгчээр орох: бүртгэлгүйгээр бүх боломж нээлттэй шинэ бүртгэл (POST /auth/judge). */
   signInAsJudge(): Promise<void>;
   signOut(): Promise<void>;
@@ -112,8 +112,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const signUp = useCallback(
-    async (username: string, password: string) => {
-      await finishAuth(await api<AuthResponse>('/auth/register', { body: { username, password, onboarded: false } }));
+    async (username: string, password: string, teacher = false) => {
+      await finishAuth(await api<AuthResponse>('/auth/register', { body: { username, password, onboarded: false, teacher } }));
     },
     [finishAuth],
   );

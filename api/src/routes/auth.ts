@@ -20,6 +20,8 @@ const registerSchema = z.object({
   // шинэ апп ангийг onboarding-д асуудаг (тэр хүртэл GRADE_MIN); хуучин апп бүртгэлдээ илгээнэ
   grade: z.number().int().min(GAME.GRADE_MIN).max(GAME.GRADE_MAX).default(GAME.GRADE_MIN),
   onboarded: z.boolean().default(true),
+  // багш: асуулга, баавгайн профайлгүй, шууд багшийн хэсэгт орно
+  teacher: z.boolean().default(false),
 });
 
 const loginSchema = z.object({
@@ -48,8 +50,8 @@ authRoutes.post('/register', async (c) => {
   try {
     await db.batch([
       db
-        .prepare('INSERT INTO users (username, password_hash, grade, tier, points, equipped, created_at, onboarding) VALUES (?, ?, ?, ?, ?, ?, ?, ?)')
-        .bind(username, passwordHash, body.grade, tier, GAME.START_POINTS, JSON.stringify(DEFAULT_EQUIPPED), now, body.onboarded ? '{}' : null),
+        .prepare('INSERT INTO users (username, password_hash, grade, tier, points, equipped, created_at, onboarding, is_teacher) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)')
+        .bind(username, passwordHash, body.grade, tier, GAME.START_POINTS, JSON.stringify(DEFAULT_EQUIPPED), now, body.onboarded || body.teacher ? '{}' : null, body.teacher ? 1 : 0),
       db
         .prepare(
           `INSERT INTO point_ledger (user_id, delta, reason, ref_type, ref_id, created_at)
