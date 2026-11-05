@@ -3,6 +3,7 @@ import { errorText } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { ErrorText } from '@/components/ui';
+import { JUDGE_LOGIN } from '@/constants/app';
 import { S } from '@/i18n/strings';
 
 /**
@@ -25,6 +26,7 @@ export function JudgeButton() {
     }
   }
 
+  if (!JUDGE_LOGIN) return null;
   return (
     <>
       <Button title={S.welcome.judge} variant="lime" onPress={judge} loading={busy} />

@@ -1,4 +1,4 @@
-import type { AuthResponse, Me, MeResponse, RecoveryAnswerResponse, RecoveryDto, ServerMsg, TaskDto, AnswerResponse, TaskResult } from '../../shared/types';
+import type { AuthResponse, DuelResponse, Me, MeResponse, RecoveryAnswerResponse, RecoveryDto, ServerMsg, TaskDto, AnswerResponse, TaskResult } from '../../shared/types';
 import { call, HttpError, openDuelSocket, sleep } from './lib';
 
 let failures = 0;
@@ -112,4 +112,19 @@ export class WsPlayer {
   close() {
     this.ws.close();
   }
+}
+
+export async function createAndAccept(creator: AuthResponse, acceptor: AuthResponse, stake: number) {
+  const { duel } = await call<DuelResponse>('POST', '/duels', { token: creator.token, body: { subject: 'math', stake } });
+  await call<DuelResponse>('POST', `/duels/${duel.id}/accept`, { token: acceptor.token });
+  return duel.id;
+}
+
+/** Хоёулаа холбогдож эхний асуулт хүртэл хүлээнэ. */
+export async function connectBoth(duelId: number, a: AuthResponse, b: AuthResponse) {
+  const pb = await WsPlayer.open('B', duelId, b.token);
+  const pa = await WsPlayer.open('A', duelId, a.token);
+  await pa.waitFor('countdown', 5_000);
+  await pb.waitFor('countdown', 5_000);
+  return { pa, pb };
 }
