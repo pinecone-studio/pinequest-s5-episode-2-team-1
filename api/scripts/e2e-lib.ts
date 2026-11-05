@@ -21,9 +21,13 @@ export async function expectError(p: Promise<unknown>, code: string, label: stri
   }
 }
 
+/** Санамсаргүй сүлжээ (TEST-NET-2): e2e-г дахин ажиллуулахад бүртгэл, нэвтрэлтийн хязгаарт (auth_attempts) тоологдохгүй. */
+export const testNet = () => `198.51.100.${Math.floor(Math.random() * 250) + 1}`;
+
 const suffix = Date.now().toString(36).slice(-5);
 export async function register(name: string, grade: number): Promise<AuthResponse> {
-  return call<AuthResponse>('POST', '/auth/register', { body: { username: `${name}_${suffix}`, password: 'e2e-pass-123', grade } });
+  const body = { username: `${name}_${suffix}`, password: 'e2e-pass-123', grade };
+  return call<AuthResponse>('POST', '/auth/register', { body, headers: { 'cf-connecting-ip': testNet() } });
 }
 
 export async function me(token: string): Promise<Me> {

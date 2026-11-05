@@ -1,24 +1,37 @@
 import type { Context } from 'hono';
 import { createMiddleware } from 'hono/factory';
+import { GAME } from '../config/game';
 import { ubDay } from '../domain/time';
 import type { AppEnv } from '../env';
 import { newSessionToken, sha256Hex } from './auth';
 import { ApiError } from './errors';
 
-export async function userIdForToken(db: D1Database, token: string): Promise<number | null> {
+const { SESSION_IDLE_MS, SESSION_RENEW_MS } = GAME.AUTH;
+
+/**
+ * Token-ийн хэрэглэгч. sessions.created_at нь сүүлд сунгасан агшин: SESSION_IDLE_MS ашиглаагүй token хүчингүй,
+ * ашиглагдаж буйг нь SESSION_RENEW_MS тутамд нэг удаа сунгана.
+ */
+export async function userIdForToken(db: D1Database, token: string, now = Date.now()): Promise<number | null> {
+  const tokenHash = await sha256Hex(token);
   const row = await db
-    .prepare('SELECT user_id FROM sessions WHERE token_hash = ?')
-    .bind(await sha256Hex(token))
-    .first<{ user_id: number }>();
-  return row?.user_id ?? null;
+    .prepare('SELECT user_id, created_at FROM sessions WHERE token_hash = ? AND created_at > ?')
+    .bind(tokenHash, now - SESSION_IDLE_MS)
+    .first<{ user_id: number; created_at: number }>();
+  if (!row) return null;
+  if (now - row.created_at > SESSION_RENEW_MS) {
+    await db.prepare('UPDATE sessions SET created_at = ? WHERE token_hash = ?').bind(now, tokenHash).run();
+  }
+  return row.user_id;
 }
 
+/** Шинэ session; энэ хэрэглэгчийн хугацаа нь дууссан хуучин session-уудыг хамт устгана. */
 export async function createSession(db: D1Database, userId: number, now = Date.now()): Promise<string> {
   const token = newSessionToken();
-  await db
-    .prepare('INSERT INTO sessions (token_hash, user_id, created_at) VALUES (?, ?, ?)')
-    .bind(await sha256Hex(token), userId, now)
-    .run();
+  await db.batch([
+    db.prepare('DELETE FROM sessions WHERE user_id = ? AND created_at <= ?').bind(userId, now - SESSION_IDLE_MS),
+    db.prepare('INSERT INTO sessions (token_hash, user_id, created_at) VALUES (?, ?, ?)').bind(await sha256Hex(token), userId, now),
+  ]);
   return token;
 }
 
