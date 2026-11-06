@@ -8,8 +8,8 @@ import { TUTOR } from './tutor';
 export const SUBJECTS = ['math', 'mongolian', 'physics', 'social', 'english'] as const;
 export type Subject = (typeof SUBJECTS)[number];
 
-/** `physics` хуучин DB мөрүүдийг унших үндсэн төрөлд үлдэнэ; шинэ public урсгалууд зөвхөн эдгээрийг авна. */
-export const ACTIVE_SUBJECTS = ['math', 'mongolian', 'social', 'english'] as const;
+/** Шинэ public урсгалууд зөвхөн эдгээрийг авна. */
+export const ACTIVE_SUBJECTS = ['math', 'mongolian', 'physics', 'social', 'english'] as const;
 /** Монгол хэлийг тулаанаас тусдаа нуусан. */
 export const DUEL_SUBJECTS = ['math'] as const;
 

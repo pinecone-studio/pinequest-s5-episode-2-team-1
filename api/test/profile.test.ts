@@ -54,7 +54,7 @@ describe('баавгайн харагдац', () => {
 describe('асуулгад сонгосон хичээл (шинэ төхөөрөмж дээр асуулгыг дахин асуухгүй)', () => {
   it('users.onboarding JSON-оос; байхгүй, буруу бол null', () => {
     expect(onboardingSubject('{"heardFrom":"friends","subject":"math","level":2}')).toBe('math');
-    expect(onboardingSubject('{"heardFrom":"friends","subject":"physics","level":2}')).toBeNull();
+    expect(onboardingSubject('{"heardFrom":"friends","subject":"physics","level":2}')).toBe('physics');
     expect(onboardingSubject('{}')).toBeNull(); // migration 0028-аас өмнөх хэрэглэгч
     expect(onboardingSubject(null)).toBeNull();
     expect(onboardingSubject('{"subject":"chemistry"}')).toBeNull();

@@ -6,6 +6,7 @@
 //   npm run lessons:import                 # сурах замын хичээлийн бодлого: seed/lesson-questions.json (bookRef-тэй)
 //   npm run social:import                  # нийгэм судлалын хичээлийн асуулт: seed/social-lesson-questions.json
 //   npm run english:import                 # англи хэлний хичээлийн асуулт: seed/english-lesson-questions.json
+//   npm run physics:import                 # физикийн хичээлийн асуулт: seed/physics-lesson-questions.json
 //   --url https://...workers.dev           # deploy хийсэн сервер рүү
 //   --model gemini-3.6-flash,gemini-3.5-flash-lite
 //                                          # загвар(ууд): эхнийх нь өдрийн квот дуусахад дараагийнх руу
