@@ -41,28 +41,30 @@ export default function TeacherQuiz() {
   return (
     <Screen contentStyle={styles.content} footer={footer}>
       <BackButton onPress={back} />
-      <QuizHead view={view} />
+      <QuizHead view={view} remainingMs={remainingMs} />
       {error ? <ErrorText>{error}</ErrorText> : null}
 
       {view.phase === 'lobby' ? (
         <Card style={styles.lobby}>
-          <SectionTitle>{T.lobbyTitle}</SectionTitle>
-          <Muted>{T.lobbyHint}</Muted>
-          <Text style={styles.big}>{T.joined(view.players)}</Text>
+          <Text style={styles.count} accessibilityLabel={T.joined(view.players)}>
+            {view.players}
+          </Text>
+          <Text style={styles.countLabel}>{T.joinedBig}</Text>
           <View style={styles.looks}>
             {view.board.map((p, i) => (
-              <Avatar key={i} size={48} border={2} look={p.look} label={p.name} />
+              <View key={i} style={styles.player}>
+                <Avatar size={52} border={2} look={p.look} />
+                <Text style={styles.playerName} numberOfLines={1}>
+                  {p.name}
+                </Text>
+              </View>
             ))}
           </View>
+          <Muted center>{T.lobbyHint}</Muted>
         </Card>
       ) : null}
 
-      {view.phase === 'question' || view.phase === 'reveal' ? (
-        <>
-          <QuizQuestion view={view} remainingMs={remainingMs} />
-          {view.phase === 'question' ? <Text style={styles.count}>{T.answered(view.answered, view.players)}</Text> : null}
-        </>
-      ) : null}
+      {view.phase === 'question' || view.phase === 'reveal' ? <QuizQuestion view={view} /> : null}
 
       {view.phase === 'reveal' ? (
         <>
@@ -83,8 +85,11 @@ export default function TeacherQuiz() {
 
 const styles = StyleSheet.create({
   content: { gap: 14, paddingTop: 8 },
-  lobby: { gap: 10 },
+  lobby: { gap: 6, alignItems: 'center' },
+  count: { fontFamily: fonts.pixelNum, fontSize: 64, lineHeight: 76, color: colors.indigo },
+  countLabel: { fontFamily: fonts.bold, fontSize: 17, color: colors.ink },
+  looks: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'center', marginVertical: 8 },
+  player: { width: 64, alignItems: 'center', gap: 4 },
+  playerName: { fontFamily: fonts.semibold, fontSize: 12, color: colors.ink, textAlign: 'center' },
   big: { fontFamily: fonts.extrabold, fontSize: 24, color: colors.indigo, textAlign: 'center' },
-  looks: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
-  count: { fontFamily: fonts.bold, fontSize: 17, color: colors.ink, textAlign: 'center' },
 });

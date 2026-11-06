@@ -5,6 +5,7 @@ import { ubDay } from './domain/time';
 import type { AppEnv } from './env';
 import { errorHandler } from './lib/errors';
 import { adminRoutes } from './routes/admin';
+import { assignmentRoutes } from './routes/assignments';
 import { authRoutes } from './routes/auth';
 import { bagRoutes } from './routes/bag';
 import { clanRoutes } from './routes/clans';
@@ -60,5 +61,6 @@ app.route('/dashboard', dashboardRoutes);
 app.route('/tutor', tutorRoutes);
 app.route('/teacher', teacherRoutes);
 app.route('/quiz', quizRoutes);
+app.route('/assignments', assignmentRoutes);
 
 export default app;

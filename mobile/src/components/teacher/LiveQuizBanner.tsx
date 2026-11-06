@@ -7,10 +7,14 @@ import { Button } from '@/components/Button';
 import { Card } from '@/components/ui';
 import { colors, fonts } from '@/constants/theme';
 import { T } from '@/i18n/teacher';
+import { AssignmentCards } from './AssignmentCards';
 
 const POLL_MS = 5000;
 
-/** Анги tab дээр: багш тэмцээн эхлүүлсэн бол "Тэмцээнд нэгдэх". Дэлгэц нээлттэй байхад 5 сек тутам шалгана. */
+/**
+ * Анги tab дээр багшаас ирсэн зүйлс: тэмцээн эхэлсэн бол "Тэмцээнд нэгдэх" (дэлгэц нээлттэй байхад 5 сек тутам шалгана),
+ * доор нь багшийн даалгаврууд.
+ */
 export function LiveQuizBanner() {
   const [quizId, setQuizId] = useState<number | null>(null);
   useFocusEffect(
@@ -24,13 +28,17 @@ export function LiveQuizBanner() {
       return () => clearInterval(timer);
     }, []),
   );
-  if (!quizId) return null;
   return (
-    <Card style={styles.card}>
-      <Text style={styles.title}>{T.liveBanner}</Text>
-      <Text style={styles.sub}>{T.liveBannerSub}</Text>
-      <Button title={T.joinLive} variant="lemon" onPress={() => router.push(`/quiz/${quizId}`)} />
-    </Card>
+    <>
+      {quizId ? (
+        <Card style={styles.card}>
+          <Text style={styles.title}>{T.liveBanner}</Text>
+          <Text style={styles.sub}>{T.liveBannerSub}</Text>
+          <Button title={T.joinLive} variant="lemon" onPress={() => router.push(`/quiz/${quizId}`)} />
+        </Card>
+      ) : null}
+      <AssignmentCards />
+    </>
   );
 }
 

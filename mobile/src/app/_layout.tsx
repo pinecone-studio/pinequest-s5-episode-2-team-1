@@ -125,6 +125,7 @@ function RootNavigator() {
           <Stack.Screen name="duel/[id]" options={{ gestureEnabled: false }} />
           <Stack.Screen name="tutor" options={{ animation: 'slide_from_bottom' }} />
           <Stack.Screen name="quiz/[id]" options={{ gestureEnabled: false }} />
+          <Stack.Screen name="assignment/[id]" />
         </Stack.Protected>
         <Stack.Protected guard={!signedIn}>
           <Stack.Screen name="welcome" />

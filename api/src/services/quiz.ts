@@ -15,30 +15,35 @@ import { teacherClass } from './teacher';
 
 const { QUESTIONS, MIN_QUESTIONS, STALE_MS } = TEACHER.QUIZ;
 
-
-/** Тэмцээн эхлүүлнэ (хүлээлгийн өрөө). Ангийн өмнөх дуусаагүй тэмцээнийг хаана. topic өгвөл зөвхөн тэр сэдвээр. */
-export async function startQuiz(db: D1Database, teacher: number, code: string, subject: Subject, topic: string | null, now = Date.now()) {
-  const cls = await teacherClass(db, teacher, code, now);
+/** Ангийн олонх сурагчийн ангийн түвшний санамсаргүй асуултууд (тэмцээн, багшийн даалгавар). topic өгвөл зөвхөн тэр сэдвээр. */
+export async function pickClassQuestions(db: D1Database, clanId: number, subject: Subject, topic: string | null, limit: number): Promise<number[]> {
   const { results: grades } = await db
     .prepare('SELECT u.grade, COUNT(*) AS n FROM clan_members m JOIN users u ON u.id = m.user_id WHERE m.clan_id = ? GROUP BY u.grade')
-    .bind(cls.id)
+    .bind(clanId)
     .all<{ grade: number; n: number }>();
   const grade = modeGrade(grades) ?? GAME.GRADE_MIN;
   const tier = tierForGrade(grade);
   if (!tier) throw new ApiError(500, 'INTERNAL');
-  const { results: picked } = await db
+  const { results } = await db
     .prepare(
       `SELECT id FROM questions WHERE tier = ? AND subject = ? AND flagged = 0 AND (book_ref IS NULL OR grade = ?) AND (?5 IS NULL OR topic = ?5)
        ORDER BY RANDOM() LIMIT ?4`,
     )
-    .bind(tier, subject, grade, QUESTIONS, topic)
+    .bind(tier, subject, grade, limit, topic)
     .all<{ id: number }>();
+  return results.map((r) => r.id);
+}
+
+/** Тэмцээн эхлүүлнэ (хүлээлгийн өрөө). Ангийн өмнөх дуусаагүй тэмцээнийг хаана. topic өгвөл зөвхөн тэр сэдвээр. */
+export async function startQuiz(db: D1Database, teacher: number, code: string, subject: Subject, topic: string | null, now = Date.now()) {
+  const cls = await teacherClass(db, teacher, code, now);
+  const picked = await pickClassQuestions(db, cls.id, subject, topic, QUESTIONS);
   if (picked.length < MIN_QUESTIONS) throw new ApiError(503, 'NO_QUESTIONS', 'Энэ сэдвээр асуулт хүрэлцэхгүй байна');
   const [, inserted] = await db.batch([
     db.prepare("UPDATE quiz_games SET phase = 'finished', phase_at = ? WHERE clan_id = ? AND phase != 'finished'").bind(now, cls.id),
     db
       .prepare('INSERT INTO quiz_games (clan_id, host_id, subject, question_ids, phase_at, created_at) VALUES (?, ?, ?, ?, ?, ?)')
-      .bind(cls.id, teacher, subject, JSON.stringify(picked.map((p) => p.id)), now, now),
+      .bind(cls.id, teacher, subject, JSON.stringify(picked), now, now),
   ]);
   return { quizId: Number(inserted.meta.last_row_id) };
 }

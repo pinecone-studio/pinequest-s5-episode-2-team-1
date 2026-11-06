@@ -1,6 +1,7 @@
 // Багш: бүртгэл, анги нээх, сурагч нэгдэх, сул сэдэв, ангийн тэмцээн (Kahoot маягийн). `npm run e2e -- --only teacher`
 import type { QuizActiveResponse, QuizView, TeacherClassDetailResponse, TeacherClassesResponse } from '../../shared/teacher';
 import type { AuthResponse, MyClanResponse } from '../../shared/types';
+import { runAssignmentChecks } from './e2e-assignments';
 import { check, doTask, expectError, me, register, testNet } from './e2e-lib';
 import { call } from './lib';
 
@@ -49,12 +50,13 @@ export async function runTeacherScenario() {
   check(v.phase === 'question' && v.q === 0 && v.question !== null && v.correctIndex === null && v.players === 2, 'Багш 1-р асуултыг гаргана', v);
   // зөв хариуг мэдэхгүй тул хоёр өөр хариулт өгнө: хоёрын нэг нь л зөв байж болно
   const a1 = await call<QuizView>('POST', `/quiz/${quizId}/answer`, { token: kid.token, body: { q: 0, choice: 0 } });
-  check(a1.phase === 'question' && a1.mine?.correct === null && a1.board.every((b) => b.score === 0), 'Асуулт явж байхад зөв эсэх, оноо нууц', a1);
+  check(a1.phase === 'question' && a1.mine?.correct === null && a1.counts === null && a1.board.every((b) => b.score === 0), 'Асуулт явж байхад зөв эсэх, оноо нууц', a1);
   await call<QuizView>('POST', `/quiz/${quizId}/answer`, { token: kid.token, body: { q: 0, choice: 1 } });
   const a2 = await call<QuizView>('POST', `/quiz/${quizId}/answer`, { token: kid2.token, body: { q: 0, choice: 1 } });
   check(a2.phase === 'reveal' && a2.correctIndex !== null, 'Бүгд хариулбал шууд зөв хариу гарна', a2.phase);
   const k1 = await call<QuizView>('GET', `/quiz/${quizId}`, { token: kid.token });
   check(k1.mine?.choice === 0, 'Эхний хариулт л тоологдоно', k1.mine);
+  check(k1.counts?.[0] === 1 && k1.counts?.[1] === 1 && k1.counts.length === 4, 'Хариулт бүрийг хэдэн хүн сонгосныг харуулна', k1.counts);
   check(k1.board.filter((b) => b.score > 0).length === (k1.correctIndex! <= 1 ? 1 : 0) && k1.board[0].score >= k1.board[1].score, 'Leaderboard оноогоор эрэмбэлэгдэнэ', k1.board);
   await expectError(call('POST', `/quiz/${quizId}/answer`, { token: kid.token, body: { q: 0, choice: 2 } }), 'TASK_CLOSED', 'Хариу гарсны дараа хариулахгүй');
 
@@ -66,6 +68,8 @@ export async function runTeacherScenario() {
   v = await call<QuizView>('POST', `/quiz/${quizId}/next`, { token: t.token });
   check(v.phase === 'finished' && v.question === null, 'Тэмцээн дуусна', v.phase);
   check((await call<QuizActiveResponse>('GET', '/quiz/active', { token: kid.token })).quizId === null, 'Дууссан тэмцээн сурагчдад харагдахгүй');
+
+  await runAssignmentChecks(t, kid, kid2, outsider, cls.code);
 
   console.log('\n— Сүүлчийн сурагч гарсан ч анги үлдэнэ');
   await call('POST', '/clans/mine/leave', { token: kid.token });
