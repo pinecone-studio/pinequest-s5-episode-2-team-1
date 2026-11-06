@@ -1,27 +1,38 @@
 import { clanTitle } from '@shared/clan';
 import type { QuizActiveResponse, StudentStatDto, TeacherClassDetailResponse, TopicStatDto } from '@shared/teacher';
-import type { Subject } from '@shared/types';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { api, errorText } from '@/api/client';
-import { Button } from '@/components/Button';
+import { useAuth } from '@/auth/AuthContext';
+import { SegmentedTabs } from '@/components/SegmentedTabs';
+import { AssignForm } from '@/components/teacher/AssignForm';
+import { AssignmentList } from '@/components/teacher/AssignmentList';
+import { ClassCode } from '@/components/teacher/ClassCode';
+import { ClassOverview } from '@/components/teacher/ClassOverview';
+import { StreakBoard } from '@/components/teacher/StreakBoard';
 import { StudentRow } from '@/components/teacher/StudentRow';
-import { WeakTopics } from '@/components/teacher/WeakTopics';
-import { BackButton, Card, Chip, ErrorText, Muted, Screen, SectionTitle } from '@/components/ui';
-import { colors, fonts, radius } from '@/constants/theme';
+import { BackButton, ErrorText, Muted, Screen, SectionTitle } from '@/components/ui';
+import { colors, fonts } from '@/constants/theme';
 import { T } from '@/i18n/teacher';
-import { formatClanCode } from '@/lib/clan';
 import { confirm } from '@/lib/confirm';
 import { goBack } from '@/lib/nav';
 
-const QUIZ_SUBJECTS: Subject[] = ['math', 'mongolian'];
+type Tab = 'overview' | 'tasks' | 'students';
+const TABS: { value: Tab; label: string }[] = [
+  { value: 'overview', label: T.tabOverview },
+  { value: 'tasks', label: T.tabTasks },
+  { value: 'students', label: T.tabStudents },
+];
 
-/** Нэг анги: нэгдэх код, тэмцээн эхлүүлэх, ангийн сул сэдэв, сурагчдын явц. */
+/** Нэг анги: сурагчгүй бол нэгдэх код. Сурагчтай бол Тойм (тэмцээн, сул сэдэв) · Даалгавар · Сурагчид (дараалал). */
 export default function TeacherClass() {
   const { code } = useLocalSearchParams<{ code: string }>();
+  const { me } = useAuth();
   const [data, setData] = useState<TeacherClassDetailResponse | null>(null);
-  const [subject, setSubject] = useState<Subject>('math');
+  const [tab, setTab] = useState<Tab>('overview');
+  // сул сэдвийн "Даалгавар өгөх"-өөс ирвэл тэр сэдэв сонгогдоно
+  const [taskTopic, setTaskTopic] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -39,11 +50,11 @@ export default function TeacherClass() {
     }, [load]),
   );
 
-  async function start(s: Subject, topic: TopicStatDto | null) {
+  async function run(action: () => Promise<void>) {
     setBusy(true);
     try {
-      const { quizId } = await api<QuizActiveResponse>(`/teacher/classes/${code}/quiz`, { body: { subject: s, topic: topic?.topic ?? null } });
-      router.push(`/teacher/quiz/${quizId}`);
+      await action();
+      setError('');
     } catch (e) {
       setError(errorText(e));
     } finally {
@@ -51,58 +62,90 @@ export default function TeacherClass() {
     }
   }
 
+  const start = (topic: TopicStatDto | null) =>
+    run(async () => {
+      // шинэ тэмцээн явж буйг нь дуусгадаг тул асууна
+      if (data?.class.liveQuizId && !(await confirm(T.newQuizConfirm, T.startQuiz))) return;
+      const { quizId } = await api<QuizActiveResponse>(`/teacher/classes/${code}/quiz`, {
+        body: { subject: topic?.subject ?? data?.subject ?? 'math', topic: topic?.topic ?? null },
+      });
+      router.push(`/teacher/quiz/${quizId}`);
+    });
+
+  const give = (days: number) =>
+    run(async () => {
+      await api(`/teacher/classes/${code}/assignments`, { body: { topic: taskTopic, days } });
+      await load();
+    });
+
   async function remove(s: StudentStatDto) {
     if (!(await confirm(T.removeConfirm(s.name), T.remove))) return;
-    try {
-      setData(await api<TeacherClassDetailResponse>(`/teacher/classes/${code}/students/${s.code}`, { method: 'DELETE' }));
-    } catch (e) {
-      setError(errorText(e));
-    }
+    await run(async () => setData(await api<TeacherClassDetailResponse>(`/teacher/classes/${code}/students/${s.code}`, { method: 'DELETE' })));
   }
 
   const cls = data?.class;
+  if (!data || !cls) {
+    return (
+      <Screen contentStyle={styles.content}>
+        <BackButton onPress={() => goBack('/teacher')} />
+        {error ? <ErrorText>{error}</ErrorText> : <ActivityIndicator color={colors.violet} />}
+      </Screen>
+    );
+  }
+
+  const empty = cls.students === 0;
+  const pick = (t: Tab) => {
+    setTab(t);
+    setError('');
+  };
   return (
     <Screen contentStyle={styles.content} onRefresh={() => void load()}>
       <BackButton onPress={() => goBack('/teacher')} />
-      {!data || !cls ? (
-        error ? <ErrorText>{error}</ErrorText> : <ActivityIndicator color={colors.violet} />
-      ) : (
+      <Text accessibilityRole="header" style={styles.title}>
+        {clanTitle(cls.name)}
+      </Text>
+      {empty ? (
         <>
-          <Text accessibilityRole="header" style={styles.title}>
-            {clanTitle(cls.name)}
-          </Text>
-          <Card style={styles.codeCard}>
-            <Text style={styles.codeLabel}>{T.codeTitle}</Text>
-            <Text selectable style={styles.code} accessibilityLabel={cls.code.split('').join(' ')}>
-              {formatClanCode(cls.code)}
-            </Text>
-            <Text style={styles.codeHint}>{T.codeHint}</Text>
-          </Card>
+          <ClassCode name={clanTitle(cls.name)} code={cls.code} big />
+          <Muted center>{T.studentsEmpty}</Muted>
+        </>
+      ) : (
+        <SegmentedTabs value={tab} options={TABS} onChange={pick} label={T.tabsLabel} />
+      )}
 
-          <Card style={styles.quiz}>
-            <SectionTitle>{T.quizTitle}</SectionTitle>
-            <Muted>{T.quizSub}</Muted>
-            <View style={styles.chips}>
-              {QUIZ_SUBJECTS.map((s) => (
-                <Chip key={s} label={T.subjects[s]} selected={s === subject} onPress={() => setSubject(s)} />
-              ))}
-            </View>
-            {error ? <ErrorText>{error}</ErrorText> : null}
-            <Button title={T.startQuiz} variant="lemon" loading={busy} disabled={cls.students === 0} onPress={() => void start(subject, null)} />
-            {cls.liveQuizId ? <Button title={T.openLive} variant="secondary" onPress={() => router.push(`/teacher/quiz/${cls.liveQuizId}`)} /> : null}
-          </Card>
+      {!empty && tab === 'overview' ? (
+        <ClassOverview
+          data={data}
+          busy={busy}
+          error={error}
+          onStart={(t) => void start(t)}
+          onTask={(t) => {
+            setTaskTopic(t.topic);
+            pick('tasks');
+          }}
+        />
+      ) : null}
 
-          <WeakTopics topics={data.weakTopics} busy={busy || cls.students === 0} onQuiz={(t) => void start(t.subject, t)} />
+      {!empty && tab === 'tasks' ? (
+        <>
+          <AssignForm topics={data.weakTopics} topic={taskTopic} onTopic={setTaskTopic} busy={busy} error={error} onGive={(d) => void give(d)} />
+          <AssignmentList items={data.assignments} today={me?.today ?? new Date().toISOString().slice(0, 10)} />
+        </>
+      ) : null}
 
-          <SectionTitle>{`${T.studentsTitle} · ${T.students(cls.students, cls.maxStudents)}`}</SectionTitle>
-          {data.students.length === 0 ? <Muted>{T.studentsEmpty}</Muted> : null}
+      {!empty && tab === 'students' ? (
+        <>
+          <StreakBoard students={data.students} />
+          <SectionTitle>{`${T.studentsTitle} · ${cls.students}/${cls.maxStudents}`}</SectionTitle>
+          {error ? <ErrorText>{error}</ErrorText> : null}
           <View style={styles.list}>
             {data.students.map((s) => (
               <StudentRow key={s.code} s={s} onRemove={() => void remove(s)} />
             ))}
           </View>
+          <ClassCode name={clanTitle(cls.name)} code={cls.code} big={false} />
         </>
-      )}
+      ) : null}
     </Screen>
   );
 }
@@ -110,11 +153,5 @@ export default function TeacherClass() {
 const styles = StyleSheet.create({
   content: { gap: 14, paddingTop: 8 },
   title: { fontFamily: fonts.extrabold, fontSize: 28, color: colors.ink },
-  codeCard: { alignItems: 'center', gap: 6, backgroundColor: colors.indigo, borderRadius: radius.card },
-  codeLabel: { fontFamily: fonts.bold, fontSize: 15, color: colors.lavender },
-  code: { fontFamily: fonts.pixelNum, fontSize: 44, lineHeight: 56, letterSpacing: 4, color: colors.lemon },
-  codeHint: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 20, color: colors.white, textAlign: 'center' },
-  quiz: { gap: 12 },
-  chips: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   list: { gap: 8 },
 });

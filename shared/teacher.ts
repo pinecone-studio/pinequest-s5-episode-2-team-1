@@ -1,4 +1,5 @@
 // Багшийн хэсэг ба ангийн шууд тэмцээний (Kahoot маягийн) API гэрээ. api ба mobile хоёулаа `import type`-аар хэрэглэнэ.
+import type { AssignmentDto } from './assignment';
 import type { BearLook, Subject } from './types';
 
 /** Багшийн нэг анги (жагсаалтад). code: сурагчид нэгдэх 6 оронтой код. */
@@ -12,6 +13,8 @@ export interface TeacherClassDto {
 }
 
 export interface TeacherClassesResponse {
+  /** Багшийн заадаг хичээл; сонгоогүй бол null (нүүр эхлээд хичээл асууна) */
+  subject: Subject | null;
   classes: TeacherClassDto[];
 }
 
@@ -24,6 +27,10 @@ export interface TopicStatDto {
   correct: number;
   /** 0..100 */
   percent: number;
+  /** Энэ сэдвээр хариулсан сурагч */
+  students: number;
+  /** Үүнээс STRUGGLE_PERCENT-аас доош зөвтэй (алдаж байгаа) сурагч */
+  struggling: number;
 }
 
 export interface StudentStatDto {
@@ -36,13 +43,18 @@ export interface StudentStatDto {
   percent: number | null;
   /** Хамгийн их алддаг сэдэв (хангалттай хариулаагүй бол null) */
   weakTopic: string | null;
+  /** Өдөр дараалан даалгавар хийсэн тоо (тасарсан бол 0) */
+  streak: number;
 }
 
 export interface TeacherClassDetailResponse {
   class: TeacherClassDto;
+  subject: Subject | null;
   students: StudentStatDto[];
-  /** Ангийн хамгийн их алддаг сэдвүүд (муу нь эхэндээ) */
+  /** Ангийн хамгийн их алддаг сэдвүүд (муу нь эхэндээ): өдрийн даалгавар, тэмцээн, багшийн даалгавар нийлээд */
   weakTopics: TopicStatDto[];
+  /** Сүүлийн даалгаврууд (шинэ нь эхэндээ) */
+  assignments: AssignmentDto[];
 }
 
 export type QuizPhase = 'lobby' | 'question' | 'reveal' | 'finished';
@@ -72,6 +84,8 @@ export interface QuizView {
   correctIndex: number | null;
   explanation: string | null;
   answered: number;
+  /** Хариулт бүрийг хэдэн хүн сонгосон (reveal, finished үед) */
+  counts: number[] | null;
   players: number;
   isHost: boolean;
   joined: boolean;

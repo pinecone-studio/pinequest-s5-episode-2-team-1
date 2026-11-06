@@ -56,12 +56,13 @@ export async function quizView(db: D1Database, me: number, id: number, now = Dat
          WHERE p.game_id = ?1 GROUP BY u.id ORDER BY p.joined_at`,
       )
       .bind(id, g.q),
-    db.prepare('SELECT COUNT(*) AS n FROM quiz_answers WHERE game_id = ? AND q = ?').bind(id, g.q),
+    db.prepare('SELECT choice, COUNT(*) AS n FROM quiz_answers WHERE game_id = ? AND q = ? GROUP BY choice').bind(id, g.q),
     db.prepare('SELECT choice, correct, points FROM quiz_answers WHERE game_id = ? AND q = ? AND user_id = ?').bind(id, g.q, me),
     db.prepare('SELECT prompt, options, correct_index, explanation FROM questions WHERE id = ?').bind(ids[g.q] ?? 0),
   ]);
   const players = board.results as BoardRow[];
-  const n = (answered.results[0] as { n: number }).n;
+  const picks = answered.results as { choice: number; n: number }[];
+  const n = picks.reduce((s, r) => s + r.n, 0);
   const phase = effectivePhase(g.phase, g.phase_at, n, players.length, now);
   const qRow = g.q >= 0 ? (question.results[0] as QuestionRow | undefined) : undefined;
   const my = mine.results[0] as MineRow | undefined;
@@ -82,6 +83,7 @@ export async function quizView(db: D1Database, me: number, id: number, now = Dat
     correctIndex: shown && qRow ? qRow.correct_index : null,
     explanation: shown && qRow ? qRow.explanation : null,
     answered: n,
+    counts: shown && qRow ? (JSON.parse(qRow.options) as string[]).map((_, i) => picks.find((r) => r.choice === i)?.n ?? 0) : null,
     players: players.length,
     isHost: g.host_id === me,
     joined: players.some((p) => p.id === me),
