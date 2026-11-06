@@ -55,11 +55,15 @@ export function tutorSystemPrompt(ctx: TutorContext): string {
         : 'Хүүхдийн сүүлд алдсан бодлогууд. Аль сэдвээс эхлэхийг хүүхдээр сонгуулаад тэр сэдвийг заа:\n\n' +
           ctx.questions.map((q, i) => describeQuestion(q, i + 1)).join('\n\n');
 
+  const english = ctx.questions.some((q) => q.subject === 'english')
+    ? '\nАнгли хэлний бодлого бол тайлбараа монголоор бичээд, англи үг, өгүүлбэрийг жишээ болгон англиар бич.'
+    : '';
+
   // Баавгайн хариу самбар дээр бичгээр гарна: томьёог тэмдэгтээр бичүүлнэ, "икс нэмэх найм" гэвэл уншихад хэцүү.
   return `Чи бол KUMA апп-ын найрсаг, тэвчээртэй баавгай багш. ${ctx.grade}-р ангийн хүүхдэд алдсан бодлогоо ойлгоход тусална.
 Хүүхэд дуугаар асууна; чиний хариулт самбар дээр бичгээр харагдана.
 
-ХЭЛ: үргэлж зөвхөн монгол хэлээр хариул, хүүхэд өөр хэлээр ярьсан ч. (Always answer only in Mongolian.)
+ХЭЛ: үргэлж зөвхөн монгол хэлээр хариул, хүүхэд өөр хэлээр ярьсан ч. (Always answer only in Mongolian.)${english}
 
 Хэлбэр:
 - Нэг ээлжинд 1–3 богино өгүүлбэр, дараа нь хүүхдэд асуулт тавьж үг өг. Лекц бүү унш.
@@ -94,8 +98,8 @@ export function tutorSystemPrompt(ctx: TutorContext): string {
 - Хүүхдийн хэлсэн нь тодорхойгүй бол таамаглахгүй, дахин асуу.
 
 Хариуны талбарууд:
-- heard: хүүхдийн энэ ээлжинд яг хэлсэн үгс, зөв бичгийн дүрмээр; тоо, томьёог цифр, тэмдэгтээр. Бичлэг сонсогдохгүй
-  бол хоосон. Бичлэггүй ээлжинд хоосон.
+- heard: хүүхдийн энэ ээлжинд яг хэлсэн үгс, хэлсэн хэлээр нь, зөв бичгийн дүрмээр; тоо, томьёог цифр, тэмдэгтээр.
+  Бичлэг сонсогдохгүй бол хоосон. Бичлэггүй ээлжинд хоосон.
 - reply: баавгайн хариулт.
 - done: хичээл дууссан эсэх.
 - Нэр, сургууль, утас, хаяг зэрэг хувийн мэдээлэл бүү асуу. Насанд нь тохирохгүй зүйл бүү ярь.
@@ -117,12 +121,17 @@ export const TUTOR_LAST_TURN = '\n\nЭнэ бол сүүлийн хариулт:
 /**
  * Чимээтэй үед загвар хүүхдийн яриаг солонгос, герман гэх мэтээр бичиж болно. Баавгай дууг өөрөө сонсдог тул
  * ойлголтод нөлөөлөхгүй, харин дэлгэцэнд хүүхдийг төөрөгдүүлэх тул ийм бичвэрийг харуулахгүй.
- * "5x - 8" шиг цөөн латин үсэгтэйг үлдээнэ.
+ * "5x - 8" шиг цөөн латин үсэгтэйг үлдээнэ. Англи хэлний ярилцлагад (latinOk) латин бичвэр нь зөв хариулт.
  */
-export function isForeignTranscript(text: string): boolean {
+export function isForeignTranscript(text: string, latinOk = false): boolean {
   const letters = text.match(/\p{L}/gu)?.length ?? 0;
-  const cyrillic = text.match(/\p{Script=Cyrillic}/gu)?.length ?? 0;
-  return letters >= 3 && cyrillic / letters < 0.3;
+  const known = (text.match(/\p{Script=Cyrillic}/gu)?.length ?? 0) + (latinOk ? (text.match(/\p{Script=Latin}/gu)?.length ?? 0) : 0);
+  return letters >= 3 && known / letters < 0.3;
+}
+
+/** Хүүхдэд харуулах сонссон үг: түүхэнд бүтнээрээ үлдэнэ, энд зөвхөн дэлгэцийг шүүнэ. */
+export function shownHeard(heard: string, questions: readonly MissedQuestion[]): string {
+  return isForeignTranscript(heard, questions.some((q) => q.subject === 'english')) ? '' : heard;
 }
 
 export type TutorPart = { text: string } | { inlineData: { mimeType: string; data: string } };
@@ -196,8 +205,7 @@ export function parseTutorReply(raw: string): TutorReply | null {
   }
   const reply = String(parsed?.reply ?? '').replace(/[*#_`]/g, '').trim();
   if (!reply) return null;
-  const heard = String(parsed?.heard ?? '').trim();
-  return { heard: isForeignTranscript(heard) ? '' : heard, reply, done: parsed?.done === true };
+  return { heard: String(parsed?.heard ?? '').trim(), reply, done: parsed?.done === true };
 }
 
 /** Gemini түр дүүрсэн (429, 503): retry дууссан ч хариу аваагүй. */

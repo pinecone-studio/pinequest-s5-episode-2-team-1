@@ -6,6 +6,7 @@ import {
   type MissedQuestion,
   parseTutorReply,
   pcmToWav,
+  shownHeard,
   TUTOR_LAST_TURN,
   TutorBusyError,
   tutorKickoff,
@@ -46,6 +47,11 @@ describe('tutorSystemPrompt', () => {
     expect(p).toContain('Хүүхдийн хариулт: алгассан');
     expect(p).toContain('2. [Физик]');
     expect(p).toContain('Аль сэдвээс эхлэхийг');
+  });
+
+  it('англи хэлний бодлогод англи жишээ бичихийг зөвшөөрнө, бусад хичээлд үгүй', () => {
+    expect(tutorSystemPrompt({ grade: 8, questions: [{ ...q, subject: 'english' }], focused: true })).toContain('англи үг, өгүүлбэрийг жишээ');
+    expect(tutorSystemPrompt({ grade: 8, questions: [q], focused: true })).not.toContain('англи үг, өгүүлбэрийг жишээ');
   });
 
   it('алдсан бодлогогүй үед сэдвийг хүүхдээс асууна', () => {
@@ -136,9 +142,12 @@ describe('parseTutorReply', () => {
     expect(parseTutorReply('{"heard":"x нь 6')).toBeNull();
   });
 
-  it('хоосон хариу бол null, өөр бичгээр сонссоныг харуулахгүй', () => {
+  it('хоосон хариу бол null', () => {
     expect(parseTutorReply('{"heard":"x","reply":"  ","done":true}')).toBeNull();
-    expect(parseTutorReply('{"heard":"3분의 2 더하기","reply":"Зөв","done":true}')).toEqual({ heard: '', reply: 'Зөв', done: true });
+  });
+
+  it('өөр бичгээр сонссон ч түүхэнд үлдээнэ: зөвхөн дэлгэц шүүнэ', () => {
+    expect(parseTutorReply('{"heard":"She goes to school","reply":"Зөв","done":false}')?.heard).toBe('She goes to school');
   });
 });
 
@@ -182,6 +191,21 @@ describe('askTutor', () => {
     const fetchImpl = vi.fn(async () => new Response('bad', { status: 400 }));
     await expect(askTutor('KEY', 'm', body, fetchImpl as unknown as typeof fetch)).rejects.toThrow('HTTP 400');
     expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('shownHeard', () => {
+  const english: MissedQuestion = { ...q, subject: 'english' };
+
+  it('англи хэлний ярилцлагад англи яриаг харуулна', () => {
+    expect(shownHeard('She goes to school', [english])).toBe('She goes to school');
+    expect(shownHeard('She goes to school', [q, english])).toBe('She goes to school');
+  });
+
+  it('бусад хичээлд латин, бүх хичээлд өөр бичгийг харуулахгүй', () => {
+    expect(shownHeard('She goes to school', [q])).toBe('');
+    expect(shownHeard('더하기는 곱하기를 왜', [english])).toBe('');
+    expect(shownHeard('Би ойлгохгүй байна', [q])).toBe('Би ойлгохгүй байна');
   });
 });
 
