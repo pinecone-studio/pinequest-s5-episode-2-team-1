@@ -8,6 +8,7 @@ import { socketUserId } from '../lib/session';
 import {
   askTutor,
   pcmToWav,
+  shownHeard,
   TUTOR_LAST_TURN,
   TutorBusyError,
   type TutorContent,
@@ -165,7 +166,8 @@ async function relay(
       }
       replies++;
       history.push({ role: 'user', parts: [{ text: out.heard || said }] }, { role: 'model', parts: [{ text: out.reply }] });
-      if (out.heard) send({ type: 'kid_text', text: out.heard });
+      const shown = shownHeard(out.heard, ctx.questions);
+      if (shown) send({ type: 'kid_text', text: shown });
       send({ type: 'bear_text', text: out.reply });
       send({ type: 'turn_end' });
       const readMs = Math.min(out.reply.length * GAME.TUTOR.READ_MS_PER_CHAR, GAME.TUTOR.READ_MAX_MS);
