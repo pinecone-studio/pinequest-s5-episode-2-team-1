@@ -37,13 +37,21 @@ export async function runTeacherScenario() {
 
   console.log('\n— Ангийн тэмцээн');
   check((await call<QuizActiveResponse>('GET', '/quiz/active', { token: kid.token })).quizId === null, 'Эхэндээ тэмцээнгүй');
-  const { quizId } = await call<QuizActiveResponse>('POST', `/teacher/classes/${cls.code}/quiz`, { token: t.token, body: { subject: 'math' } });
+  const tok = { token: t.token };
+  check((await call<TeacherClassesResponse>('GET', '/teacher/classes', tok)).subject === null, 'Шинэ багш хичээлээ сонгоогүй');
+  await expectError(call('POST', `/teacher/classes/${cls.code}/quiz`, { ...tok, body: {} }), 'BAD_REQUEST', 'Хичээлгүй багш тэмцээн эхлүүлэхгүй');
+  await expectError(call('POST', `/teacher/classes/${cls.code}/assignments`, { ...tok, body: { days: 3 } }), 'BAD_REQUEST', 'Хичээлгүй багш даалгавар өгөхгүй');
+  await expectError(call('PUT', '/teacher/subject', { ...tok, body: { subject: 'physics' } }), 'BAD_REQUEST', 'Идэвхгүй хичээл сонгохгүй');
+  check((await call<TeacherClassesResponse>('PUT', '/teacher/subject', { ...tok, body: { subject: 'math' } })).subject === 'math', 'Хичээлээ сонгоно');
+  // өөр хичээл илгээсэн ч тэмцээн багшийн хичээлээр
+  const { quizId } = await call<QuizActiveResponse>('POST', `/teacher/classes/${cls.code}/quiz`, { ...tok, body: { subject: 'english' } });
   check((await call<QuizActiveResponse>('GET', '/quiz/active', { token: kid.token })).quizId === quizId, 'Сурагч тэмцээнээ олно');
   const outsider = await register('tk_c', 7);
   await expectError(call('POST', `/quiz/${quizId}/join`, { token: outsider.token }), 'FORBIDDEN', 'Өөр ангийн хүүхэд нэгдэхгүй');
   let v = await call<QuizView>('POST', `/quiz/${quizId}/join`, { token: kid.token });
   await call<QuizView>('POST', `/quiz/${quizId}/join`, { token: kid2.token });
   check(v.phase === 'lobby' && v.joined && !v.isHost, 'Хүлээлгийн өрөөнд нэгдэнэ');
+  check(v.subject === 'math', 'Тэмцээн зөвхөн багшийн хичээлээр', v.subject);
   await expectError(call('POST', `/quiz/${quizId}/next`, { token: kid.token }), 'FORBIDDEN', 'Сурагч тэмцээнийг удирдахгүй');
 
   v = await call<QuizView>('POST', `/quiz/${quizId}/next`, { token: t.token });

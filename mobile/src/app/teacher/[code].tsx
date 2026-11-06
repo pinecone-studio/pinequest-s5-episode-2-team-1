@@ -67,7 +67,7 @@ export default function TeacherClass() {
       // шинэ тэмцээн явж буйг нь дуусгадаг тул асууна
       if (data?.class.liveQuizId && !(await confirm(T.newQuizConfirm, T.startQuiz))) return;
       const { quizId } = await api<QuizActiveResponse>(`/teacher/classes/${code}/quiz`, {
-        body: { subject: topic?.subject ?? data?.subject ?? 'math', topic: topic?.topic ?? null },
+        body: { topic: topic?.topic ?? null },
       });
       router.push(`/teacher/quiz/${quizId}`);
     });

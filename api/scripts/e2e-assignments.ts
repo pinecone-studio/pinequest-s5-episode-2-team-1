@@ -1,6 +1,6 @@
 // Багшийн хичээл, даалгавар, дарааллын эрэмбэ. runTeacherScenario дотроос (`npm run e2e -- --only teacher`).
 import type { AssignmentsResponse, AssignmentView } from '../../shared/assignment';
-import type { TeacherClassDetailResponse, TeacherClassesResponse } from '../../shared/teacher';
+import type { TeacherClassDetailResponse } from '../../shared/teacher';
 import type { AuthResponse } from '../../shared/types';
 import { check, expectError } from './e2e-lib';
 import { call } from './lib';
@@ -9,10 +9,6 @@ import { call } from './lib';
 export async function runAssignmentChecks(t: AuthResponse, kid: AuthResponse, kid2: AuthResponse, outsider: AuthResponse, code: string) {
   console.log('\n— Багшийн хичээл, даалгавар');
   const tok = { token: t.token };
-  check((await call<TeacherClassesResponse>('GET', '/teacher/classes', tok)).subject === null, 'Шинэ багш хичээлээ сонгоогүй');
-  await expectError(call('POST', `/teacher/classes/${code}/assignments`, { ...tok, body: { days: 3 } }), 'BAD_REQUEST', 'Хичээлгүй багш даалгавар өгөхгүй');
-  await expectError(call('PUT', '/teacher/subject', { ...tok, body: { subject: 'physics' } }), 'BAD_REQUEST', 'Идэвхгүй хичээл сонгохгүй');
-  check((await call<TeacherClassesResponse>('PUT', '/teacher/subject', { ...tok, body: { subject: 'math' } })).subject === 'math', 'Хичээлээ сонгоно');
   await expectError(call('POST', `/teacher/classes/${code}/assignments`, { ...tok, body: { days: 2 } }), 'BAD_REQUEST', 'Зөвхөн 1, 3, 7 хоног');
 
   const { id } = await call<{ id: number }>('POST', `/teacher/classes/${code}/assignments`, { ...tok, body: { topic: null, days: 3 } });
