@@ -12,7 +12,7 @@ const LEVELS: Record<Difficulty, string> = {
   3: 'advanced level: analyse, compare or reason across several ideas in a realistic case',
 };
 
-const SUBJECT_NAMES: Record<Subject, string> = { math: 'Математик', mongolian: 'Монгол хэл', physics: 'Физик', social: 'Нийгэм судлал' };
+const SUBJECT_NAMES: Record<Subject, string> = { math: 'Математик', mongolian: 'Монгол хэл', physics: 'Физик', social: 'Нийгэм судлал', english: 'Англи хэл' };
 
 const SYSTEM = `You write multiple-choice quiz questions for students of Mongolian general secondary schools (ЕБС).
 

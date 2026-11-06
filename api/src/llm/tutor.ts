@@ -4,7 +4,7 @@ import { GAME, type Subject } from '../config/game';
 
 const BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
 
-const SUBJECT_NAMES: Record<Subject, string> = { math: 'Математик', mongolian: 'Монгол хэл', physics: 'Физик', social: 'Нийгэм судлал' };
+const SUBJECT_NAMES: Record<Subject, string> = { math: 'Математик', mongolian: 'Монгол хэл', physics: 'Физик', social: 'Нийгэм судлал', english: 'Англи хэл' };
 const LETTERS = ['A', 'B', 'C', 'D'];
 
 /** Хүүхдийн хариулсан (ихэвчлэн алдсан) бодлого. */

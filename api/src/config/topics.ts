@@ -57,6 +57,14 @@ export const TOPICS: Record<Tier, Record<Subject, readonly Topic[]>> = {
       { id: 'law_basics', name: 'Хууль гэж юу вэ' },
       { id: 'self_government', name: 'Хамтын удирдлага, шийдвэр' },
     ],
+    english: [
+      { id: 'vocabulary', name: 'Үгийн сан' },
+      { id: 'tenses', name: 'Үйл үгийн цаг' },
+      { id: 'grammar', name: 'Өгүүлбэрийн бүтэц, үгийн хэлбэр' },
+      { id: 'reading', name: 'Уншиж ойлгох' },
+      { id: 'communication', name: 'Харилцааны хэллэг' },
+      { id: 'writing', name: 'Бичих, зөв бичих дүрэм' },
+    ],
   },
   2: {
     math: [
@@ -105,6 +113,14 @@ export const TOPICS: Record<Tier, Record<Subject, readonly Topic[]>> = {
       { id: 'local_government', name: 'Орон нутгийн удирдлага' },
       { id: 'courts', name: 'Шүүх ба шийдвэр гаргалт' },
     ],
+    english: [
+      { id: 'vocabulary', name: 'Үгийн сан' },
+      { id: 'tenses', name: 'Үйл үгийн цаг' },
+      { id: 'grammar', name: 'Өгүүлбэрийн бүтэц, үгийн хэлбэр' },
+      { id: 'reading', name: 'Уншиж ойлгох' },
+      { id: 'communication', name: 'Харилцааны хэллэг' },
+      { id: 'writing', name: 'Бичих, зөв бичих дүрэм' },
+    ],
   },
   3: {
     math: [
@@ -149,6 +165,14 @@ export const TOPICS: Record<Tier, Record<Subject, readonly Topic[]>> = {
       { id: 'democracy', name: 'Ардчилал, засаглал, сонгууль' },
       { id: 'civil_society', name: 'Иргэний нийгэм, хэвлэл мэдээлэл' },
       { id: 'foreign_relations', name: 'Монгол Улсын гадаад харилцаа' },
+    ],
+    english: [
+      { id: 'vocabulary', name: 'Үгийн сан' },
+      { id: 'tenses', name: 'Үйл үгийн цаг' },
+      { id: 'grammar', name: 'Өгүүлбэрийн бүтэц, үгийн хэлбэр' },
+      { id: 'reading', name: 'Уншиж ойлгох' },
+      { id: 'communication', name: 'Харилцааны хэллэг' },
+      { id: 'writing', name: 'Бичих, зөв бичих дүрэм' },
     ],
   },
 };
