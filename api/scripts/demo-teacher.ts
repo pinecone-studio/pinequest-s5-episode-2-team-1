@@ -29,6 +29,7 @@ for (const [name, fur, tasks] of KIDS) {
   for (const ok of tasks) await doTask(k.token, 'math', ok);
   kids.push(k);
 }
-const { quizId } = await call<QuizActiveResponse>('POST', `/teacher/classes/${code}/quiz`, { token: t.token, body: { subject: 'math' } });
+await call('PUT', '/teacher/subject', { token: t.token, body: { subject: 'math' } });
+const { quizId } = await call<QuizActiveResponse>('POST', `/teacher/classes/${code}/quiz`, { token: t.token, body: {} });
 for (const k of kids.slice(1)) await call('POST', `/quiz/${quizId}/join`, { token: k.token });
 console.log(JSON.stringify({ teacher: body.username, kid: kids[0].me.username, code, quizId }));

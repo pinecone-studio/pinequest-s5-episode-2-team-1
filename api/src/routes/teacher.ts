@@ -44,10 +44,10 @@ teacherRoutes.delete('/classes/:code/students/:student', async (c) =>
   c.json<TeacherClassDetailResponse>(await removeStudent(c.env.DB, c.get('userId'), c.req.param('code'), c.req.param('student'))),
 );
 
-/** Ангийн тэмцээн (хүлээлгийн өрөө). topic өгвөл зөвхөн тэр сэдвээр (сул сэдвээ давтуулах). */
+/** Ангийн тэмцээн (хүлээлгийн өрөө): багшийн хичээлээр. topic өгвөл зөвхөн тэр сэдвээр (сул сэдвээ давтуулах). */
 teacherRoutes.post('/classes/:code/quiz', async (c) => {
-  const body = await readBody(c, z.object({ subject: z.enum(ACTIVE_SUBJECTS), topic: z.string().max(64).nullable().default(null) }));
-  return c.json<QuizActiveResponse>(await startQuiz(c.env.DB, c.get('userId'), c.req.param('code'), body.subject, body.topic), 201);
+  const body = await readBody(c, z.object({ topic: z.string().max(64).nullable().default(null) }));
+  return c.json<QuizActiveResponse>(await startQuiz(c.env.DB, c.get('userId'), c.req.param('code'), body.topic), 201);
 });
 
 /** Даалгавар өгөх: багшийн хичээлээр, topic өгвөл тэр сэдвээр; days = хэдэн хоногийн дотор хийх. */

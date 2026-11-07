@@ -8,7 +8,7 @@ import { ApiError } from '../lib/errors';
 import { clanOf } from './clans';
 import { modeGrade } from './league';
 import { loadGame, quizView } from './quizView';
-import { teacherClass } from './teacher';
+import { teacherClass, teacherSubject } from './teacher';
 
 // Ангийн шууд тэмцээн (Kahoot маягийн). Төлөв D1-д; багш, сурагчид 1 секунд тутам GET /quiz/:id асууна.
 // shortcut: polling (WebSocket биш) — нэг ангид ≤40 хүн тул хангалттай; олон анги зэрэг тоглох бол DuelRoom шиг DO руу шилжинэ.
@@ -34,9 +34,14 @@ export async function pickClassQuestions(db: D1Database, clanId: number, subject
   return results.map((r) => r.id);
 }
 
-/** Тэмцээн эхлүүлнэ (хүлээлгийн өрөө). Ангийн өмнөх дуусаагүй тэмцээнийг хаана. topic өгвөл зөвхөн тэр сэдвээр. */
-export async function startQuiz(db: D1Database, teacher: number, code: string, subject: Subject, topic: string | null, now = Date.now()) {
+/**
+ * Тэмцээн эхлүүлнэ (хүлээлгийн өрөө): зөвхөн багшийн заадаг хичээлээр. Ангийн өмнөх дуусаагүй тэмцээнийг хаана.
+ * topic өгвөл зөвхөн тэр сэдвээр (өөр хичээлийн сэдэв бол асуулт олдохгүй).
+ */
+export async function startQuiz(db: D1Database, teacher: number, code: string, topic: string | null, now = Date.now()) {
   const cls = await teacherClass(db, teacher, code, now);
+  const subject = await teacherSubject(db, teacher);
+  if (!subject) throw new ApiError(409, 'BAD_REQUEST', 'Эхлээд заадаг хичээлээ сонгоно уу');
   const picked = await pickClassQuestions(db, cls.id, subject, topic, QUESTIONS);
   if (picked.length < MIN_QUESTIONS) throw new ApiError(503, 'NO_QUESTIONS', 'Энэ сэдвээр асуулт хүрэлцэхгүй байна');
   const [, inserted] = await db.batch([
