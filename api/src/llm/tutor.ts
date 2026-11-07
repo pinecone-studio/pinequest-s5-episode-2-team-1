@@ -3,6 +3,7 @@
 import { GAME, type Subject } from '../config/game';
 
 const BASE = 'https://generativelanguage.googleapis.com/v1beta/models';
+const CACHE_BASE = 'https://generativelanguage.googleapis.com/v1beta/cachedContents';
 
 const SUBJECT_NAMES: Record<Subject, string> = { math: 'Математик', mongolian: 'Монгол хэл', physics: 'Физик', social: 'Нийгэм судлал', english: 'Англи хэл' };
 const LETTERS = ['A', 'B', 'C', 'D'];
@@ -119,7 +120,7 @@ export function tutorKickoff(ctx: TutorContext): string {
 }
 
 /** Сүүлийн хариулт: хязгаарт хүрсэн тул баавгай энэ ээлжинд хичээлээ дуусгана. */
-export const TUTOR_LAST_TURN = '\n\nЭнэ бол сүүлийн хариулт: юу сурснийг нэг өгүүлбэрээр сануулж, баяртай гээд done = true болго.';
+export const TUTOR_LAST_TURN = 'Энэ бол сүүлийн хариулт: юу сурснийг нэг өгүүлбэрээр сануулж, баяртай гээд done = true болго.';
 
 /**
  * Чимээтэй үед загвар хүүхдийн яриаг солонгос, герман гэх мэтээр бичиж болно. Баавгай дууг өөрөө сонсдог тул
@@ -139,6 +140,11 @@ export function shownHeard(heard: string, questions: readonly MissedQuestion[]):
 
 export type TutorPart = { text: string } | { inlineData: { mimeType: string; data: string } };
 export type TutorContent = { role: 'user' | 'model'; parts: TutorPart[] };
+
+/** Сүүлийн ээлжийн зааврыг зөвхөн энэ хүсэлтэд нэмнэ; түүхийг өөрчлөхгүй. */
+export function tutorAsked(asked: TutorContent, last: boolean): TutorContent {
+  return last ? { ...asked, parts: [...asked.parts, { text: TUTOR_LAST_TURN }] } : asked;
+}
 
 export interface TutorReply {
   heard: string;
@@ -160,10 +166,10 @@ const REPLY_SCHEMA = {
 };
 
 /** Зөв хариуг нууцалсан бодлогод correct, wrong сонголтыг хасна: загвар хариуг шүүж чадахгүй. */
-export function tutorRequest(systemPrompt: string, contents: TutorContent[], hideAnswer = false) {
+export function tutorRequest(systemPrompt: string, contents: TutorContent[], hideAnswer = false, cacheName?: string) {
   const verdict = { ...REPLY_SCHEMA.properties.verdict, enum: hideAnswer ? ['hidden', 'none'] : REPLY_SCHEMA.properties.verdict.enum };
   return {
-    systemInstruction: { parts: [{ text: systemPrompt }] },
+    ...(cacheName ? { cachedContent: cacheName } : { systemInstruction: { parts: [{ text: systemPrompt }] } }),
     contents,
     generationConfig: {
       maxOutputTokens: GAME.TUTOR.MAX_OUTPUT_TOKENS,
@@ -171,6 +177,42 @@ export function tutorRequest(systemPrompt: string, contents: TutorContent[], hid
       responseSchema: { ...REPLY_SCHEMA, properties: { ...REPLY_SCHEMA.properties, verdict } },
     },
   };
+}
+
+/** Gemini system prompt cache: богино prompt зэрэг алдаа гарвал энгийн хүсэлтээр үргэлжлүүлнэ. */
+export async function createTutorCache(
+  key: string,
+  model: string,
+  systemPrompt: string,
+  ttlSeconds: number,
+  fetchImpl: typeof fetch = fetch,
+): Promise<string | null> {
+  try {
+    const res = await fetchImpl(CACHE_BASE, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-goog-api-key': key },
+      body: JSON.stringify({ model: `models/${model}`, systemInstruction: { parts: [{ text: systemPrompt }] }, ttl: `${ttlSeconds}s` }),
+      signal: AbortSignal.timeout(GAME.TUTOR.TIMEOUT_MS),
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { name?: unknown };
+    return typeof data.name === 'string' && data.name.startsWith('cachedContents/') ? data.name : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Cache устгал амжилтгүй болсон ч ярилцлагад нөлөөлөхгүй. */
+export async function deleteTutorCache(key: string, name: string, fetchImpl: typeof fetch = fetch): Promise<void> {
+  try {
+    await fetchImpl(`https://generativelanguage.googleapis.com/v1beta/${name}`, {
+      method: 'DELETE',
+      headers: { 'x-goog-api-key': key },
+      signal: AbortSignal.timeout(GAME.TUTOR.TIMEOUT_MS),
+    });
+  } catch {
+    // TTL дуусахад өөрөө устна
+  }
 }
 
 /** Mic-ийн PCM16LE mono хэсгүүдийг Gemini-д илгээх WAV болгоно. */

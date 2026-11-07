@@ -7,11 +7,13 @@ import { ApiError, parseId } from '../lib/errors';
 import { socketUserId } from '../lib/session';
 import {
   askTutor,
+  createTutorCache,
+  deleteTutorCache,
   pcmToWav,
   shownHeard,
-  TUTOR_LAST_TURN,
   TutorBusyError,
   type TutorContent,
+  tutorAsked,
   tutorKickoff,
   tutorRequest,
   tutorSystemPrompt,
@@ -48,6 +50,7 @@ tutorRoutes.get('/ws', async (c) => {
     relay(server, {
       key,
       model: c.env.GEMINI_TUTOR_MODEL || 'gemini-3.5-flash-lite',
+      background: (p) => c.executionCtx.waitUntil(p),
       session: {
         start: () => startTutorSession(c.env.DB, userId),
         end: (id, counted, bearMs) =>
@@ -79,6 +82,8 @@ async function relay(
     key: string;
     model: string;
     /** Хэрэглэгчийн өдрийн / зэрэг ярилцлагын хязгаар (services/tutor). */
+    /** Socket хаагдсаны дараа ч дуусах ёстой ажил (кэш устгах). */
+    background: (p: Promise<unknown>) => void;
     session: { start: () => Promise<number>; end: (id: number, counted: boolean, bearMs: number) => void };
     load: () => ReturnType<typeof loadTutorContext>;
   },
@@ -115,6 +120,19 @@ async function relay(
   }
 
   const system = tutorSystemPrompt(ctx);
+  let cacheName: string | null = null;
+  let cacheDisabled = false;
+  const cachePromise = GAME.TUTOR.PROMPT_CACHE
+    ? createTutorCache(opts.key, opts.model, system, GAME.TUTOR.CACHE_TTL_S)
+    : Promise.resolve(null);
+  opts.background(cachePromise.then((name) => {
+    if (!name) return;
+    if (closed || cacheDisabled) {
+      opts.background(deleteTutorCache(opts.key, name));
+      return;
+    }
+    cacheName = name;
+  }));
   const hideAnswer = ctx.questions.length > 0 && ctx.questions.every((q) => q.hideAnswer);
   /** Өмнөх ээлжүүд бичвэрээр: дууг дахин илгээвэл зардал нь ээлж бүрт өснө. */
   const history: TutorContent[] = [];
@@ -139,6 +157,11 @@ async function relay(
   const shutdown = (msg?: TutorServerMsg) => {
     if (closed) return;
     closed = true;
+    cacheDisabled = true;
+    if (cacheName) {
+      opts.background(deleteTutorCache(opts.key, cacheName));
+      cacheName = null;
+    }
     // Gemini-ийн алдаанаас болж баавгай нэг ч хариулж амжаагүй бол тоолохгүй. Хүүхэд өөрөө гарсан бол тоолно: хүсэлт явсан.
     opts.session.end(sessionId, replies > 0 || !failed, Math.round(bearMs));
     if (timer !== undefined) clearTimeout(timer);
@@ -153,8 +176,19 @@ async function relay(
     requests++;
     const last = requests >= GAME.TUTOR.MAX_REPLIES;
     try {
-      const body = tutorRequest(last ? system + TUTOR_LAST_TURN : system, [...history, asked], hideAnswer);
-      const out = await askTutor(opts.key, opts.model, body);
+      const contents = [...history, tutorAsked(asked, last)];
+      const usedCache = cacheName ?? undefined;
+      let out;
+      try {
+        out = await askTutor(opts.key, opts.model, tutorRequest(system, contents, hideAnswer, usedCache));
+      } catch (e) {
+        if (closed) return;
+        if (!usedCache || e instanceof TutorBusyError) throw e;
+        cacheDisabled = true;
+        cacheName = null;
+        opts.background(deleteTutorCache(opts.key, usedCache));
+        out = await askTutor(opts.key, opts.model, tutorRequest(system, contents, hideAnswer));
+      }
       if (closed) return;
       busy = false;
       if (muted) {
