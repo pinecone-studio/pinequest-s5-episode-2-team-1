@@ -70,9 +70,9 @@ const ACTIVE_WINDOW_MS = GAME.TUTOR.MAX_SESSION_MS + 60_000;
 
 /**
  * Ярилцлагыг бүртгэнэ. Өдрийн хязгаар ба зэрэг ярилцлагыг INSERT дотор шалгана: зэрэг ирсэн хүсэлт хязгаарыг давахгүй.
- * Буцаасан id-г endTutorSession-д өгнө.
+ * dailyLimit = хэрэглэгчийн багцын өдрийн эрх (domain/plan.ts). Буцаасан id-г endTutorSession-д өгнө.
  */
-export async function startTutorSession(db: D1Database, userId: number, now = Date.now()): Promise<number> {
+export async function startTutorSession(db: D1Database, userId: number, dailyLimit: number, now = Date.now()): Promise<number> {
   const day = ubDay(now);
   const activeSince = now - ACTIVE_WINDOW_MS;
   const row = await db
@@ -83,7 +83,7 @@ export async function startTutorSession(db: D1Database, userId: number, now = Da
          AND (SELECT COUNT(*) FROM tutor_sessions WHERE user_id = ? AND ended_at IS NULL AND started_at > ?) < ?
        RETURNING id`,
     )
-    .bind(userId, day, now, userId, day, GAME.TUTOR.DAILY_SESSIONS, userId, activeSince, GAME.TUTOR.MAX_ACTIVE)
+    .bind(userId, day, now, userId, day, dailyLimit, userId, activeSince, GAME.TUTOR.MAX_ACTIVE)
     .first<{ id: number }>();
   if (row) return row.id;
 
@@ -94,7 +94,7 @@ export async function startTutorSession(db: D1Database, userId: number, now = Da
   if ((active?.n ?? 0) >= GAME.TUTOR.MAX_ACTIVE) {
     throw new ApiError(409, 'TUTOR_LIMIT', 'Баавгай өөр дэлгэц дээр чамтай ярьж байна. Тэр ярилцлагаа дуусгаад дахин оролдоорой.');
   }
-  throw new ApiError(429, 'TUTOR_LIMIT', `Өнөөдрийн ${GAME.TUTOR.DAILY_SESSIONS} ярилцлага дууслаа. Маргааш дахин ярилцъя!`);
+  throw new ApiError(429, 'TUTOR_LIMIT', `Өнөөдрийн ${dailyLimit} ярилцлага дууслаа. Маргааш дахин ярилцъя!`);
 }
 
 /**

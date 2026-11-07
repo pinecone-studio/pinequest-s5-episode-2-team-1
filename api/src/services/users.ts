@@ -3,6 +3,7 @@ import type { Me, SubjectPath } from '../../../shared/types';
 import { ACTIVE_SUBJECTS, GAME, SUBJECTS, type Subject } from '../config/game';
 import { levelProgress } from '../domain/level';
 import { type Lives, livesNow, nextLifeAt, spendLife } from '../domain/lives';
+import { effectivePlan } from '../domain/plan';
 import { parseBearLook } from '../domain/profile';
 import { shieldBlock, shieldNextBuyDay } from '../domain/shield';
 import { maxStake } from '../domain/stake';
@@ -33,10 +34,13 @@ export interface UserRow {
   lives: number;
   lives_at: number | null;
   onboarding: string | null;
+  /** Төлбөрийн багц (shared/plan.ts); одоогийн утгыг effectivePlan-аар уншина. */
+  plan: string;
+  plan_until: number | null;
 }
 
 const USER_COLUMNS =
-  'id, username, display_name, grade, tier, xp, points, streak, last_streak_day, shield_held, shield_bought_day, shield_used_day, equipped, bear_look, created_at, is_admin, is_judge, is_teacher, lives, lives_at, onboarding';
+  'id, username, display_name, grade, tier, xp, points, streak, last_streak_day, shield_held, shield_bought_day, shield_used_day, equipped, bear_look, created_at, is_admin, is_judge, is_teacher, lives, lives_at, onboarding, plan, plan_until';
 
 /** Тоглоомын бүх боломж нээлттэй: admin эсвэл шүүгч (хувцас, зам, шат, boss, хайрцаг; амь хасагдахгүй, давтлагагүй). */
 export const allAccess = (u: Pick<UserRow, 'is_admin' | 'is_judge'>) => u.is_admin === 1 || u.is_judge === 1;
@@ -207,6 +211,7 @@ export function buildMe(
     admin: user.is_admin === 1,
     judge: user.is_judge === 1,
     teacher: user.is_teacher === 1,
+    plan: effectivePlan(user, now),
     lives: lives.lives,
     maxLives: GAME.LIVES.MAX,
     nextLifeAt: nextLifeAt(lives),
