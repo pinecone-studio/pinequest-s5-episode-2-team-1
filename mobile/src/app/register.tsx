@@ -5,7 +5,6 @@ import { errorText } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
 import { AuthField, type AuthMood, AuthShell, passwordOk, usernameOk } from '@/components/AuthShell';
 import { Button } from '@/components/Button';
-import { JudgeButton } from '@/components/JudgeButton';
 import { FlowTop } from '@/components/onboarding/FlowTop';
 import { ErrorText, Muted } from '@/components/ui';
 import { S } from '@/i18n/strings';
@@ -91,7 +90,6 @@ export default function RegisterScreen() {
       <ErrorText>{error}</ErrorText>
       <Button title={S.auth.register} onPress={submit} loading={busy} disabled={!ready} />
       <Muted center>{S.auth.privacy}</Muted>
-      {teacher ? null : <JudgeButton />}
     </AuthShell>
   );
 }
