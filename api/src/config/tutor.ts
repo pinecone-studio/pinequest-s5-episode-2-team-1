@@ -1,3 +1,5 @@
+import { PLAN_TUTOR_DAILY } from '../../../shared/plan';
+
 /**
  * Алдсан бодлогоо баавгайтай дуугаар ярилцах. Загвар: wrangler vars GEMINI_TUTOR_MODEL. GAME.TUTOR-оор уншина.
  * Нэг бодлогын дээд зардлыг MAX_REPLIES, MAX_TALK_MS, MAX_OUTPUT_TOKENS, DAILY_SESSIONS хамтдаа тогтооно.
@@ -19,7 +21,7 @@ export const TUTOR = {
   READ_MS_PER_CHAR: 70,
   READ_MAX_MS: 12_000,
   /** Нэг хэрэглэгч өдөрт хэдэн ярилцлага (бодлого) нээх: багцаар (shared/plan.ts). Max-ийн эрхийг багц гарахад тохируулна. */
-  DAILY_SESSIONS: { free: 1, plus: 10, max: 10 },
+  DAILY_SESSIONS: PLAN_TUTOR_DAILY,
   /** Зэрэг явагдах ярилцлага: дэлгэцээ хаагаад шууд дахин нээхэд хуучин нь хаагдаж амжаагүй байж болно. */
   MAX_ACTIVE: 2,
   /** questionId-гүй үед сүүлд алдсан хэдэн бодлогыг баавгайд өгөх. */

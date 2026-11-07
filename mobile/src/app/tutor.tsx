@@ -1,9 +1,11 @@
+import { PLAN_TUTOR_DAILY } from '@shared/plan';
 import { fixTranscript } from '@shared/transcript';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { type ComponentRef, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
+import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { LeafCurtain } from '@/components/LeafCurtain';
 import { Sprite } from '@/components/pixel';
@@ -33,6 +35,7 @@ export default function TutorScreen() {
   const { questionId } = useLocalSearchParams<{ questionId?: string }>();
   const parsed = Number(questionId);
   const talk = useBearTalk(questionId && Number.isInteger(parsed) && parsed > 0 ? parsed : undefined);
+  const { me } = useAuth();
   const insets = useSafeAreaInsets();
   // web/tablet дээр дэлгэц 430px-ийн баганад (_layout) багтана: цонхны биш, энэ дэлгэцийн бодит хэмжээгээр байрлуулна,
   // эс бөгөөс өргөн цонхонд анги томорч самбар дээд захаас гарч, бичиг харагдахгүй болно
@@ -56,8 +59,10 @@ export default function TutorScreen() {
     paddingTop: Math.max(10, insets.top + 4 + TOP_BAR - boardTop + 6),
   };
 
+  // Үнэгүй багцын эрх дууссан: KUMA Plus-ын санал (Max, Plus-д дээш санал байхгүй).
+  const upsell = talk.phase === 'ended' && talk.limited && me?.plan === 'free';
   const chalk =
-    talk.phase === 'ended' ? (talk.notice ?? '') : talk.phase === 'tap' ? S.tutor.tapHint : talk.phase === 'connecting' ? '' : fixTranscript(talk.bearText) || '…';
+    talk.phase === 'ended' ? `${talk.notice ?? ''}${upsell ? `\n${S.plans.upsell(PLAN_TUTOR_DAILY.plus)}` : ''}` : talk.phase === 'tap' ? S.tutor.tapHint : talk.phase === 'connecting' ? '' : fixTranscript(talk.bearText) || '…';
   const listening = talk.phase === 'listening';
   const talking = talk.phase === 'talking';
   const thinking = talk.phase === 'thinking';
@@ -138,7 +143,11 @@ export default function TutorScreen() {
         <View style={styles.actions}>
           {talk.phase === 'ended' ? (
             <>
-              <Button title={S.tutor.restart} variant="lime" onPress={talk.restart} style={styles.main} />
+              {upsell ? (
+                <Button title={S.plans.upsellButton} variant="lime" onPress={() => router.push('/plans')} style={styles.main} />
+              ) : talk.limited ? null : (
+                <Button title={S.tutor.restart} variant="lime" onPress={talk.restart} style={styles.main} />
+              )}
               <Button title={S.common.back} variant="white" onPress={() => goBack()} style={styles.action} />
             </>
           ) : (

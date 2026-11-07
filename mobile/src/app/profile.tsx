@@ -1,4 +1,5 @@
 import { clanTitle } from '@shared/clan';
+import { PLAN_NAMES, PLAN_TUTOR_DAILY } from '@shared/plan';
 import type { ClanDto, FriendBody, FriendsResponse, MyClanResponse, MyProfileResponse } from '@shared/types';
 import * as Haptics from 'expo-haptics';
 import { router, useFocusEffect } from 'expo-router';
@@ -178,6 +179,21 @@ export default function ProfileScreen() {
                 <Button title={S.profile.shareBear} variant="lemon" loading={busy === 'card'} onPress={shareBear} />
                 {cardNote ? <Text style={styles.note}>{cardNote}</Text> : null}
               </Card>
+            </Enter>
+          ) : null}
+
+          {me ? (
+            <Enter index={1}>
+              <PressScale accessibilityRole="link" accessibilityLabel={`${S.plans.myPlan}: ${PLAN_NAMES[me.plan ?? 'free']}`} onPress={() => router.push('/plans')}>
+                <Card style={styles.clan}>
+                  <View style={{ flex: 1, gap: 3 }}>
+                    <Text style={styles.subTitle}>{S.plans.myPlan}</Text>
+                    <Text style={styles.cardTitle}>{PLAN_NAMES[me.plan ?? 'free']}</Text>
+                    <Text style={type.small}>{S.plans.tutorDaily(PLAN_TUTOR_DAILY[me.plan ?? 'free'])}</Text>
+                  </View>
+                  <Text style={styles.chevron}>›</Text>
+                </Card>
+              </PressScale>
             </Enter>
           ) : null}
 

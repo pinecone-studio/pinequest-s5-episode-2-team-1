@@ -92,7 +92,7 @@ export async function startTutorSession(db: D1Database, userId: number, dailyLim
     .bind(userId, activeSince)
     .first<{ n: number }>();
   if ((active?.n ?? 0) >= GAME.TUTOR.MAX_ACTIVE) {
-    throw new ApiError(409, 'TUTOR_LIMIT', 'Баавгай өөр дэлгэц дээр чамтай ярьж байна. Тэр ярилцлагаа дуусгаад дахин оролдоорой.');
+    throw new ApiError(409, 'TUTOR_ACTIVE', 'Баавгай өөр дэлгэц дээр чамтай ярьж байна. Тэр ярилцлагаа дуусгаад дахин оролдоорой.');
   }
   throw new ApiError(429, 'TUTOR_LIMIT', `Өнөөдрийн ${dailyLimit} ярилцлага дууслаа. Маргааш дахин ярилцъя!`);
 }

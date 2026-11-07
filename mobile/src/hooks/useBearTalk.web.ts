@@ -58,6 +58,8 @@ export function useBearTalk(questionId: number | undefined) {
   const [kidText, setKidText] = useState('');
   const [topic, setTopic] = useState<{ subject: Subject; prompt: string } | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  /** Өнөөдрийн баавгайтай ярих эрх дууссан (TUTOR_LIMIT): дэлгэц багцын санал харуулна. */
+  const [limited, setLimited] = useState(false);
   /** Gemini бэлэн: хөшиг нээгдэж эхэлнэ (баавгай нээгдэж дууссаны дараа ярина) */
   const [ready, setReady] = useState(false);
   /** Баавгайн ам: тоглож буй хэсгийн тэр агшны чанга байдал */
@@ -113,6 +115,7 @@ export function useBearTalk(questionId: number | undefined) {
     setKidText('');
     setTopic(null);
     setNotice(null);
+    setLimited(false);
     setReady(false);
     setHint(false);
 
@@ -272,6 +275,7 @@ export function useBearTalk(questionId: number | undefined) {
           void micOn();
           break;
         case 'end':
+          if (m.code === 'TUTOR_LIMIT') setLimited(true);
           end(m.reason === 'time' ? S.tutor.timeUp : m.reason === 'done' ? S.tutor.done : (m.message ?? S.tutor.lost));
           break;
       }
@@ -443,6 +447,7 @@ export function useBearTalk(questionId: number | undefined) {
     kidText,
     topic,
     notice,
+    limited,
     hint,
     interrupt: () => interruptRef.current?.(),
     /** Хүүхэд товч дарж ярина: дарахад эхэлж, суллахад баавгай хариулна. */
