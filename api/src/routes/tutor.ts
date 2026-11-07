@@ -115,6 +115,7 @@ async function relay(
   }
 
   const system = tutorSystemPrompt(ctx);
+  const hideAnswer = ctx.questions.length > 0 && ctx.questions.every((q) => q.hideAnswer);
   /** Өмнөх ээлжүүд бичвэрээр: дууг дахин илгээвэл зардал нь ээлж бүрт өснө. */
   const history: TutorContent[] = [];
   let replies = 0;
@@ -152,7 +153,7 @@ async function relay(
     requests++;
     const last = requests >= GAME.TUTOR.MAX_REPLIES;
     try {
-      const body = tutorRequest(last ? system + TUTOR_LAST_TURN : system, [...history, asked]);
+      const body = tutorRequest(last ? system + TUTOR_LAST_TURN : system, [...history, asked], hideAnswer);
       const out = await askTutor(opts.key, opts.model, body);
       if (closed) return;
       busy = false;

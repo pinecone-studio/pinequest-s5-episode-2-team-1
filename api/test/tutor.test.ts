@@ -40,6 +40,7 @@ describe('tutorSystemPrompt', () => {
     expect(p).not.toContain('Зөв хариулт:');
     expect(p).not.toContain('Ерөнхий хуваарь 6');
     expect(p).toContain('Зөв хариуг нь бүү хэл');
+    expect(p).toContain('Давтлага дээрээ өөрөө шалгаарай');
   });
 
   it('алгассан бодлого, олон бодлогын жагсаалт', () => {
@@ -99,7 +100,14 @@ describe('tutorRequest', () => {
     expect(body.contents).toEqual(contents);
     expect(body.generationConfig.maxOutputTokens).toBe(GAME.TUTOR.MAX_OUTPUT_TOKENS);
     expect(body.generationConfig.responseMimeType).toBe('application/json');
-    expect(body.generationConfig.responseSchema.required).toEqual(['heard', 'reply', 'done']);
+    expect(body.generationConfig.responseSchema.required).toEqual(['heard', 'verdict', 'reply', 'done']);
+  });
+
+  it('загвар хариуг reply-ээс өмнө шүүнэ, нууц бодлогод зөв, буруу гэж шүүх сонголтгүй', () => {
+    const schema = (hide: boolean) => tutorRequest('SYS', [], hide).generationConfig.responseSchema;
+    expect(schema(false).propertyOrdering).toEqual(['heard', 'verdict', 'reply', 'done']);
+    expect(schema(false).properties.verdict.enum).toEqual(['correct', 'wrong', 'none', 'hidden']);
+    expect(schema(true).properties.verdict.enum).toEqual(['hidden', 'none']);
   });
 
   it('сүүлийн хариултын заавар хичээлийг дуусгуулна', () => {

@@ -40,7 +40,8 @@ function describeQuestion(q: MissedQuestion, n: number): string {
     ...(q.hideAnswer
       ? [
           '   (Хүүхэд энэ бодлогыг давтлага дээр өөрөө дахин бодно. Зөв хариуг нь бүү хэл, бүү бодож өг, хүүхдийн хэлсэн',
-          '   хариуг зөв, буруу гэж бүү батал. Сэдвийг өөр тоотой жишээгээр заагаад, энэ бодлогыг өөрөө бодохыг урамшуул.)',
+          '   хариуг зөв, буруу гэж бүү батал. Сэдвийг өөр тоотой жишээгээр заагаад, энэ бодлогыг өөрөө бодохыг урамшуул.',
+          '   Хүүхэд "зөв үү?" гэж асуувал "Давтлага дээрээ өөрөө шалгаарай" гээд өөр тоотой жишээгээр үргэлжлүүл.)',
         ]
       : [`   Зөв хариулт: ${option(q.correctIndex)}`, `   Тайлбар: ${q.explanation}`]),
   ].join('\n');
@@ -78,8 +79,8 @@ export function tutorSystemPrompt(ctx: TutorContext): string {
 - Тоо хэлэхээсээ өмнө дотроо алхам алхмаар бодож шалга. Бодлогын Тайлбар дахь бодолтыг үндэс болго; таны тооцоо
   Тайлбараас зөрвөл Тайлбар зөв.
 - Хүүхдийн хариуг өөрөө бодож шалга. Зөв бол л "зөв" гэ; буруу бол хэзээ ч бүү зөвшөөр.
-- Чи дунд алхмыг асуухад хүүхэд эцсийн хариугаа хэлбэл бодлогын зөв хариутай тулга: зөв бол "зөв" гээд яаж
-  гаргасныг асуу, "буруу" гэж бүү хэл.
+- Хүүхэд хариу хэлбэл (ямар ч алхам дээр) эхлээд бодлогын Зөв хариулттай тулга. Таарч байвал reply-г "Зөв" гэж эхлүүлээд
+  яаж гаргасныг асуу. Энэ бол хүүхдийн хамгийн чухал мөч: өмнөх асуултаа үргэлжлүүлж, хариуг нь алгасаж болохгүй.
 - Хэсэгчлэн зөв бол зөв хэсгийг нэрлэж, буруу алхмыг зөөлөн заа. Хоёр удаа алдвал тэр алхмыг өөрөө үзүүл.
 
 Хичээл (6–8 ээлжинд багтаа):
@@ -100,7 +101,9 @@ export function tutorSystemPrompt(ctx: TutorContext): string {
 Хариуны талбарууд:
 - heard: хүүхдийн энэ ээлжинд яг хэлсэн үгс, хэлсэн хэлээр нь, зөв бичгийн дүрмээр; тоо, томьёог цифр, тэмдэгтээр.
   Бичлэг сонсогдохгүй бол хоосон. Бичлэггүй ээлжинд хоосон.
-- reply: баавгайн хариулт.
+- verdict: reply бичихээс өмнө шийд. correct = хүүхэд зөв хариу хэлсэн, wrong = буруу хариу хэлсэн, none = хариу хэлээгүй,
+  hidden = хүүхэд хариу хэлсэн ч зөв хариуг нь нууцалсан бодлого (зөв, буруу гэж хэлэхгүй).
+- reply: баавгайн хариулт, verdict-тэйгээ таарсан.
 - done: хичээл дууссан эсэх.
 - Нэр, сургууль, утас, хаяг зэрэг хувийн мэдээлэл бүү асуу. Насанд нь тохирохгүй зүйл бүү ярь.
 
@@ -143,20 +146,29 @@ export interface TutorReply {
   done: boolean;
 }
 
+/** verdict нь reply-ээс өмнө: загвар хүүхдийн хариуг эхлээд шалгаж шийдээд, дараа нь бичнэ. */
 const REPLY_SCHEMA = {
   type: 'OBJECT',
-  properties: { heard: { type: 'STRING' }, reply: { type: 'STRING' }, done: { type: 'BOOLEAN' } },
-  required: ['heard', 'reply', 'done'],
+  properties: {
+    heard: { type: 'STRING' },
+    verdict: { type: 'STRING', enum: ['correct', 'wrong', 'none', 'hidden'] },
+    reply: { type: 'STRING' },
+    done: { type: 'BOOLEAN' },
+  },
+  required: ['heard', 'verdict', 'reply', 'done'],
+  propertyOrdering: ['heard', 'verdict', 'reply', 'done'],
 };
 
-export function tutorRequest(systemPrompt: string, contents: TutorContent[]) {
+/** Зөв хариуг нууцалсан бодлогод correct, wrong сонголтыг хасна: загвар хариуг шүүж чадахгүй. */
+export function tutorRequest(systemPrompt: string, contents: TutorContent[], hideAnswer = false) {
+  const verdict = { ...REPLY_SCHEMA.properties.verdict, enum: hideAnswer ? ['hidden', 'none'] : REPLY_SCHEMA.properties.verdict.enum };
   return {
     systemInstruction: { parts: [{ text: systemPrompt }] },
     contents,
     generationConfig: {
       maxOutputTokens: GAME.TUTOR.MAX_OUTPUT_TOKENS,
       responseMimeType: 'application/json',
-      responseSchema: REPLY_SCHEMA,
+      responseSchema: { ...REPLY_SCHEMA, properties: { ...REPLY_SCHEMA.properties, verdict } },
     },
   };
 }
