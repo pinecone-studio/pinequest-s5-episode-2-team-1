@@ -2,9 +2,14 @@
  * Алдсан бодлогоо баавгайтай дуугаар ярилцах. Загвар: wrangler vars GEMINI_TUTOR_MODEL. GAME.TUTOR-оор уншина.
  * Нэг бодлогын дээд зардлыг MAX_REPLIES, MAX_TALK_MS, MAX_OUTPUT_TOKENS, DAILY_SESSIONS хамтдаа тогтооно.
  */
+const MAX_SESSION_MS = 5 * 60_000;
+
 export const TUTOR = {
   /** Нэг ярианы дээд хугацаа. */
-  MAX_SESSION_MS: 5 * 60_000,
+  MAX_SESSION_MS,
+  /** System prompt-ыг яриа дуусах хүртэл хадгална. */
+  PROMPT_CACHE: true,
+  CACHE_TTL_S: MAX_SESSION_MS / 1000 + 60,
   /** Нэг ярилцлага (нэг бодлого)-д баавгайн хариултын тоо (мэндчилгээг оруулаад): сүүлийнх нь хичээлээ дуусгана. */
   MAX_REPLIES: 7,
   /** Хүүхдийн нэг ээлжийн дээд урт: үүнээс урт дууг хаяна. */
