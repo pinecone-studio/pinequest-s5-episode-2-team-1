@@ -41,8 +41,6 @@
     "GEMINI_MODEL": "gemini-3.8-flash",
     "GEMINI_THINKING_LEVEL": "low",
     "GEMINI_TUTOR_MODEL": "gemini-3.5-flash-lite",
-    // "on": эхлэх дэлгэцийн "Шүүгчээр орох" товч ажиллана (POST /auth/judge). Тэмцээний дараа "off".
-    "JUDGE_LOGIN": "on",
     "WORKERS_AI_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
   },
 
@@ -134,7 +132,6 @@
         "GEMINI_MODEL": "gemini-3.8-flash",
         "GEMINI_THINKING_LEVEL": "low",
         "GEMINI_TUTOR_MODEL": "gemini-3.5-flash-lite",
-        "JUDGE_LOGIN": "off",
         "WORKERS_AI_MODEL": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
       }
     }

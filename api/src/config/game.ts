@@ -1,6 +1,6 @@
 import { CLAN_CODE_LENGTH, CLAN_MAX_MEMBERS } from '../../../shared/clan';
 import { GATE_COUNT, UNITS } from '../../../shared/path';
-import { AUTH, JUDGE } from './auth';
+import { AUTH } from './auth';
 import { TUTOR } from './tutor';
 
 // Тоглоомын бүх тогтмол энд төвлөрнө. Логик эдгээрээс л уншина.
@@ -147,7 +147,6 @@ export const GAME = {
 
   TUTOR,
   AUTH,
-  JUDGE,
 } as const;
 
 /** Бүртгүүлэхэд өмсгөх үнэгүй (price = 0) эд зүйлс. */

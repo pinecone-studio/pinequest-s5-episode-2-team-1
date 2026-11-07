@@ -13,7 +13,6 @@ import { leagueRoutes } from './routes/league';
 import { dashboardRoutes } from './routes/dashboard';
 import { duelRoutes } from './routes/duels';
 import { friendRoutes } from './routes/friends';
-import { judgeRoutes } from './routes/judge';
 import { meRoutes } from './routes/me';
 import { profileRoutes } from './routes/profiles';
 import { quizRoutes } from './routes/quiz';
@@ -41,7 +40,6 @@ app.get('/health', async (c) => {
 });
 
 app.route('/auth', authRoutes);
-app.route('/auth/judge', judgeRoutes);
 app.route('/me', meRoutes);
 app.route('/profiles', profileRoutes);
 app.route('/friends', friendRoutes);
