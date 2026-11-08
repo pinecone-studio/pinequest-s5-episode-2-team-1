@@ -9,6 +9,7 @@ const rawSchema = z.object({
   explanation: z.string(),
   topic: z.string().optional(),
   difficulty: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
+  image: z.string().optional(),
 });
 
 const CYRILLIC = /[Ѐ-ӿ]/;
@@ -34,6 +35,10 @@ const OPTION_PREFIX = /^\s*(?:[A-DА-Г]\s*[).:]|[1-4]\s*[).])\s+/;
  * сангаас үүсгэхэд гардаг алдаа: асуулт дангаараа ойлгогдох ёстой.
  */
 const REFERS_TO_SOURCE = /сурах бичг|(дээрх|доорх|өгсөн) (зураг|хүснэгт|график|диаграмм)|зурагт (үзүүл|харуул|өгс)|зураг дээр|\d+-р (дасгал|хуудас)/i;
+
+/** Асуултын зураг: PNG/WebP data URI, 200KB хүртэл (D1-ийн мөрөнд, даалгаврын хариунд шууд явна). */
+const IMAGE = /^data:image\/(png|webp);base64,[A-Za-z0-9+/]+={0,2}$/;
+const MAX_IMAGE_CHARS = 200_000;
 
 export interface Rejection {
   reason: string;
@@ -88,7 +93,9 @@ function checkOne(raw: unknown, topics: readonly string[]): QuestionDraft | Reje
   if (new Set(options.map((o) => o.toLowerCase())).size !== 4) return { reason: 'duplicate options', prompt };
   if ([prompt, explanation, ...options].some(hasMixedScriptWord)) return { reason: 'mixed script', prompt };
   if ([prompt, explanation, ...options].some(hasForeignScript)) return { reason: 'foreign script', prompt };
-  if (REFERS_TO_SOURCE.test(prompt) || REFERS_TO_SOURCE.test(explanation)) return { reason: 'refers to source', prompt };
+  if (q.image !== undefined && (!IMAGE.test(q.image) || q.image.length > MAX_IMAGE_CHARS)) return { reason: 'image', prompt };
+  // Зурагтай асуулт "Зурагт үзүүлсэн…" гэж өөрийн зураг руугаа заана.
+  if (!q.image && (REFERS_TO_SOURCE.test(prompt) || REFERS_TO_SOURCE.test(explanation))) return { reason: 'refers to source', prompt };
 
   // Жагсаалтад байхгүй сэдэвтэй асуултыг хаяхгүй (квот хэмнэнэ), зөвхөн сэдэвгүй хадгална.
   const topic = q.topic?.trim();
@@ -99,6 +106,7 @@ function checkOne(raw: unknown, topics: readonly string[]): QuestionDraft | Reje
     explanation,
     ...(topic && topics.includes(topic) ? { topic } : {}),
     ...(q.difficulty ? { difficulty: q.difficulty } : {}),
+    ...(q.image ? { image: q.image } : {}),
   };
 }
 

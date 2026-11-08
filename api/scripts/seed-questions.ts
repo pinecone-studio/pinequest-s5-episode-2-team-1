@@ -16,7 +16,7 @@
 //   --parallel 2                           # хэдэн хослолыг зэрэг үүсгэх (free tier-ийн минутын хязгаар)
 //   --no-books                             # сурах бичгийн сангүйгээр, хөтөлбөрийн сэдвийн жагсаалтаар
 import { readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ADMIN_TOKEN, API_URL, arg, call, flag, HttpError, sleep } from './lib';
 
@@ -145,7 +145,12 @@ async function main() {
 
   if (flag('fixtures')) {
     const file = arg('file') ?? fixturesPath;
-    const questions = JSON.parse(readFileSync(file, 'utf8'));
+    // "image": "images/ruler.png" (JSON файлын хавтаснаас) нь data URI болж явна.
+    const questions = (JSON.parse(readFileSync(file, 'utf8')) as { image?: string }[]).map((q) =>
+      q.image && !q.image.startsWith('data:')
+        ? { ...q, image: `data:image/${extname(q.image).slice(1)};base64,${readFileSync(join(dirname(file), q.image)).toString('base64')}` }
+        : q,
+    );
     const r = await call<{ inserted: number; duplicates: number; rejected: number }>('POST', '/admin/import', {
       admin: true,
       body: { source: arg('source') ?? (file === fixturesPath ? 'fixture' : 'import'), questions },

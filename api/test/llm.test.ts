@@ -23,6 +23,15 @@ describe('validateDrafts', () => {
     expect(Object.keys(drafts[0]).sort()).toEqual(['correctIndex', 'explanation', 'options', 'prompt']);
   });
 
+  it('зурагтай асуулт: data URI-г хадгалж, "зурагт үзүүлсэн" гэж заахыг зөвшөөрнө', () => {
+    const image = 'data:image/png;base64,iVBORw0KGgo=';
+    const prompt = 'Зурагт үзүүлсэн мензуркт хэдэн мл ус байна вэ?';
+    const { drafts } = validateDrafts({ questions: [good({ prompt, image })] }, []);
+    expect(drafts[0].image).toBe(image);
+    const bad = validateDrafts({ questions: [good({ prompt }), good({ prompt: `${prompt} 2`, image: 'https://x/y.png' })] }, []);
+    expect(bad.rejected.map((r) => r.reason)).toEqual(['refers to source', 'image']);
+  });
+
   it('сонголтуудыг холиход зөв хариултын текст хэвээр', () => {
     for (let i = 0; i < 20; i++) {
       const [d] = validateDrafts({ questions: [good()] }, []).drafts;

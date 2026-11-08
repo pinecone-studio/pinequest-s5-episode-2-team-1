@@ -32,8 +32,8 @@ export async function insertDrafts(
 ): Promise<{ inserted: number; duplicates: number }> {
   if (drafts.length === 0) return { inserted: 0, duplicates: 0 };
   const stmt = db.prepare(
-    `INSERT OR IGNORE INTO questions (tier, subject, prompt, options, correct_index, explanation, prompt_key, source, book_ref, book_page, grade, topic, difficulty, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT OR IGNORE INTO questions (tier, subject, prompt, options, correct_index, explanation, prompt_key, source, book_ref, book_page, grade, topic, difficulty, image, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
   // Өмнө сэдэвгүй, хүндгүй хадгалагдсан ижил асуултад (жишээ нь seed-ийг дахин import хийхэд) тэдгээрийг нөхнө.
   // lesson-seed нь хүндийн эх сурвалж тул дахин import хийхэд өөрийн мөрүүдийн хүндийг шинэчилнэ.
@@ -43,7 +43,7 @@ export async function insertDrafts(
   );
   const results = await db.batch([
     ...drafts.map((d) =>
-      stmt.bind(tier, subject, d.prompt, JSON.stringify(d.options), d.correctIndex, d.explanation, promptKey(d.prompt), source, book?.ref ?? null, bookPage(book?.ref ?? null), book?.grade ?? null, d.topic ?? null, d.difficulty ?? null, now),
+      stmt.bind(tier, subject, d.prompt, JSON.stringify(d.options), d.correctIndex, d.explanation, promptKey(d.prompt), source, book?.ref ?? null, bookPage(book?.ref ?? null), book?.grade ?? null, d.topic ?? null, d.difficulty ?? null, d.image ?? null, now),
     ),
     ...drafts.flatMap((d) => (d.topic ? [fill.bind(d.topic, tier, subject, promptKey(d.prompt))] : [])),
     ...drafts.flatMap((d) => (d.difficulty ? [fillDifficulty.bind(d.difficulty, tier, subject, promptKey(d.prompt), source, source)] : [])),

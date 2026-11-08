@@ -3,7 +3,7 @@ import * as Haptics from 'expo-haptics';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as ScreenCapture from 'expo-screen-capture';
 import { type ComponentRef, useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Image, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeInDown, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
@@ -361,6 +361,7 @@ export default function TaskScreen() {
                   {q.prompt}
                 </Text>
               </View>
+              {q.image ? <Image source={{ uri: q.image }} style={styles.figure} resizeMode="contain" accessibilityIgnoresInvertColors /> : null}
 
               <View style={grid ? styles.grid : { gap: 10 }}>
                 {q.options.map((opt, i) => (
@@ -467,6 +468,7 @@ const styles = StyleSheet.create({
   label: { fontFamily: fonts.bold, fontSize: 13, letterSpacing: 1, textTransform: 'uppercase', color: colors.muted },
   prompt: { fontFamily: fonts.semibold, fontSize: 26, letterSpacing: -0.6, color: colors.ink },
   hint: { fontFamily: fonts.medium, fontSize: 15, color: colors.muted },
+  figure: { width: '100%', aspectRatio: 4 / 3, borderRadius: radius.md, backgroundColor: colors.white },
   grid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 10 },
   explain: { backgroundColor: colors.white, borderRadius: radius.md, borderWidth: 3, padding: 14, gap: 4 },
   verdict: { fontFamily: fonts.extrabold, fontSize: 17 },
