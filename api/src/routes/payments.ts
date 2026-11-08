@@ -6,7 +6,7 @@ import type { PaymentResponse, PaymentsInfoResponse } from '../../../shared/type
 import type { AppEnv } from '../env';
 import { ApiError, readBody } from '../lib/errors';
 import { requireAuth } from '../lib/session';
-import { paymentProvider } from '../payments/provider';
+import { paymentProvider, webhookProvider } from '../payments/provider';
 import { checkPayment, createPayment, paymentCallback, paymentWebhook } from '../services/payments';
 import { loadMe } from '../services/users';
 
@@ -45,12 +45,12 @@ paymentRoutes.on(['GET', 'POST'], '/callback/:id', async (c) => {
 });
 
 /**
- * Системийн webhook (Wire: нэг тогтмол хаяг). Гарын үсэг буруу бол 400 (Wire дахин илгээхгүй), зөв бол 200: төлбөрийг
+ * Системийн webhook (Wire: нэг тогтмол хаяг). Товч хаалттай (PAYMENT_PROVIDER тохируулаагүй) үед ч ажиллана. Гарын үсэг буруу бол 400 (Wire дахин илгээхгүй), зөв бол 200: төлбөрийг
  * системээс дахин шалгаад багцыг сунгана. endpoint.verification шиг төлбөргүй үйл явдалд зүгээр 200.
  */
 paymentRoutes.post('/webhook/:provider', async (c) => {
-  const provider = paymentProvider(c.env, c.req.url);
-  if (!provider?.webhook || provider.name !== c.req.param('provider')) throw new ApiError(404, 'NOT_FOUND');
+  const provider = webhookProvider(c.env, c.req.param('provider'));
+  if (!provider?.webhook) throw new ApiError(404, 'NOT_FOUND');
   const result = await provider.webhook(await c.req.text(), c.req.raw.headers);
   if (!result) throw new ApiError(400, 'BAD_REQUEST', 'Гарын үсэг буруу');
   if (result.invoiceId) await paymentWebhook(c.env.DB, provider, result.invoiceId);

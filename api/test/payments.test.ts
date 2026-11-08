@@ -3,7 +3,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { describe, expect, it } from 'vitest';
 import { GAME } from '../src/config/game';
 import type { Bindings } from '../src/env';
-import { mockProvider, paymentProvider, type PaymentProvider } from '../src/payments/provider';
+import { mockProvider, paymentProvider, type PaymentProvider, webhookProvider } from '../src/payments/provider';
 import { checkPayment, createPayment, paymentCallback, paymentWebhook } from '../src/services/payments';
 
 type Value = string | number | null;
@@ -191,6 +191,13 @@ describe('paymentProvider', () => {
     expect(paymentProvider(wire('sk_live_x'), 'https://api.example/payments')).toBeNull();
     expect(paymentProvider(wire(undefined, 'whsec_x'), 'https://api.example/payments')).toBeNull();
     expect(paymentProvider(wire('sk_live_x', 'whsec_x'), 'https://api.example/payments')?.name).toBe('wire');
+  });
+  it('accepts Wire webhooks once the keys are set, even before payments open', () => {
+    const keys = { WIRE_SECRET_KEY: 'sk_live_x', WIRE_WEBHOOK_SECRET: 'whsec_x' } as Bindings;
+    expect(webhookProvider(keys, 'wire')?.name).toBe('wire');
+    expect(paymentProvider(keys, 'https://api.example/payments')).toBeNull();
+    expect(webhookProvider({ WIRE_SECRET_KEY: 'sk_live_x' } as Bindings, 'wire')).toBeNull();
+    expect(webhookProvider(keys, 'mock')).toBeNull();
   });
   it('allows the mock provider only on localhost', () => {
     expect(paymentProvider(env('mock'), 'http://localhost:8787/payments')).toBe(mockProvider);

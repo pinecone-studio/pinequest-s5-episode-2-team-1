@@ -61,8 +61,19 @@ export function paymentProvider(env: Bindings, requestUrl: string): PaymentProvi
       return isLocal(requestUrl) ? mockProvider : null;
     case 'wire':
       // Хоёр түлхүүр хоёулаа тохируулагдсан үед л нээгдэнэ: webhook-гүйгээр төлбөр хүлээхгүй.
-      return env.WIRE_SECRET_KEY && env.WIRE_WEBHOOK_SECRET ? wireProvider(env.WIRE_SECRET_KEY, env.WIRE_WEBHOOK_SECRET) : null;
+      return wireFromEnv(env);
     default:
       return null;
   }
+}
+
+const wireFromEnv = (env: Bindings) =>
+  env.WIRE_SECRET_KEY && env.WIRE_WEBHOOK_SECRET ? wireProvider(env.WIRE_SECRET_KEY, env.WIRE_WEBHOOK_SECRET) : null;
+
+/**
+ * Webhook хүлээн авах систем: түлхүүрүүд нь тохируулагдсан бол PAYMENT_PROVIDER-ээс үл хамааран ажиллана. Ингэснээр товчийг
+ * нээхээс (PAYMENT_PROVIDER=wire) өмнө Wire-ийн verification ping-д хариулж, нээсний дараа хаасан ч төлөгдсөн төлбөр орно.
+ */
+export function webhookProvider(env: Bindings, name: string): PaymentProvider | null {
+  return name === 'wire' ? wireFromEnv(env) : null;
 }
