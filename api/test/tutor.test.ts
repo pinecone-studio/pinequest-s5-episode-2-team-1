@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { GAME } from '../src/config/game';
 import {
   askTutor,
+  createTutorCache,
+  deleteTutorCache,
   isForeignTranscript,
   type MissedQuestion,
   parseTutorReply,
@@ -9,6 +11,7 @@ import {
   shownHeard,
   TUTOR_LAST_TURN,
   TutorBusyError,
+  tutorAsked,
   tutorKickoff,
   tutorRequest,
   tutorSystemPrompt,
@@ -96,7 +99,8 @@ describe('tutorRequest', () => {
   it('system prompt, яриа түүх, JSON хариуны загвар, токены хязгаар', () => {
     const contents = [{ role: 'user' as const, parts: [{ text: 'сайн уу' }] }];
     const body = tutorRequest('SYS', contents);
-    expect(body.systemInstruction.parts[0].text).toBe('SYS');
+    expect(body).toHaveProperty('systemInstruction.parts.0.text', 'SYS');
+    expect(body).not.toHaveProperty('cachedContent');
     expect(body.contents).toEqual(contents);
     expect(body.generationConfig.maxOutputTokens).toBe(GAME.TUTOR.MAX_OUTPUT_TOKENS);
     expect(body.generationConfig.responseMimeType).toBe('application/json');
@@ -110,8 +114,54 @@ describe('tutorRequest', () => {
     expect(schema(true).properties.verdict.enum).toEqual(['hidden', 'none']);
   });
 
+  it('cache ашиглавал systemInstruction-г илгээхгүй', () => {
+    const body = tutorRequest('SYS', [], false, 'cachedContents/123');
+    expect(body).toHaveProperty('cachedContent', 'cachedContents/123');
+    expect(body).not.toHaveProperty('systemInstruction');
+    expect(body).not.toHaveProperty('tools');
+    expect(body).not.toHaveProperty('toolConfig');
+    expect(body.generationConfig.maxOutputTokens).toBe(GAME.TUTOR.MAX_OUTPUT_TOKENS);
+  });
+
   it('сүүлийн хариултын заавар хичээлийг дуусгуулна', () => {
     expect(TUTOR_LAST_TURN).toContain('done = true');
+    const asked = { role: 'user' as const, parts: [{ text: 'Сайн уу' }] };
+    expect(tutorAsked(asked, false)).toBe(asked);
+    expect(tutorAsked(asked, true).parts).toEqual([{ text: 'Сайн уу' }, { text: TUTOR_LAST_TURN }]);
+    expect(asked.parts).toEqual([{ text: 'Сайн уу' }]);
+  });
+});
+
+describe('tutor cache', () => {
+  it('cache үүсгэхэд загвар, prompt, TTL-г явуулж нэрийг буцаана', async () => {
+    const fetchImpl = vi.fn(async (_url: unknown, _init?: RequestInit) => new Response(JSON.stringify({ name: 'cachedContents/123' })));
+    await expect(createTutorCache('KEY', 'gemini-3.5-flash-lite', 'SYS', 360, fetchImpl as unknown as typeof fetch)).resolves.toBe('cachedContents/123');
+    const [url, init] = fetchImpl.mock.calls[0]!;
+    expect(String(url)).toBe('https://generativelanguage.googleapis.com/v1beta/cachedContents');
+    expect(init?.method).toBe('POST');
+    expect(new Headers(init?.headers).get('x-goog-api-key')).toBe('KEY');
+    expect(JSON.parse(String(init?.body))).toEqual({
+      model: 'models/gemini-3.5-flash-lite',
+      systemInstruction: { parts: [{ text: 'SYS' }] },
+      ttl: '360s',
+    });
+    expect(init?.signal).toBeInstanceOf(AbortSignal);
+  });
+
+  it('cache үүсгэхэд 400 болон fetch алдааг null болгоно', async () => {
+    const bad = vi.fn(async () => new Response('too short', { status: 400 }));
+    const throws = vi.fn(async () => { throw new Error('network'); });
+    await expect(createTutorCache('KEY', 'm', 'short', 10, bad as unknown as typeof fetch)).resolves.toBeNull();
+    await expect(createTutorCache('KEY', 'm', 'SYS', 10, throws as unknown as typeof fetch)).resolves.toBeNull();
+  });
+
+  it('cache устгах алдааг үл тооно', async () => {
+    const fetchImpl = vi.fn(async (_url: unknown, _init?: RequestInit) => { throw new Error('network'); });
+    await expect(deleteTutorCache('KEY', 'cachedContents/123', fetchImpl as unknown as typeof fetch)).resolves.toBeUndefined();
+    const [url, init] = fetchImpl.mock.calls[0]!;
+    expect(String(url)).toBe('https://generativelanguage.googleapis.com/v1beta/cachedContents/123');
+    expect(init?.method).toBe('DELETE');
+    expect(new Headers(init?.headers).get('x-goog-api-key')).toBe('KEY');
   });
 });
 
