@@ -22,6 +22,8 @@ export interface MissedQuestion {
    * харуулаагүй). Зөв хариу, тайлбарыг prompt-д огт өгөхгүй: баавгай хэлж чадахгүй.
    */
   hideAnswer?: boolean;
+  /** Зурагтай асуултын PNG/WebP data URI: баавгай зургийг хараад тайлбарлана (tutorFigures). */
+  image?: string;
 }
 
 export interface TutorContext {
@@ -38,6 +40,7 @@ function describeQuestion(q: MissedQuestion, n: number): string {
     `${n}. [${SUBJECT_NAMES[q.subject]}] ${q.prompt}`,
     `   Хувилбарууд: ${q.options.map((_, i) => option(i)).join('; ')}`,
     `   Хүүхдийн хариулт: ${picked}`,
+    ...(q.image ? [`   Бодлогын зураг: хүүхдийн эхний мессежид «${n}-р бодлогын зураг» гэж хавсаргасан. Зургийг хараад тайлбарла.`] : []),
     ...(q.hideAnswer
       ? [
           '   (Хүүхэд энэ бодлогыг давтлага дээр өөрөө дахин бодно. Зөв хариуг нь бүү хэл, бүү бодож өг, хүүхдийн хэлсэн',
@@ -140,6 +143,23 @@ export function shownHeard(heard: string, questions: readonly MissedQuestion[]):
 
 export type TutorPart = { text: string } | { inlineData: { mimeType: string; data: string } };
 export type TutorContent = { role: 'user' | 'model'; parts: TutorPart[] };
+
+const DATA_URI = /^data:(image\/(?:png|webp));base64,(.+)$/;
+
+/** Бодлогуудын зураг (системийн заавар зөвхөн текст тул хүсэлт бүрийн эхний мессежид хавсаргана). Зураггүй бол хоосон. */
+export function tutorFigures(questions: readonly MissedQuestion[]): TutorPart[] {
+  return questions.flatMap((q, i) => {
+    const m = q.image ? DATA_URI.exec(q.image) : null;
+    return m ? [{ text: `${i + 1}-р бодлогын зураг:` }, { inlineData: { mimeType: m[1], data: m[2] } }] : [];
+  });
+}
+
+/** Зургийг эхний (хүүхдийн) мессежийн өмнө нэмнэ. history-д хадгалахгүй: дуу, бичвэр шиг хүсэлт бүрт дахин явна. */
+export function withFigures(contents: TutorContent[], figures: TutorPart[]): TutorContent[] {
+  if (figures.length === 0 || contents.length === 0) return contents;
+  const [first, ...rest] = contents;
+  return [{ ...first, parts: [...figures, ...first.parts] }, ...rest];
+}
 
 /** Сүүлийн ээлжийн зааврыг зөвхөн энэ хүсэлтэд нэмнэ; түүхийг өөрчлөхгүй. */
 export function tutorAsked(asked: TutorContent, last: boolean): TutorContent {

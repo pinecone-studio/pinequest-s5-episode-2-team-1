@@ -41,7 +41,7 @@ export async function runTeacherScenario() {
   check((await call<TeacherClassesResponse>('GET', '/teacher/classes', tok)).subject === null, 'Шинэ багш хичээлээ сонгоогүй');
   await expectError(call('POST', `/teacher/classes/${cls.code}/quiz`, { ...tok, body: {} }), 'BAD_REQUEST', 'Хичээлгүй багш тэмцээн эхлүүлэхгүй');
   await expectError(call('POST', `/teacher/classes/${cls.code}/assignments`, { ...tok, body: { days: 3 } }), 'BAD_REQUEST', 'Хичээлгүй багш даалгавар өгөхгүй');
-  await expectError(call('PUT', '/teacher/subject', { ...tok, body: { subject: 'physics' } }), 'BAD_REQUEST', 'Идэвхгүй хичээл сонгохгүй');
+  await expectError(call('PUT', '/teacher/subject', { ...tok, body: { subject: 'chemistry' } }), 'BAD_REQUEST', 'Байхгүй хичээл сонгохгүй');
   check((await call<TeacherClassesResponse>('PUT', '/teacher/subject', { ...tok, body: { subject: 'math' } })).subject === 'math', 'Хичээлээ сонгоно');
   // өөр хичээл илгээсэн ч тэмцээн багшийн хичээлээр
   const { quizId } = await call<QuizActiveResponse>('POST', `/teacher/classes/${cls.code}/quiz`, { ...tok, body: { subject: 'english' } });

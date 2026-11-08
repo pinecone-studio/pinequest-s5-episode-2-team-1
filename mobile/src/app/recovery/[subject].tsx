@@ -7,6 +7,7 @@ import { ApiError, api, errorText } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { OptionButton, type OptionState } from '@/components/OptionButton';
+import { QuestionImage } from '@/components/QuestionImage';
 import { BackButton, Card, ErrorText, ProgressBar, Screen } from '@/components/ui';
 import { colors, fonts } from '@/constants/theme';
 import { activeSubject } from '@/constants/subjects';
@@ -127,6 +128,7 @@ export default function RecoveryScreen() {
               <Text style={styles.prompt} accessibilityRole="header">
                 {q.prompt}
               </Text>
+              <QuestionImage uri={q.image} />
               {order.map((orig, i) => (
                 <OptionButton
                   key={orig}

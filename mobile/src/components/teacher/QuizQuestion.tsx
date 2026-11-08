@@ -1,6 +1,7 @@
 import type { QuizView } from '@shared/teacher';
 import { StyleSheet, Text, View } from 'react-native';
 import { OptionButton, type OptionState } from '@/components/OptionButton';
+import { QuestionImage } from '@/components/QuestionImage';
 import { Card, Muted } from '@/components/ui';
 import { colors, fonts, radius } from '@/constants/theme';
 import { T } from '@/i18n/teacher';
@@ -25,6 +26,7 @@ export function QuizQuestion({ view, onAnswer }: { view: QuizView; onAnswer?: (c
     <>
       <Card>
         <Text style={styles.prompt}>{q.prompt}</Text>
+        <QuestionImage uri={q.image} />
       </Card>
       <View style={styles.options}>
         {q.options.map((opt, i) => (

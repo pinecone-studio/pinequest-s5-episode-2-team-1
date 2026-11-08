@@ -492,7 +492,8 @@ export interface RecoveryDto {
   total: number;
   cleared: boolean;
   /** Одоо бодох асуулт (зөв хариу, тайлбаргүй); topic = сэдвийн нэр. */
-  question: { id: number; prompt: string; options: string[]; topic?: string } | null;
+  /** image: зурагтай асуултын PNG/WebP data URI. */
+  question: { id: number; prompt: string; options: string[]; topic?: string; image?: string } | null;
 }
 
 export interface RecoveryAnswerResponse {
