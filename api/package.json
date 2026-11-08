@@ -23,6 +23,8 @@
     "lessons:import": "tsx scripts/seed-questions.ts --fixtures --file seed/lesson-questions.json --source lesson-seed",
     "social:import": "tsx scripts/seed-questions.ts --fixtures --file seed/social-lesson-questions.json --source lesson-seed",
     "english:import": "tsx scripts/seed-questions.ts --fixtures --file seed/english-lesson-questions.json --source lesson-seed",
+    "physics:import": "tsx scripts/seed-questions.ts --fixtures --file seed/physics-lesson-questions.json --source lesson-seed",
+    "physics:images": "tsx scripts/seed-questions.ts --fixtures --file seed/physics-image-questions.json --source lesson-seed",
     "books:import": "tsx scripts/books.ts import",
     "books:list": "tsx scripts/books.ts list",
     "books:page": "tsx scripts/books.ts page",

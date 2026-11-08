@@ -1,8 +1,8 @@
 import type { Subject } from '@shared/types';
 
-/** Аппын идэвхтэй хичээлүүд. `physics` хуучин өгөгдөл унших төрөлд л үлдэнэ. */
-export const ACTIVE_SUBJECTS: Subject[] = ['math', 'mongolian', 'social', 'english'];
-export const PATH_SUBJECTS: Subject[] = ['math', 'social', 'english'];
+/** Аппын идэвхтэй хичээлүүд. */
+export const ACTIVE_SUBJECTS: Subject[] = ['math', 'mongolian', 'physics', 'social', 'english'];
+export const PATH_SUBJECTS: Subject[] = ['math', 'physics', 'social', 'english'];
 export const DUEL_SUBJECTS: Subject[] = ['math'];
 
 export const isActiveSubject = (value: unknown): value is Subject => ACTIVE_SUBJECTS.includes(value as Subject);

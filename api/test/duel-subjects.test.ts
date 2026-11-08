@@ -8,9 +8,8 @@ describe('тулааны хичээл', () => {
     expect(DUEL_SUBJECTS).not.toContain('physics');
   });
 
-  it('физикийг public урсгалаас хассан ч хуучин өгөгдлийн төрөлд хэвээр үлдээнэ', () => {
-    expect(ACTIVE_SUBJECTS).toEqual(['math', 'mongolian', 'social', 'english']);
-    expect(ACTIVE_SUBJECTS).not.toContain('physics');
-    expect(SUBJECTS).toContain('physics');
+  it('идэвхтэй хичээлүүд бүгд үндсэн төрөлд байна', () => {
+    expect(ACTIVE_SUBJECTS).toEqual(['math', 'mongolian', 'physics', 'social', 'english']);
+    for (const s of ACTIVE_SUBJECTS) expect(SUBJECTS).toContain(s);
   });
 });

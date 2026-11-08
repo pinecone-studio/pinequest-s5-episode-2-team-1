@@ -1,0 +1,87 @@
+[
+ {
+  "tier": 1,
+  "subject": "physics",
+  "bookRef": "physics-7:6-13",
+  "topic": "measurement",
+  "prompt": "Зурагт үзүүлсэн харандааны урт хэдэн см вэ?",
+  "options": [
+   "5.5 см",
+   "7.5 см",
+   "2 см",
+   "5 см"
+  ],
+  "correctIndex": 0,
+  "explanation": "Харандаа 0-ээс биш 2 см-ээс эхэлсэн: 7.5 − 2 = 5.5 см.",
+  "difficulty": 1,
+  "image": "images/physics-7-ruler.png"
+ },
+ {
+  "tier": 1,
+  "subject": "physics",
+  "bookRef": "physics-7:6-13",
+  "topic": "measurement",
+  "prompt": "Зурагт үзүүлсэн штангенциркулийн заалт хэдэн мм вэ?",
+  "options": [
+   "21.4 мм",
+   "21.5 мм",
+   "24 мм",
+   "25.4 мм"
+  ],
+  "correctIndex": 0,
+  "explanation": "Нониусын 0 нь 21 мм-ийн дараа, 4-р зураас нь үндсэн хуваарьтай давхацсан: 21 + 0.4 = 21.4 мм.",
+  "difficulty": 3,
+  "image": "images/physics-7-caliper.png"
+ },
+ {
+  "tier": 1,
+  "subject": "physics",
+  "bookRef": "physics-7:23-28",
+  "topic": "measurement",
+  "prompt": "Зурагт туршилт эхэлсэн, дууссан цагийг үзүүлэв. Туршилт хэдэн минут үргэлжилсэн бэ?",
+  "options": [
+   "35 минут",
+   "50 минут",
+   "15 минут",
+   "45 минут"
+  ],
+  "correctIndex": 0,
+  "explanation": "Эхэлсэн 10:15, дууссан 10:50: 50 − 15 = 35 минут.",
+  "difficulty": 1,
+  "image": "images/physics-7-clocks.png"
+ },
+ {
+  "tier": 1,
+  "subject": "physics",
+  "bookRef": "physics-7:29-33",
+  "topic": "measurement",
+  "prompt": "Зурагт үзүүлсэн мензуркт хэдэн мл ус байна вэ?",
+  "options": [
+   "36 мл",
+   "38 мл",
+   "34 мл",
+   "46 мл"
+  ],
+  "correctIndex": 0,
+  "explanation": "Жижиг хуваарь бүр 2 мл: 30 мл-ээс 3 хуваарь дээш = 36 мл.",
+  "difficulty": 1,
+  "image": "images/physics-7-cylinder.png"
+ },
+ {
+  "tier": 1,
+  "subject": "physics",
+  "bookRef": "physics-7:29-33",
+  "topic": "measurement",
+  "prompt": "Чулууг мензуркт хийхэд ус зурагт үзүүлснээр өгсөв. Чулууны эзлэхүүн хэдэн см³ вэ?",
+  "options": [
+   "15 см³",
+   "65 см³",
+   "50 см³",
+   "115 см³"
+  ],
+  "correctIndex": 0,
+  "explanation": "Ус 50 мл-ээс 65 мл болсон: 65 − 50 = 15 мл = 15 см³.",
+  "difficulty": 2,
+  "image": "images/physics-7-cylinder-rock.png"
+ }
+]

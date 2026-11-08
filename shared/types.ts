@@ -408,6 +408,8 @@ export interface TaskQuestion {
   id: number;
   prompt: string;
   options: string[];
+  /** Зурагтай асуултын PNG/WebP data URI. */
+  image?: string;
   answered: boolean;
 }
 

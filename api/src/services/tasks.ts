@@ -46,12 +46,13 @@ interface TaskRow {
   correct: number | null;
   prompt: string;
   options: string;
+  image: string | null;
 }
 
 export async function loadTask(db: D1Database, userId: number, taskId: number): Promise<TaskDto> {
   const { results } = await db
     .prepare(
-      `SELECT t.id, t.subject, t.status, tq.position, tq.question_id, tq.choice, tq.correct, q.prompt, q.options
+      `SELECT t.id, t.subject, t.status, tq.position, tq.question_id, tq.choice, tq.correct, q.prompt, q.options, q.image
        FROM tasks t
        JOIN task_questions tq ON tq.task_id = t.id
        JOIN questions q ON q.id = tq.question_id
@@ -71,6 +72,7 @@ export async function loadTask(db: D1Database, userId: number, taskId: number): 
       id: r.question_id,
       prompt: r.prompt,
       options: JSON.parse(r.options) as string[],
+      ...(r.image ? { image: r.image } : {}),
       answered: r.choice !== null,
     })),
     answeredCount: results.filter((r) => r.choice !== null).length,
@@ -105,7 +107,7 @@ export async function startTask(
     throw new ApiError(409, 'RECOVERY_REQUIRED', 'Эхлээд давтлагаа дуусгаарай');
   }
   const path = (await loadSubjectPaths(db, userId))[subject];
-  // Математик 6–12, нийгэм судлал 7–11, англи хэл 6–12 нь анги тус бүрийн тогтмол roadmap; бусад нь номын хичээл бүр нэг зангилаа.
+  // Математик 6–12, нийгэм судлал 7–11, англи хэл 6–12, физик 7–11 нь анги тус бүрийн тогтмол roadmap; бусад нь номын хичээл бүр нэг зангилаа.
   const roadmap = roadmapNodes(subject, user.grade);
   const book = roadmap.length > 0 ? null : await bookLessons(env, subject, user.grade).catch(() => null);
   const pathLen = roadmap.length || pathLessons(book?.lessons.length ?? 0);

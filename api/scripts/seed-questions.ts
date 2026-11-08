@@ -6,6 +6,7 @@
 //   npm run lessons:import                 # сурах замын хичээлийн бодлого: seed/lesson-questions.json (bookRef-тэй)
 //   npm run social:import                  # нийгэм судлалын хичээлийн асуулт: seed/social-lesson-questions.json
 //   npm run english:import                 # англи хэлний хичээлийн асуулт: seed/english-lesson-questions.json
+//   npm run physics:import                 # физикийн хичээлийн асуулт: seed/physics-lesson-questions.json
 //   --url https://...workers.dev           # deploy хийсэн сервер рүү
 //   --model gemini-3.6-flash,gemini-3.5-flash-lite
 //                                          # загвар(ууд): эхнийх нь өдрийн квот дуусахад дараагийнх руу
@@ -15,7 +16,7 @@
 //   --parallel 2                           # хэдэн хослолыг зэрэг үүсгэх (free tier-ийн минутын хязгаар)
 //   --no-books                             # сурах бичгийн сангүйгээр, хөтөлбөрийн сэдвийн жагсаалтаар
 import { readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ADMIN_TOKEN, API_URL, arg, call, flag, HttpError, sleep } from './lib';
 
@@ -144,7 +145,12 @@ async function main() {
 
   if (flag('fixtures')) {
     const file = arg('file') ?? fixturesPath;
-    const questions = JSON.parse(readFileSync(file, 'utf8'));
+    // "image": "images/ruler.png" (JSON файлын хавтаснаас) нь data URI болж явна.
+    const questions = (JSON.parse(readFileSync(file, 'utf8')) as { image?: string }[]).map((q) =>
+      q.image && !q.image.startsWith('data:')
+        ? { ...q, image: `data:image/${extname(q.image).slice(1)};base64,${readFileSync(join(dirname(file), q.image)).toString('base64')}` }
+        : q,
+    );
     const r = await call<{ inserted: number; duplicates: number; rejected: number }>('POST', '/admin/import', {
       admin: true,
       body: { source: arg('source') ?? (file === fixturesPath ? 'fixture' : 'import'), questions },
