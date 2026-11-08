@@ -19,14 +19,14 @@ import { goBack } from '@/lib/nav';
 const CAN_BUY = Platform.OS === 'web';
 
 /** Plus карт дээрх баавгай: самбарын өмнө тайлбарлаж буй TutorBear-ийг энэ өндөрт багтаана. */
-const BEAR_H = 140;
+const BEAR_H = 150;
 const BEAR = frameSize('bear_tutor_0_1320x1344', tutor.sheets[0], tutor.columns);
 const BEAR_SCALE = BEAR_H / BEAR.height;
 const BEAR_W = Math.round(BEAR.width * BEAR_SCALE);
 
 /**
- * Багцууд: голлуулсан том KUMA Plus карт (баавгай, нэр, өдрийн тоо, үнэ, авах товч), доор нь Үнэгүй ба Max ижил хэмжээтэй
- * хоёр карт зэрэгцэн. Бүх бичвэр голлосон. Авах товч сервер худалдан авалт нээлттэй (GET /payments → open) болтол дарагдахгүй.
+ * Багцууд: том KUMA Plus карт (баавгай, юу авах, үнэ, авах товч), доор нь Үнэгүй ба Max нэг мөрөөр. Авах товч сервер
+ * худалдан авалт нээлттэй (GET /payments → open) гэх хүртэл дарагдахгүй.
  */
 export default function PlansScreen() {
   const { me } = useAuth();
@@ -52,15 +52,22 @@ export default function PlansScreen() {
 
       <Enter index={0}>
         <View style={styles.plus}>
-          <View style={styles.bearBox} importantForAccessibility="no-hide-descendants">
-            <View style={styles.bearScale}>
-              <TutorBear phase="bear" mouth={0} label="" />
+          <View style={styles.plusHead}>
+            <Text style={[styles.badge, styles.badgeLemon, styles.badgeStart]}>{plusMine ? S.plans.current : S.plans.recommended}</Text>
+            <Text style={styles.plusName}>{PLAN_NAMES.plus}</Text>
+          </View>
+          <View style={styles.plusTop}>
+            <View style={styles.plusText}>
+              <Text style={styles.plusNum}>{PLAN_TUTOR_DAILY.plus}</Text>
+              <Text style={styles.plusUnit}>{S.plans.perDayUnit}</Text>
+              <Text style={styles.plusLine}>{S.plans.dailyWhat}</Text>
+            </View>
+            <View style={styles.bearBox} importantForAccessibility="no-hide-descendants">
+              <View style={styles.bearScale}>
+                <TutorBear phase="bear" mouth={0} label="" />
+              </View>
             </View>
           </View>
-          <Text style={[styles.badge, styles.badgeLemon]}>{plusMine ? S.plans.current : S.plans.recommended}</Text>
-          <Text style={styles.plusName}>{PLAN_NAMES.plus}</Text>
-          <Text style={styles.plusDaily}>{S.plans.dailyShort(PLAN_TUTOR_DAILY.plus)}</Text>
-          <Text style={styles.plusLine}>{S.plans.dailyWhat}</Text>
 
           {CAN_BUY ? (
             <View style={styles.buy}>
@@ -73,7 +80,6 @@ export default function PlansScreen() {
                 variant="lemon"
                 disabled={!open}
                 onPress={() => router.push('/pay')}
-                style={styles.cta}
               />
               {open ? null : <Text style={styles.note}>{S.plans.payingSoon}</Text>}
             </View>
@@ -82,29 +88,30 @@ export default function PlansScreen() {
       </Enter>
 
       <Enter index={1}>
-        <View style={styles.pair}>
-          <Tile tone="free" name={PLAN_NAMES.free} sub={S.plans.dailyShort(PLAN_TUTOR_DAILY.free)} badge={current === 'free' ? S.plans.current : null} />
-          <Tile
-            tone="max"
-            name={PLAN_NAMES.max}
-            sub={current === 'max' ? S.plans.dailyShort(PLAN_TUTOR_DAILY.max) : S.plans.maxSub}
-            badge={current === 'max' ? S.plans.current : S.plans.soon}
-          />
-        </View>
+        <Row tone="free" name={PLAN_NAMES.free} sub={S.plans.dailyShort(PLAN_TUTOR_DAILY.free)} badge={current === 'free' ? S.plans.current : null} />
+      </Enter>
+      <Enter index={2}>
+        <Row
+          tone="max"
+          name={PLAN_NAMES.max}
+          sub={current === 'max' ? S.plans.dailyShort(PLAN_TUTOR_DAILY.max) : S.plans.maxSub}
+          badge={current === 'max' ? S.plans.current : S.plans.soon}
+        />
       </Enter>
     </Screen>
   );
 }
 
-/** Үнэгүй (lime) ба Max (violet): ижил өргөн, ижил өндөр (мөрөөрөө сунана), бичвэр голлосон. */
-function Tile({ tone, name, sub, badge }: { tone: 'free' | 'max'; name: string; sub: string; badge: string | null }) {
+/** Бусад багц нэг мөрөөр: Үнэгүй lime, Max violet (Plus шиг тод, хатуу сүүдэртэй), нэр, өдрийн тоо, тэмдэг. */
+function Row({ tone, name, sub, badge }: { tone: 'free' | 'max'; name: string; sub: string; badge: string | null }) {
   const max = tone === 'max';
   return (
-    <View style={[styles.tile, max ? styles.tileMax : styles.tileFree]}>
-      {/* тэмдэггүй ч зай нь үлдэнэ: хоёр картын нэр, бичвэр нэг түвшинд */}
-      <Text aria-hidden={!badge} style={[styles.badge, max ? styles.badgeLemon : styles.badgeInk, !badge && styles.hidden]}>{badge ?? S.plans.current}</Text>
-      <Text style={[styles.tileName, max && styles.onDark]}>{name}</Text>
-      <Text style={[styles.tileSub, max && styles.onDarkSoft]}>{sub}</Text>
+    <View style={[styles.row, max ? styles.rowMax : styles.rowFree]}>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={[styles.rowName, max && styles.onDark]}>{name}</Text>
+        <Text style={[styles.rowSub, max && styles.onDarkSoft]}>{sub}</Text>
+      </View>
+      {badge ? <Text style={[styles.badge, max ? styles.badgeLemon : styles.badgeInk]}>{badge}</Text> : null}
     </View>
   );
 }
@@ -113,19 +120,25 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
 
   plus: {
-    alignItems: 'center',
     backgroundColor: colors.indigo,
     borderRadius: radius.lg,
     borderWidth: 2,
     borderColor: colors.ink,
-    paddingHorizontal: 20,
-    paddingTop: 14,
+    padding: 20,
     paddingBottom: 22,
-    gap: 8,
-    marginBottom: 16,
+    gap: 18,
+    marginBottom: 18,
     ...hardShadow(5),
   },
-  bearBox: { width: BEAR_W, height: BEAR_H },
+  plusHead: { gap: 8, marginBottom: -10 },
+  plusTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  plusText: { flex: 1, gap: 4 },
+  // Silkscreen: зөвхөн цифр (кирилл байхгүй)
+  plusNum: { fontFamily: fonts.pixelNum, fontSize: 64, lineHeight: 68, color: colors.lemon },
+  plusUnit: { fontFamily: fonts.bold, fontSize: 18, lineHeight: 22, color: colors.white },
+  plusName: { fontFamily: fonts.extrabold, fontSize: 32, lineHeight: 36, letterSpacing: -1, color: colors.white },
+  plusLine: { fontFamily: fonts.semibold, fontSize: 15, lineHeight: 20, color: colors.lavender, marginTop: 4 },
+  bearBox: { width: BEAR_W, height: BEAR_H, marginRight: -8 },
   // scale нь төвөөс хийгддэг тул анхны хэмжээтэй view-г хайрцагны төвд байрлуулна
   bearScale: {
     position: 'absolute',
@@ -135,38 +148,34 @@ const styles = StyleSheet.create({
     top: (BEAR_H - BEAR.height) / 2,
     transform: [{ scale: BEAR_SCALE }],
   },
-  plusName: { fontFamily: fonts.extrabold, fontSize: 32, lineHeight: 36, letterSpacing: -1, color: colors.white, textAlign: 'center' },
-  plusDaily: { fontFamily: fonts.extrabold, fontSize: 22, lineHeight: 26, letterSpacing: -0.4, color: colors.lemon, textAlign: 'center' },
-  plusLine: { fontFamily: fonts.semibold, fontSize: 15, lineHeight: 21, color: colors.lavender, textAlign: 'center' },
 
-  buy: { alignSelf: 'stretch', alignItems: 'center', gap: 12, marginTop: 10 },
-  priceRow: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'center', gap: 6 },
+  buy: { gap: 12 },
+  priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' },
   amount: { fontFamily: fonts.extrabold, fontSize: 40, lineHeight: 44, letterSpacing: -1, color: colors.lemon },
   perMonth: { fontFamily: fonts.semibold, fontSize: 18, color: colors.white },
-  cta: { alignSelf: 'stretch' },
   note: { fontFamily: fonts.semibold, fontSize: 13, color: colors.lavender, textAlign: 'center' },
 
-  badge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill, overflow: 'hidden', fontFamily: fonts.bold, fontSize: 12 },
+  badge: { alignSelf: 'center', paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill, overflow: 'hidden', fontFamily: fonts.bold, fontSize: 12 },
   badgeLemon: { backgroundColor: colors.lemon, color: colors.ink },
+  badgeStart: { alignSelf: 'flex-start' },
   badgeInk: { backgroundColor: colors.ink, color: colors.white },
 
-  pair: { flexDirection: 'row', gap: 12 },
-  tile: {
-    flex: 1,
+  row: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 10,
     borderRadius: radius.card,
     borderWidth: 2,
     borderColor: colors.ink,
-    paddingVertical: 18,
-    paddingHorizontal: 10,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    marginBottom: 14,
     ...hardShadow(4),
   },
-  tileFree: { backgroundColor: colors.lime },
-  tileMax: { backgroundColor: colors.violet },
-  tileName: { fontFamily: fonts.extrabold, fontSize: 20, lineHeight: 24, letterSpacing: -0.4, color: colors.ink, textAlign: 'center' },
-  tileSub: { fontFamily: fonts.semibold, fontSize: 14, lineHeight: 19, color: colors.ink, textAlign: 'center' },
+  rowFree: { backgroundColor: colors.lime },
+  rowMax: { backgroundColor: colors.violet },
+  rowName: { fontFamily: fonts.extrabold, fontSize: 22, lineHeight: 26, letterSpacing: -0.4, color: colors.ink },
+  rowSub: { fontFamily: fonts.semibold, fontSize: 15, color: colors.ink },
   onDark: { color: colors.white },
   onDarkSoft: { color: colors.lavender },
-  hidden: { opacity: 0 },
 });
