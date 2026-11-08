@@ -24,12 +24,6 @@ const BEAR = frameSize('bear_tutor_0_1320x1344', tutor.sheets[0], tutor.columns)
 const BEAR_SCALE = BEAR_H / BEAR.height;
 const BEAR_W = Math.round(BEAR.width * BEAR_SCALE);
 
-/** ms → 2026-12-09 (төхөөрөмжийн цагаар). */
-function day(ms: number): string {
-  const d = new Date(ms);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-
 /**
  * Багцууд: том KUMA Plus карт (баавгай, юу авах, үнэ, авах товч), доор нь Үнэгүй ба Max нэг мөрөөр. Авах товч сервер
  * худалдан авалт нээлттэй (GET /payments → open) гэх хүртэл дарагдахгүй.
@@ -59,7 +53,7 @@ export default function PlansScreen() {
       <Enter index={0}>
         <View style={styles.plus}>
           <View style={styles.plusHead}>
-            <Text style={[styles.badge, styles.badgeLemon]}>{plusMine ? S.plans.current : S.plans.recommended}</Text>
+            <Text style={[styles.badge, styles.badgeLemon, styles.badgeStart]}>{plusMine ? S.plans.current : S.plans.recommended}</Text>
             <Text style={styles.plusName}>{PLAN_NAMES.plus}</Text>
           </View>
           <View style={styles.plusTop}>
@@ -79,7 +73,6 @@ export default function PlansScreen() {
               <View style={styles.priceRow}>
                 <Text style={styles.amount}>{S.plans.amount(PLAN_PRICE.plus)}</Text>
                 <Text style={styles.perMonth}>{S.plans.perMonth}</Text>
-                {plusMine && me?.planUntil ? <Text style={styles.until}>{S.plans.until(day(me.planUntil))}</Text> : null}
               </View>
               <Button
                 title={plusMine ? S.plans.extend : S.plans.buy}
@@ -94,24 +87,30 @@ export default function PlansScreen() {
       </Enter>
 
       <Enter index={1}>
-        <Row name={PLAN_NAMES.free} sub={S.plans.dailyShort(PLAN_TUTOR_DAILY.free)} badge={current === 'free' ? S.plans.current : null} />
+        <Row tone="free" name={PLAN_NAMES.free} sub={S.plans.dailyShort(PLAN_TUTOR_DAILY.free)} badge={current === 'free' ? S.plans.current : null} />
       </Enter>
       <Enter index={2}>
-        <Row name={PLAN_NAMES.max} sub={current === 'max' ? S.plans.dailyShort(PLAN_TUTOR_DAILY.max) : S.plans.soon} badge={current === 'max' ? S.plans.current : null} dim={current !== 'max'} />
+        <Row
+          tone="max"
+          name={PLAN_NAMES.max}
+          sub={current === 'max' ? S.plans.dailyShort(PLAN_TUTOR_DAILY.max) : S.plans.maxSub}
+          badge={current === 'max' ? S.plans.current : S.plans.soon}
+        />
       </Enter>
     </Screen>
   );
 }
 
-/** Бусад багц нэг мөрөөр: нэр, товч утга, одоогийн бол тэмдэг. */
-function Row({ name, sub, badge, dim }: { name: string; sub: string; badge: string | null; dim?: boolean }) {
+/** Бусад багц нэг мөрөөр: Үнэгүй lime, Max violet (Plus шиг тод, хатуу сүүдэртэй), нэр, өдрийн тоо, тэмдэг. */
+function Row({ tone, name, sub, badge }: { tone: 'free' | 'max'; name: string; sub: string; badge: string | null }) {
+  const max = tone === 'max';
   return (
-    <View style={[styles.row, badge ? styles.rowMine : null]}>
-      <View style={{ flex: 1 }}>
-        <Text style={[type.h3, dim && styles.dim]}>{name}</Text>
-        <Text style={type.small}>{sub}</Text>
+    <View style={[styles.row, max ? styles.rowMax : styles.rowFree]}>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={[styles.rowName, max && styles.onDark]}>{name}</Text>
+        <Text style={[styles.rowSub, max && styles.onDarkSoft]}>{sub}</Text>
       </View>
-      {badge ? <Text style={[styles.badge, styles.badgeInk]}>{badge}</Text> : null}
+      {badge ? <Text style={[styles.badge, max ? styles.badgeLemon : styles.badgeInk]}>{badge}</Text> : null}
     </View>
   );
 }
@@ -151,23 +150,29 @@ const styles = StyleSheet.create({
   priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' },
   amount: { fontFamily: fonts.extrabold, fontSize: 40, lineHeight: 44, letterSpacing: -1, color: colors.lemon },
   perMonth: { fontFamily: fonts.semibold, fontSize: 18, color: colors.white },
-  until: { fontFamily: fonts.medium, fontSize: 14, color: colors.lavender, marginLeft: 'auto' },
   note: { fontFamily: fonts.semibold, fontSize: 13, color: colors.lavender, textAlign: 'center' },
 
-  badge: { alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill, overflow: 'hidden', fontFamily: fonts.bold, fontSize: 12 },
+  badge: { alignSelf: 'center', paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill, overflow: 'hidden', fontFamily: fonts.bold, fontSize: 12 },
   badgeLemon: { backgroundColor: colors.lemon, color: colors.ink },
-  badgeInk: { alignSelf: 'center', backgroundColor: colors.ink, color: colors.white },
+  badgeStart: { alignSelf: 'flex-start' },
+  badgeInk: { backgroundColor: colors.ink, color: colors.white },
 
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: colors.white,
     borderRadius: radius.card,
-    paddingVertical: 14,
+    borderWidth: 2,
+    borderColor: colors.ink,
+    paddingVertical: 16,
     paddingHorizontal: 18,
-    marginBottom: 10,
+    marginBottom: 14,
+    ...hardShadow(4),
   },
-  rowMine: { borderWidth: 2, borderColor: colors.ink },
-  dim: { color: colors.muted },
+  rowFree: { backgroundColor: colors.lime },
+  rowMax: { backgroundColor: colors.violet },
+  rowName: { fontFamily: fonts.extrabold, fontSize: 22, lineHeight: 26, letterSpacing: -0.4, color: colors.ink },
+  rowSub: { fontFamily: fonts.semibold, fontSize: 15, color: colors.ink },
+  onDark: { color: colors.white },
+  onDarkSoft: { color: colors.lavender },
 });
