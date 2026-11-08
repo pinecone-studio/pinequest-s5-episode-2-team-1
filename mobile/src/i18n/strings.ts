@@ -629,7 +629,7 @@ export const S = {
     tutorDaily: (n: number) => `Алдсан бодлогоо AI баавгайгаар өдөрт ${n} бодлого тайлбарлуулна`,
     dailyShort: (n: number) => `Өдөрт ${n} бодлого`,
     dailyWhat: 'Алдсан бодлогоо AI баавгайгаар тайлбарлуулна',
-    maxSub: 'Plus-аас илүү боломжтой',
+    maxSub: 'Plus-аас илүү',
     myPlan: 'Миний багц',
     seePlans: 'Багцууд',
     upsell: (n: number) => `KUMA Plus-аар алдсан бодлогоо AI баавгайгаар өдөрт ${n} бодлого тайлбарлуулна.`,
