@@ -1,8 +1,8 @@
 import { PLAN_PRICE, PLAN_TUTOR_DAILY } from '@shared/plan';
 import type { Payment, PaymentResponse } from '@shared/types';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { api, errorText } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
@@ -16,12 +16,21 @@ import { goBack } from '@/lib/nav';
 const POLL_MS = 4000;
 const POLL_FOR_MS = 15 * 60_000;
 
+/** Hosted төлбөрийн хуудас (Wire) руу шилжүүлнэ: вэб дээр тухайн tab-аараа, утсанд browser-оор. */
+function openCheckout(url: string) {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') window.location.assign(url);
+  else Linking.openURL(url).catch(() => {});
+}
+
 /**
- * KUMA Plus худалдан авах: нэхэмжлэл үүсгээд QR, банкны холбоосыг харуулна. Төлбөр орохыг хэдэн секунд тутам шалгаж,
+ * KUMA Plus худалдан авах: нэхэмжлэл үүсгээд QR, банкны холбоосыг харуулна, эсвэл (Wire) төлбөрийн хуудас руу шилжүүлнэ.
+ * Төлбөрийн хуудаснаас `/pay?payment=:id` гэж буцаж ирэхэд шинээр үүсгэхгүй, тэр төлбөрийг шалгана. Төлбөр орохыг хэдэн секунд тутам шалгаж,
  * орвол багц шинэчлэгдэнэ. Багцын дэлгэцийн товч сервер худалдан авалт нээлттэй үед л энд хүргэнэ.
  */
 export default function PayScreen() {
   const { setMe } = useAuth();
+  const { payment: returned } = useLocalSearchParams<{ payment?: string }>();
+  const returnedId = Number(returned);
   const [payment, setPayment] = useState<Payment | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -35,10 +44,24 @@ export default function PayScreen() {
     try {
       const res = await api<PaymentResponse>('/payments', { body: { plan: 'plus' } });
       setPayment(res.payment);
+      if (res.payment.checkoutUrl) openCheckout(res.payment.checkoutUrl);
     } catch (e) {
       setError(errorText(e));
     }
   }, []);
+
+  /** Төлбөрийн хуудаснаас буцаж ирсэн: тэр төлбөрийн төлвийг шууд асууна. */
+  const resume = useCallback(async (id: number) => {
+    setError(null);
+    started.current = Date.now();
+    try {
+      const res = await api<PaymentResponse>(`/payments/${id}`);
+      if (res.me) setMe(res.me);
+      setPayment(res.payment);
+    } catch (e) {
+      setError(errorText(e));
+    }
+  }, [setMe]);
 
   const check = useCallback(
     async (manual: boolean) => {
@@ -59,8 +82,9 @@ export default function PayScreen() {
   );
 
   useEffect(() => {
-    create();
-  }, [create]);
+    if (Number.isInteger(returnedId) && returnedId > 0) resume(returnedId);
+    else create();
+  }, [create, resume, returnedId]);
 
   useEffect(() => {
     if (payment?.status !== 'pending') return;
@@ -100,7 +124,14 @@ export default function PayScreen() {
           <Text style={type.bodyMuted}>{S.pay.waiting}</Text>
         ) : (
           <>
-            <Text style={type.body}>{S.pay.scan}</Text>
+            {payment.checkoutUrl ? (
+              <>
+                <Text style={type.body}>{S.pay.redirecting}</Text>
+                <Button title={S.pay.openCheckout} onPress={() => openCheckout(payment.checkoutUrl!)} />
+              </>
+            ) : payment.qrImage || payment.links?.length ? (
+              <Text style={type.body}>{S.pay.scan}</Text>
+            ) : null}
             {payment.qrImage ? (
               <Image
                 accessibilityLabel="QR"

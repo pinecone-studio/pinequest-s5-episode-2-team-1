@@ -28,7 +28,7 @@ export async function createPayment(
   provider: PaymentProvider,
   userId: number,
   plan: BuyablePlan,
-  callbackBase: string,
+  urls: { api: string; app: string },
   now = Date.now(),
 ): Promise<Payment> {
   const recent = await db
@@ -54,10 +54,12 @@ export async function createPayment(
       paymentId: row.id,
       amount,
       description: `${PLAN_NAMES[plan]} ${PLAN_PERIOD_DAYS} хоног`,
-      callbackUrl: `${callbackBase}/payments/callback/${row.id}`,
+      callbackUrl: `${urls.api}/payments/callback/${row.id}`,
+      successUrl: `${urls.app}/pay?payment=${row.id}`,
+      cancelUrl: `${urls.app}/plans`,
     });
     await db.prepare('UPDATE payments SET invoice_id = ? WHERE id = ?').bind(invoice.invoiceId, row.id).run();
-    return { ...view(row), qrImage: invoice.qrImage, qrText: invoice.qrText, links: invoice.links };
+    return { ...view(row), qrImage: invoice.qrImage, qrText: invoice.qrText, links: invoice.links, checkoutUrl: invoice.checkoutUrl };
   } catch {
     await db.prepare("UPDATE payments SET status = 'failed' WHERE id = ?").bind(row.id).run();
     throw new ApiError(502, 'PAYMENT_FAILED', 'Төлбөрийн системтэй холбогдсонгүй');
@@ -114,5 +116,14 @@ export async function checkPayment(
 /** Төлбөрийн системийн callback: биеийг нь итгэхгүй, системээс өөрөөс нь дахин шалгана. */
 export async function paymentCallback(db: D1Database, provider: PaymentProvider | null, paymentId: number, now = Date.now()) {
   const row = await db.prepare(SELECT_PAYMENT).bind(paymentId).first<PaymentRow>();
+  if (row) await settle(db, provider, row, now);
+}
+
+/** Системийн webhook: тухайн системийн нэхэмжлэлийг олоод (биеийг итгэхгүй) системээс дахин шалгана. */
+export async function paymentWebhook(db: D1Database, provider: PaymentProvider, invoiceId: string, now = Date.now()) {
+  const row = await db
+    .prepare('SELECT id, user_id, plan, amount, days, provider, invoice_id, status FROM payments WHERE provider = ? AND invoice_id = ?')
+    .bind(provider.name, invoiceId)
+    .first<PaymentRow>();
   if (row) await settle(db, provider, row, now);
 }

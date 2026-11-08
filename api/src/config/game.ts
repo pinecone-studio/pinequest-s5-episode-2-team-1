@@ -148,6 +148,12 @@ export const GAME = {
   /** Багцын төлбөр: нэг хэрэглэгч цагт хэдэн нэхэмжлэл үүсгэж болох (төлбөрийн систем рүү spam хийлгэхгүй). */
   PAYMENTS: {
     MAX_PER_HOUR: 10,
+    /** Wire (https://docs.wire.mn): API хаяг, нэг хүсэлтийн дээд хугацаа, webhook-ийн цагийн зөрүүний хязгаар (сек). */
+    WIRE_API: 'https://api.wire.mn/v1',
+    TIMEOUT_MS: 10_000,
+    WEBHOOK_TOLERANCE_S: 300,
+    /** Төлбөрийн хуудаснаас буцах апп (Origin header нь эдгээрийн нэг биш бол эхнийх нь). */
+    APP_ORIGINS: ['https://kumalearn.online'],
   },
 
   TUTOR,
