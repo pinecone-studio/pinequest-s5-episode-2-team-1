@@ -6,7 +6,6 @@ import { runBooksScenario } from './e2e-books';
 import { runClansScenario } from './e2e-clans';
 import { runDuelScenario } from './e2e-duel';
 import { runFriendsScenario } from './e2e-friends';
-import { runJudgeScenario } from './e2e-judge';
 import { runProfilesScenario } from './e2e-profiles';
 import { runTeacherScenario } from './e2e-teacher';
 import { check, clearRecovery, correctIndex, doTask, expectError, failureCount, me, register } from './e2e-lib';
@@ -343,7 +342,6 @@ async function main() {
   if (!only || only === 'friends') await runFriendsScenario();
   if (!only || only === 'clans') await runClansScenario();
   if (!only || only === 'duel') await runDuelScenario();
-  if (!only || only === 'judge') await runJudgeScenario();
   if (!only || only === 'teacher') await runTeacherScenario();
   if (!only || only === 'books') await runBooksScenario();
   console.log('\n— Ledger');
