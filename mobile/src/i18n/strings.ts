@@ -30,6 +30,9 @@ export const subjectGlyphs: Record<Subject, string> = {
 /** 1284 → "1 284 м" */
 const meters = (m: number) => `${String(m).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} м`;
 
+/** Мөнгөн дүн: 15000 → 15,000 (₮-тэй хамт, Silkscreen биш фонтоор). */
+const mnt = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
 export const S = {
   common: {
     loading: 'Ачаалж байна…',
@@ -614,22 +617,29 @@ export const S = {
   },
   plans: {
     title: 'Багцууд',
-    intro: 'Баавгай багш алдсан бодлогыг чинь хамт бодож тайлбарлана. Багц ахих тусам өдөрт илүү олон бодлого ярилцана.',
+    heroTitle: 'Алдсан бодлогоо AI баавгайгаар тайлбарлуул',
+    heroBody: 'Баавгай алдсан бодлогыг чинь алхам алхмаар тайлбарлаж, дараагийнхыг өөрөө бодоход тусална.',
+    compareTitle: 'Өдөрт тайлбарлуулах бодлого',
     current: 'Одоогийн багц',
+    recommended: 'Санал болгох',
     soon: 'Тун удахгүй',
     payingSoon: 'Төлбөр удахгүй нээгдэнэ',
-    price: (n: number) => `${String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}₮ / сар`,
+    price: (n: number) => `${mnt(n)}₮ / сар`,
+    amount: (n: number) => `${mnt(n)}₮`,
+    perMonth: '/ сар',
+    perDay: (n: number) => `Өдөрт ${mnt(n)}₮ орчим`,
     buy: 'KUMA Plus авах',
     extend: 'Сарын эрх сунгах',
     until: (date: string) => `${date} хүртэл`,
-    tutorDaily: (n: number) => `Баавгай багштай өдөрт ${n} бодлого ярилцана`,
+    tutorDaily: (n: number) => `Алдсан бодлогоо AI баавгайгаар өдөрт ${n} бодлого тайлбарлуулна`,
     base: ['Сурах зам, даалгавар, boss', 'Тулаан, анги, найзууд', 'Баавгайгаа хувцаслах'],
     plusExtra: 'Үнэгүй багцын бүх боломж',
     maxExtra: 'KUMA Plus-ын бүх боломж',
     maxSoon: 'Шинэ боломжууд удахгүй нэмэгдэнэ',
+    notes: ['Сар бүр автоматаар төлбөр татагдахгүй.', 'Хугацаа дуусвал Үнэгүй багц руу шилжинэ. Ахиц чинь хадгалагдана.'],
     myPlan: 'Миний багц',
     seePlans: 'Багцууд',
-    upsell: (n: number) => `KUMA Plus-аар баавгай багштай өдөрт ${n} бодлого ярилцана.`,
+    upsell: (n: number) => `KUMA Plus-аар алдсан бодлогоо AI баавгайгаар өдөрт ${n} бодлого тайлбарлуулна.`,
     upsellButton: 'KUMA Plus үзэх',
   },
   pay: {
