@@ -618,7 +618,6 @@ export const S = {
   plans: {
     title: 'Багцууд',
     current: 'Одоогийн багц',
-    recommended: 'Санал болгох',
     soon: 'Тун удахгүй',
     payingSoon: 'Төлбөр удахгүй нээгдэнэ',
     price: (n: number) => `${mnt(n)}₮ / сар`,
@@ -628,8 +627,7 @@ export const S = {
     extend: 'Сарын эрх сунгах',
     tutorDaily: (n: number) => `Алдсан бодлогоо AI баавгайгаар өдөрт ${n} бодлого тайлбарлуулна`,
     dailyShort: (n: number) => `Өдөрт ${n} бодлого`,
-    perDayUnit: 'бодлого өдөрт',
-    dailyWhat: 'AI баавгай тайлбарлана',
+    pitch: (n: number) => `AI баавгай өдөрт ${n} бодлого тайлбарлана`,
     maxSub: 'Plus-аас илүү',
     myPlan: 'Миний багц',
     seePlans: 'Багцууд',

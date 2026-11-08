@@ -19,7 +19,7 @@ import { goBack } from '@/lib/nav';
 const CAN_BUY = Platform.OS === 'web';
 
 /** Plus карт дээрх баавгай: самбарын өмнө тайлбарлаж буй TutorBear-ийг энэ өндөрт багтаана. */
-const BEAR_H = 150;
+const BEAR_H = 124;
 const BEAR = frameSize('bear_tutor_0_1320x1344', tutor.sheets[0], tutor.columns);
 const BEAR_SCALE = BEAR_H / BEAR.height;
 const BEAR_W = Math.round(BEAR.width * BEAR_SCALE);
@@ -52,15 +52,11 @@ export default function PlansScreen() {
 
       <Enter index={0}>
         <View style={styles.plus}>
-          <View style={styles.plusHead}>
-            <Text style={[styles.badge, styles.badgeLemon, styles.badgeStart]}>{plusMine ? S.plans.current : S.plans.recommended}</Text>
-            <Text style={styles.plusName}>{PLAN_NAMES.plus}</Text>
-          </View>
           <View style={styles.plusTop}>
             <View style={styles.plusText}>
-              <Text style={styles.plusNum}>{PLAN_TUTOR_DAILY.plus}</Text>
-              <Text style={styles.plusUnit}>{S.plans.perDayUnit}</Text>
-              <Text style={styles.plusLine}>{S.plans.dailyWhat}</Text>
+              {plusMine ? <Text style={[styles.badge, styles.badgeLemon, styles.badgeStart]}>{S.plans.current}</Text> : null}
+              <Text style={styles.plusName}>{PLAN_NAMES.plus}</Text>
+              <Text style={styles.plusPitch}>{S.plans.pitch(PLAN_TUTOR_DAILY.plus)}</Text>
             </View>
             <View style={styles.bearBox} importantForAccessibility="no-hide-descendants">
               <View style={styles.bearScale}>
@@ -130,14 +126,10 @@ const styles = StyleSheet.create({
     marginBottom: 18,
     ...hardShadow(5),
   },
-  plusHead: { gap: 8, marginBottom: -10 },
-  plusTop: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  plusText: { flex: 1, gap: 4 },
-  // Silkscreen: зөвхөн цифр (кирилл байхгүй)
-  plusNum: { fontFamily: fonts.pixelNum, fontSize: 64, lineHeight: 68, color: colors.lemon },
-  plusUnit: { fontFamily: fonts.bold, fontSize: 18, lineHeight: 22, color: colors.white },
-  plusName: { fontFamily: fonts.extrabold, fontSize: 32, lineHeight: 36, letterSpacing: -1, color: colors.white },
-  plusLine: { fontFamily: fonts.semibold, fontSize: 15, lineHeight: 20, color: colors.lavender, marginTop: 4 },
+  plusTop: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  plusText: { flex: 1, gap: 8 },
+  plusName: { fontFamily: fonts.extrabold, fontSize: 30, lineHeight: 34, letterSpacing: -1, color: colors.white },
+  plusPitch: { fontFamily: fonts.semibold, fontSize: 16, lineHeight: 22, color: colors.lavender },
   bearBox: { width: BEAR_W, height: BEAR_H, marginRight: -8 },
   // scale нь төвөөс хийгддэг тул анхны хэмжээтэй view-г хайрцагны төвд байрлуулна
   bearScale: {
@@ -151,8 +143,8 @@ const styles = StyleSheet.create({
 
   buy: { gap: 12 },
   priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' },
-  amount: { fontFamily: fonts.extrabold, fontSize: 40, lineHeight: 44, letterSpacing: -1, color: colors.lemon },
-  perMonth: { fontFamily: fonts.semibold, fontSize: 18, color: colors.white },
+  amount: { fontFamily: fonts.extrabold, fontSize: 34, lineHeight: 38, letterSpacing: -1, color: colors.lemon },
+  perMonth: { fontFamily: fonts.semibold, fontSize: 16, color: colors.lavender },
   note: { fontFamily: fonts.semibold, fontSize: 13, color: colors.lavender, textAlign: 'center' },
 
   badge: { alignSelf: 'center', paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill, overflow: 'hidden', fontFamily: fonts.bold, fontSize: 12 },
