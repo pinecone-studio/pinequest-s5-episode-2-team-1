@@ -119,7 +119,8 @@ async function relay(
     }
   } catch (e) {
     if (!(e instanceof ApiError)) console.error('[tutor]', e);
-    send({ type: 'end', reason: 'error', message: e instanceof ApiError ? e.message : LOST });
+    // code: апп өдрийн эрх дууссан (TUTOR_LIMIT) үед багцын санал харуулна.
+    send({ type: 'end', reason: 'error', message: e instanceof ApiError ? e.message : LOST, code: e instanceof ApiError ? e.code : undefined });
     safeClose(client, 1011, 'error');
     return;
   }

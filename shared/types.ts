@@ -60,6 +60,7 @@ export type ErrorCode =
   | 'STAGE_LOCKED'
   | 'TUTOR_UNAVAILABLE'
   | 'TUTOR_LIMIT'
+  | 'TUTOR_ACTIVE'
   | 'PROFILE_NOT_FOUND'
   | 'FRIEND_LIMIT'
   | 'CLAN_NOT_FOUND'
@@ -724,7 +725,7 @@ export type TutorServerMsg =
   /** Хүүхэд яриаг тасалсан тул баавгай зогсов: тоглуулж буй дуугаа хаяна. */
   | { type: 'interrupted' }
   /** done = баавгай бодлогыг тайлбарлаж дуусгаад баяртай гэсэн. */
-  | { type: 'end'; reason: 'time' | 'done' | 'error'; message?: string };
+  | { type: 'end'; reason: 'time' | 'done' | 'error'; message?: string; code?: ErrorCode };
 
 // ---------- Сурах бичгийн сан (admin, scripts/books.ts) ----------
 
