@@ -1,7 +1,7 @@
 import type { BEAR_FACES, BEAR_FURS } from './bear';
 import type { BagItem, LootKind } from './loot';
 import type { HeardFrom, Reason, SelfLevel } from './onboarding';
-import type { Plan } from './plan';
+import type { BuyablePlan, Plan } from './plan';
 // API ба WebSocket-ийн гэрээ. api/ болон mobile/ хоёулаа зөвхөн `import type`-аар ашиглана
 // (runtime код энд байхгүй тул Metro энэ файлыг bundle хийх шаардлагагүй).
 
@@ -61,6 +61,9 @@ export type ErrorCode =
   | 'TUTOR_UNAVAILABLE'
   | 'TUTOR_LIMIT'
   | 'TUTOR_ACTIVE'
+  | 'PAYMENTS_OFF'
+  | 'PAYMENT_FAILED'
+  | 'PAYMENT_LIMIT'
   | 'PROFILE_NOT_FOUND'
   | 'FRIEND_LIMIT'
   | 'CLAN_NOT_FOUND'
@@ -140,6 +143,8 @@ export interface Me {
   teacher: boolean;
   /** Төлбөрийн багц: баавгайтай ярих өдрийн эрх үүнээс хамаарна. */
   plan: Plan;
+  /** Төлбөртэй багц дуусах мөч (ms). Үнэгүй эсвэл хугацаагүй бол null. */
+  planUntil?: number | null;
   /** Амь: зангилаа руу орох бүрт нэг хасагдана; 0 бол бодлого, давтлага, баавгай хаалттай. */
   lives: number;
   maxLives: number;
@@ -854,4 +859,41 @@ export interface DashboardStatsResponse {
 export interface BookOcrResponse {
   model: string;
   pages: Array<{ seq: number; sha256: string; text: string }>;
+}
+
+// ---- Багцын төлбөр (api/src/routes/payments.ts) ----
+
+/** Худалдан авалт нээлттэй эсэх. Төлбөрийн систем холбогдоогүй үед open = false, товч дарагдахгүй. */
+export interface PaymentsInfoResponse {
+  open: boolean;
+}
+
+export interface CreatePaymentBody {
+  plan: BuyablePlan;
+}
+
+export type PaymentStatus = 'pending' | 'paid' | 'failed';
+
+/** Банкны апп руу шууд орох холбоос (QPay-ийн urls гэх мэт). */
+export interface PaymentLink {
+  name: string;
+  link: string;
+  logo?: string;
+}
+
+export interface Payment {
+  id: number;
+  plan: BuyablePlan;
+  amount: number;
+  status: PaymentStatus;
+  /** Зөвхөн үүсгэх үед: QR зураг (base64 PNG), QR текст, банкны холбоосууд. */
+  qrImage?: string;
+  qrText?: string;
+  links?: PaymentLink[];
+}
+
+/** me: төлбөр орсон бол шинэ багцтай хэрэглэгч. */
+export interface PaymentResponse {
+  payment: Payment;
+  me?: Me;
 }
