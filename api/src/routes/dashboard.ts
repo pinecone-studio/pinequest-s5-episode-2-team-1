@@ -147,7 +147,7 @@ td { font-variant-numeric: tabular-nums; }
     <div class="card tile"><div class="label">Сүүлийн 7 хоногт орсон</div><div class="value" id="k-7d"></div><div class="delta" id="k-30d"></div></div>
     <div class="card tile"><div class="label">Өнөөдөр дууссан даалгавар</div><div class="value" id="k-tasks"></div></div>
     <div class="card tile"><div class="label">Өнөөдөр тоглосон тулаан</div><div class="value" id="k-duels"></div></div>
-    <div class="card tile"><div class="label">Өнөөдөр баавгайтай ярилцсан</div><div class="value" id="k-tutor"></div></div>
+    <div class="card tile"><div class="label">Өнөөдөр AI баавгайгаар тайлбарлуулсан</div><div class="value" id="k-tutor"></div></div>
   </section>
 
   <section class="grid2">
