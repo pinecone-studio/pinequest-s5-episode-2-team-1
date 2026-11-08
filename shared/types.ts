@@ -1,6 +1,7 @@
 import type { BEAR_FACES, BEAR_FURS } from './bear';
 import type { BagItem, LootKind } from './loot';
 import type { HeardFrom, Reason, SelfLevel } from './onboarding';
+import type { Plan } from './plan';
 // API ба WebSocket-ийн гэрээ. api/ болон mobile/ хоёулаа зөвхөн `import type`-аар ашиглана
 // (runtime код энд байхгүй тул Metro энэ файлыг bundle хийх шаардлагагүй).
 
@@ -137,6 +138,8 @@ export interface Me {
   judge: boolean;
   /** Багш: сурагчийн апп-ын оронд багшийн хэсэг (анги, явц, тэмцээн) нээгдэнэ. */
   teacher: boolean;
+  /** Төлбөрийн багц: баавгайтай ярих өдрийн эрх үүнээс хамаарна. */
+  plan: Plan;
   /** Амь: зангилаа руу орох бүрт нэг хасагдана; 0 бол бодлого, давтлага, баавгай хаалттай. */
   lives: number;
   maxLives: number;

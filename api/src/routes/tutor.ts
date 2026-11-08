@@ -18,6 +18,7 @@ import {
   tutorRequest,
   tutorSystemPrompt,
 } from '../llm/tutor';
+import { effectivePlan, tutorDailyLimit } from '../domain/plan';
 import { endTutorSession, loadTutorContext, startTutorSession } from '../services/tutor';
 import { getUserRow, requireLife } from '../services/users';
 
@@ -41,6 +42,7 @@ tutorRoutes.get('/ws', async (c) => {
   const raw = c.req.query('questionId');
   const questionId = raw === undefined ? undefined : parseId(raw);
 
+  let dailyLimit: number = GAME.TUTOR.DAILY_SESSIONS.free;
   const [client, server] = Object.values(new WebSocketPair());
   server.accept();
   // compatibility_date-аас хамаарч binary нь Blob ирдэг тул ArrayBuffer болгоно (дуу дараалал алдагдахгүй, sync).
@@ -52,7 +54,7 @@ tutorRoutes.get('/ws', async (c) => {
       model: c.env.GEMINI_TUTOR_MODEL || 'gemini-3.5-flash-lite',
       background: (p) => c.executionCtx.waitUntil(p),
       session: {
-        start: () => startTutorSession(c.env.DB, userId),
+        start: () => startTutorSession(c.env.DB, userId, dailyLimit),
         end: (id, counted, bearMs) =>
           c.executionCtx.waitUntil(endTutorSession(c.env.DB, id, counted, bearMs).catch((e) => console.error('[tutor] session', e))),
       },
@@ -60,7 +62,10 @@ tutorRoutes.get('/ws', async (c) => {
         // Upgrade-ийн өмнө HTTP 503 өгвөл клиент зөвхөн "холбоо тасарлаа" л хардаг тул socket-оор мэдэгдэнэ.
         if (!key) throw new ApiError(503, 'TUTOR_UNAVAILABLE', 'Баавгай одоо ярих боломжгүй байна. Дараа дахин оролдоно уу.');
         // Амьгүй бол нөхөгдтөл баавгайтай ярилцах хаалттай.
-        requireLife(await getUserRow(c.env.DB, userId));
+        const user = await getUserRow(c.env.DB, userId);
+        requireLife(user);
+        // Багцын өдрийн эрх: start() үүнийг ашиглана (load нь start-аас өмнө дуусна).
+        dailyLimit = tutorDailyLimit(effectivePlan(user, Date.now()));
         return loadTutorContext(c.env.DB, userId, questionId);
       },
     }),
