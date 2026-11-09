@@ -7,7 +7,7 @@ import type { AppEnv } from '../env';
 import { ApiError, readBody } from '../lib/errors';
 import { requireAuth } from '../lib/session';
 import { paymentProvider, webhookProvider } from '../payments/provider';
-import { checkPayment, createPayment, paymentCallback, paymentWebhook } from '../services/payments';
+import { checkPayment, createPayment, paymentCallback, paymentTestAmount, paymentWebhook } from '../services/payments';
 import { loadMe } from '../services/users';
 
 export const paymentRoutes = new Hono<AppEnv>();
@@ -34,7 +34,7 @@ paymentRoutes.post('/', requireAuth, async (c) => {
   if (!provider) throw new ApiError(503, 'PAYMENTS_OFF', 'Төлбөр удахгүй нээгдэнэ');
   const body = await readBody(c, z.object({ plan: z.enum(BUYABLE_PLANS) }));
   const urls = { api: new URL(c.req.url).origin, app: appOrigin(c.req.header('origin')) };
-  const payment = await createPayment(c.env.DB, provider, c.get('userId'), body.plan, urls);
+  const payment = await createPayment(c.env.DB, provider, c.get('userId'), body.plan, urls, Date.now(), await paymentTestAmount(c.env.PAYMENT_TEST_AMOUNT, c.env.DB, c.get('userId')));
   return c.json<PaymentResponse>({ payment });
 });
 

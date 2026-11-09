@@ -30,6 +30,8 @@ export async function createPayment(
   plan: BuyablePlan,
   urls: { api: string; app: string },
   now = Date.now(),
+  /** Туршилтын дүн (routes: зөвхөн admin, PAYMENT_TEST_AMOUNT). Өгөөгүй бол багцын үнэ. */
+  testAmount?: number,
 ): Promise<Payment> {
   const recent = await db
     .prepare('SELECT COUNT(*) AS n FROM payments WHERE user_id = ? AND created_at > ?')
@@ -39,7 +41,7 @@ export async function createPayment(
     throw new ApiError(429, 'PAYMENT_LIMIT', 'Хэт олон оролдлого');
   }
 
-  const amount = PLAN_PRICE[plan];
+  const amount = testAmount ?? PLAN_PRICE[plan];
   const row = await db
     .prepare(
       `INSERT INTO payments (user_id, plan, amount, days, provider, created_at)
@@ -53,7 +55,7 @@ export async function createPayment(
     const invoice = await provider.createInvoice({
       paymentId: row.id,
       amount,
-      description: `${PLAN_NAMES[plan]} ${PLAN_PERIOD_DAYS} хоног`,
+      description: `${PLAN_NAMES[plan]} ${PLAN_PERIOD_DAYS} хоног${testAmount === undefined ? '' : ' (туршилт)'}`,
       callbackUrl: `${urls.api}/payments/callback/${row.id}`,
       successUrl: `${urls.app}/pay?payment=${row.id}`,
       cancelUrl: `${urls.app}/plans`,
@@ -126,4 +128,15 @@ export async function paymentWebhook(db: D1Database, provider: PaymentProvider, 
     .bind(provider.name, invoiceId)
     .first<PaymentRow>();
   if (row) await settle(db, provider, row, now);
+}
+
+/**
+ * Жинхэнэ мөнгөөр бага дүнгээр турших (Wire-д туршилтын горим байхгүй): PAYMENT_TEST_AMOUNT тавьсан үед зөвхөн admin-ий
+ * нэхэмжлэл тэр дүнтэй. Бусад хэрэглэгч, эсвэл тохиргоо буруу бол undefined (багцын үнэ).
+ */
+export async function paymentTestAmount(setting: string | undefined, db: D1Database, userId: number): Promise<number | undefined> {
+  const amount = Number(setting);
+  if (!setting || !Number.isInteger(amount) || amount <= 0) return undefined;
+  const user = await db.prepare('SELECT is_admin FROM users WHERE id = ?').bind(userId).first<{ is_admin: number }>();
+  return user?.is_admin === 1 ? amount : undefined;
 }
