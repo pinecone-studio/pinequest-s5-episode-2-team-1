@@ -9,7 +9,7 @@ describe('тулааны хичээл', () => {
   });
 
   it('идэвхтэй хичээлүүд бүгд үндсэн төрөлд байна', () => {
-    expect(ACTIVE_SUBJECTS).toEqual(['math', 'mongolian', 'physics', 'social', 'english']);
+    expect(ACTIVE_SUBJECTS).toEqual(['math', 'mongolian', 'physics', 'chemistry', 'social', 'english']);
     for (const s of ACTIVE_SUBJECTS) expect(SUBJECTS).toContain(s);
   });
 });

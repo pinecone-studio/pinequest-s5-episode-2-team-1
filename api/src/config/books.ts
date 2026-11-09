@@ -29,6 +29,7 @@ export const BOOK_SUBJECT_TITLES: Record<string, string> = {
   math: 'Математик',
   mongolian: 'Монгол хэл',
   physics: 'Физик',
+  chemistry: 'Хими',
   social: 'Нийгэм судлал',
   english: 'Англи хэл',
 };

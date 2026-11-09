@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { subjectInGrade } from '../../shared/subjects';
 
 describe('subjectInGrade', () => {
-  it('offers physics and social only in grades 7–11', () => {
-    for (const subject of ['physics', 'social'] as const) {
+  it('offers physics, chemistry and social only in grades 7–11', () => {
+    for (const subject of ['physics', 'chemistry', 'social'] as const) {
       expect(subjectInGrade(subject, 6)).toBe(false);
       expect(subjectInGrade(subject, 7)).toBe(true);
       expect(subjectInGrade(subject, 11)).toBe(true);
