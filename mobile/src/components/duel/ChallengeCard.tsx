@@ -11,7 +11,6 @@ import { S, subjectNames } from '@/i18n/strings';
 export function ChallengeCard({
   index,
   duel,
-  highlight,
   canAfford,
   disabled,
   loading,
@@ -19,7 +18,6 @@ export function ChallengeCard({
 }: {
   index: number;
   duel: DuelSummary;
-  highlight: boolean;
   canAfford: boolean;
   disabled: boolean;
   loading: boolean;
@@ -28,7 +26,7 @@ export function ChallengeCard({
   const n = duel.teamSize;
   const team = n > 1;
   return (
-    <Enter index={index} style={[styles.card, highlight && styles.match]}>
+    <Enter index={index} style={styles.card}>
       <View style={styles.top}>
         <View style={styles.mode}>
           <Text style={styles.modeText}>{`${n} VS ${n}`}</Text>
@@ -87,7 +85,6 @@ function Seats({ duel }: { duel: DuelSummary }) {
 
 const styles = StyleSheet.create({
   card: { backgroundColor: colors.white, borderRadius: radius.card, padding: 14, gap: 10, borderWidth: 2, borderColor: colors.white },
-  match: { borderColor: colors.violet },
   top: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   body: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   mode: { backgroundColor: arena.bg, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },

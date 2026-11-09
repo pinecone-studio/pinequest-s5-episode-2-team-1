@@ -1926,6 +1926,8 @@ export const sprites = {
   nav2_bag_off_30x30: { source: require('../../assets/sprites/nav2_bag_off_30x30.png'), width: 30, height: 30 },
   nav2_league_on_30x30: { source: require('../../assets/sprites/nav2_league_on_30x30.png'), width: 30, height: 30 },
   nav2_league_off_30x30: { source: require('../../assets/sprites/nav2_league_off_30x30.png'), width: 30, height: 30 },
+  nav2_duel_on_30x30: { source: require('../../assets/sprites/nav2_duel_on_30x30.png'), width: 30, height: 30 },
+  nav2_duel_off_30x30: { source: require('../../assets/sprites/nav2_duel_off_30x30.png'), width: 30, height: 30 },
   btn_calendar_30x30: { source: require('../../assets/sprites/btn_calendar_30x30.png'), width: 30, height: 30 },
   btn_calendar_24x24: { source: require('../../assets/sprites/btn_calendar_24x24.png'), width: 24, height: 24 },
   ob_friends_24x24: { source: require('../../assets/sprites/ob_friends_24x24.png'), width: 24, height: 24 },

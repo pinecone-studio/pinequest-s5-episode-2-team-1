@@ -1,4 +1,4 @@
-import type { CreateDuelBody, DuelResponse, DuelSummary, DuelTeam, DuelTeamBody, JoinDuelBody, LobbyResponse } from '@shared/types';
+import type { DuelResponse, DuelSummary, DuelTeam, DuelTeamBody, LobbyResponse } from '@shared/types';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
 import { Share } from 'react-native';
@@ -9,7 +9,7 @@ import { formatCode } from '@/lib/duelTeams';
 
 const POLL_MS = 3_000;
 
-/** Тулааны лобби: 3 сек тутам poll, сорилт үүсгэх/нэгдэх/баг солих, эхэлмэгц өрөө рүү автоматаар орно. */
+/** Тулааны лобби: 3 сек тутам poll, нэгдэх/баг солих, эхэлмэгц өрөө рүү автоматаар орно (үүсгэх, кодоор орох нь тусдаа дэлгэцэд). */
 export function useDuelLobby() {
   const [lobby, setLobby] = useState<LobbyResponse | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -63,7 +63,6 @@ export function useDuelLobby() {
     if (duel.status === 'accepted') enter(duel.id);
   };
 
-  const create = (body: CreateDuelBody) => run('create', () => api<DuelResponse>('/duels', { body }).then(() => undefined));
   const cancel = (id: number) => run('cancel', () => api(`/duels/${id}/cancel`, { method: 'POST' }).then(() => undefined));
   const leaveTeam = (id: number) => run('leave', () => api(`/duels/${id}/leave`, { method: 'POST' }).then(() => undefined));
   const switchTeam = (id: number, team: DuelTeam) =>
@@ -72,21 +71,6 @@ export function useDuelLobby() {
   const accept = async (id: number) => {
     if (!(await leaveMineOk())) return;
     await run(`accept-${id}`, async () => afterJoin((await api<DuelResponse>(`/duels/${id}/accept`, { method: 'POST' })).duel));
-  };
-
-  /** Кодоор орно; алдааг дуудсан газарт (кодын талбарын доор) буцаана. */
-  const join = async (code: string): Promise<string | null> => {
-    if (busy !== null || !(await leaveMineOk())) return null;
-    setBusy('join');
-    try {
-      afterJoin((await api<DuelResponse>('/duels/join', { body: { code } satisfies JoinDuelBody })).duel);
-      await load();
-      return null;
-    } catch (e) {
-      return errorText(e);
-    } finally {
-      setBusy(null);
-    }
   };
 
   const share = async (d: DuelSummary) => {
@@ -101,5 +85,5 @@ export function useDuelLobby() {
     }
   };
 
-  return { lobby, busy, error, enter, create, cancel, leaveTeam, switchTeam, accept, join, share };
+  return { lobby, busy, error, enter, cancel, leaveTeam, switchTeam, accept, share };
 }

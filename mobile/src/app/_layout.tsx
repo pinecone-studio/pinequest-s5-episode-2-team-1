@@ -125,6 +125,8 @@ function RootNavigator() {
           <Stack.Screen name="uul/[code]" />
           <Stack.Screen name="task/[subject]" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />
           <Stack.Screen name="recovery/[subject]" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="duel/new" />
+          <Stack.Screen name="duel/join" options={{ animation: 'slide_from_bottom' }} />
           <Stack.Screen name="duel/[id]" options={{ gestureEnabled: false }} />
           <Stack.Screen name="tutor" options={{ animation: 'slide_from_bottom' }} />
           <Stack.Screen name="quiz/[id]" options={{ gestureEnabled: false }} />

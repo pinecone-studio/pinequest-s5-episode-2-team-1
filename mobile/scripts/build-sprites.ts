@@ -176,7 +176,7 @@ for (const n of ['bear_lesson', 'lesson_bg', 'lesson_shadow']) M[n] = [3];
 for (const n of ['bear_tutor_0', 'bear_mouth', 'classroom']) M[n] = [3];
 for (const k of ['leaf', 'blossom', 'pine']) M[`branch_${k}`] = M[`branch_${k}_v`] = [3];
 // v2 (Charlie маягийн) nav icon ба Нүүрний товчнууд: 20px эх, 30dp-ээр (1.5×) — нарийн pixel
-for (const n of ['home', 'tasks', 'path', 'shop', 'crew', 'bag', 'league']) {
+for (const n of ['home', 'tasks', 'path', 'shop', 'crew', 'bag', 'league', 'duel']) {
   M[`nav2_${n}_on`] = [[30, 30]];
   M[`nav2_${n}_off`] = [[30, 30]];
 }

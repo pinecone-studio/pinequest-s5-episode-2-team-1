@@ -28,7 +28,7 @@ const ITEMS: NavItem[] = [
   // { route: 'tasks', label: 'Хичээл', on: 'nav2_tasks_on_30x30', off: 'nav2_tasks_off_30x30' },
   { route: 'path', label: 'Аялал', on: 'nav2_path_on_30x30', off: 'nav2_path_off_30x30' },
   { route: 'shop', label: 'Дэлгүүр', on: 'nav2_shop_on_30x30', off: 'nav2_shop_off_30x30' },
-  { route: 'duel', label: 'Зорилго', on: 'nav2_crew_on_30x30', off: 'nav2_crew_off_30x30' },
+  { route: 'duel', label: 'Тулаан', on: 'nav2_duel_on_30x30', off: 'nav2_duel_off_30x30' },
   { route: 'league', label: 'Лиг', on: 'nav2_league_on_30x30', off: 'nav2_league_off_30x30' },
 ];
 
