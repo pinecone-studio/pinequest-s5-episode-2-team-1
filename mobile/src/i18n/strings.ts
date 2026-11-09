@@ -270,7 +270,11 @@ export const S = {
     tabs: 'Ангилал',
     tabBg: 'Дэвсгэр',
     tabOutfit: 'Хувцас',
-    sectionHot: 'ОНЦЛОХ',
+    /** Модон самбарын pixel фонт зөвхөн кирилл том үсэгтэй. */
+    sectionPlus: 'ПЛЮС ХУВЦАС',
+    plusTag: 'PLUS',
+    plusOnly: 'KUMA Plus-д л',
+    plusOnlyA11y: 'Зөвхөн KUMA Plus хэрэглэгч авна',
     sectionTrending: 'ЭРЭЛТТЭЙ',
     sectionSeasonal: 'УЛИРЛЫН',
     sectionAll: 'БҮХ ХУВЦАС',
@@ -428,6 +432,7 @@ export const S = {
   lives: {
     label: (n: number, max: number, time: string | null) => `Амь ${n}/${max}${time ? `, дараагийн амь ${time}` : ''}`,
     full: 'Дүүрэн',
+    unlimited: 'Хязгааргүй амь (KUMA Plus)',
   },
   path: {
     friendHere: (name: string) => `${name} энд байна. Дарвал профайл нь нээгдэнэ`,
@@ -493,6 +498,9 @@ export const S = {
     correct: 'Зөв! Сайн байна.',
     wrong: 'Буруу. 1 амь хасагдлаа. Дахин бодоод үзээрэй: дахиад буруу бол зөв хариуг харуулна.',
     revealed: 'Дахин буруу. 1 амь хасагдлаа. Зөв хариу нь ногооноор тодорсон, тайлбарыг уншаад ижил сэдвийн өөр асуулт бодно.',
+    /** KUMA Plus: амь хасагдахгүй. */
+    wrongPlus: 'Буруу. Дахин бодоод үзээрэй: дахиад буруу бол зөв хариуг харуулна.',
+    revealedPlus: 'Дахин буруу. Зөв хариу нь ногооноор тодорсон, тайлбарыг уншаад ижил сэдвийн өөр асуулт бодно.',
     next: 'Үргэлжлүүлэх',
     retry: 'Дахин бодох',
     doneTitle: 'Давтлагаа дуусгалаа!',
@@ -610,6 +618,8 @@ export const S = {
     dailyShort: (n: number) => `Өдөрт ${n} бодлого`,
     noTutor: 'AI баавгай зөвхөн KUMA Plus-д',
     pitch: (n: number) => `AI баавгай өдөрт ${n} бодлого тайлбарлана`,
+    /** Plus картын богино давуу талууд. */
+    perks: (outfits: number, mult: number) => ['∞ амь', `${outfits} онцгой хувцас`, 'Сар бүр бэлэг хайрцаг', `${mult}× боргоцой`],
     maxSub: 'Plus-аас илүү',
     myPlan: 'Миний багц',
     seePlans: 'Багцууд',
@@ -802,6 +812,17 @@ export const S = {
     closedAlt: 'Хаалттай нууц хайрцаг',
     openAlt: 'Нээгдсэн нууц хайрцаг',
   },
+  plusBox: {
+    title: 'KUMA Plus бэлэг',
+    tapToOpen: 'Хайрцгийг дараад нээгээрэй',
+    left: (n: number) => `Нээгээгүй хайрцаг: ${n}`,
+    none: 'Нээх хайрцаг алга. KUMA Plus авах бүрт нэг хайрцаг нэмэгдэнэ.',
+    got: 'Шинэ хувцас олдлоо!',
+    coins: 'Plus-ын бүх хувцас чинь бий тул боргоцой авлаа!',
+    wear: 'Өмсөх',
+    done: 'Болсон',
+    openButton: (n: number) => `Бэлэг хайрцаг нээх (${n})`,
+  },
   items: {
     amber: { name: 'Хувын болор', desc: 'Тулаанд нэг асуултын 2 буруу хариултыг арилгана.' },
     honey: { name: 'Зөгийн балны сав', desc: 'Нэг зүрх (амь) нөхнө.' },
@@ -876,6 +897,8 @@ export const errorMessages: Record<ErrorCode | 'NETWORK' | 'TIMEOUT' | 'OFFLINE'
   PAYMENTS_OFF: 'Төлбөр удахгүй нээгдэнэ.',
   PAYMENT_FAILED: 'Төлбөрийн системтэй холбогдож чадсангүй. Дахин оролдоорой.',
   PAYMENT_LIMIT: 'Хэт олон оролдлого хийлээ. Нэг цагийн дараа дахин оролдоорой.',
+  PLUS_ONLY: 'Энэ хувцсыг зөвхөн KUMA Plus хэрэглэгч авна.',
+  NO_PLUS_BOX: 'Бэлэг хайрцаг алга. KUMA Plus авах бүрт нэг хайрцаг нэмэгдэнэ.',
   PROFILE_NOT_FOUND: 'Ийм кодтой профайл олдсонгүй',
   FRIEND_LIMIT: 'Найзын тоо дээд хэмжээндээ хүрсэн байна',
   CLAN_NOT_FOUND: 'Ийм кодтой анги олдсонгүй',

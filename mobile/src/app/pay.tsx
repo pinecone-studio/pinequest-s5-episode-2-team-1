@@ -28,7 +28,7 @@ function openCheckout(url: string) {
  * орвол багц шинэчлэгдэнэ. Багцын дэлгэцийн товч сервер худалдан авалт нээлттэй үед л энд хүргэнэ.
  */
 export default function PayScreen() {
-  const { setMe } = useAuth();
+  const { me, setMe } = useAuth();
   const { payment: returned } = useLocalSearchParams<{ payment?: string }>();
   const returnedId = Number(returned);
   const [payment, setPayment] = useState<Payment | null>(null);
@@ -113,6 +113,9 @@ export default function PayScreen() {
           <>
             <Text style={type.h2}>{S.pay.paid}</Text>
             <Text style={type.body}>{S.plans.tutorDaily(PLAN_TUTOR_DAILY.plus)}</Text>
+            {(me?.plusBoxes ?? 0) > 0 ? (
+              <Button title={S.plusBox.openButton(me?.plusBoxes ?? 0)} variant="lemon" onPress={() => router.replace('/plus-box')} />
+            ) : null}
             <Button title={S.pay.done} onPress={() => router.replace('/plans')} />
           </>
         ) : error ? (

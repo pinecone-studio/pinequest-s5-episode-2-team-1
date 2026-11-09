@@ -30,7 +30,7 @@ function shuffledOrder(n: number): number[] {
 export default function RecoveryScreen() {
   const { subject: rawSubject } = useLocalSearchParams<{ subject: string }>();
   const subject = activeSubject(rawSubject);
-  const { refreshMe } = useAuth();
+  const { me, refreshMe } = useAuth();
   const [recovery, setRecovery] = useState<RecoveryDto | null>(null);
   const [order, setOrder] = useState<number[]>([]);
   const [selected, setSelected] = useState<number | null>(null);
@@ -145,7 +145,11 @@ export default function RecoveryScreen() {
                     style={[styles.verdict, { color: verdict.correct ? colors.okText : colors.dangerText }]}
                     accessibilityLiveRegion="polite"
                   >
-                    {verdict.correct ? S.recovery.correct : revealed ? S.recovery.revealed : S.recovery.wrong}
+                    {verdict.correct
+                      ? S.recovery.correct
+                      : revealed
+                        ? me?.unlimitedLives ? S.recovery.revealedPlus : S.recovery.revealed
+                        : me?.unlimitedLives ? S.recovery.wrongPlus : S.recovery.wrong}
                   </Text>
                   {verdict.explanation ? <Text style={styles.body}>{verdict.explanation}</Text> : null}
                   <Button

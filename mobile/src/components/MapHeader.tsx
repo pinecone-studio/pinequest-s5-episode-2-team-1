@@ -66,15 +66,23 @@ export function MapHeader({
             <View style={styles.stats}>
               <AvatarLink size={36} border={2} dotBorder={theme.panel} />
               {/* XP-ийн оронд амь: бодлогод алдах бүрт нэг хасагдана, 2 цаг тутамд нэг нөхөгдөнө */}
-              <View style={styles.stat} accessible accessibilityLabel={S.lives.label(lives, maxLives, clock)}>
-                <View style={{ gap: 4, alignItems: 'center' }}>
-                  <View style={styles.hearts}>
-                    {Array.from({ length: maxLives }, (_, k) => (
-                      <Sprite key={k} id="icon_heart_12x12" style={k < lives ? null : styles.heartOff} />
-                    ))}
+              <View style={styles.stat} accessible accessibilityLabel={me?.unlimitedLives ? S.lives.unlimited : S.lives.label(lives, maxLives, clock)}>
+                {me?.unlimitedLives ? (
+                  // KUMA Plus: амь хасагдахгүй
+                  <View style={styles.unlimited}>
+                    <Sprite id="icon_heart_12x12" />
+                    <Animated.Text style={[styles.infinity, fade.text]}>∞</Animated.Text>
                   </View>
-                  <Animated.Text style={[styles.timer, clock ? styles.timerNum : null, fade.text]}>{clock ?? S.lives.full}</Animated.Text>
-                </View>
+                ) : (
+                  <View style={{ gap: 4, alignItems: 'center' }}>
+                    <View style={styles.hearts}>
+                      {Array.from({ length: maxLives }, (_, k) => (
+                        <Sprite key={k} id="icon_heart_12x12" style={k < lives ? null : styles.heartOff} />
+                      ))}
+                    </View>
+                    <Animated.Text style={[styles.timer, clock ? styles.timerNum : null, fade.text]}>{clock ?? S.lives.full}</Animated.Text>
+                  </View>
+                )}
               </View>
               <Stat icon="icon_flame_24x24" value={me.streak} label={S.path.streak} text={fade.text} />
               <Stat icon="btn_honey_24x24" value={honey} label="Боргоцой" text={fade.text} />
@@ -151,6 +159,8 @@ const styles = StyleSheet.create({
   num: { fontFamily: fonts.pixelNum, fontSize: 14, lineHeight: 15 },
   hearts: { flexDirection: 'row', gap: 2 },
   heartOff: { opacity: 0.3 },
+  unlimited: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  infinity: { fontFamily: fonts.bold, fontSize: 22, lineHeight: 24 },
   timer: { fontFamily: fonts.pixel, fontSize: 12, lineHeight: 13 },
   timerNum: { fontFamily: fonts.pixelNum, fontSize: 10 },
   // газрын зураг дээр тод харагдахаар зөөлөн сүүдэр

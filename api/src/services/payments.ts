@@ -70,6 +70,7 @@ export async function createPayment(
  * Төлөгдсөн гэж тэмдэглээд багцыг сунгана. Нэг batch (transaction): хоёр мөр хоёулаа status = 'pending' үед л өөрчлөгдөнө,
  * тиймээс callback, шалгалт зэрэг давхар ирсэн ч багц нэг л удаа сунгагдана.
  * Сунгалт: ижил багцтай, хугацаа нь дуусаагүй бол дуусах өдрөөс, үгүй бол одооноос. Хугацаагүй (NULL) ижил багц хэвээр.
+ * Төлбөр бүр нэг бэлэг хайрцаг нэмнэ (plus_boxes).
  */
 export async function confirmPayment(db: D1Database, p: PaymentRow, now = Date.now()): Promise<boolean> {
   const [user, payment] = await db.batch([
@@ -80,7 +81,8 @@ export async function confirmPayment(db: D1Database, p: PaymentRow, now = Date.n
              WHEN plan = ? AND plan_until IS NULL THEN NULL
              ELSE MAX(CASE WHEN plan = ? THEN plan_until ELSE 0 END, ?) + ?
            END,
-           plan = ?
+           plan = ?,
+           plus_boxes = plus_boxes + 1
          WHERE id = ? AND EXISTS (SELECT 1 FROM payments WHERE id = ? AND status = 'pending')`,
       )
       .bind(p.plan, p.plan, now, p.days * DAY_MS, p.plan, p.user_id, p.id),

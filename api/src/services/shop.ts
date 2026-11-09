@@ -1,6 +1,8 @@
+import { isPaidPlan, isPlusOutfit } from '../../../shared/plan';
 import type { CosmeticsResponse, Me, ShopResponse, Slot } from '../../../shared/types';
 import { COSMETICS, cosmeticById } from '../config/cosmetics';
 import { levelFromXp } from '../domain/level';
+import { effectivePlan } from '../domain/plan';
 import { isConstraintError } from '../lib/db';
 import { ApiError } from '../lib/errors';
 import { getCatalog } from './items';
@@ -83,7 +85,14 @@ async function ownedCosmeticIds(db: D1Database, userId: number): Promise<Set<str
 export async function cosmeticsView(db: D1Database, userId: number): Promise<CosmeticsResponse> {
   const [me, owned] = await Promise.all([loadMe(db, userId), ownedCosmeticIds(db, userId)]);
   return {
-    items: COSMETICS.map((c) => ({ id: c.id, kind: c.kind, key: c.key, price: c.price, owned: me.admin || me.judge || c.price === 0 || owned.has(c.id) })),
+    items: COSMETICS.map((c) => ({
+      id: c.id,
+      kind: c.kind,
+      key: c.key,
+      price: c.price,
+      owned: me.admin || me.judge || c.price === 0 || owned.has(c.id),
+      ...(c.kind === 'outfit' && isPlusOutfit(c.key) ? { plusOnly: true } : {}),
+    })),
     me,
   };
 }
@@ -93,7 +102,11 @@ export async function buyCosmetic(db: D1Database, userId: number, cosmeticId: st
   const c = cosmeticById(cosmeticId);
   if (!c) throw new ApiError(404, 'NOT_FOUND', 'Олдсонгүй');
   if (c.price === 0) throw new ApiError(409, 'ALREADY_OWNED', 'Үнэгүй');
-  await getUserRow(db, userId);
+  const user = await getUserRow(db, userId);
+  // Plus-ын онцгой хувцас: зөвхөн KUMA Plus (Max) идэвхтэй хэрэглэгч авна. Өмнө нь авсан бол Plus дууссан ч эзэмшсэн хэвээр.
+  if (c.kind === 'outfit' && isPlusOutfit(c.key) && !isPaidPlan(effectivePlan(user, now)) && !allAccess(user)) {
+    throw new ApiError(403, 'PLUS_ONLY', 'Энэ хувцсыг зөвхөн KUMA Plus хэрэглэгч авна');
+  }
   try {
     await db.batch([
       db.prepare('INSERT INTO user_cosmetics (user_id, cosmetic_id, acquired_at) VALUES (?, ?, ?)').bind(userId, c.id, now),
