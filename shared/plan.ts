@@ -2,8 +2,11 @@
 export const PLANS = ['free', 'plus', 'max'] as const;
 export type Plan = (typeof PLANS)[number];
 
-/** Алдсан бодлогоо AI баавгайгаар өдөрт тайлбарлуулах бодлогын тоо. API-ийн GAME.TUTOR.DAILY_SESSIONS, апп-ын багцын дэлгэц хоёулаа эндээс. */
-export const PLAN_TUTOR_DAILY: Record<Plan, number> = { free: 1, plus: 10, max: 10 };
+/** Алдсан бодлогоо AI баавгайгаар өдөрт тайлбарлуулах бодлогын тоо. Үнэгүй 0: AI баавгай зөвхөн төлбөртэй багцад. API-ийн GAME.TUTOR.DAILY_SESSIONS, апп-ын багцын дэлгэц хоёулаа эндээс. */
+export const PLAN_TUTOR_DAILY: Record<Plan, number> = { free: 0, plus: 10, max: 10 };
+
+/** AI баавгайтай багц эсэх (өдрийн эрх 0-ээс их). */
+export const hasTutor = (plan: Plan): boolean => PLAN_TUTOR_DAILY[plan] > 0;
 
 /** Апп-д харуулах нэр. */
 export const PLAN_NAMES: Record<Plan, string> = { free: 'Үнэгүй', plus: 'KUMA Plus', max: 'KUMA Max' };

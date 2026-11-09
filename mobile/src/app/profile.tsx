@@ -1,5 +1,5 @@
 import { CLAN_ICONS, clanTitle } from '@shared/clan';
-import { PLAN_NAMES, PLAN_TUTOR_DAILY } from '@shared/plan';
+import { hasTutor, PLAN_NAMES, PLAN_TUTOR_DAILY } from '@shared/plan';
 import type { ClanDto, FriendBody, FriendsResponse, MyClanResponse, MyProfileResponse } from '@shared/types';
 import * as Haptics from 'expo-haptics';
 import { router, useFocusEffect } from 'expo-router';
@@ -189,7 +189,9 @@ export default function ProfileScreen() {
                   <View style={{ flex: 1, gap: 3 }}>
                     <Text style={styles.subTitle}>{S.plans.myPlan}</Text>
                     <Text style={styles.cardTitle}>{PLAN_NAMES[me.plan ?? 'free']}</Text>
-                    <Text style={type.small}>{S.plans.tutorDaily(PLAN_TUTOR_DAILY[me.plan ?? 'free'])}</Text>
+                    <Text style={type.small}>
+                      {hasTutor(me.plan ?? 'free') ? S.plans.tutorDaily(PLAN_TUTOR_DAILY[me.plan ?? 'free']) : S.plans.noTutor}
+                    </Text>
                   </View>
                   <Text style={styles.chevron}>›</Text>
                 </Card>

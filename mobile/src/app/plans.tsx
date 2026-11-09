@@ -84,7 +84,7 @@ export default function PlansScreen() {
       </Enter>
 
       <Enter index={1}>
-        <Row tone="free" name={PLAN_NAMES.free} sub={S.plans.dailyShort(PLAN_TUTOR_DAILY.free)} badge={current === 'free' ? S.plans.current : null} />
+        <Row tone="free" name={PLAN_NAMES.free} sub={S.plans.noTutor} badge={current === 'free' ? S.plans.current : null} />
       </Enter>
       <Enter index={2}>
         <Row

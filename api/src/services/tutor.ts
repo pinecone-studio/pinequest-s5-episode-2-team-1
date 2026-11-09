@@ -75,6 +75,8 @@ const ACTIVE_WINDOW_MS = GAME.TUTOR.MAX_SESSION_MS + 60_000;
  * dailyLimit = хэрэглэгчийн багцын өдрийн эрх (domain/plan.ts). Буцаасан id-г endTutorSession-д өгнө.
  */
 export async function startTutorSession(db: D1Database, userId: number, dailyLimit: number, now = Date.now()): Promise<number> {
+  // Үнэгүй багц: AI баавгай байхгүй (өдрийн эрх 0). Апп энэ кодоор KUMA Plus-ийн санал харуулна.
+  if (dailyLimit <= 0) throw new ApiError(403, 'TUTOR_PLUS_ONLY', 'AI баавгай зөвхөн KUMA Plus багцад байна');
   const day = ubDay(now);
   const activeSince = now - ACTIVE_WINDOW_MS;
   const row = await db

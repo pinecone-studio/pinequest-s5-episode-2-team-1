@@ -1,10 +1,12 @@
 import { GATE_ITEM } from '@shared/loot';
+import { hasTutor } from '@shared/plan';
 import { UNIT_GATE } from '@shared/path';
 import type { TaskResult } from '@shared/types';
 import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
+import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { CountUp, Enter, Motion, Pop, Rising, Sprite } from '@/components/pixel';
 import { colors, fonts, radius } from '@/constants/theme';
@@ -36,6 +38,9 @@ const SOFT = '#CFC6FF';
 
 /** 06 · Хичээл дууслаа / шагнал. Бүх тоо серверийн TaskResult-аас. `onRecovery` = нөхөх салаа зам нээгдсэн (дараагийн алхам). */
 export function RewardView({ result, onAgain, onRecovery }: { result: TaskResult; onAgain: () => void; onRecovery?: () => void }) {
+  const { me } = useAuth();
+  // Үнэгүй багцад AI баавгай байхгүй: товч KUMA Plus-ийн санал руу хөтөлнө.
+  const tutor = hasTutor(me?.plan ?? 'free');
   const insets = useSafeAreaInsets();
   const online = useOnline();
   const leveledUp = result.levelAfter > result.levelBefore;
@@ -96,7 +101,12 @@ export function RewardView({ result, onAgain, onRecovery }: { result: TaskResult
               {/* давсан хаалгатай дахин тулалдах боломжгүй */}
               {result.gateBeaten ? null : <Button title={S.reward.again} variant="white" small onPress={onAgain} />}
               {result.correctCount < result.total && online ? (
-                <Button title={S.reward.talk} variant="white" small onPress={() => router.push('/tutor')} />
+                <Button
+                  title={tutor ? S.reward.talk : S.tutor.askPlus}
+                  variant="white"
+                  small
+                  onPress={() => router.push(tutor ? '/tutor' : '/plans')}
+                />
               ) : null}
             </>
           )}

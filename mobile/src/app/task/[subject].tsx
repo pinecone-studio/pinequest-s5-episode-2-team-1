@@ -1,5 +1,6 @@
 import type { AnswerResponse, FlagResponse, TaskDto, TaskResult } from '@shared/types';
 import * as Haptics from 'expo-haptics';
+import { hasTutor } from '@shared/plan';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as ScreenCapture from 'expo-screen-capture';
 import { type ComponentRef, useCallback, useEffect, useRef, useState } from 'react';
@@ -404,7 +405,12 @@ export default function TaskScreen() {
               ) : null}
 
               {feedback && !feedback.correct && online && !practice ? (
-                <Button title={S.tutor.ask} variant="white" small onPress={() => router.push(`/tutor?questionId=${q.id}`)} />
+                <Button
+                  title={hasTutor(me?.plan ?? 'free') ? S.tutor.ask : S.tutor.askPlus}
+                  variant="white"
+                  small
+                  onPress={() => router.push(hasTutor(me?.plan ?? 'free') ? `/tutor?questionId=${q.id}` : '/plans')}
+                />
               ) : null}
 
               {feedback ? (
