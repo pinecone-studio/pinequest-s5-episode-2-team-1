@@ -14,9 +14,11 @@ import {
   TutorBusyError,
   type TutorContent,
   tutorAsked,
+  tutorFigures,
   tutorKickoff,
   tutorRequest,
   tutorSystemPrompt,
+  withFigures,
 } from '../llm/tutor';
 import { effectivePlan, tutorDailyLimit } from '../domain/plan';
 import { endTutorSession, loadTutorContext, startTutorSession } from '../services/tutor';
@@ -142,6 +144,7 @@ async function relay(
   const hideAnswer = ctx.questions.length > 0 && ctx.questions.every((q) => q.hideAnswer);
   /** Өмнөх ээлжүүд бичвэрээр: дууг дахин илгээвэл зардал нь ээлж бүрт өснө. */
   const history: TutorContent[] = [];
+  const figures = tutorFigures(ctx.questions);
   let replies = 0;
   /** Gemini-д явуулсан хүсэлтийн тоо: хүүхэд тасалсан, гарсан ч төлбөр гардаг тул хязгаарт тоолно. */
   let requests = 0;
@@ -182,7 +185,7 @@ async function relay(
     requests++;
     const last = requests >= GAME.TUTOR.MAX_REPLIES;
     try {
-      const contents = [...history, tutorAsked(asked, last)];
+      const contents = withFigures([...history, tutorAsked(asked, last)], figures);
       const usedCache = cacheName ?? undefined;
       let out;
       try {

@@ -22,6 +22,7 @@ interface QuestionRow {
   options: string;
   correct_index: number;
   explanation: string | null;
+  image: string | null;
 }
 
 /** Миний ангийн хугацаа дуусаагүй даалгаврууд (ойрхон дуусах нь эхэндээ) ба миний явц. */
@@ -57,7 +58,7 @@ async function load(db: D1Database, me: number, id: number) {
   if ((await clanOf(db, me))?.id !== a.clan_id) throw new ApiError(403, 'FORBIDDEN', 'Энэ даалгавар чиний ангийнх биш');
   const [qs, mine] = await db.batch([
     db
-      .prepare('SELECT q.prompt, q.options, q.correct_index, q.explanation FROM json_each(?) j JOIN questions q ON q.id = j.value ORDER BY j.key')
+      .prepare('SELECT q.prompt, q.options, q.correct_index, q.explanation, q.image FROM json_each(?) j JOIN questions q ON q.id = j.value ORDER BY j.key')
       .bind(a.question_ids),
     db.prepare('SELECT position, choice, correct FROM assignment_answers WHERE assignment_id = ? AND user_id = ? ORDER BY position').bind(id, me),
   ]);
@@ -73,7 +74,7 @@ export async function assignmentView(db: D1Database, me: number, id: number, now
     topicName: topicLabel(a.subject, a.topic),
     dueDay: a.due_day,
     open: ubDay(now) <= a.due_day,
-    questions: questions.map((q) => ({ prompt: q.prompt, options: JSON.parse(q.options) as string[] })),
+    questions: questions.map((q) => ({ prompt: q.prompt, options: JSON.parse(q.options) as string[], ...(q.image ? { image: q.image } : {}) })),
     answers: answers.map((r) => ({
       choice: r.choice,
       correct: r.correct === 1,

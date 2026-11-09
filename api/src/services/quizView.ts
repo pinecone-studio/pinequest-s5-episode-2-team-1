@@ -39,7 +39,7 @@ async function assertAccess(db: D1Database, g: GameRow, me: number) {
 
 // prev: өмнөх асуултуудын оноо, cur: одоогийнх (асуулт явж байхад нууна: хэн зөв хариулсан нь илрэхгүй)
 type BoardRow = { id: number; username: string; display_name: string | null; bear_look: string | null; prev: number; cur: number };
-type QuestionRow = { prompt: string; options: string; correct_index: number; explanation: string };
+type QuestionRow = { prompt: string; options: string; correct_index: number; explanation: string; image: string | null };
 type MineRow = { choice: number; correct: number; points: number };
 
 export async function quizView(db: D1Database, me: number, id: number, now = Date.now()): Promise<QuizView> {
@@ -58,7 +58,7 @@ export async function quizView(db: D1Database, me: number, id: number, now = Dat
       .bind(id, g.q),
     db.prepare('SELECT choice, COUNT(*) AS n FROM quiz_answers WHERE game_id = ? AND q = ? GROUP BY choice').bind(id, g.q),
     db.prepare('SELECT choice, correct, points FROM quiz_answers WHERE game_id = ? AND q = ? AND user_id = ?').bind(id, g.q, me),
-    db.prepare('SELECT prompt, options, correct_index, explanation FROM questions WHERE id = ?').bind(ids[g.q] ?? 0),
+    db.prepare('SELECT prompt, options, correct_index, explanation, image FROM questions WHERE id = ?').bind(ids[g.q] ?? 0),
   ]);
   const players = board.results as BoardRow[];
   const picks = answered.results as { choice: number; n: number }[];
@@ -77,7 +77,10 @@ export async function quizView(db: D1Database, me: number, id: number, now = Dat
     phase,
     q: g.q,
     total: ids.length,
-    question: qRow && phase !== 'finished' ? { prompt: qRow.prompt, options: JSON.parse(qRow.options) as string[] } : null,
+    question:
+      qRow && phase !== 'finished'
+        ? { prompt: qRow.prompt, options: JSON.parse(qRow.options) as string[], ...(qRow.image ? { image: qRow.image } : {}) }
+        : null,
     endsAt: phase === 'question' ? g.phase_at + QUESTION_MS : null,
     questionMs: QUESTION_MS,
     correctIndex: shown && qRow ? qRow.correct_index : null,

@@ -49,6 +49,7 @@ export interface AssignmentView {
   topicName: string | null;
   dueDay: string;
   open: boolean;
-  questions: { prompt: string; options: string[] }[];
+  /** image: зурагтай асуултын PNG/WebP data URI. */
+  questions: { prompt: string; options: string[]; image?: string }[];
   answers: AssignmentAnswerDto[];
 }
