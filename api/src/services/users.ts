@@ -172,6 +172,7 @@ export function buildMe(
   const progress = levelProgress(user.xp);
   const block = shieldBlock(s, user.points, today);
   const equipped = parseEquipped(user.equipped);
+  const plan = effectivePlan(user, now);
   return {
     id: user.id,
     username: user.username,
@@ -211,7 +212,8 @@ export function buildMe(
     admin: user.is_admin === 1,
     judge: user.is_judge === 1,
     teacher: user.is_teacher === 1,
-    plan: effectivePlan(user, now),
+    plan,
+    planUntil: plan === 'free' || user.is_admin === 1 || user.is_judge === 1 ? null : user.plan_until,
     lives: lives.lives,
     maxLives: GAME.LIVES.MAX,
     nextLifeAt: nextLifeAt(lives),

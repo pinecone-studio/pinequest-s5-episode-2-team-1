@@ -115,6 +115,7 @@ function RootNavigator() {
           <Stack.Screen name="bag" />
           <Stack.Screen name="pinecones" />
           <Stack.Screen name="plans" />
+          <Stack.Screen name="pay" />
           <Stack.Screen name="chest" options={{ animation: 'fade', gestureEnabled: false }} />
           <Stack.Screen name="profile" />
           <Stack.Screen name="u/[code]" />

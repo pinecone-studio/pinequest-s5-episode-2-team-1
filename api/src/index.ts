@@ -14,6 +14,7 @@ import { dashboardRoutes } from './routes/dashboard';
 import { duelRoutes } from './routes/duels';
 import { friendRoutes } from './routes/friends';
 import { meRoutes } from './routes/me';
+import { paymentRoutes } from './routes/payments';
 import { profileRoutes } from './routes/profiles';
 import { quizRoutes } from './routes/quiz';
 import { recoveryRoutes } from './routes/recovery';
@@ -60,5 +61,6 @@ app.route('/tutor', tutorRoutes);
 app.route('/teacher', teacherRoutes);
 app.route('/quiz', quizRoutes);
 app.route('/assignments', assignmentRoutes);
+app.route('/payments', paymentRoutes);
 
 export default app;
