@@ -1,4 +1,4 @@
-import { PLAN_NAMES, PLAN_PRICE, PLAN_TUTOR_DAILY, PLANS, type Plan } from '@shared/plan';
+import { PLAN_NAMES, PLAN_PRICE, PLAN_TUTOR_DAILY, type Plan } from '@shared/plan';
 import type { PaymentsInfoResponse } from '@shared/types';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -6,40 +6,32 @@ import { Platform, StyleSheet, Text, View } from 'react-native';
 import { api } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
-import { Enter } from '@/components/pixel';
-import { BackButton, Card, Screen } from '@/components/ui';
-import { colors, fonts, radius } from '@/constants/theme';
+import { Enter, frameSize } from '@/components/pixel';
+import { TutorBear } from '@/components/TutorBear';
+import { BackButton, Screen } from '@/components/ui';
+import { colors, fonts, hardShadow, radius } from '@/constants/theme';
 import { type } from '@/constants/type';
 import { S } from '@/i18n/strings';
+import tutor from '@/lib/pixelBear/bear-tutor.json';
 import { goBack } from '@/lib/nav';
-
-/** Багц бүрийн давуу тал: эхнийх нь доод багцын бүх боломж, сүүлийнх нь баавгай багшийн өдрийн эрх. */
-function features(plan: Plan): string[] {
-  const tutor = S.plans.tutorDaily(PLAN_TUTOR_DAILY[plan]);
-  if (plan === 'free') return [...S.plans.base, tutor];
-  if (plan === 'plus') return [S.plans.plusExtra, tutor];
-  return [S.plans.maxExtra, S.plans.maxSoon];
-}
-
-/** Тодруулах өнгө: Plus = гол санал (lime), Max = удахгүй (lavender). */
-const ACCENT: Record<Plan, string> = { free: colors.white, plus: colors.lime, max: colors.lavender };
 
 /** Худалдан авалт эхний ээлжинд зөвхөн вэб дээр (kumalearn.online). Утасны апп дотор үнэ, товч харуулахгүй. */
 const CAN_BUY = Platform.OS === 'web';
 
-/** ms → 2026-12-09 (төхөөрөмжийн цагаар). */
-function day(ms: number): string {
-  const d = new Date(ms);
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
+/** Plus карт дээрх баавгай: самбарын өмнө тайлбарлаж буй TutorBear-ийг энэ өндөрт багтаана. */
+const BEAR_H = 124;
+const BEAR = frameSize('bear_tutor_0_1320x1344', tutor.sheets[0], tutor.columns);
+const BEAR_SCALE = BEAR_H / BEAR.height;
+const BEAR_W = Math.round(BEAR.width * BEAR_SCALE);
 
 /**
- * Багцууд: Үнэгүй, KUMA Plus, KUMA Max-ийг харьцуулна. Одоогийн багцыг тэмдэглэнэ. Вэб дээр Plus-ын үнэ, авах товч гарна:
- * сервер худалдан авалт нээлттэй (GET /payments → open) гэж хэлэх хүртэл товч дарагдахгүй. Max бүхэлдээ удахгүй.
+ * Багцууд: том KUMA Plus карт (баавгай, юу авах, үнэ, авах товч), доор нь Үнэгүй ба Max нэг мөрөөр. Авах товч сервер
+ * худалдан авалт нээлттэй (GET /payments → open) гэх хүртэл дарагдахгүй.
  */
 export default function PlansScreen() {
   const { me } = useAuth();
   const current: Plan = me?.plan ?? 'free';
+  const plusMine = current === 'plus';
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -57,70 +49,125 @@ export default function PlansScreen() {
           {S.plans.title}
         </Text>
       </View>
-      <Text style={[type.bodyMuted, styles.intro]}>{S.plans.intro}</Text>
 
-      {PLANS.map((plan, i) => {
-        const mine = plan === current;
-        const soon = plan === 'max';
-        return (
-          <Enter key={plan} index={i}>
-            <Card style={[styles.card, { backgroundColor: ACCENT[plan] }, mine && styles.mine]}>
-              <View style={styles.top}>
-                <Text style={type.h3}>{PLAN_NAMES[plan]}</Text>
-                {mine ? <Text style={[styles.badge, styles.badgeMine]}>{S.plans.current}</Text> : null}
-                {soon && !mine ? <Text style={styles.badge}>{S.plans.soon}</Text> : null}
+      <Enter index={0}>
+        <View style={styles.plus}>
+          <View style={styles.plusTop}>
+            <View style={styles.plusText}>
+              {plusMine ? <Text style={[styles.badge, styles.badgeLemon, styles.badgeStart]}>{S.plans.current}</Text> : null}
+              <Text style={styles.plusName}>{PLAN_NAMES.plus}</Text>
+              <Text style={styles.plusPitch}>{S.plans.pitch(PLAN_TUTOR_DAILY.plus)}</Text>
+            </View>
+            <View style={styles.bearBox} importantForAccessibility="no-hide-descendants">
+              <View style={styles.bearScale}>
+                <TutorBear phase="bear" mouth={0} label="" />
               </View>
-              <View style={styles.list}>
-                {features(plan).map((f) => (
-                  <View key={f} style={styles.row}>
-                    <Text style={styles.tick}>✓</Text>
-                    <Text style={[type.body, { flex: 1 }]}>{f}</Text>
-                  </View>
-                ))}
+            </View>
+          </View>
+
+          {CAN_BUY ? (
+            <View style={styles.buy}>
+              <View style={styles.priceRow}>
+                <Text style={styles.amount}>{S.plans.amount(PLAN_PRICE.plus)}</Text>
+                <Text style={styles.perMonth}>{S.plans.perMonth}</Text>
               </View>
-              {plan === 'plus' && CAN_BUY ? (
-                <View style={styles.buy}>
-                  <Text style={type.h3}>{S.plans.price(PLAN_PRICE.plus)}</Text>
-                  {mine && me?.planUntil ? <Text style={type.bodyMuted}>{S.plans.until(day(me.planUntil))}</Text> : null}
-                  <Button
-                    title={mine ? S.plans.extend : S.plans.buy}
-                    variant="ink"
-                    small
-                    disabled={!open}
-                    onPress={() => router.push('/pay')}
-                  />
-                  {open ? null : <Text style={[type.bodyMuted, styles.note]}>{S.plans.payingSoon}</Text>}
-                </View>
-              ) : null}
-            </Card>
-          </Enter>
-        );
-      })}
+              <Button
+                title={plusMine ? S.plans.extend : S.plans.buy}
+                variant="lemon"
+                disabled={!open}
+                onPress={() => router.push('/pay')}
+              />
+              {open ? null : <Text style={styles.note}>{S.plans.payingSoon}</Text>}
+            </View>
+          ) : null}
+        </View>
+      </Enter>
+
+      <Enter index={1}>
+        <Row tone="free" name={PLAN_NAMES.free} sub={S.plans.dailyShort(PLAN_TUTOR_DAILY.free)} badge={current === 'free' ? S.plans.current : null} />
+      </Enter>
+      <Enter index={2}>
+        <Row
+          tone="max"
+          name={PLAN_NAMES.max}
+          sub={current === 'max' ? S.plans.dailyShort(PLAN_TUTOR_DAILY.max) : S.plans.maxSub}
+          badge={current === 'max' ? S.plans.current : S.plans.soon}
+        />
+      </Enter>
     </Screen>
   );
 }
 
+/** Бусад багц нэг мөрөөр: Үнэгүй lime, Max violet (Plus шиг тод, хатуу сүүдэртэй), нэр, өдрийн тоо, тэмдэг. */
+function Row({ tone, name, sub, badge }: { tone: 'free' | 'max'; name: string; sub: string; badge: string | null }) {
+  const max = tone === 'max';
+  return (
+    <View style={[styles.row, max ? styles.rowMax : styles.rowFree]}>
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={[styles.rowName, max && styles.onDark]}>{name}</Text>
+        <Text style={[styles.rowSub, max && styles.onDarkSoft]}>{sub}</Text>
+      </View>
+      {badge ? <Text style={[styles.badge, max ? styles.badgeLemon : styles.badgeInk]}>{badge}</Text> : null}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
-  header: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
-  intro: { marginBottom: 16 },
-  card: { gap: 12, marginBottom: 14 },
-  mine: { borderWidth: 2, borderColor: colors.ink },
-  top: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  badge: {
-    marginLeft: 'auto',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
-    overflow: 'hidden',
-    backgroundColor: colors.white,
-    fontFamily: fonts.bold,
-    fontSize: 12,
-    color: colors.ink,
+  header: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 16 },
+
+  plus: {
+    backgroundColor: colors.indigo,
+    borderRadius: radius.lg,
+    borderWidth: 2,
+    borderColor: colors.ink,
+    padding: 20,
+    paddingBottom: 22,
+    gap: 18,
+    marginBottom: 18,
+    ...hardShadow(5),
   },
-  badgeMine: { backgroundColor: colors.ink, color: colors.white },
-  list: { gap: 8 },
-  buy: { gap: 8 },
-  note: { textAlign: 'center' },
-  row: { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
-  tick: { fontFamily: fonts.bold, fontSize: 15, lineHeight: 21, color: colors.okText },
+  plusTop: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  plusText: { flex: 1, gap: 8 },
+  plusName: { fontFamily: fonts.extrabold, fontSize: 30, lineHeight: 34, letterSpacing: -1, color: colors.white },
+  plusPitch: { fontFamily: fonts.semibold, fontSize: 16, lineHeight: 22, color: colors.lavender },
+  bearBox: { width: BEAR_W, height: BEAR_H, marginRight: -8 },
+  // scale нь төвөөс хийгддэг тул анхны хэмжээтэй view-г хайрцагны төвд байрлуулна
+  bearScale: {
+    position: 'absolute',
+    width: BEAR.width,
+    height: BEAR.height,
+    left: (BEAR_W - BEAR.width) / 2,
+    top: (BEAR_H - BEAR.height) / 2,
+    transform: [{ scale: BEAR_SCALE }],
+  },
+
+  buy: { gap: 12 },
+  priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' },
+  amount: { fontFamily: fonts.extrabold, fontSize: 34, lineHeight: 38, letterSpacing: -1, color: colors.lemon },
+  perMonth: { fontFamily: fonts.semibold, fontSize: 16, color: colors.lavender },
+  note: { fontFamily: fonts.semibold, fontSize: 13, color: colors.lavender, textAlign: 'center' },
+
+  badge: { alignSelf: 'center', paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill, overflow: 'hidden', fontFamily: fonts.bold, fontSize: 12 },
+  badgeLemon: { backgroundColor: colors.lemon, color: colors.ink },
+  badgeStart: { alignSelf: 'flex-start' },
+  badgeInk: { backgroundColor: colors.ink, color: colors.white },
+
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: radius.card,
+    borderWidth: 2,
+    borderColor: colors.ink,
+    paddingVertical: 16,
+    paddingHorizontal: 18,
+    marginBottom: 14,
+    ...hardShadow(4),
+  },
+  rowFree: { backgroundColor: colors.lime },
+  rowMax: { backgroundColor: colors.violet },
+  rowName: { fontFamily: fonts.extrabold, fontSize: 22, lineHeight: 26, letterSpacing: -0.4, color: colors.ink },
+  rowSub: { fontFamily: fonts.semibold, fontSize: 15, color: colors.ink },
+  onDark: { color: colors.white },
+  onDarkSoft: { color: colors.lavender },
 });

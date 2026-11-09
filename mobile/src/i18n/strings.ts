@@ -30,6 +30,9 @@ export const subjectGlyphs: Record<Subject, string> = {
 /** 1284 → "1 284 м" */
 const meters = (m: number) => `${String(m).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} м`;
 
+/** Мөнгөн дүн: 15000 → 15,000 (₮-тэй хамт, Silkscreen биш фонтоор). */
+const mnt = (n: number) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+
 export const S = {
   common: {
     loading: 'Ачаалж байна…',
@@ -614,22 +617,21 @@ export const S = {
   },
   plans: {
     title: 'Багцууд',
-    intro: 'Баавгай багш алдсан бодлогыг чинь хамт бодож тайлбарлана. Багц ахих тусам өдөрт илүү олон бодлого ярилцана.',
     current: 'Одоогийн багц',
     soon: 'Тун удахгүй',
     payingSoon: 'Төлбөр удахгүй нээгдэнэ',
-    price: (n: number) => `${String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',')}₮ / сар`,
+    price: (n: number) => `${mnt(n)}₮ / сар`,
+    amount: (n: number) => `${mnt(n)}₮`,
+    perMonth: '/ сар',
     buy: 'KUMA Plus авах',
     extend: 'Сарын эрх сунгах',
-    until: (date: string) => `${date} хүртэл`,
-    tutorDaily: (n: number) => `Баавгай багштай өдөрт ${n} бодлого ярилцана`,
-    base: ['Сурах зам, даалгавар, boss', 'Тулаан, анги, найзууд', 'Баавгайгаа хувцаслах'],
-    plusExtra: 'Үнэгүй багцын бүх боломж',
-    maxExtra: 'KUMA Plus-ын бүх боломж',
-    maxSoon: 'Шинэ боломжууд удахгүй нэмэгдэнэ',
+    tutorDaily: (n: number) => `Алдсан бодлогоо AI баавгайгаар өдөрт ${n} бодлого тайлбарлуулна`,
+    dailyShort: (n: number) => `Өдөрт ${n} бодлого`,
+    pitch: (n: number) => `AI баавгай өдөрт ${n} бодлого тайлбарлана`,
+    maxSub: 'Plus-аас илүү',
     myPlan: 'Миний багц',
     seePlans: 'Багцууд',
-    upsell: (n: number) => `KUMA Plus-аар баавгай багштай өдөрт ${n} бодлого ярилцана.`,
+    upsell: (n: number) => `KUMA Plus-аар алдсан бодлогоо AI баавгайгаар өдөрт ${n} бодлого тайлбарлуулна.`,
     upsellButton: 'KUMA Plus үзэх',
   },
   pay: {
