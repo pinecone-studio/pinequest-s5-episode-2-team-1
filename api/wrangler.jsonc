@@ -109,6 +109,9 @@
     // (https://surgalt-api.pinequest-team1.workers.dev). Дээд түвшний id-ууд local dev-д зориулсан тул хөндөхгүй.
     "production": {
       "name": "surgalt-api",
+      // Өөрийн домэйн (Wire webhook гэх мэт гадны холболтод). workers.dev хаяг ч хэвээр: апп одоогоор түүгээр ханддаг.
+      "routes": [{ "pattern": "api.kumalearn.online", "custom_domain": true }],
+      "workers_dev": true,
       "d1_databases": [
         {
           "binding": "DB",
