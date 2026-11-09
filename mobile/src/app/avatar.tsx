@@ -8,8 +8,9 @@ import { SpeechBubble } from '@/components/AuthShell';
 import { Avatar, type PortraitLook } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { FlowTop } from '@/components/onboarding/FlowTop';
+import { PhotoPicker } from '@/components/profile/PhotoPicker';
 import { Enter, Pop, PressScale } from '@/components/pixel';
-import { BackButton, Card, Chip, ErrorText, Screen, TextField } from '@/components/ui';
+import { BackButton, Card, ErrorText, Screen, TextField } from '@/components/ui';
 import { colors, fonts, radius } from '@/constants/theme';
 import { type } from '@/constants/type';
 import { S } from '@/i18n/strings';
@@ -23,8 +24,8 @@ const FURS: { id: BearFur; hex: string }[] = [
 ];
 
 /**
- * Профайл үүсгэх (бүртгүүлсний дараах 2-р алхам) ба профайлаас «Зураг солих»: профайлын нэр, баавгайн үсний өнгө,
- * цээжний цагаан толбо. Том хөрөг сонголт бүрт шууд солигдоно. Царайг сонгуулахгүй: Нүүрэн дээрх баавгай өөрөө янз
+ * Профайл үүсгэх (бүртгүүлсний дараах 2-р алхам) ба профайлаас «Зураг солих»: профайлын нэр, өөрийн зураг эсвэл
+ * баавгайн үсний өнгө (цээж нь үргэлж цагаан толботой). Том хөрөг сонголт бүрт шууд солигдоно. Царайг сонгуулахгүй: Нүүрэн дээрх баавгай өөрөө янз
  * бүрийн царай гаргадаг тул хөрөг хадгалсан (эсвэл анхдагч тайван) царайгаа үлдээнэ.
  */
 export default function AvatarScreen() {
@@ -34,7 +35,8 @@ export default function AvatarScreen() {
   const [editing] = useState(me.profileSet);
   // хуучин кэшэлсэн профайлд name, үс, царай байхгүй байж болно
   const [name, setName] = useState(me.name ?? me.username);
-  const [look, setLook] = useState<PortraitLook>({ fur: me.look.fur ?? 'brown', face: me.look.face ?? 'calm', chest: me.look.chest ?? true });
+  // цээжийг сонгуулахгүй: хадгалахад үргэлж цагаан толботой болно
+  const [look, setLook] = useState<PortraitLook>({ fur: me.look.fur ?? 'brown', face: me.look.face ?? 'calm', chest: true });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const pick = (patch: Partial<PortraitLook>) => setLook((l) => ({ ...l, ...patch }));
@@ -74,9 +76,10 @@ export default function AvatarScreen() {
 
       <Enter index={0} style={styles.hero}>
         {editing ? null : <SpeechBubble size="lg">{S.avatar.bubble}</SpeechBubble>}
-        <Pop trigger={`${look.fur}${look.chest}`}>
-          <Avatar size={172} border={6} look={look} label={S.avatar.preview(name.trim())} />
+        <Pop trigger={`${look.fur}${me.look.photo ?? ''}`}>
+          <Avatar size={172} border={6} look={{ ...look, photo: me.look.photo }} label={S.avatar.preview(name.trim())} />
         </Pop>
+        <PhotoPicker photo={me.look.photo} />
       </Enter>
 
       <Enter index={1}>
@@ -105,14 +108,6 @@ export default function AvatarScreen() {
             </View>
           </View>
 
-          <View style={styles.group}>
-            <Text style={styles.label}>{S.avatar.chest}</Text>
-            <View accessibilityRole="radiogroup" style={styles.chips}>
-              <Chip label={S.avatar.chestOn} selected={look.chest} onPress={() => pick({ chest: true })} />
-              <Chip label={S.avatar.chestOff} selected={!look.chest} onPress={() => pick({ chest: false })} />
-            </View>
-          </View>
-
           <ErrorText>{error}</ErrorText>
           <Button title={editing ? S.avatar.save : S.avatar.continue} onPress={save} loading={busy} />
         </Card>
@@ -129,7 +124,6 @@ const styles = StyleSheet.create({
   group: { gap: 8 },
   label: { fontFamily: fonts.bold, fontSize: 13, color: colors.ink },
   row: { flexDirection: 'row', gap: 8 },
-  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   option: { flex: 1, borderRadius: radius.sm, borderWidth: 2, borderColor: colors.line, backgroundColor: colors.white },
   on: { borderColor: colors.violet, backgroundColor: colors.trackAlt },
   furOption: { minHeight: 48, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 6 },

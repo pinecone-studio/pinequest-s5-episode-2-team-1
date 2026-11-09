@@ -174,6 +174,13 @@ export interface BearLook {
   fur: BearFur;
   face: BearFace;
   chest: boolean;
+  /** Өөрийн оруулсан зургийн id (GET /photos/:id): байвал баавгайн хөргийн оронд дугуй аватарт харагдана. */
+  photo?: string;
+}
+
+/** PUT /photos: base64 зураг (JPEG/PNG/WebP). */
+export interface PhotoBody {
+  data: string;
 }
 
 export interface SubjectPath {

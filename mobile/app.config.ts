@@ -34,6 +34,7 @@ const config: ExpoConfig = {
     ],
     'expo-secure-store',
     ['expo-audio', { microphonePermission: 'Баавгайтай ярилцахад микрофон хэрэгтэй.' }],
+    ['expo-image-picker', { photosPermission: 'Профайлдаа зураг оруулахад зургийн сан хэрэгтэй.', cameraPermission: false, microphonePermission: false }],
     ['expo-camera', { cameraPermission: 'Найзынхаа QR кодыг уншихад камер хэрэгтэй.', microphonePermission: false, recordAudioAndroid: false }],
   ],
   experiments: {

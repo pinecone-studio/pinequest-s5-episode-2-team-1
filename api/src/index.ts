@@ -15,6 +15,7 @@ import { duelRoutes } from './routes/duels';
 import { friendRoutes } from './routes/friends';
 import { meRoutes } from './routes/me';
 import { paymentRoutes } from './routes/payments';
+import { photoRoutes } from './routes/photos';
 import { profileRoutes } from './routes/profiles';
 import { quizRoutes } from './routes/quiz';
 import { recoveryRoutes } from './routes/recovery';
@@ -42,6 +43,7 @@ app.get('/health', async (c) => {
 
 app.route('/auth', authRoutes);
 app.route('/me', meRoutes);
+app.route('/photos', photoRoutes);
 app.route('/profiles', profileRoutes);
 app.route('/friends', friendRoutes);
 app.route('/clans', clanRoutes);

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { newProfileCode, normalizeProfileCode, parseBearLook } from '../src/domain/profile';
+import { newProfileCode, normalizeProfileCode, parseBearLook, photoMime } from '../src/domain/profile';
 import { wornOutfits } from '../src/services/profiles';
 import { onboardingSubject } from '../src/services/users';
 
@@ -66,5 +66,19 @@ describe('хослуулж өмссөн хувцас', () => {
   it("'+'-ээр тусгаарласан жагсаалт; давхардлыг хасна", () => {
     expect(wornOutfits('pirate_hat+staff00+pirate_hat')).toEqual(['pirate_hat', 'staff00']);
     expect(wornOutfits('scarf')).toEqual(['scarf']);
+  });
+});
+
+describe('профайлын зураг', () => {
+  it('төрлийг эхний байтаас таньна', () => {
+    expect(photoMime(new Uint8Array([0xff, 0xd8, 0xff, 0xe0]))).toBe('image/jpeg');
+    expect(photoMime(new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d]))).toBe('image/png');
+    expect(photoMime(new TextEncoder().encode('RIFF\0\0\0\0WEBPVP8 '))).toBe('image/webp');
+    expect(photoMime(new TextEncoder().encode('<svg onload=x>'))).toBeNull();
+  });
+
+  it('bear_look-ийн зөв id-тай зургийг л авна', () => {
+    expect(parseBearLook('{"photo":"12-0123456789abcdef"}').photo).toBe('12-0123456789abcdef');
+    expect(parseBearLook('{"photo":"../books/x"}')).not.toHaveProperty('photo');
   });
 });
