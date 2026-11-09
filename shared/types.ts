@@ -889,10 +889,12 @@ export interface Payment {
   plan: BuyablePlan;
   amount: number;
   status: PaymentStatus;
-  /** Зөвхөн үүсгэх үед: QR зураг (base64 PNG), QR текст, банкны холбоосууд. */
+  /** Зөвхөн үүсгэх үед: QR зураг (base64 PNG), QR текст, банкны холбоосууд эсвэл төлбөрийн хуудас. */
   qrImage?: string;
   qrText?: string;
   links?: PaymentLink[];
+  /** Hosted төлбөрийн хуудас (Wire): апп хэрэглэгчийг энд шилжүүлнэ. */
+  checkoutUrl?: string;
 }
 
 /** me: төлбөр орсон бол шинэ багцтай хэрэглэгч. */
