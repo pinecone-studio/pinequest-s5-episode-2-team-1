@@ -18,9 +18,20 @@ async function main() {
   for (let i = 0; i < USER_FAILS + 2; i++) await login(username, 'e2e-pass-123', testNet());
   check(true, `Зөв нууц үгээр ${USER_FAILS + 2} удаа нэвтэрнэ`);
 
-  // Нэг нэр: өөр өөр сүлжээнээс ч USER_FAILS буруу оролдлогын дараа зөв нууц үгийг ч хүлээж авахгүй.
-  for (let i = 0; i < USER_FAILS; i++) await expectError(login(username, 'wrong-pass', testNet()), 'INVALID_CREDENTIALS', `Буруу нууц үг ${i + 1}`);
-  await expectError(login(username, 'e2e-pass-123', testNet()), 'FORBIDDEN', 'Хязгаарт хүрсэн нэр зөв нууц үгээр ч түр нэвтрэхгүй');
+  // Нэг сүлжээнээс нэг нэрт USER_FAILS буруу оролдлогын дараа тэр сүлжээнээс зөв нууц үгийг ч хүлээж авахгүй.
+  const attacker = testNet();
+  for (let i = 0; i < USER_FAILS; i++) await expectError(login(username, 'wrong-pass', attacker), 'INVALID_CREDENTIALS', `Буруу нууц үг ${i + 1}`);
+  await expectError(login(username, 'e2e-pass-123', attacker), 'TOO_MANY_ATTEMPTS', 'Хязгаарт хүрсэн сүлжээ зөв нууц үгээр ч түр нэвтрэхгүй');
+  // Өөр сүлжээнээс эзэн нь нэвтэрсээр: нэрийг мэддэг хүн бүртгэлийг түгжиж чадахгүй.
+  let owner = attacker;
+  while (owner === attacker) owner = testNet();
+  check(!!(await login(username, 'e2e-pass-123', owner)).token, 'Өөр сүлжээнээс эзэн нь нэвтэрнэ');
+  // Бүртгэлтэй нэрийг оролдох нь бүртгэлийн хязгаарыг идэхгүй (доорх хязгаарын шалгалт үүнийг баталгаажуулна).
+  await expectError(
+    call('POST', '/auth/register', { body: { username, password: 'e2e-pass-123', grade: 7 } }),
+    'USERNAME_TAKEN',
+    'Бүртгэлтэй нэр 409',
+  );
 
   // Хуучин token хүчинтэй хэвээр (хязгаар зөвхөн шинэ нэвтрэлтэд).
   const { me } = await call<MeResponse>('GET', '/me', { token: kid.token });
@@ -34,7 +45,7 @@ async function main() {
       headers: { 'cf-connecting-ip': net },
     });
   for (let i = 0; i < NETWORK_SIGNUPS; i++) await signup(i);
-  await expectError(signup(NETWORK_SIGNUPS), 'FORBIDDEN', `Нэг сүлжээнээс ${NETWORK_SIGNUPS + 1} дэх бүртгэл үүсэхгүй`);
+  await expectError(signup(NETWORK_SIGNUPS), 'TOO_MANY_ATTEMPTS', `Нэг сүлжээнээс ${NETWORK_SIGNUPS + 1} дэх бүртгэл үүсэхгүй`);
   check(!!(await register('limit_other', 7)).token, 'Өөр сүлжээнээс бүртгүүлсээр байна');
 
   const failures = failureCount();

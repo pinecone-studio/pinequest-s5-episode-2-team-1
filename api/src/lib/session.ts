@@ -10,9 +10,10 @@ const { SESSION_IDLE_MS, SESSION_RENEW_MS } = GAME.AUTH;
 
 /**
  * Token-ийн хэрэглэгч. sessions.created_at нь сүүлд сунгасан агшин: SESSION_IDLE_MS ашиглаагүй token хүчингүй,
- * ашиглагдаж буйг нь SESSION_RENEW_MS тутамд нэг удаа сунгана.
+ * ашиглагдаж буйг нь SESSION_RENEW_MS тутамд нэг удаа сунгана (хариуг хүлээлгэхгүй, алдаа нь хүсэлтийг унагахгүй).
  */
-export async function userIdForToken(db: D1Database, token: string, now = Date.now()): Promise<number | null> {
+export async function userIdForToken(c: Context<AppEnv>, token: string, now = Date.now()): Promise<number | null> {
+  const db = c.env.DB;
   const tokenHash = await sha256Hex(token);
   const row = await db
     .prepare('SELECT user_id, created_at FROM sessions WHERE token_hash = ? AND created_at > ?')
@@ -20,16 +21,20 @@ export async function userIdForToken(db: D1Database, token: string, now = Date.n
     .first<{ user_id: number; created_at: number }>();
   if (!row) return null;
   if (now - row.created_at > SESSION_RENEW_MS) {
-    await db.prepare('UPDATE sessions SET created_at = ? WHERE token_hash = ?').bind(now, tokenHash).run();
+    const renew = db.prepare('UPDATE sessions SET created_at = ? WHERE token_hash = ?').bind(now, tokenHash).run();
+    c.executionCtx.waitUntil(renew.catch((e) => console.error('[session]', e)));
   }
   return row.user_id;
 }
 
-/** Шинэ session; энэ хэрэглэгчийн хугацаа нь дууссан хуучин session-уудыг хамт устгана. */
+/**
+ * Шинэ session; хэн нэгний хугацаа нь дууссан session-уудыг хамт устгана (дахин нэвтрэхгүй хэрэглэгчийнх ч,
+ * бүртгэл, шүүгчийн session ч энд цэвэрлэгдэнэ; idx_sessions_created).
+ */
 export async function createSession(db: D1Database, userId: number, now = Date.now()): Promise<string> {
   const token = newSessionToken();
   await db.batch([
-    db.prepare('DELETE FROM sessions WHERE user_id = ? AND created_at <= ?').bind(userId, now - SESSION_IDLE_MS),
+    db.prepare('DELETE FROM sessions WHERE created_at <= ?').bind(now - SESSION_IDLE_MS),
     db.prepare('INSERT INTO sessions (token_hash, user_id, created_at) VALUES (?, ?, ?)').bind(await sha256Hex(token), userId, now),
   ]);
   return token;
@@ -49,7 +54,7 @@ export function bearerToken(c: Context): string | null {
 export async function socketUserId(c: Context<AppEnv>): Promise<number> {
   if (c.req.header('upgrade')?.toLowerCase() !== 'websocket') throw new ApiError(400, 'BAD_REQUEST', 'WebSocket хүлээж байна');
   const [scheme, token] = (c.req.header('sec-websocket-protocol') ?? '').split(',').map((s) => s.trim());
-  const userId = scheme === 'bearer' && token ? await userIdForToken(c.env.DB, token) : null;
+  const userId = scheme === 'bearer' && token ? await userIdForToken(c, token) : null;
   if (!userId) throw new ApiError(401, 'UNAUTHORIZED', 'Нэвтрэх шаардлагатай');
   return userId;
 }
@@ -68,7 +73,7 @@ export function trackActive(c: Context<AppEnv>, userId: number, now = Date.now()
 /** `Authorization: Bearer <token>` шаардана, c.var.userId-г тохируулна. */
 export const requireAuth = createMiddleware<AppEnv>(async (c, next) => {
   const token = bearerToken(c);
-  const userId = token ? await userIdForToken(c.env.DB, token) : null;
+  const userId = token ? await userIdForToken(c, token) : null;
   if (!userId) throw new ApiError(401, 'UNAUTHORIZED', 'Нэвтрэх шаардлагатай');
   c.set('userId', userId);
   trackActive(c, userId);
