@@ -160,6 +160,7 @@ interface PracticeQuestion {
   topic: string | null;
   book_ref: string | null;
   source: string;
+  image: string | null;
 }
 
 async function pending(db: D1Database, userId: number, subject: Subject) {
@@ -170,7 +171,7 @@ async function pending(db: D1Database, userId: number, subject: Subject) {
   if (!row) throw new ApiError(404, 'NOT_FOUND', 'Давтлага алга');
   const { results: questions } = await db
     .prepare(
-      `SELECT q.id, q.prompt, q.options, q.correct_index, q.explanation, q.tier, q.topic, q.book_ref, q.source
+      `SELECT q.id, q.prompt, q.options, q.correct_index, q.explanation, q.tier, q.topic, q.book_ref, q.source, q.image
        FROM json_each(?) j JOIN questions q ON q.id = j.value ORDER BY j.key`,
     )
     .bind(row.questions)
@@ -188,7 +189,9 @@ function toDto(subject: Subject, questions: PracticeQuestion[], passed: number[]
     total: questions.length,
     cleared: !q,
     // Зөв хариу, тайлбарыг энд хэзээ ч явуулахгүй.
-    question: q ? { id: q.id, prompt: q.prompt, options: JSON.parse(q.options) as string[], ...(topic ? { topic } : {}) } : null,
+    question: q
+      ? { id: q.id, prompt: q.prompt, options: JSON.parse(q.options) as string[], ...(topic ? { topic } : {}), ...(q.image ? { image: q.image } : {}) }
+      : null,
   };
 }
 

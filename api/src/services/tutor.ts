@@ -17,6 +17,7 @@ interface Row {
   task_wrong: number;
   /** Салаа зам нь дууссан эсэх; салаа зам үүсээгүй бол null. */
   recovery_cleared: number | null;
+  image: string | null;
 }
 
 const toMissed = (r: Row): MissedQuestion => ({
@@ -28,9 +29,10 @@ const toMissed = (r: Row): MissedQuestion => ({
   explanation: r.explanation,
   // Апп answerTask-тай адил: 2+ алдсан даалгаврын буруу хариултын зөв хариуг салаа зам дуустал нууна.
   hideAnswer: r.correct !== 1 && recoveryCertain(r.task_wrong) && r.recovery_cleared !== 1,
+  ...(r.image ? { image: r.image } : {}),
 });
 
-const SELECT = `SELECT tq.question_id, q.subject, q.prompt, q.options, q.correct_index, q.explanation, tq.choice, tq.correct,
+const SELECT = `SELECT tq.question_id, q.subject, q.prompt, q.options, q.correct_index, q.explanation, q.image, tq.choice, tq.correct,
     (SELECT COUNT(*) FROM task_questions w WHERE w.task_id = tq.task_id AND w.choice >= 0 AND w.correct = 0) AS task_wrong,
     (SELECT r.cleared_at IS NOT NULL FROM recoveries r WHERE r.task_id = tq.task_id) AS recovery_cleared
   FROM task_questions tq

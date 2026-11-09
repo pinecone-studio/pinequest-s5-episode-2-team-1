@@ -76,7 +76,8 @@ export interface QuizView {
   /** Одоогийн асуулт (0-ээс); хүлээлгийн өрөөнд -1 */
   q: number;
   total: number;
-  question: { prompt: string; options: string[] } | null;
+  /** image: зурагтай асуултын PNG/WebP data URI. */
+  question: { prompt: string; options: string[]; image?: string } | null;
   /** Асуултын хугацаа дуусах агшин (question үед) */
   endsAt: number | null;
   questionMs: number;

@@ -12,9 +12,11 @@ import {
   TUTOR_LAST_TURN,
   TutorBusyError,
   tutorAsked,
+  tutorFigures,
   tutorKickoff,
   tutorRequest,
   tutorSystemPrompt,
+  withFigures,
 } from '../src/llm/tutor';
 
 const q: MissedQuestion = {
@@ -273,5 +275,36 @@ describe('isForeignTranscript', () => {
     expect(isForeignTranscript('Ich weiß nicht')).toBe(true);
     expect(isForeignTranscript('5x - 8 гэж бодсон')).toBe(false);
     expect(isForeignTranscript('12')).toBe(false);
+  });
+});
+
+describe('зурагтай бодлого', () => {
+  const pic: MissedQuestion = { ...q, subject: 'physics', prompt: 'Зурагт үзүүлсэн харандааны урт хэдэн см вэ?', image: 'data:image/png;base64,iVBORw0KGgo=' };
+
+  it('tells the bear which question has a picture', () => {
+    expect(tutorSystemPrompt({ grade: 7, questions: [q, pic], focused: false })).toContain('«2-р бодлогын зураг»');
+    expect(tutorSystemPrompt({ grade: 7, questions: [q], focused: true })).not.toContain('бодлогын зураг');
+  });
+
+  it('turns data URIs into inline image parts numbered like the questions', () => {
+    expect(tutorFigures([q, pic])).toEqual([
+      { text: '2-р бодлогын зураг:' },
+      { inlineData: { mimeType: 'image/png', data: 'iVBORw0KGgo=' } },
+    ]);
+    expect(tutorFigures([q, { ...q, image: 'https://x/y.png' }])).toEqual([]);
+  });
+
+  it('puts the pictures before the first message on every request', () => {
+    const figures = tutorFigures([pic]);
+    const history = [
+      { role: 'user' as const, parts: [{ text: 'kickoff' }] },
+      { role: 'model' as const, parts: [{ text: 'hi' }] },
+    ];
+    const asked = { role: 'user' as const, parts: [{ text: 'next' }] };
+    const out = withFigures([...history, asked], figures);
+    expect(out[0].parts).toEqual([...figures, { text: 'kickoff' }]);
+    expect(out.slice(1)).toEqual([history[1], asked]);
+    expect(history[0].parts).toEqual([{ text: 'kickoff' }]);
+    expect(withFigures([asked], [])).toEqual([asked]);
   });
 });

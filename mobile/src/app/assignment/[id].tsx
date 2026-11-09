@@ -5,6 +5,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { api, errorText } from '@/api/client';
 import { Button } from '@/components/Button';
 import { OptionButton, type OptionState } from '@/components/OptionButton';
+import { QuestionImage } from '@/components/QuestionImage';
 import { QuizResult, type ResultMood } from '@/components/teacher/QuizResult';
 import { BackButton, Card, ErrorText, Muted, ProgressBar, Screen } from '@/components/ui';
 import { colors, fonts } from '@/constants/theme';
@@ -92,6 +93,7 @@ export default function AssignmentScreen() {
         <>
           <Card>
             <Text style={styles.prompt}>{view.questions[pos].prompt}</Text>
+            <QuestionImage uri={view.questions[pos].image} />
           </Card>
           <View style={styles.options}>
             {view.questions[pos].options.map((opt, i) => (
