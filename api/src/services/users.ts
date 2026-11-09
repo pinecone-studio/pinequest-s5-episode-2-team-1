@@ -3,6 +3,7 @@ import type { Me, SubjectPath } from '../../../shared/types';
 import { ACTIVE_SUBJECTS, GAME, SUBJECTS, type Subject } from '../config/game';
 import { levelProgress } from '../domain/level';
 import { type Lives, livesNow, nextLifeAt, spendLife } from '../domain/lives';
+import { isPaidPlan, PAID_POINTS_MULT } from '../../../shared/plan';
 import { effectivePlan } from '../domain/plan';
 import { parseBearLook } from '../domain/profile';
 import { shieldBlock, shieldNextBuyDay } from '../domain/shield';
@@ -37,13 +38,24 @@ export interface UserRow {
   /** Төлбөрийн багц (shared/plan.ts); одоогийн утгыг effectivePlan-аар уншина. */
   plan: string;
   plan_until: number | null;
+  plus_boxes: number;
 }
 
 const USER_COLUMNS =
-  'id, username, display_name, grade, tier, xp, points, streak, last_streak_day, shield_held, shield_bought_day, shield_used_day, equipped, bear_look, created_at, is_admin, is_judge, is_teacher, lives, lives_at, onboarding, plan, plan_until';
+  'id, username, display_name, grade, tier, xp, points, streak, last_streak_day, shield_held, shield_bought_day, shield_used_day, equipped, bear_look, created_at, is_admin, is_judge, is_teacher, lives, lives_at, onboarding, plan, plan_until, plus_boxes';
 
 /** Тоглоомын бүх боломж нээлттэй: admin эсвэл шүүгч (хувцас, зам, шат, boss, хайрцаг; амь хасагдахгүй, давтлагагүй). */
 export const allAccess = (u: Pick<UserRow, 'is_admin' | 'is_judge'>) => u.is_admin === 1 || u.is_judge === 1;
+
+/** Амь хасагдахгүй: admin, шүүгч, эсвэл KUMA Plus (Max) идэвхтэй. */
+export function livesUnlimited(user: UserRow, now = Date.now()): boolean {
+  return allAccess(user) || isPaidPlan(effectivePlan(user, now));
+}
+
+/** Хичээлийн боргоцойн үржвэр: төлбөртэй багцад PAID_POINTS_MULT, бусдад 1 (admin, шүүгч ч 1). */
+export function pointsMult(user: UserRow, now = Date.now()): number {
+  return isPaidPlan(effectivePlan(user, now)) && !allAccess(user) ? PAID_POINTS_MULT : 1;
+}
 
 export async function getUserRow(db: D1Database, id: number): Promise<UserRow> {
   const row = await db.prepare(`SELECT ${USER_COLUMNS} FROM users WHERE id = ?`).bind(id).first<UserRow>();
@@ -192,7 +204,7 @@ export function buildMe(
     nextMultiplier: streakMultiplier(registerTaskDay(s, today).streak),
     todayTasks,
     questionsPerTask: GAME.QUESTIONS_PER_TASK,
-    pointsPerCorrect: GAME.POINTS_PER_CORRECT,
+    pointsPerCorrect: Math.round(GAME.POINTS_PER_CORRECT * pointsMult(user, now)),
     xpPerCorrect: GAME.XP_PER_CORRECT,
     shield: {
       held: user.shield_held > 0,
@@ -217,6 +229,8 @@ export function buildMe(
     lives: lives.lives,
     maxLives: GAME.LIVES.MAX,
     nextLifeAt: nextLifeAt(lives),
+    unlimitedLives: livesUnlimited(user, now),
+    plusBoxes: user.plus_boxes ?? 0,
     bag,
   };
 }
@@ -236,7 +250,7 @@ export async function spendUserLife(db: D1Database, userId: number, now = Date.n
   // Уншсан утга өөрчлөгдөөгүй үед л бичнэ (compare-and-set): зэрэг ирсэн буруу хариулт бүр нэг амь хасна.
   for (let attempt = 0; attempt < 5; attempt++) {
     const user = await getUserRow(db, userId);
-    if (allAccess(user)) return false;
+    if (livesUnlimited(user, now)) return false;
     const read = livesOf(user);
     const lives = livesNow(read, now);
     if (lives.lives <= 0) return false;
@@ -254,7 +268,7 @@ export async function spendUserLife(db: D1Database, userId: number, now = Date.n
  */
 export function requireLife(user: UserRow, now = Date.now()): Lives {
   const lives = livesNow(livesOf(user), now);
-  if (lives.lives <= 0 && !allAccess(user)) throw new ApiError(409, 'NO_LIVES', 'Амь дууссан. Шинэ амь нөхөгдөхийг хүлээнэ үү');
+  if (lives.lives <= 0 && !livesUnlimited(user, now)) throw new ApiError(409, 'NO_LIVES', 'Амь дууссан. Шинэ амь нөхөгдөхийг хүлээнэ үү');
   return lives;
 }
 

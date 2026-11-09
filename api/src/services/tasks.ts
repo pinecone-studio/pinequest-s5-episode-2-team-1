@@ -29,7 +29,7 @@ import {
   refillPool,
 } from './pool';
 import { hasPendingRecovery, recoveryCertain, recoveryStatements } from './recovery';
-import { allAccess, countTasksToday, getUserRow, loadMe, loadSubjectPaths, requireLife, spendUserLife, streakStateOf, syncStreak } from './users';
+import { allAccess, countTasksToday, pointsMult, getUserRow, loadMe, loadSubjectPaths, requireLife, spendUserLife, streakStateOf, syncStreak } from './users';
 
 /** Номын сан (замын урт номын хичээлийн тооноос хамаарна). */
 type Books = Pick<Bindings, 'BOOKS'>;
@@ -359,7 +359,9 @@ export async function completeTask(
     .first<{ subject: Subject; kind: string; boss: number | null; path_lessons: number | null; node: number | null; stage: number | null; n: number; wrong: number }>();
   if (!cc) throw new ApiError(404, 'NOT_FOUND', 'Даалгавар олдсонгүй');
   const correctCount = cc.n;
-  const base = taskReward(correctCount, after.streak);
+  // KUMA Plus: хичээлийн боргоцой PAID_POINTS_MULT дахин (хаалганы нэг удаагийн шагнал хэвээр).
+  const plain = taskReward(correctCount, after.streak);
+  const base = { ...plain, points: Math.round(plain.points * pointsMult(user, now)) };
   const path = (await loadSubjectPaths(db, userId))[cc.subject];
   // Тухайн хичээлийн дараагийн boss-ыг ялбал тэр хичээлийн дараагийн бүлэг нээгдэнэ (bosses_beaten = boss нөхцөл
   // давхар тоолохоос сэргийлнэ).

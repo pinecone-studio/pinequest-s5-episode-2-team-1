@@ -247,7 +247,7 @@ export default function TaskScreen() {
     mood === 'right'
       ? { alt: S.lesson.bearCorrect, bubble: practice ? S.offline.correctBubble : S.lesson.correctBubble(me?.xpPerCorrect ?? 0) }
       : mood === 'wrong'
-        ? { alt: S.lesson.bearWrong, bubble: practice ? S.lesson.wrongBubble : S.lesson.wrongLifeBubble }
+        ? { alt: S.lesson.bearWrong, bubble: practice || me?.unlimitedLives ? S.lesson.wrongBubble : S.lesson.wrongLifeBubble }
         : { alt: S.lesson.bearThinking, bubble: error ? error.message : S.lesson.thinking };
 
   const hide = hidden && q && hidden.q === q.id ? hidden.hide : [];

@@ -1,4 +1,4 @@
-import { PLAN_NAMES, PLAN_PRICE, PLAN_TUTOR_DAILY, type Plan } from '@shared/plan';
+import { PAID_POINTS_MULT, type Plan, PLAN_NAMES, PLAN_PRICE, PLAN_TUTOR_DAILY, PLUS_OUTFITS } from '@shared/plan';
 import type { PaymentsInfoResponse } from '@shared/types';
 import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -64,6 +64,18 @@ export default function PlansScreen() {
               </View>
             </View>
           </View>
+
+          <View style={styles.perks}>
+            {S.plans.perks(PLUS_OUTFITS.length, PAID_POINTS_MULT).map((perk) => (
+              <Text key={perk} style={styles.perk}>
+                {perk}
+              </Text>
+            ))}
+          </View>
+
+          {(me?.plusBoxes ?? 0) > 0 ? (
+            <Button title={S.plusBox.openButton(me?.plusBoxes ?? 0)} variant="lime" onPress={() => router.push('/plus-box')} />
+          ) : null}
 
           {CAN_BUY ? (
             <View style={styles.buy}>
@@ -142,6 +154,17 @@ const styles = StyleSheet.create({
   },
 
   buy: { gap: 12 },
+  perks: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  perk: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: radius.pill,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    color: colors.white,
+    fontFamily: fonts.bold,
+    fontSize: 13,
+  },
   priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' },
   amount: { fontFamily: fonts.extrabold, fontSize: 34, lineHeight: 38, letterSpacing: -1, color: colors.lemon },
   perMonth: { fontFamily: fonts.semibold, fontSize: 16, color: colors.lavender },

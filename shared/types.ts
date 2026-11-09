@@ -62,6 +62,8 @@ export type ErrorCode =
   | 'TUTOR_UNAVAILABLE'
   | 'TUTOR_LIMIT'
   | 'TUTOR_ACTIVE'
+  | 'PLUS_ONLY'
+  | 'NO_PLUS_BOX'
   | 'PAYMENTS_OFF'
   | 'PAYMENT_FAILED'
   | 'PAYMENT_LIMIT'
@@ -151,6 +153,10 @@ export interface Me {
   maxLives: number;
   /** Дараагийн амь нөхөгдөх мөч (ms); дүүрэн бол null. */
   nextLifeAt: number | null;
+  /** KUMA Plus (эсвэл admin): амь хасагдахгүй. */
+  unlimitedLives?: boolean;
+  /** Нээгээгүй бэлэг хайрцгийн тоо (Plus төлбөр бүрт 1). */
+  plusBoxes?: number;
   /** Цүнхний хэрэглэгдэхүүн (нууц хайрцгаас): Хувын болор, Зөгийн балны сав */
   bag: Record<BagItem, number>;
 }
@@ -640,6 +646,8 @@ export interface CosmeticItem {
   key: string;
   price: number;
   owned: boolean;
+  /** Зөвхөн KUMA Plus хэрэглэгч авна (shared/plan.ts PLUS_OUTFITS). */
+  plusOnly?: boolean;
 }
 
 export interface CosmeticsResponse {
@@ -921,4 +929,13 @@ export interface Payment {
 export interface PaymentResponse {
   payment: Payment;
   me?: Me;
+}
+
+// ---- KUMA Plus бэлэг хайрцаг (POST /me/plus-box) ----
+
+/** Хайрцагнаас гарсан зүйл: Plus-ын хувцас (outfit = mobile catalog id), бүгдийг нь эзэмшсэн бол боргоцой. */
+export interface PlusBoxResponse {
+  outfit: string | null;
+  coins: number;
+  me: Me;
 }

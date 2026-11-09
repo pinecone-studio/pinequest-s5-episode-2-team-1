@@ -1,9 +1,11 @@
+import { isPaidPlan, isPlusOutfit } from '@shared/plan';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { FadeIn, FadeInDown, SlideInDown } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '@/auth/AuthContext';
 import { BgArt } from '@/components/BgArt';
 import { BrickBanner } from '@/components/BrickBanner';
 import type { SwatchStatus } from '@/components/BgSwatch';
@@ -48,10 +50,12 @@ const COLS = 3;
 const chunk = <T,>(arr: T[], n: number): T[][] => Array.from({ length: Math.ceil(arr.length / n) }, (_, i) => arr.slice(i * n, i * n + n));
 const pad = <T,>(row: T[], n: number): (T | null)[] => [...row, ...Array(n - row.length).fill(null)];
 
-function statusOf(opts: { equipped: boolean; owned: boolean; price: number; honey: number; lockedLevel?: number | null }): SwatchStatus {
-  const { equipped, owned, price, honey, lockedLevel } = opts;
+function statusOf(opts: { equipped: boolean; owned: boolean; price: number; honey: number; lockedLevel?: number | null; plusLocked?: boolean }): SwatchStatus {
+  const { equipped, owned, price, honey, lockedLevel, plusLocked } = opts;
   if (equipped) return { text: S.shop.equipped, color: colors.okText, showHoney: false, locked: false };
   if (owned) return { text: S.shop.owned, color: colors.okText, showHoney: false, locked: false };
+  // KUMA Plus-ын онцгой хувцас: Үнэгүй хэрэглэгчид үнийн оронд PLUS гэж харагдана
+  if (plusLocked) return { text: S.shop.plusTag, a11y: S.shop.plusOnlyA11y, color: colors.violet, showHoney: false, locked: true };
   if (lockedLevel) return { text: S.shop.levelNeeded(lockedLevel), color: colors.dangerText, showHoney: false, locked: true };
   if (price > honey) return { text: formatNumber(price), a11y: S.shop.shortBy(formatNumber(price)), color: colors.dangerText, showHoney: true, locked: true };
   return { text: formatNumber(price), color: colors.ink, showHoney: true, locked: false };
@@ -61,6 +65,9 @@ function statusOf(opts: { equipped: boolean; owned: boolean; price: number; hone
 export default function ShopScreen() {
   const bear = usePixelBear();
   const outfits = useOutfits();
+  const { me } = useAuth();
+  const paid = isPaidPlan(me?.plan ?? 'free');
+  const plusLockedOf = (id: string, owned: boolean) => !paid && !owned && isPlusOutfit(id);
   const online = useOnline();
   const insets = useSafeAreaInsets();
   // Хувцас эхэнд: дэлгүүр нээгдэхэд хувцасны tab
@@ -100,7 +107,8 @@ export default function ShopScreen() {
       price: outfitView.price,
       lockedLevel: outfitView.lockedLevel,
     };
-  const curStatus = statusOf({ ...cur, honey: bear.honey });
+  const plusLocked = !isBg && plusLockedOf(outfitDef.id, cur.owned);
+  const curStatus = statusOf({ ...cur, honey: bear.honey, plusLocked });
   const kind = isBg ? S.shop.tabBg : CATEGORIES.find((c) => c.value === categoryOf(outfitDef.id))?.label;
   const cantAfford = !cur.owned && cur.price > bear.honey;
   const action = !outfits.loaded
@@ -114,12 +122,14 @@ export default function ShopScreen() {
         ? { title: S.shop.equip, bg: colors.indigo, fg: colors.white, disabled: false }
         : !online
           ? { title: S.offline.needsInternet, bg: colors.stoneAlt, fg: colors.muted, disabled: true }
-          : cur.lockedLevel
+          : plusLocked
+            ? { title: S.shop.plusOnly, bg: colors.lime, fg: colors.ink, disabled: false }
+            : cur.lockedLevel
             ? { title: S.shop.levelNeeded(cur.lockedLevel), bg: colors.stoneAlt, fg: colors.muted, disabled: true }
             : cantAfford
               ? { title: S.shop.noHoney, bg: colors.stoneAlt, fg: colors.muted, disabled: true }
               : { title: S.shop.buyFor(formatNumber(cur.price)), bg: colors.indigo, fg: colors.white, disabled: false };
-  const buying = !cur.owned && !action.disabled;
+  const buying = !cur.owned && !action.disabled && !plusLocked;
 
   function open() {
     setMessage('');
@@ -129,6 +139,12 @@ export default function ShopScreen() {
 
   async function onAction() {
     if (busy || action.disabled) return;
+    // Plus-ын онцгой хувцас: багцын дэлгэц рүү
+    if (plusLocked) {
+      setSheet(false);
+      router.push('/plans');
+      return;
+    }
     setMessage('');
     setError('');
     if (cur.owned) {
@@ -238,6 +254,7 @@ export default function ShopScreen() {
                               price: v.price,
                               honey: bear.honey,
                               lockedLevel: v.lockedLevel,
+                              plusLocked: plusLockedOf(v.def.id, v.owned),
                             })}
                             onPress={() => {
                               setSelOutfit(v.def.id);

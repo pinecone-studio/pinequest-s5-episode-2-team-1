@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
-import type { LessonsResponse, MeResponse, MyProfileResponse, OnboardingBody } from '../../../shared/types';
+import type { LessonsResponse, MeResponse, MyProfileResponse, OnboardingBody, PlusBoxResponse } from '../../../shared/types';
 import { HEARD_FROM, REASONS, SELF_LEVELS } from '../../../shared/onboarding';
 import { BEAR_FACES, BEAR_FURS } from '../config/cosmetics';
 import { ACTIVE_SUBJECTS, GAME } from '../config/game';
@@ -10,6 +10,7 @@ import { ApiError, readBody } from '../lib/errors';
 import { requireAuth } from '../lib/session';
 import { loadLessons } from '../services/lessons';
 import { myProfile, rotateProfileCode, setAdminGrade, setAvatar, setBearLook, setOnboarding } from '../services/profiles';
+import { openPlusBox } from '../services/plusBox';
 import { loadMe } from '../services/users';
 
 export const meRoutes = new Hono<AppEnv>();
@@ -26,6 +27,9 @@ meRoutes.get('/lessons/:subject', requireAuth, async (c) => {
   if (!user) throw new ApiError(401, 'UNAUTHORIZED', 'Нэвтрэх шаардлагатай');
   return c.json<LessonsResponse>(await loadLessons(c.env, subject.data, user.grade));
 });
+
+/** KUMA Plus бэлэг хайрцаг нээх: Plus-ын онцгой хувцаснаас санамсаргүй нэг. */
+meRoutes.post('/plus-box', requireAuth, async (c) => c.json<PlusBoxResponse>(await openPlusBox(c.env.DB, c.get('userId'))));
 
 /** Миний профайл (бусдад ингэж харагдана) ба хуваалцах код. */
 meRoutes.get('/profile', requireAuth, async (c) => c.json<MyProfileResponse>(await myProfile(c.env.DB, c.get('userId'))));
