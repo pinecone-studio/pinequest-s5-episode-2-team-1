@@ -119,6 +119,8 @@ function RootNavigator() {
           <Stack.Screen name="pay" />
           <Stack.Screen name="chest" options={{ animation: 'fade', gestureEnabled: false }} />
           <Stack.Screen name="profile" />
+          <Stack.Screen name="settings" />
+          <Stack.Screen name="friends" />
           <Stack.Screen name="u/[code]" />
           <Stack.Screen name="scan" options={{ animation: 'slide_from_bottom' }} />
           <Stack.Screen name="uul/index" />
