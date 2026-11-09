@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { GAME } from '../src/config/game';
 import type { Bindings } from '../src/env';
 import { mockProvider, paymentProvider, type PaymentProvider, webhookProvider } from '../src/payments/provider';
-import { checkPayment, createPayment, paymentCallback, paymentWebhook } from '../src/services/payments';
+import { checkPayment, createPayment, paymentCallback, paymentTestAmount, paymentWebhook } from '../src/services/payments';
 
 type Value = string | number | null;
 const DAY = 24 * 60 * 60_000;
@@ -154,6 +154,27 @@ describe('checkPayment', () => {
     const p = { ...fakeProvider(), isPaid: async () => Promise.reject(new Error('down')) };
     await createPayment(db, p, 1, 'plus', URLS, now);
     expect((await checkPayment(db, p, 1, 1, now)).status).toBe('pending');
+  });
+});
+
+describe('test amount', () => {
+  it('applies only to admins with a valid setting', async () => {
+    const { db, sql } = setup();
+    sql.exec('UPDATE users SET is_admin = 1 WHERE id = 1');
+    expect(await paymentTestAmount('200', db, 1)).toBe(200);
+    expect(await paymentTestAmount('200', db, 2)).toBeUndefined();
+    expect(await paymentTestAmount(undefined, db, 1)).toBeUndefined();
+    expect(await paymentTestAmount('abc', db, 1)).toBeUndefined();
+    expect(await paymentTestAmount('0', db, 1)).toBeUndefined();
+  });
+  it('charges the given test amount and marks it in the description', async () => {
+    const { db, sql } = setup();
+    let seen: { amount?: number; description?: string } = {};
+    const p = { ...fakeProvider(), createInvoice: async (r: { amount: number; description: string }) => ((seen = r), { invoiceId: 'inv-1' }) };
+    const res = await createPayment(db, p, 1, 'plus', URLS, now, 200);
+    expect(res.amount).toBe(200);
+    expect(seen).toMatchObject({ amount: 200, description: 'KUMA Plus 30 хоног (туршилт)' });
+    expect(sql.prepare('SELECT amount FROM payments WHERE id = 1').get()).toEqual({ amount: 200 });
   });
 });
 
