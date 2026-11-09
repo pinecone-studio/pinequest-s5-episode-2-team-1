@@ -2,15 +2,15 @@ import type { Subject } from '@shared/types';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, fonts, subjectTheme } from '@/constants/theme';
 import { S, subjectGlyphs, subjectNames } from '@/i18n/strings';
-import { PATH_SUBJECTS } from '@/lib/pixelBear/path';
+import { pathSubjectsFor } from '@/lib/pixelBear/path';
 
 export const SUGGESTED: Subject = 'math';
 
-/** Хичээл сонгох өнгөт картууд (02 · Хичээл сонгох): сонгосон нь томорч, хар хүрээтэй. */
-export function SubjectPick({ value, onChange }: { value: Subject | null; onChange: (s: Subject) => void }) {
+/** Хичээл сонгох өнгөт картууд (02 · Хичээл сонгох): сонгосон нь томорч, хар хүрээтэй. Зөвхөн тухайн ангид ордог хичээлүүд. */
+export function SubjectPick({ value, onChange, grade }: { value: Subject | null; onChange: (s: Subject) => void; grade?: number | null }) {
   return (
     <View style={{ gap: 10 }}>
-      {PATH_SUBJECTS.map((subject) => {
+      {pathSubjectsFor(grade).map((subject) => {
         const t = subjectTheme[subject];
         const active = subject === value;
         return (

@@ -837,6 +837,7 @@ export const errorMessages: Record<ErrorCode | 'NETWORK' | 'TIMEOUT' | 'OFFLINE'
   USERNAME_TAKEN: 'Энэ нэр бүртгэлтэй байна. Өөр нэр сонгоно уу.',
   INVALID_CREDENTIALS: 'Нэр эсвэл нууц үг буруу байна',
   NO_QUESTIONS: 'Асуулт бэлдэж байна. Түр хүлээгээд дахин оролдоно уу.',
+  SUBJECT_NOT_IN_GRADE: 'Энэ хичээл таны ангид ордоггүй.',
   TASK_CLOSED: 'Энэ даалгавар дууссан байна',
   ALREADY_ANSWERED: 'Энэ асуултад хариулсан байна',
   INSUFFICIENT_POINTS: 'Боргоцой хүрэлцэхгүй байна',

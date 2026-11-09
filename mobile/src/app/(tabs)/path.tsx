@@ -45,7 +45,7 @@ const nodeHead = (boss: boolean) => (boss ? 120 : 44);
 export default function PathScreen() {
   const { me, refreshMe } = useAuth();
   const { subject: savedSubject, setSubject } = usePixelBear();
-  const subject = pathSubject(savedSubject);
+  const subject = pathSubject(savedSubject, me?.grade);
   const insets = useSafeAreaInsets();
   const barSpace = useTabBarSpace();
   const scroll = useRef<ComponentRef<typeof ScrollView>>(null);

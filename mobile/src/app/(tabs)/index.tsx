@@ -38,7 +38,7 @@ export default function HomeScreen() {
   function feed() {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     // Өнөөдрийн хичээл: өмнө хийсэн хичээлүүдээс санамсаргүй нэгийг 3 бодлогоор давтана
-    router.push(`/task/${pathSubject(subject)}?review=1`);
+    router.push(`/task/${pathSubject(subject, me?.grade)}?review=1`);
   }
 
   return (
