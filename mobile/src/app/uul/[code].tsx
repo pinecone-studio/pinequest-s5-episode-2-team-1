@@ -6,7 +6,8 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { api, ApiError, errorText } from '@/api/client';
 import { Button } from '@/components/Button';
-import { ClanMountain } from '@/components/ClanMountain';
+import { Avatar } from '@/components/Avatar';
+import { ClanEmblem } from '@/components/clan/ClanEmblem';
 import { Enter, Sprite } from '@/components/pixel';
 import { BackButton, Card, ErrorText, Muted, Screen } from '@/components/ui';
 import { colors, fonts, radius } from '@/constants/theme';
@@ -71,14 +72,23 @@ export default function ClanJoinScreen() {
         <>
           <Enter index={0}>
             <Card style={styles.hero}>
-              <ClanMountain climbers={clan.looks} label={S.clan.mountainLabel(clanTitle(clan.name), clan.height)} />
+              <View style={styles.emblem}>
+                <ClanEmblem icon={clan.icon} size={96} />
+              </View>
               <Text style={type.h2} numberOfLines={2}>
                 {clanTitle(clan.name)}
               </Text>
               <Text style={type.small}>{S.clan.previewLine(clan.owner, clan.members, clan.maxMembers)}</Text>
-              <Text style={styles.height}>
-                {groupDigits(clan.height)}
-                <Text style={styles.unit}> м</Text>
+              <View style={styles.looks}>
+                {clan.looks.map((look, i) => (
+                  <View key={i} style={i > 0 && styles.overlap}>
+                    <Avatar size={36} border={2} look={look} />
+                  </View>
+                ))}
+              </View>
+              <Text style={styles.points}>
+                {groupDigits(clan.xp)}
+                <Text style={styles.unit}> XP</Text>
               </Text>
             </Card>
           </Enter>
@@ -138,7 +148,10 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'flex-start', gap: 12 },
   center: { paddingVertical: 24, alignItems: 'center', gap: 12 },
   hero: { gap: 10 },
-  height: { fontFamily: fonts.pixelNum, fontSize: 30, lineHeight: 36, color: colors.ink },
+  emblem: { alignItems: 'center', paddingVertical: 4 },
+  looks: { flexDirection: 'row' },
+  overlap: { marginLeft: -10 },
+  points: { fontFamily: fonts.pixelNum, fontSize: 30, lineHeight: 36, color: colors.ink },
   unit: { fontFamily: fonts.bold, fontSize: 18 },
   action: { gap: 10 },
   status: { fontFamily: fonts.semibold, fontSize: 15, lineHeight: 21, color: colors.ink },

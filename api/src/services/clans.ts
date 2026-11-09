@@ -1,4 +1,4 @@
-import { defaultClanName, normalizeClanName, XP_PER_METER } from '../../../shared/clan';
+import { type ClanIcon, clanIcon, defaultClanName, normalizeClanName } from '../../../shared/clan';
 import type { BearLook, ClanDto, ClanMemberDto, ClanPreviewResponse, MyClanResponse } from '../../../shared/types';
 import { GAME } from '../config/game';
 import { newClanCode, newClanPublicId, normalizeClanCode } from '../domain/clanCode';
@@ -11,18 +11,18 @@ import { ApiError } from '../lib/errors';
 import { ensureProfileCode, profileOwner } from './profileCodes';
 import { getUserRow, streakStateOf, type UserRow } from './users';
 
-// Уул (ангийн баг): нэг хүүхэд нэг л Ууланд (clan_members.user_id PRIMARY KEY), Ууланд хамгийн ихдээ 40.
-// Гишүүдийн XP Уулыг өндөрсгөнө: XP_PER_METER XP = 1 метр (нэг зөв хариулт).
+// Анги (ангийн баг): нэг хүүхэд нэг л ангид (clan_members.user_id PRIMARY KEY), ангид хамгийн ихдээ 40.
+// Ангийн оноо = гишүүдийн XP (нэг зөв хариулт 10 XP).
 
 interface ClanRow {
   id: number;
   name: string;
   code: string;
   owner_id: number;
+  icon: string | null;
 }
 
-const CLAN_COLUMNS = 'c.id, c.name, c.code, c.owner_id';
-const meters = (xp: number) => Math.floor(xp / XP_PER_METER);
+const CLAN_COLUMNS = 'c.id, c.name, c.code, c.owner_id, c.icon';
 
 /** Миний Уул; аль ч Ууланд байхгүй бол null. */
 export async function clanOf(db: D1Database, userId: number): Promise<ClanRow | null> {
@@ -61,7 +61,7 @@ type MemberRow = Pick<
   'id' | 'username' | 'display_name' | 'grade' | 'xp' | 'streak' | 'last_streak_day' | 'shield_held' | 'shield_bought_day' | 'shield_used_day' | 'bear_look'
 > & { profile_code: string | null; week_xp: number };
 
-/** Уул ба гишүүд (энэ 7 хоногт хамгийн их өндөрсгөсөн нь эхэндээ). Гишүүдийн streak-ийг DB-д бичилгүй тооцно. */
+/** Анги ба гишүүд (энэ 7 хоногт хамгийн их XP авсан нь эхэндээ). Гишүүдийн streak-ийг DB-д бичилгүй тооцно. */
 async function loadClan(db: D1Database, clan: ClanRow, me: number, now: number): Promise<ClanDto> {
   const today = ubDay(now);
   const { results } = await db
@@ -85,18 +85,19 @@ async function loadClan(db: D1Database, clan: ClanRow, me: number, now: number):
       level: levelFromXp(r.xp),
       streak: normalizeStreak(streakStateOf(r), today).state.streak,
       look: parseBearLook(r.bear_look),
-      meters: meters(r.xp),
-      weekMeters: meters(r.week_xp),
+      xp: r.xp,
+      weekXp: r.week_xp,
       owner: r.id === clan.owner_id,
       isMe: r.id === me,
     }))
     // sort тогтвортой: тэнцвэл эрт нэгдсэн нь эхэндээ
-    .sort((a, b) => b.weekMeters - a.weekMeters || b.meters - a.meters);
+    .sort((a, b) => b.weekXp - a.weekXp || b.xp - a.xp);
   return {
     code: clan.code,
     name: clan.name,
-    height: members.reduce((sum, m) => sum + m.meters, 0),
-    weekHeight: members.reduce((sum, m) => sum + m.weekMeters, 0),
+    icon: clanIcon(clan.icon),
+    xp: members.reduce((sum, m) => sum + m.xp, 0),
+    weekXp: members.reduce((sum, m) => sum + m.weekXp, 0),
     maxMembers: GAME.CLAN.MAX_MEMBERS,
     isOwner: clan.owner_id === me,
     members,
@@ -114,7 +115,7 @@ export async function clanNameOf(db: D1Database, userId: number): Promise<string
 }
 
 /** Уул байгуулна: үүсгэгч нь эзэн, анхны гишүүн. Нэр өгөөгүй бол "<нэрийн>" (Төгсбилэгийн). */
-export async function createClan(db: D1Database, me: number, name: string | undefined, now = Date.now()): Promise<MyClanResponse> {
+export async function createClan(db: D1Database, me: number, name: string | undefined, icon?: ClanIcon, now = Date.now()): Promise<MyClanResponse> {
   if (await clanOf(db, me)) throw new ApiError(409, 'CLAN_MEMBER', 'Чи аль хэдийн ангид байна. Шинээр үүсгэхийн өмнө гарна уу');
   const user = await getUserRow(db, me);
   const clanName = name === undefined ? defaultClanName(user.display_name ?? user.username) : cleanName(name);
@@ -126,8 +127,8 @@ export async function createClan(db: D1Database, me: number, name: string | unde
       // Нэг batch = нэг transaction: аль хэдийн гишүүн болсон бол (зэрэг ирсэн хүсэлт) Уул ч үүсэхгүй.
       await db.batch([
         db
-          .prepare('INSERT INTO clans (name, code, public_id, owner_id, created_at) VALUES (?, ?, ?, ?, ?)')
-          .bind(clanName, code, newClanPublicId(), me, now),
+          .prepare('INSERT INTO clans (name, code, public_id, owner_id, icon, created_at) VALUES (?, ?, ?, ?, ?, ?)')
+          .bind(clanName, code, newClanPublicId(), me, icon ?? null, now),
         db.prepare('INSERT INTO clan_members (user_id, clan_id, joined_at) SELECT ?, id, ? FROM clans WHERE code = ?').bind(me, now, code),
       ]);
       break;
@@ -145,9 +146,9 @@ export async function previewClan(db: D1Database, me: number, input: string): Pr
   const clan = await clanByCode(db, input);
   const [stats, owner, looks, mine] = await Promise.all([
     db
-      .prepare('SELECT COUNT(*) AS n, COALESCE(SUM(u.xp / ?), 0) AS height FROM clan_members m JOIN users u ON u.id = m.user_id WHERE m.clan_id = ?')
-      .bind(XP_PER_METER, clan.id)
-      .first<{ n: number; height: number }>(),
+      .prepare('SELECT COUNT(*) AS n, COALESCE(SUM(u.xp), 0) AS xp FROM clan_members m JOIN users u ON u.id = m.user_id WHERE m.clan_id = ?')
+      .bind(clan.id)
+      .first<{ n: number; xp: number }>(),
     getUserRow(db, clan.owner_id),
     db
       .prepare('SELECT u.bear_look FROM clan_members m JOIN users u ON u.id = m.user_id WHERE m.clan_id = ? ORDER BY m.joined_at, u.id LIMIT 8')
@@ -161,7 +162,8 @@ export async function previewClan(db: D1Database, me: number, input: string): Pr
       name: clan.name,
       members: stats?.n ?? 0,
       maxMembers: GAME.CLAN.MAX_MEMBERS,
-      height: stats?.height ?? 0,
+      icon: clanIcon(clan.icon),
+      xp: stats?.xp ?? 0,
       owner: owner.display_name ?? owner.username,
       looks: looks.results.map((r): BearLook => parseBearLook(r.bear_look)),
     },
@@ -218,11 +220,12 @@ export async function leaveClan(db: D1Database, me: number): Promise<MyClanRespo
   return { clan: null };
 }
 
-/** Нэр солих (эзэн). */
-export async function renameClan(db: D1Database, me: number, name: string, now = Date.now()): Promise<MyClanResponse> {
+/** Нэр ба icon солих (эзэн); өгөөгүй талбар хэвээр. */
+export async function updateClan(db: D1Database, me: number, body: { name?: string; icon?: ClanIcon }, now = Date.now()): Promise<MyClanResponse> {
   const clan = await myClanOrThrow(db, me);
   ownerOnly(clan, me);
-  await db.prepare('UPDATE clans SET name = ? WHERE id = ?').bind(cleanName(name), clan.id).run();
+  const name = body.name === undefined ? clan.name : cleanName(body.name);
+  await db.prepare('UPDATE clans SET name = ?, icon = ? WHERE id = ?').bind(name, body.icon ?? clan.icon, clan.id).run();
   return myClan(db, me, now);
 }
 

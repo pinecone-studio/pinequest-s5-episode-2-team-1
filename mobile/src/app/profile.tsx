@@ -1,4 +1,4 @@
-import { clanTitle } from '@shared/clan';
+import { CLAN_ICONS, clanTitle } from '@shared/clan';
 import { PLAN_NAMES, PLAN_TUTOR_DAILY } from '@shared/plan';
 import type { ClanDto, FriendBody, FriendsResponse, MyClanResponse, MyProfileResponse } from '@shared/types';
 import * as Haptics from 'expo-haptics';
@@ -9,7 +9,7 @@ import { api, errorText } from '@/api/client';
 import { useAuth } from '@/auth/AuthContext';
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
-import { ClanMountain } from '@/components/ClanMountain';
+import { ClanEmblem } from '@/components/clan/ClanEmblem';
 import { FriendRow } from '@/components/FriendRow';
 import { Enter, PressScale } from '@/components/pixel';
 import { QrIsland } from '@/components/QrIsland';
@@ -37,7 +37,7 @@ export default function ProfileScreen() {
   const { bgId } = usePixelBear();
   const [data, setData] = useState<MyProfileResponse | null>(null);
   const [friends, setFriends] = useState<FriendsResponse | null>(null);
-  // undefined = ачаалж байна, null = Уулгүй
+  // undefined = ачаалж байна, null = ангигүй
   const [clan, setClan] = useState<ClanDto | null | undefined>(undefined);
   const [error, setError] = useState('');
   const [note, setNote] = useState('');
@@ -201,13 +201,11 @@ export default function ProfileScreen() {
             <Enter index={1}>
               <PressScale
                 accessibilityRole="link"
-                accessibilityLabel={clan ? `${S.clan.cardTitle}: ${clanTitle(clan.name)}, ${S.clan.cardLine(clan.members.length, clan.maxMembers, clan.height)}` : S.clan.cardTitle}
+                accessibilityLabel={clan ? `${S.clan.cardTitle}: ${clanTitle(clan.name)}, ${S.clan.cardLine(clan.members.length, clan.maxMembers, clan.xp)}` : S.clan.cardTitle}
                 onPress={() => router.push('/uul')}
               >
                 <Card style={styles.clan}>
-                  <View style={styles.clanArt}>
-                    <ClanMountain />
-                  </View>
+                  <ClanEmblem icon={clan?.icon ?? CLAN_ICONS[0]} />
                   <View style={{ flex: 1, gap: 3 }}>
                     <Text style={styles.subTitle}>{S.clan.cardTitle}</Text>
                     {clan ? (
@@ -215,7 +213,7 @@ export default function ProfileScreen() {
                         <Text style={styles.cardTitle} numberOfLines={2}>
                           {clanTitle(clan.name)}
                         </Text>
-                        <Text style={type.small}>{S.clan.cardLine(clan.members.length, clan.maxMembers, clan.height)}</Text>
+                        <Text style={type.small}>{S.clan.cardLine(clan.members.length, clan.maxMembers, clan.xp)}</Text>
                       </>
                     ) : (
                       <Text style={styles.clanEmpty}>{S.clan.cardEmpty}</Text>
@@ -330,7 +328,6 @@ const styles = StyleSheet.create({
   subTitle: { fontFamily: fonts.bold, fontSize: 13, color: colors.muted, marginTop: 4 },
   request: { gap: 10 },
   clan: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  clanArt: { width: 92 },
   clanEmpty: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 19, color: colors.ink },
   chevron: { fontFamily: fonts.bold, fontSize: 26, color: colors.mutedIcon },
 });

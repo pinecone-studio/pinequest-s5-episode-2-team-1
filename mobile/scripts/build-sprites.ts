@@ -184,8 +184,10 @@ for (const n of ['home', 'tasks', 'path', 'shop', 'crew', 'bag', 'league']) {
 M.btn_calendar = [[30, 30], [24, 24]];
 // онбоардингийн сонголтын icon (PixelLab Pro, апп-ын icon-уудыг style болгосон 24px): 1× = 24dp, @2x/@3x бүхэл
 for (const n of ['friends', 'teacher', 'family', 'social', 'other', 'grades', 'exam', 'catchup', 'fun', 'compete']) M[`ob_${n}`] = [1];
-// Лигийн тэмдэг (PixelLab Pro, 32px): carousel-д 32dp, одоогийн лиг 64dp
-for (const k of ['terelj', 'khentii', 'khuvsgul', 'khangai', 'otgontenger', 'khuiten']) M[`league_${k}`] = [1, 2];
+// Лигийн тэмдэг (PixelLab Pro Flash, 64px бамбай, модоос очир хүртэл): шатанд 32dp, одоогийн лиг 64dp
+for (const k of ['wood', 'stone', 'bronze', 'silver', 'gold', 'diamond']) M[`league_${k}`] = [0.5, 1];
+// Ангийн icon (PixelLab Pro Flash 48px, лигийн тэмдгийн style): анги үүсгэхдээ сонгоно, 48dp
+for (const k of ['bear', 'wolf', 'eagle', 'horse', 'leopard', 'dragon', 'owl', 'fox', 'rocket', 'bolt', 'crown', 'flame']) M[`clan_icon_${k}`] = [1];
 // баавгай бэлдэж байхад эргэх номын хуудас (scripts/book-sprites.ts), 8 frame 28×18 → 2×
 M.fx_book_flip_sheet = [2];
 M.btn_honey = [[12, 12], [24, 24], [30, 30], [36, 36]];

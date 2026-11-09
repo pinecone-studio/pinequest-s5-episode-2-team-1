@@ -121,6 +121,7 @@ function RootNavigator() {
           <Stack.Screen name="u/[code]" />
           <Stack.Screen name="scan" options={{ animation: 'slide_from_bottom' }} />
           <Stack.Screen name="uul/index" />
+          <Stack.Screen name="uul/invite" />
           <Stack.Screen name="uul/[code]" />
           <Stack.Screen name="task/[subject]" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />
           <Stack.Screen name="recovery/[subject]" options={{ gestureEnabled: false, animation: 'slide_from_bottom' }} />
