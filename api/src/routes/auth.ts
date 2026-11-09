@@ -8,7 +8,7 @@ import type { AppEnv } from '../env';
 import { hashPassword, newSessionToken, normalizeUsername, sha256Hex, usernameError, verifyPassword } from '../lib/auth';
 import { ApiError, readBody } from '../lib/errors';
 import { bearerToken, createSession, requireAuth, trackActive } from '../lib/session';
-import { assertUnderLimits, loginLimits, recordAttempts, registerLimits } from '../services/authLimits';
+import { forgetAttempts, loginLimits, registerLimits, takeAttempts } from '../services/authLimits';
 import { loadMe } from '../services/users';
 
 const registerSchema = z.object({
@@ -39,10 +39,13 @@ authRoutes.post('/register', async (c) => {
 
   const db = c.env.DB;
   const now = Date.now();
+  // Бүртгэлтэй нэрийг хязгаараас өмнө шалгана: давхардсан нэр оролдох нь сүлжээний бүртгэлийн хязгаарыг идэхгүй.
+  // (Зэрэг бүртгүүлбэл доорх UNIQUE барина.)
+  if (await db.prepare('SELECT 1 FROM users WHERE username = ?').bind(username).first()) {
+    throw new ApiError(409, 'USERNAME_TAKEN', 'Энэ нэр бүртгэлтэй байна');
+  }
   // Бүртгэл бүр PBKDF2 боддог тул нэг сүлжээнээс олон удаа үүсгэж CPU дүүргэхээс сэргийлнэ.
-  const limits = await registerLimits(c.req.header('cf-connecting-ip'));
-  await assertUnderLimits(db, limits, now);
-  await recordAttempts(db, limits, now);
+  await takeAttempts(db, await registerLimits(c.req.header('cf-connecting-ip')), now);
   const passwordHash = await hashPassword(body.password);
   const token = newSessionToken();
   const tokenHash = await sha256Hex(token);
@@ -80,9 +83,11 @@ authRoutes.post('/login', async (c) => {
   const body = await readBody(c, loginSchema);
   const db = c.env.DB;
   const username = normalizeUsername(body.username);
-  // Зөвхөн буруу оролдлого тоологдоно: зөв нууц үгтэй анги бүхэлдээ нэг Wi-Fi-аас саадгүй нэвтэрнэ.
+  const now = Date.now();
+  // Шалгахаас өмнө тоолно (зэрэг ирсэн хүсэлт хязгаарыг давахгүй), зөв нууц үг бол буцааж устгана: зөвхөн буруу
+  // оролдлого тоологдох тул зөв нууц үгтэй анги бүхэлдээ нэг Wi-Fi-аас саадгүй нэвтэрнэ.
   const limits = await loginLimits(username, c.req.header('cf-connecting-ip'));
-  await assertUnderLimits(db, limits);
+  await takeAttempts(db, limits, now);
   const user = await db
     .prepare('SELECT id, password_hash FROM users WHERE username = ?')
     .bind(username)
@@ -90,9 +95,9 @@ authRoutes.post('/login', async (c) => {
   // Нэр олдоогүй ч hash бодно: хариуны хугацаагаар бүртгэлтэй нэрийг таахгүй.
   if (!user) await hashPassword(body.password);
   if (!user || !(await verifyPassword(body.password, user.password_hash))) {
-    await recordAttempts(db, limits);
     throw new ApiError(401, 'INVALID_CREDENTIALS', 'Нэр эсвэл нууц үг буруу');
   }
+  await forgetAttempts(db, limits, now);
   const token = await createSession(db, user.id);
   trackActive(c, user.id);
   return c.json<AuthResponse>({ token, me: await loadMe(db, user.id) });
