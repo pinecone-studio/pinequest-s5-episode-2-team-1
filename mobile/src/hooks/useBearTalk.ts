@@ -253,7 +253,7 @@ export function useBearTalk(questionId: number | undefined) {
           void micOn();
           break;
         case 'end':
-          if (m.code === 'TUTOR_LIMIT') setLimited(true);
+          if (m.code === 'TUTOR_LIMIT' || m.code === 'TUTOR_PLUS_ONLY') setLimited(true);
           end(m.reason === 'time' ? S.tutor.timeUp : m.reason === 'done' ? S.tutor.done : (m.message ?? S.tutor.lost));
           break;
       }
