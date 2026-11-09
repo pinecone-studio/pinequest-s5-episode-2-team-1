@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { clanTitle, defaultClanName, genitive, normalizeClanName, peakProgress, PEAKS } from '../../shared/clan';
+import { CLAN_ICONS, clanIcon, clanTitle, defaultClanName, genitive, normalizeClanName } from '../../shared/clan';
 import { newClanCode, normalizeClanCode } from '../src/domain/clanCode';
 import { weekStart } from '../src/domain/time';
 
@@ -63,20 +63,19 @@ describe('Уулын код', () => {
   });
 });
 
-describe('Уулын өндөр', () => {
-  it('дараагийн оргил', () => {
-    expect(peakProgress(0)).toEqual({ passed: null, next: PEAKS[0] });
-    expect(peakProgress(40).passed).toEqual(PEAKS[0]);
-    expect(peakProgress(1000)).toEqual({ passed: PEAKS[2], next: PEAKS[3] });
-    expect(peakProgress(9000)).toEqual({ passed: PEAKS[PEAKS.length - 1], next: null });
-  });
-});
-
 describe('7 хоногийн эхлэл', () => {
   it('Даваа гараг', () => {
     expect(weekStart('2026-10-26')).toBe('2026-10-26'); // Даваа
     expect(weekStart('2026-10-29')).toBe('2026-10-26'); // Пүрэв
     expect(weekStart('2026-11-01')).toBe('2026-10-26'); // Ням
     expect(weekStart('2026-11-02')).toBe('2026-11-02');
+  });
+});
+
+describe('Ангийн icon', () => {
+  it('танихгүй, хоосон утга анхдагч баавгай болно', () => {
+    expect(clanIcon('wolf')).toBe('wolf');
+    expect(clanIcon(null)).toBe(CLAN_ICONS[0]);
+    expect(clanIcon('unicorn')).toBe('bear');
   });
 });

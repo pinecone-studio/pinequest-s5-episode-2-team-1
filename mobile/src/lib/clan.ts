@@ -1,4 +1,5 @@
 import { CLAN_CODE_LENGTH } from '@shared/clan';
+import type { MyClanResponse } from '@shared/types';
 import * as Linking from 'expo-linking';
 import { Platform } from 'react-native';
 
@@ -22,3 +23,6 @@ export const clanQrText = (code: string) => clanLink(code) ?? Linking.createURL(
 export function parseClanLink(text: string): string | null {
   return text.match(new RegExp(`/uul/(\\d{${CLAN_CODE_LENGTH}})(?!\\d)`))?.[1] ?? null;
 }
+
+/** Ангийн үйлдэл (uul/index.tsx): амжилттай бол шинэ төлөвийг харуулна. */
+export type ClanAct = (key: string, fn: () => Promise<MyClanResponse>) => Promise<boolean>;

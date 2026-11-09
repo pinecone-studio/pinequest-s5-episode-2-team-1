@@ -1,4 +1,5 @@
 // UI-ийн бүх текст энд. Апп-ын нэр: src/constants/app.ts
+import type { ClanIcon } from '@shared/clan';
 import type { ErrorCode, Subject } from '@shared/types';
 
 export const subjectNames: Record<Subject, string> = {
@@ -27,8 +28,8 @@ export const subjectGlyphs: Record<Subject, string> = {
   english: 'Aa',
 };
 
-/** 1284 → "1 284 м" */
-const meters = (m: number) => `${String(m).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} м`;
+/** 1284 → "1 284 XP" (ангийн оноо) */
+const xpText = (n: number) => `${String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')} XP`;
 
 export const S = {
   common: {
@@ -79,28 +80,6 @@ export const S = {
     bag: 'Цүнх',
     duel: 'Баг',
     league: 'Анги',
-  },
-  // Анги tab: миний анги, ижил ангийн бусад ангитай энэ 7 хоногийн эрэмбэ
-  league: {
-    title: 'Анги',
-    sub: 'Ангийнхантайгаа нэгдэж, бусад ангитай өрсөлд.',
-    daysLeft: (n: number) => (n <= 1 ? 'Өнөөдөр дуусна' : `${n} өдөр үлдлээ`),
-    members: (n: number) => `${n} гишүүн`,
-    place: 'байр',
-    weekMeters: (m: number) => `+${m} м`,
-    weekLabel: 'энэ 7 хоногт',
-    noClanTitle: 'Ангиа үүсгээрэй',
-    noClanBody: 'Анги үүсгээд ангийнхнаа кодоор урь. Ангийнхан чинь аль хэдийн үүсгэсэн бол кодоор нь нэгд.',
-    toClan: 'Анги үүсгэх',
-    toJoin: 'Кодоор нэгдэх',
-    standings: (grade: number) => `${grade}-р ангиудын эрэмбэ`,
-    standingsAny: 'Ангиудын эрэмбэ',
-    onlyMe: 'Одоогоор ганцхан чиний анги байна. Бусад ангиуд нэгдэхэд энд гарна.',
-    rowA11y: (rank: number, name: string, m: number, mine: boolean) => `${rank}-р байр, ${name} анги, энэ 7 хоногт ${m} метр${mine ? ', миний анги' : ''}`,
-    openClan: 'Ангиа нээх',
-    close: 'Хаах',
-    loadError: 'Ангийн мэдээллийг ачаалж чадсангүй.',
-    retry: 'Дахин оролдох',
   },
   auth: {
     tagline: 'Өдөр бүр сур, боргоцой цуглуул, тулаанд ял!',
@@ -711,29 +690,40 @@ export const S = {
   clan: {
     title: 'Анги',
     cardTitle: 'Миний анги',
-    cardEmpty: 'Ангийнхантайгаа нэгдээд, зөв хариулт бүрээрээ ангийнхаа уулыг хамтдаа өндөрсгөөрэй!',
+    cardEmpty: 'Ангийнхантайгаа нэгдээд, зөв хариулт бүрээрээ ангидаа XP цуглуулаарай!',
     cardOpen: 'Анги',
-    cardLine: (members: number, max: number, height: number) => `${members}/${max} сурагч · ${meters(height)}`,
+    cardLine: (members: number, max: number, xp: number) => `${members}/${max} сурагч · ${xpText(xp)}`,
     intro: 'Ангийнхан нэг багт нэгдэж, бусад ангитай өрсөлдөнө.',
     createTitle: 'Анги үүсгэх',
     createHint: 'Нэрийг нь өөрчилж болно, жишээ нь «6А».',
     nameLabel: 'Ангийн нэр',
+    iconLabel: 'Ангийн тэмдэг',
+    icons: {
+      bear: 'Баавгай',
+      wolf: 'Чоно',
+      eagle: 'Бүргэд',
+      horse: 'Морь',
+      leopard: 'Ирвэс',
+      dragon: 'Луу',
+      owl: 'Шар шувуу',
+      fox: 'Үнэг',
+      rocket: 'Пуужин',
+      bolt: 'Аянга',
+      crown: 'Титэм',
+      flame: 'Гал',
+    } as Record<ClanIcon, string>,
     create: 'Үүсгэх',
     joinTitle: 'Ангид нэгдэх',
     joinHint: 'Ангийнхнаасаа ангийн 6 оронтой кодыг асуу, эсвэл QR-ийг нь уншуул.',
     joinButton: 'Харах',
     scan: 'QR уншуулах',
-    heightLabel: 'Ангийн уулын өндөр',
-    height: (m: number) => meters(m),
-    week: (m: number) => `Энэ 7 хоногт +${meters(m)}`,
-    nextPeak: (name: string, height: number, left: number) => `Дараагийн оргил: ${name} (${meters(height)}) · ${meters(left)} үлдлээ`,
-    passedPeak: (name: string, height: number) => `Давсан оргил: ${name} (${meters(height)})`,
-    topPeak: 'Эверестээс ч өндөр боллоо!',
+    xp: (n: number) => xpText(n),
+    week: (n: number) => `Энэ 7 хоногт +${xpText(n)}`,
+    total: (n: number) => `нийт ${xpText(n)}`,
     members: (n: number, max: number) => `Гишүүд · ${n}/${max}`,
     owner: 'Эзэн',
-    memberMeters: (week: number, total: number) => `+${meters(week)} · нийт ${meters(total)}`,
     memberLabel: (rank: number, name: string, week: number, total: number) =>
-      `${rank}. ${name}: энэ 7 хоногт ${meters(week)}, нийт ${meters(total)}`,
+      `${rank}. ${name}: энэ 7 хоногт ${xpText(week)}, нийт ${xpText(total)}`,
     invite: 'Ангийнхнаа урих',
     inviteHint: 'Энэ кодыг самбар дээр бичих эсвэл QR-ийг уншуулахад ангийнхан чинь нэгдэнэ.',
     codeLabel: 'Ангийн код',
@@ -749,7 +739,7 @@ export const S = {
     rotateConfirm: 'Шинэ код үүсгэх үү? Хуучин кодоор нэгдэх боломжгүй болно, гишүүд хэвээр үлдэнэ.',
     rotateYes: 'Солих',
     rotated: 'Шинэ код үүслээ.',
-    rename: 'Нэр солих',
+    rename: 'Засах',
     save: 'Хадгалах',
     cancel: 'Болих',
     editMembers: 'Гишүүн хасах',
@@ -758,7 +748,7 @@ export const S = {
     removeConfirm: (name: string) => `${name} — ангиас хасах уу?`,
     removeYes: 'Хасах',
     leave: 'Ангиас гарах',
-    leaveConfirm: 'Ангиас гарах уу? Чиний метр ангиас хасагдана.',
+    leaveConfirm: 'Ангиас гарах уу? Чиний XP ангийн дүнгээс хасагдана.',
     leaveOwner: 'Ангиас гарах уу? Хамгийн эрт нэгдсэн гишүүн ангийн эзэн болно.',
     leaveLast: 'Ангиас гарах уу? Чи сүүлчийн гишүүн тул анги устна.',
     leaveYes: 'Гарах',
@@ -776,7 +766,6 @@ export const S = {
     cameraAsk: 'Ангийн QR кодыг уншихад камер хэрэгтэй.',
     manualTitle: 'Кодоор нэгдэх',
     manualHint: 'Ангийнхнаасаа авсан 6 оронтой кодоо оруул',
-    mountainLabel: (title: string, m: number) => `${title}, ${meters(m)} өндөр`,
   },
   chest: {
     title: 'Нууц хайрцаг',

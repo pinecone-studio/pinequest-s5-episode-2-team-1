@@ -35,13 +35,13 @@ export async function runClansScenario() {
   await expectError(join(b.token, other.code), 'CLAN_MEMBER', 'Өөр Ууланд байхдаа нэгдэхгүй');
   check((await call<ClanPreviewResponse>('GET', `/clans/${other.code}`, { token: b.token })).status === 'elsewhere', 'Б-д "өөр Ууланд байна"');
 
-  console.log('\n— Уулын өндөр');
+  console.log('\n— Ангийн XP');
   await doTask(b.token, 'math', true);
   const grown = (await mine(a.token))!;
   const bRow = grown.members.find((m) => m.username === b.me.username);
-  check((bRow?.meters ?? 0) > 0 && bRow?.weekMeters === bRow?.meters, 'Б-гийн зөв хариулт Уулыг өндөрсгөнө (энэ 7 хоногт)', bRow);
-  check(grown.members[0].username === b.me.username, 'Энэ 7 хоногт их өндөрсгөсөн нь эхэндээ');
-  check(grown.height === grown.members.reduce((s, m) => s + m.meters, 0), 'Өндөр = гишүүдийн метрийн нийлбэр', grown.height);
+  check((bRow?.xp ?? 0) > 0 && bRow?.weekXp === bRow?.xp, 'Б-гийн зөв хариулт ангийн XP-д нэмэгдэнэ (энэ 7 хоногт)', bRow);
+  check(grown.members[0].username === b.me.username, 'Энэ 7 хоногт их XP авсан нь эхэндээ');
+  check(grown.xp === grown.members.reduce((s, m) => s + m.xp, 0), 'Ангийн XP = гишүүдийн XP-ийн нийлбэр', grown.xp);
 
   console.log('\n— Профайл дээр');
   const aProfile = await call<ProfileResponse>('GET', `/profiles/${await profileCode(a.token)}`, { token: c.token });

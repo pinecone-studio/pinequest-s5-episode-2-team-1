@@ -1,13 +1,17 @@
-// Уул (ангийн баг): ангийнхан нэг Ууланд нэгдэж, хамтдаа цуглуулсан XP-ээрээ Уулаа өндөрсгөнө. API ба апп нэг эх.
+// Анги (ангийн баг, clans): ангийнхан нэг ангид нэгдэж, хамтдаа цуглуулсан XP-ээрээ бусад ангитай уралдана. API ба апп нэг эх.
 
-/** Нэг Ууланд хамгийн ихдээ ийм олон сурагч (нэг анги). */
+/** Нэг ангид хамгийн ихдээ ийм олон сурагч (нэг анги). */
 export const CLAN_MAX_MEMBERS = 40;
 /** Урилгын код: тулааны кодын адил 6 оронтой тоо (самбар дээр бичиж өгөхөд амар). */
 export const CLAN_CODE_LENGTH = 6;
-/** Нэрийн эхний хэсэг ("Төгсбилэгийн"), " Уул" нь үргэлж ард нь нэмэгдэнэ. */
+/** Нэрийн эхний хэсэг ("Төгсбилэгийн"), " анги" нь үргэлж ард нь нэмэгдэнэ. */
 export const CLAN_NAME_MAX = 24;
-/** Уулын өндөр: гишүүдийн XP-ийн нийлбэр / энэ (= нэг зөв хариулт 1 метр). */
-export const XP_PER_METER = 10;
+
+/** Анги үүсгэхдээ сонгох pixel icon (sprite clan_icon_<key>_48x48). Эхнийх нь анхдагч. */
+export const CLAN_ICONS = ['bear', 'wolf', 'eagle', 'horse', 'leopard', 'dragon', 'owl', 'fox', 'rocket', 'bolt', 'crown', 'flame'] as const;
+export type ClanIcon = (typeof CLAN_ICONS)[number];
+/** DB-ийн утгыг (NULL, хуучин, танихгүй) icon болгоно. */
+export const clanIcon = (key: string | null | undefined): ClanIcon => (CLAN_ICONS as readonly string[]).includes(key ?? '') ? (key as ClanIcon) : CLAN_ICONS[0];
 
 /** "Батын" → "Батын анги". Хуучин нэрэнд "анги", "ангийн" бичсэн бол давхардуулахгүй ("6А ангийн" → "6А анги"). */
 export const clanTitle = (name: string) => `${name.replace(/\s*анги(йн)?$/i, '') || name} анги`;
@@ -31,7 +35,7 @@ const SOFT_TAIL = /[гжчшщкь]$/i;
 /**
  * Нэрийн харьяалахын тийн ялгал: "Төгсбилэг" → "Төгсбилэгийн", "Болд" → "Болдын", "Дулмаа" → "Дулмаагийн",
  * "Сарнай" → "Сарнайн", "Бат-Эрдэнэ" → "Бат-Эрдэнийн". Зөвхөн сүүлийн үгийг хувиргана; кирилл биш бол "-ийн"
- * залгана. Санал болгох нэр тул нарийн дүрмийн онцгой тохиолдлыг Уулын эзэн өөрөө засна.
+ * залгана. Санал болгох нэр тул нарийн дүрмийн онцгой тохиолдлыг ангийн эзэн өөрөө засна.
  */
 export function genitive(name: string): string {
   const trimmed = name.trim();
@@ -58,28 +62,5 @@ export function genitive(name: string): string {
   return head + out;
 }
 
-/** Уулын анхдагч нэр үүсгэгчийн нэрээс: "Төгсбилэг" → "Төгсбилэгийн". */
+/** Ангийн анхдагч нэр үүсгэгчийн нэрээс: "Төгсбилэг" → "Төгсбилэгийн". */
 export const defaultClanName = (founder: string) => normalizeClanName(genitive(founder)) || 'Баавгайн';
-
-export interface Peak {
-  name: string;
-  /** метр */
-  height: number;
-}
-
-/** Уулын өндрийг харьцуулах оргилууд (намаас өндөр рүү). */
-export const PEAKS: readonly Peak[] = [
-  { name: 'Чингис хааны морьт хөшөө', height: 40 },
-  { name: 'Эйфелийн цамхаг', height: 330 },
-  { name: 'Бурж Халифа', height: 828 },
-  { name: 'Богд хан уулын Цэцээгүн', height: 2256 },
-  { name: 'Хүйтэн оргил', height: 4374 },
-  { name: 'Эверест', height: 8849 },
-];
-
-/** Давсан хамгийн өндөр оргил ба дараагийнх (бүгдийг давсан бол next = null). */
-export function peakProgress(height: number): { passed: Peak | null; next: Peak | null } {
-  const next = PEAKS.find((p) => p.height > height) ?? null;
-  const passed = [...PEAKS].reverse().find((p) => p.height <= height) ?? null;
-  return { passed, next };
-}

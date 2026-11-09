@@ -1,3 +1,4 @@
+import type { ClanIcon } from './clan';
 import type { BEAR_FACES, BEAR_FURS } from './bear';
 import type { BagItem, LootKind } from './loot';
 import type { HeardFrom, Reason, SelfLevel } from './onboarding';
@@ -303,15 +304,15 @@ export interface FriendActionResponse {
   friend: FriendStatus;
 }
 
-// ---------- Уул (ангийн баг) ----------
-// Ангийнхан 6 оронтой кодоор нэг Ууланд нэгдэнэ (дээд тал нь 40). Гишүүдийн XP Уулыг өндөрсгөнө (shared/clan.ts).
+// ---------- Анги (ангийн баг, clans) ----------
+// Ангийнхан 6 оронтой кодоор нэг ангид нэгдэнэ (дээд тал нь 40). Ангийн оноо = гишүүдийн XP-ийн нийлбэр (1 зөв = 10 XP).
 
-/** Уулын гишүүн: найзын мөрийн адил (профайлын кодоор нь /u/<код> нээгдэнэ), дээр нь Уулд нэмсэн метр. */
+/** Ангийн гишүүн: найзын мөрийн адил (профайлын кодоор нь /u/<код> нээгдэнэ), дээр нь XP. */
 export interface ClanMemberDto extends Omit<FriendDto, 'paths'> {
-  /** Уулыг өндөрсгөсөн нийт метр (XP / XP_PER_METER) */
-  meters: number;
-  /** Энэ 7 хоногт (Даваа гарагаас) нэмсэн метр */
-  weekMeters: number;
+  /** Нийт XP */
+  xp: number;
+  /** Энэ 7 хоногт (Даваа гарагаас) даалгавраар авсан XP */
+  weekXp: number;
   owner: boolean;
   isMe: boolean;
 }
@@ -319,15 +320,17 @@ export interface ClanMemberDto extends Omit<FriendDto, 'paths'> {
 export interface ClanDto {
   /** Урилгын код: гишүүн бүр харж, ангийнхандаа өгнө; эзэн нь солино. */
   code: string;
-  /** Нэрийн эхний хэсэг: "Төгсбилэгийн" (clanTitle → "Төгсбилэгийн Уул") */
+  /** Нэрийн эхний хэсэг: "Төгсбилэгийн" (clanTitle → "Төгсбилэгийн анги") */
   name: string;
-  /** Гишүүдийн нийт метр */
-  height: number;
-  weekHeight: number;
+  icon: ClanIcon;
+  /** Гишүүдийн нийт XP */
+  xp: number;
+  /** Гишүүдийн энэ 7 хоногийн XP */
+  weekXp: number;
   maxMembers: number;
-  /** Би Уулын эзэн (нэр, код солих, гишүүн хасах) */
+  /** Би ангийн эзэн (нэр, код солих, гишүүн хасах) */
   isOwner: boolean;
-  /** Энэ 7 хоногт хамгийн их өндөрсгөсөн нь эхэндээ */
+  /** Энэ 7 хоногт хамгийн их XP авсан нь эхэндээ */
   members: ClanMemberDto[];
 }
 
@@ -342,15 +345,17 @@ export interface ClanPreview {
   name: string;
   members: number;
   maxMembers: number;
-  height: number;
+  icon: ClanIcon;
+  /** Гишүүдийн нийт XP */
+  xp: number;
   /** Эзний нэр */
   owner: string;
-  /** Эхний гишүүдийн баавгай (Уулын зурган дээр) */
+  /** Эхний гишүүдийн баавгай (ангийн зурган дээр) */
   looks: BearLook[];
 }
 
 /**
- * Лиг дээрх Уул. Өөр Уулын хувьд урилгын код, username, профайлын код, гишүүдийн нэр БАЙХГҮЙ (docs/design/clan-league.md §7):
+ * Лиг дээрх анги. Өөр ангийн хувьд урилгын код, username, профайлын код, гишүүдийн нэр БАЙХГҮЙ (docs/design/clan-league.md §7):
  * зөвхөн нэр, тоо, нэргүй баавгайн хөрөг.
  */
 export interface LeagueClanDto {
@@ -359,18 +364,32 @@ export interface LeagueClanDto {
   name: string;
   members: number;
   rank: number;
-  /** Энэ 7 хоногт гишүүдийн нэмсэн метр (тоглолтын оноо гартал эрэмбэ үүгээр) */
-  weekHeight: number;
-  /** Нийт өндөр (тэнцвэл) */
-  height: number;
+  /** Энэ 7 хоногт гишүүдийн авсан XP (эрэмбэ үүгээр) */
+  weekXp: number;
+  /** Нийт XP (тэнцвэл) */
+  xp: number;
+  /** Лиг 1–6 (shared/league LEAGUE_TIERS) */
+  tier: number;
+  icon: ClanIcon;
   isMine: boolean;
   looks: BearLook[];
 }
 
-/** GET /league. no_clan = Уулгүй, too_small = 5-аас цөөн гишүүнтэй (лигт ороогүй), placed = лигт байна. */
+/**
+ * GET /league. no_clan = ангигүй, placed = ангитай. tier = миний ангийн лиг (ангигүй бол 1), promoted = өнгөрсөн 7 хоногт
+ * түрүүлж энэ лигт дэвшсэн.
+ */
 export interface LeagueResponse {
   season: { week: string; endsAt: number };
-  me: { state: 'no_clan' | 'placed'; members: number; isOwner: boolean; clanName: string | null; grade: number | null };
+  me: {
+    state: 'no_clan' | 'placed';
+    tier: number;
+    promoted: boolean;
+    members: number;
+    isOwner: boolean;
+    clanName: string | null;
+    grade: number | null;
+  };
   /** Ижил ангийн ангиуд (эхний 10 + миний анги); ангигүй бол хоосон */
   standings: LeagueClanDto[];
 }
@@ -384,6 +403,7 @@ export interface ClanPreviewResponse {
 /** POST /clans (name байхгүй бол үүсгэгчийн нэрээс: "Төгсбилэгийн"), PATCH /clans/mine */
 export interface ClanBody {
   name?: string;
+  icon?: ClanIcon;
 }
 
 /** PUT /me/look */
