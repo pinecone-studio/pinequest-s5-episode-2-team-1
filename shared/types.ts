@@ -395,7 +395,7 @@ export interface LeagueResponse {
     clanName: string | null;
     grade: number | null;
   };
-  /** Ижил ангийн ангиуд (эхний 10 + миний анги); ангигүй бол хоосон */
+  /** Ижил ангийн ангиуд (эхний 10 + миний анги); ангигүй бол хүүхдийн ангийн (grade) эхний 10 */
   standings: LeagueClanDto[];
 }
 

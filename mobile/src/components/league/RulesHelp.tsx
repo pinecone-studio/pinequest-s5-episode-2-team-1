@@ -13,7 +13,8 @@ const ICONS: SpriteKey[] = ['nav2_tasks_on_30x30', 'icon_star_24x24', 'nav2_leag
  * Гарчгийн хажуудах pixel "?" товч: дарвал "Яаж уралдах вэ?" дүрэм доороос гарч ирнэ (даалгавар → 1 зөв = 1 м →
  * 1-р байр дараагийн лигт). Дүрэм дэлгэц дээр байнга байж зай эзлэхгүй.
  */
-export function RulesHelp() {
+/** `noClan`: ангигүй бол дүрмийн доор анги үүсгэх / нэгдэх тайлбар. */
+export function RulesHelp({ noClan }: { noClan?: boolean }) {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
   return (
@@ -45,6 +46,12 @@ export function RulesHelp() {
                 </View>
               </View>
             ))}
+            {noClan ? (
+              <View style={styles.note}>
+                <Text style={styles.stepTitle}>{L.noClanTitle}</Text>
+                <Text style={styles.stepBody}>{L.noClanBody}</Text>
+              </View>
+            ) : null}
             <Button title={L.gotIt} variant="lemon" onPress={close} />
           </Pressable>
         </Pressable>
@@ -74,6 +81,7 @@ const styles = StyleSheet.create({
   step: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   icon: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.trackAlt },
   texts: { flex: 1, gap: 2 },
+  note: { gap: 4, padding: 14, borderRadius: radius.sm, backgroundColor: colors.trackAlt },
   stepTitle: { fontFamily: fonts.bold, fontSize: 16, color: colors.ink },
   stepBody: { fontFamily: fonts.medium, fontSize: 14, lineHeight: 19, color: colors.muted },
 });

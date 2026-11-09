@@ -22,6 +22,8 @@ export const LEAGUE = {
   GROUP_MAX: 10,
   /** Өөр ангийн картанд харагдах нэргүй баавгайн хөрөг */
   LOOKS: 5,
+  /** Уралдааныг харж болох ангиуд (GAME.GRADE_MIN–MAX) */
+  GRADES: [6, 7, 8, 9, 10, 11, 12],
 } as const;
 
 export type RaceStatus = { kind: 'alone' } | { kind: 'lead'; gap: number } | { kind: 'chase'; rank: number; need: number };

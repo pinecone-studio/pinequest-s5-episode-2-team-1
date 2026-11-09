@@ -6,6 +6,8 @@ import { api, errorText } from '@/api/client';
 import { Button } from '@/components/Button';
 import { ClanRow } from '@/components/league/ClanRow';
 import { ClanSheet } from '@/components/league/ClanSheet';
+import { GradePicker } from '@/components/league/GradePicker';
+import { JoinClanSheet } from '@/components/league/JoinClanSheet';
 import { RulesHelp } from '@/components/league/RulesHelp';
 import { TierHeader } from '@/components/league/TierHeader';
 import { PixelText } from '@/components/pinecones';
@@ -16,29 +18,34 @@ import { L } from '@/i18n/league';
 
 /**
  * Анги (доод цэсний 5-р tab): ангидаа нэгдээд ижил ангийн бусад ангитай энэ 7 хоногт метрээр уралдана (Duolingo лиг шиг).
- * Дээр миний байр ба дээд ангийг давахад хэдэн м дутуу, дараа нь дүрэм, уралдааны жагсаалт. Ангигүй бол байгуулах эсвэл
- * кодоор нэгдэх (/uul). Миний анги дээр дарвал ангиа нээнэ, өөр анги дээр дарвал товч мэдээлэл.
+ * Дээр лигийн шат, дараа нь уралдааны жагсаалт. Ангигүй бол гарчгийн хажуудах товчоор байгуулах / кодоор нэгдэх (/uul), лиг ба
+ * өөрийн ангийн (grade) уралдаан харагдсаар. Миний анги дээр дарвал ангиа нээнэ, өөр анги дээр дарвал товч мэдээлэл.
  */
 export default function LeagueScreen() {
   const [data, setData] = useState<LeagueResponse | null>(null);
   const [error, setError] = useState('');
   const [open, setOpen] = useState<LeagueClanDto | null>(null);
+  /** Харж буй анги (grade); null = миний анги */
+  const [grade, setGrade] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     try {
       setError('');
-      setData(await api<LeagueResponse>('/league'));
+      setData(await api<LeagueResponse>(grade === null ? '/league' : `/league?grade=${grade}`));
     } catch (e) {
       setError(errorText(e));
     }
-  }, []);
+  }, [grade]);
   useFocusEffect(
     useCallback(() => {
       void load();
     }, [load]),
   );
+  // дэлгэцээс гармагц өөр ангийн сонголт арилна: буцаж ирэхэд өөрийн ангийн лиг
+  useFocusEffect(useCallback(() => () => setGrade(null), []));
 
   const max = Math.max(0, ...(data?.standings.map((c) => c.weekXp) ?? []));
+  const shown = grade ?? data?.me.grade ?? null;
 
   return (
     <Screen tabBar contentStyle={styles.content}>
@@ -47,7 +54,8 @@ export default function LeagueScreen() {
           <View accessibilityRole="header">
             <PixelText text={L.title.toUpperCase()} px={3} color={colors.ink} shadow={colors.stone} />
           </View>
-          <RulesHelp />
+          <RulesHelp noClan={data?.me.state === 'no_clan'} />
+          {data?.me.state === 'no_clan' ? <JoinClanSheet /> : null}
         </View>
         <Text style={styles.sub}>{L.sub}</Text>
       </View>
@@ -62,21 +70,19 @@ export default function LeagueScreen() {
         ) : (
           <ActivityIndicator color={colors.violet} style={{ marginTop: 24 }} />
         )
-      ) : data.me.state === 'no_clan' ? (
-        <Card style={styles.cta}>
-          <Text style={styles.ctaTitle}>{L.noClanTitle}</Text>
-          <Muted>{L.noClanBody}</Muted>
-          <Button title={L.toClan} onPress={() => router.push('/uul')} />
-          <Button title={L.toJoin} variant="secondary" onPress={() => router.push('/uul')} />
-        </Card>
       ) : (
         <>
-          <TierHeader tier={data.me.tier} promoted={data.me.promoted} />
+          <TierHeader tier={data.me.tier} promoted={data.me.promoted} preview={data.me.state === 'no_clan'} />
           <View style={styles.table}>
             <View style={styles.tableHead}>
-              <Text style={styles.tableTitle}>{data.me.grade !== null ? L.standings(data.me.grade) : L.standingsAny}</Text>
+              {shown !== null ? (
+                <GradePicker value={shown} mine={data.me.grade} onChange={setGrade} />
+              ) : (
+                <Text style={styles.tableTitle}>{L.standingsAny}</Text>
+              )}
               <Text style={styles.chip}>{L.timeLeft(data.season.endsAt - Date.now())}</Text>
             </View>
+            {data.standings.length === 0 ? <Muted>{shown === data.me.grade ? L.noStandings : L.noStandingsOther}</Muted> : null}
             {data.standings.map((c) => (
               <ClanRow key={c.id} clan={c} max={max} onPress={() => (c.isMine ? router.push('/uul') : setOpen(c))} />
             ))}
@@ -95,10 +101,9 @@ const styles = StyleSheet.create({
   head: { gap: 8 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   sub: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 21, color: colors.muted },
-  cta: { gap: 12 },
-  ctaTitle: { fontFamily: fonts.bold, fontSize: 17, lineHeight: 23, color: colors.ink },
   table: { gap: 8 },
-  tableHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  // нарийн дэлгэцэд цагийн chip доод мөрөнд буух ба гарчиг тасрахгүй
+  tableHead: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   tableTitle: { flexShrink: 1, fontFamily: fonts.extrabold, fontSize: 17, color: colors.ink },
   chip: {
     flexShrink: 0,
