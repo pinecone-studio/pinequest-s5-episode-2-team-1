@@ -178,7 +178,7 @@ export const S = {
     visPrivate: 'Найзтайгаа',
     visPublicHint: 'Ижил түвшний бүх хүүхдийн лобби дээр гарна. Найзаа кодоор ч урьж болно.',
     visPrivateHint: 'Лобби дээр гарахгүй. Урилгын кодыг найздаа өгөөрэй, зөвхөн тэр орно.',
-    matching: (n: number, subject: Subject) => `${subjectBy[subject]} ${n} хүүхэд тулаан хүлээж байна. Доороос шууд нэгдэж болно!`,
+    matching: (n: number, subject: Subject) => `${subjectBy[subject]} ${n} хүүхэд тулаан хүлээж байна. Лобби дээрээс шууд нэгдэж болно!`,
     mineTitle: 'Таны сорилт',
     minePublic: 'Лобби дээр бусдад харагдаж байна',
     minePrivate: 'Зөвхөн кодоор орно',

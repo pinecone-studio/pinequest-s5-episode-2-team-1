@@ -1,11 +1,8 @@
-import type { Subject } from '@shared/types';
-import { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '@/auth/AuthContext';
 import { Button } from '@/components/Button';
 import { ChallengeCard } from '@/components/duel/ChallengeCard';
-import { CreateDuelCard } from '@/components/duel/CreateDuelCard';
-import { JoinCodeCard } from '@/components/duel/JoinCodeCard';
+import { DuelActions } from '@/components/duel/DuelActions';
 import { LobbyHero } from '@/components/duel/LobbyHero';
 import { SquadRoom } from '@/components/duel/SquadRoom';
 import { Sprite } from '@/components/pixel';
@@ -15,12 +12,12 @@ import { useDuelLobby } from '@/hooks/useDuelLobby';
 import { S, subjectNames } from '@/i18n/strings';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 
+/** Тулааны лобби: миний тулаан (байвал), үүсгэх / кодоор орох хавтан, нэгдэх боломжтой тулаанууд. Тохиргоо тусдаа дэлгэцэд. */
 export default function DuelLobby() {
   const { me } = useAuth();
   const myId = me?.id ?? 0;
   const { honey } = usePixelBear();
-  const [subject, setSubject] = useState<Subject>('math');
-  const { lobby, busy, error, enter, create, cancel, leaveTeam, switchTeam, accept, join, share } = useDuelLobby();
+  const { lobby, busy, error, enter, cancel, leaveTeam, switchTeam, accept, share } = useDuelLobby();
 
   if (!lobby) {
     return (
@@ -33,7 +30,6 @@ export default function DuelLobby() {
 
   const mine = lobby.mine;
   const playing = mine?.status === 'accepted';
-  const matching = mine ? 0 : lobby.open.filter((d) => d.subject === subject && d.stake <= lobby.maxStake).length;
   return (
     <Screen tabBar>
       <LobbyHero honey={honey} />
@@ -48,7 +44,9 @@ export default function DuelLobby() {
           onCancel={() => cancel(mine.id)}
           onLeave={() => leaveTeam(mine.id)}
         />
-      ) : mine ? (
+      ) : null}
+
+      {mine && playing ? (
         <Card style={styles.playing}>
           <Text style={styles.title}>{S.duel.inProgress}</Text>
           <View style={styles.lineRow}>
@@ -61,10 +59,8 @@ export default function DuelLobby() {
           <Button title={S.duel.enterRoom} onPress={() => enter(mine.id)} />
         </Card>
       ) : (
-        <CreateDuelCard subject={subject} onSubject={setSubject} max={lobby.maxStake} matching={matching} loading={busy === 'create'} onCreate={create} />
+        <DuelActions canCreate={!mine} />
       )}
-
-      {playing ? null : <JoinCodeCard busy={busy !== null} loading={busy === 'join'} onJoin={join} />}
 
       <ErrorText>{error}</ErrorText>
 
@@ -75,7 +71,6 @@ export default function DuelLobby() {
           key={d.id}
           index={i}
           duel={d}
-          highlight={!mine && d.subject === subject}
           canAfford={d.stake <= lobby.maxStake}
           disabled={playing || busy !== null}
           loading={busy === `accept-${d.id}`}
