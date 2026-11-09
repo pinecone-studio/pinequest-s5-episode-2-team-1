@@ -9,7 +9,8 @@ import { L } from '@/i18n/league';
  * Дэлгэцийн дээд хэсэг (Duolingo лиг шиг): 6 лигийн шат (давсан нь өнгөтэй, одоогийнх том, дараагийнх бүдэг), ямар лигт
  * байгаа, түрүүлбэл аль лиг рүү дэвших. Өнгөрсөн 7 хоногт дэвшсэн бол баяр хүргэнэ.
  */
-export function TierHeader({ tier, promoted }: { tier: number; promoted: boolean }) {
+/** `preview`: ангигүй үед — анги бүр эхний лигээс эхэлнэ гэж харуулна. */
+export function TierHeader({ tier, promoted, preview }: { tier: number; promoted: boolean; preview?: boolean }) {
   const current = leagueTier(tier);
   const next = LEAGUE_TIERS.find((t) => t.tier === current.tier + 1);
   return (
@@ -34,7 +35,7 @@ export function TierHeader({ tier, promoted }: { tier: number; promoted: boolean
       </View>
       <View style={styles.texts}>
         <Text accessibilityRole="header" style={styles.title}>
-          {L.tierName(current.name)}
+          {preview ? L.tierStart(current.name) : L.tierName(current.name)}
         </Text>
         <Text style={styles.hint}>{next ? L.tierNext(next.name) : L.tierTop}</Text>
       </View>

@@ -13,6 +13,13 @@ import { byRank, clanStats, closeWeek, gradeOfClans } from './leagueWeek';
 
 export { modeGrade } from './leagueWeek';
 
+/** Эхний 10 анги; миний анги ороогүй бол сүүлчийнхийг орлуулна (өөрийн байраа үргэлж харна). Ангигүй бол зүгээр эхний 10. */
+export function topGroup<T extends { id: number }>(ranked: T[], mine: T | null): T[] {
+  const group = ranked.slice(0, LEAGUE.GROUP_MAX);
+  if (mine && !group.some((s) => s.id === mine.id)) group[group.length - 1] = mine;
+  return group;
+}
+
 /** Энэ 7 хоногийн (Даваа 00:00 UB) төгсгөл. */
 function seasonOf(now: number): LeagueResponse['season'] {
   const week = weekStart(ubDay(now));
@@ -20,32 +27,35 @@ function seasonOf(now: number): LeagueResponse['season'] {
   return { week, endsAt };
 }
 
-export async function league(db: D1Database, me: number, now = Date.now()): Promise<LeagueResponse> {
+/** `view`: өөр ангийн (grade) уралдааныг харах; өгөөгүй бол миний анги. */
+export async function league(db: D1Database, me: number, now = Date.now(), view?: number): Promise<LeagueResponse> {
   const season = seasonOf(now);
   const prev = addDays(season.week, -7);
   await closeWeek(db, prev, season.week);
   const mine = await clanOf(db, me);
-  if (!mine) {
-    const none = { state: 'no_clan' as const, tier: 1, promoted: false, members: 0, isOwner: false, clanName: null, grade: null };
-    return { season, me: none, standings: [] };
-  }
-
   const [stats, gradeOf] = await Promise.all([clanStats(db, season.week, addDays(season.week, 7)), gradeOfClans(db)]);
-  const my = stats.find((s) => s.id === mine.id)!;
-  const myGrade = gradeOf(mine.id);
-  const meDto = {
-    tier: my.league_tier,
-    promoted: my.promoted_week === prev,
-    members: my.members,
-    isOwner: mine.owner_id === me,
-    clanName: mine.name,
-    grade: myGrade,
-  };
+  const my = mine ? stats.find((s) => s.id === mine.id)! : null;
+  // ангигүй ч өөрийн ангийн (grade) уралдааныг харж, аль ангид нэгдэхээ сонгоно
+  const myGrade = mine
+    ? gradeOf(mine.id)
+    : ((await db.prepare('SELECT grade FROM users WHERE id = ?').bind(me).first<{ grade: number | null }>())?.grade ?? null);
+  const meDto =
+    mine && my
+      ? {
+          state: 'placed' as const,
+          tier: my.league_tier,
+          promoted: my.promoted_week === prev,
+          members: my.members,
+          isOwner: mine.owner_id === me,
+          clanName: mine.name,
+          grade: myGrade,
+        }
+      : { state: 'no_clan' as const, tier: 1, promoted: false, members: 0, isOwner: false, clanName: null, grade: myGrade };
 
-  const ranked = stats.filter((s) => gradeOf(s.id) === myGrade).sort(byRank);
-  const group = ranked.slice(0, LEAGUE.GROUP_MAX);
-  // миний анги эхний 10-д ороогүй бол сүүлчийнхийг орлуулна (өөрийн байраа үргэлж харна)
-  if (!group.some((s) => s.id === my.id)) group[group.length - 1] = my;
+  const shown = view ?? myGrade;
+  const ranked = stats.filter((s) => gradeOf(s.id) === shown).sort(byRank);
+  // өөр ангийн уралдаанд миний анги байхгүй: орлуулахгүй
+  const group = topGroup(ranked, my && ranked.includes(my) ? my : null);
 
   const { results: lookRows } = await db
     .prepare(
@@ -69,8 +79,8 @@ export async function league(db: D1Database, me: number, now = Date.now()): Prom
     xp: s.xp,
     tier: s.league_tier,
     icon: clanIcon(s.icon),
-    isMine: s.id === my.id,
+    isMine: s.id === my?.id,
     looks: looksOf(s.id),
   }));
-  return { season, me: { state: 'placed', ...meDto }, standings };
+  return { season, me: meDto, standings };
 }

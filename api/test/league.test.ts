@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { raceStatus } from '../../shared/league';
-import { modeGrade } from '../src/services/league';
+import { modeGrade, topGroup } from '../src/services/league';
 import { weekWinners } from '../src/services/leagueWeek';
 
 describe('league grade', () => {
@@ -38,5 +38,15 @@ describe('weekWinners', () => {
   it('needs XP and stops at the top league', () => {
     const g = grade({ 1: 8, 2: 8, 3: 9, 4: 9 });
     expect(weekWinners([s(1, 0), s(2, 0), s(3, 4, 6), s(4, 1)], g)).toEqual([]);
+  });
+});
+
+describe('topGroup', () => {
+  const r = (n: number) => Array.from({ length: n }, (_, i) => ({ id: i + 1 }));
+  it('keeps my clan in view, top 10 without a clan', () => {
+    expect(topGroup(r(12), { id: 12 }).map((s) => s.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 12]);
+    expect(topGroup(r(12), { id: 3 })).toHaveLength(10);
+    expect(topGroup(r(12), null).map((s) => s.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(topGroup([], null)).toEqual([]);
   });
 });
