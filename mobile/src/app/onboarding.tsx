@@ -1,4 +1,5 @@
 import type { HeardFrom, Reason, SelfLevel } from '@shared/onboarding';
+import { subjectInGrade } from '@shared/subjects';
 import type { MeResponse, OnboardingBody, Subject } from '@shared/types';
 import { router } from 'expo-router';
 import { useState } from 'react';
@@ -12,7 +13,7 @@ import { ErrorText } from '@/components/ui';
 import { S, subjectNames } from '@/i18n/strings';
 import { usePixelBear } from '@/lib/mock/pixelBear';
 import { isOnline } from '@/lib/online';
-import { PATH_SUBJECTS } from '@/lib/pixelBear/path';
+import { pathSubjectsFor } from '@/lib/pixelBear/path';
 
 type Step = 'heard' | 'grade' | 'reason' | 'subject' | 'level' | 'benefits' | 'result';
 const STEPS: Step[] = ['heard', 'grade', 'reason', 'subject', 'level', 'benefits', 'result'];
@@ -31,7 +32,7 @@ export default function OnboardingScreen() {
   const [grade, setGrade] = useState<number | null>(null);
   const [reason, setReason] = useState<Reason | null>(null);
   // өмнө нь бөглөсөн бол тэр хичээлээ (Сурах зам дээр байвал) урьдчилан сонгоно
-  const [subject, setPick] = useState<Subject>(() => PATH_SUBJECTS.find((s) => s === me?.subject) ?? SUGGESTED);
+  const [subject, setPick] = useState<Subject>(() => pathSubjectsFor(me?.grade).find((s) => s === me?.subject) ?? SUGGESTED);
   const [level, setLevel] = useState<SelfLevel | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -39,6 +40,12 @@ export default function OnboardingScreen() {
   const [steps] = useState<Step[]>(() => (me?.onboarded === false && isOnline() ? STEPS : ['subject']));
   const step = steps[i];
   const last = i === steps.length - 1;
+
+  /** Анги солиход сонгосон хичээл тэр ангид ордоггүй бол (физик, нийгэм судлал 6, 12-р ангид) математик руу буцна. */
+  function pickGrade(g: number) {
+    setGrade(g);
+    if (!subjectInGrade(subject, g)) setPick(SUGGESTED);
+  }
 
   async function finish() {
     if (busy) return;
@@ -91,9 +98,9 @@ export default function OnboardingScreen() {
       onNext={last ? finish : () => setI(i + 1)}
     >
       {step === 'heard' ? <HeardStep value={heard} onChange={setHeard} /> : null}
-      {step === 'grade' ? <GradeStep value={grade} onChange={setGrade} /> : null}
+      {step === 'grade' ? <GradeStep value={grade} onChange={pickGrade} /> : null}
       {step === 'reason' ? <ReasonStep value={reason} onChange={setReason} /> : null}
-      {step === 'subject' ? <SubjectPick value={subject} onChange={setPick} /> : null}
+      {step === 'subject' ? <SubjectPick value={subject} onChange={setPick} grade={grade ?? me?.grade} /> : null}
       {step === 'level' ? <LevelStep value={level} onChange={setLevel} /> : null}
       {step === 'benefits' ? <BenefitsStep /> : null}
       {step === 'result' && level !== null ? <ResultStep level={level} subject={subject} /> : null}

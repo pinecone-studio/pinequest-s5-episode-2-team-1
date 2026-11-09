@@ -12,10 +12,9 @@ import { type ChapterTheme, useThemeFade } from '@/constants/chapterTheme';
 import { colors, fonts } from '@/constants/theme';
 import { S, subjectNames } from '@/i18n/strings';
 import { usePixelBear } from '@/lib/mock/pixelBear';
-import { PATH_SUBJECTS } from '@/lib/pixelBear/path';
+import { pathSubjectsFor } from '@/lib/pixelBear/path';
 import type { SpriteKey } from '@/sprites';
 
-const SUBJECTS = PATH_SUBJECTS;
 
 /**
  * Сурах замын дээд хэсэг (Duolingo шиг, хүрээгүй): самбар дээр аватар · XP · гал · боргоцой жигд зайтай; түүнээс тусдаа,
@@ -113,7 +112,7 @@ export function MapHeader({
 
       {menu ? (
         <Animated.View entering={FadeInDown.duration(180)} exiting={FadeOut.duration(120)} style={styles.menu}>
-          {SUBJECTS.map((s) => (
+          {pathSubjectsFor(me?.grade).map((s) => (
             <Pressable
               key={s}
               accessibilityRole="menuitem"

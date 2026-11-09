@@ -62,6 +62,7 @@ export type ErrorCode =
   | 'TUTOR_UNAVAILABLE'
   | 'TUTOR_LIMIT'
   | 'TUTOR_ACTIVE'
+  | 'SUBJECT_NOT_IN_GRADE'
   | 'PAYMENTS_OFF'
   | 'PAYMENT_FAILED'
   | 'PAYMENT_LIMIT'

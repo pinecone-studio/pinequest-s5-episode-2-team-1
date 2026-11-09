@@ -2,6 +2,7 @@
 // давтана (нүүрний өнөөдрийн хичээлийн товч). Замд нөлөөлөхгүй, давтлага үүсгэхгүй; буруу хариулбал амь хасагдана
 // (амьгүй бол хаалттай);
 // оноо, XP, дараалал ердийн даалгавар шиг.
+import { SUBJECT_NOT_IN_GRADE_MESSAGE, subjectInGrade } from '../../../shared/subjects';
 import type { TaskDto } from '../../../shared/types';
 import { GAME, type Subject } from '../config/game';
 import { ubDay } from '../domain/time';
@@ -27,6 +28,7 @@ async function lessonTitle(env: Bindings, subject: Subject, grade: number, ref: 
 export async function startReview(env: Bindings, userId: number, subject: Subject, now = Date.now()): Promise<TaskDto> {
   const db = env.DB;
   const user = await getUserRow(db, userId);
+  if (!subjectInGrade(subject, user.grade)) throw new ApiError(400, 'SUBJECT_NOT_IN_GRADE', SUBJECT_NOT_IN_GRADE_MESSAGE);
   requireLife(user, now);
   const today = ubDay(now);
 

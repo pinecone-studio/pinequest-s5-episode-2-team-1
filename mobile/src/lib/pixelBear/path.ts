@@ -2,7 +2,7 @@ import { chestNodes, currentNode as nodeAt, gateNodes, gateOf, isBossNode, lesso
 import type { BookLesson, Subject, SubjectPath } from '@shared/types';
 import type { DefeatKey } from '@/components/DefeatAnim';
 import type { ThemeId } from '@/constants/chapterTheme';
-import { PATH_SUBJECTS } from '@/constants/subjects';
+import { pathSubjectsFor } from '@/constants/subjects';
 import { S } from '@/i18n/strings';
 import { type SpriteKey, sprites } from '@/sprites';
 import golems from './golems.json';
@@ -147,9 +147,10 @@ export const HOVER = [0, 1, 2, 1];
 export { gateOf, isBossNode, pathLessons, unitOf };
 
 /** Сурах зам, хичээл сонголт, өнөөдрийн хичээлд харагдах хичээлүүд. */
-export { PATH_SUBJECTS } from '@/constants/subjects';
-/** Нуусан хичээл хадгалагдсан бол математик. */
-export const pathSubject = (s: Subject | null | undefined): Subject => (s && PATH_SUBJECTS.includes(s) ? s : 'math');
+export { PATH_SUBJECTS, pathSubjectsFor } from '@/constants/subjects';
+/** Нуусан, эсвэл хүүхдийн ангид ордоггүй хичээл хадгалагдсан бол математик. */
+export const pathSubject = (s: Subject | null | undefined, grade?: number | null): Subject =>
+  s && pathSubjectsFor(grade).includes(s) ? s : 'math';
 
 export interface PathUnit {
   /** бүлгийн эхний зангилаа, нахиа, бэлэг, хэцүү сорил, boss */

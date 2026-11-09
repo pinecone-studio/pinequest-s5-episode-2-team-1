@@ -1,4 +1,5 @@
 import { GATE_ITEM } from '../../../shared/loot';
+import { SUBJECT_NOT_IN_GRADE_MESSAGE, subjectInGrade } from '../../../shared/subjects';
 import type { AnswerResponse, FlagResponse, Me, TaskDto, TaskResult } from '../../../shared/types';
 import { GAME, type Subject, type Tier } from '../config/game';
 import { roadmapNodes } from '../config/roadmap';
@@ -103,6 +104,8 @@ export async function startTask(
   const tier = user.tier as Tier;
   const today = ubDay(now);
   const admin = allAccess(user);
+  // Физик, нийгэм судлал 6, 12-р ангид ордоггүй: сурах бичиг, асуулт байхгүй (AI-аар үүсгэхээс сэргийлнэ).
+  if (!subjectInGrade(subject, user.grade)) throw new ApiError(400, 'SUBJECT_NOT_IN_GRADE', SUBJECT_NOT_IN_GRADE_MESSAGE);
   if (!admin && (await hasPendingRecovery(db, userId, subject))) {
     throw new ApiError(409, 'RECOVERY_REQUIRED', 'Эхлээд давтлагаа дуусгаарай');
   }

@@ -8,7 +8,7 @@ import { ShieldCard } from '@/components/ShieldCard';
 import { CountPill } from '@/components/StatPill';
 import { Screen } from '@/components/ui';
 import { colors, fonts, radius, subjectTheme } from '@/constants/theme';
-import { ACTIVE_SUBJECTS } from '@/constants/subjects';
+import { activeSubjectsFor } from '@/constants/subjects';
 import { type } from '@/constants/type';
 import { S, subjectGlyphs, subjectNames } from '@/i18n/strings';
 import { usePixelBear } from '@/lib/mock/pixelBear';
@@ -63,7 +63,7 @@ export default function TasksScreen() {
         <Text style={styles.status}>{me.streakDoneToday ? S.home.streakDone : online ? S.home.streakTodo : S.offline.streakTodo}</Text>
       </Enter>
 
-      {ACTIVE_SUBJECTS.map((subject, i) => {
+      {activeSubjectsFor(me.grade).map((subject, i) => {
         const t = subjectTheme[subject];
         return (
           <Enter key={subject} index={i + 1}>
