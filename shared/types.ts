@@ -868,7 +868,7 @@ export interface PageTextResponse {
   at: number | null;
 }
 
-/** GET /dashboard/stats?days=30 — нийтэд нээлттэй dashboard (/dashboard). Зөвхөн нэгтгэсэн тоо; өдрүүд UB цагаар. */
+/** GET /dashboard/stats?days=30 (`X-Dashboard-Key` = DASHBOARD_KEY) — багийн dashboard (/dashboard). Нэгтгэсэн тоо; өдрүүд UB цагаар. */
 export interface DashboardStatsResponse {
   /** UB өдөр, 'YYYY-MM-DD' */
   today: string;

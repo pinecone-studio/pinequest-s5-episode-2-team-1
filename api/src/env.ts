@@ -4,7 +4,7 @@
  * - GEMINI_TUTOR_API_KEY: баавгайн төлбөртэй түлхүүр; байхгүй бол GEMINI_API_KEY
  * - PAYMENT_PROVIDER: төлбөрийн систем (payments/provider.ts). Хоосон бол худалдан авалт хаалттай
  * - WIRE_SECRET_KEY (sk_live_…), WIRE_WEBHOOK_SECRET (whsec_…): Wire төлбөрийн систем, `wrangler secret put`
- * - DASHBOARD_KEY: /dashboard-ын Plus хэрэглэгчдийн жагсаалтыг нээх нууц түлхүүр (багийнханд), `wrangler secret put`
+ * - DASHBOARD_KEY: /dashboard-ыг (тоо, Plus хэрэглэгчид) нээх нууц түлхүүр (зөвхөн багийнханд), `wrangler secret put`
  * - AI: зөвхөн `--env ai` орчинд (Workers AI)
  */
 export type Bindings = Omit<Env, 'GEMINI_API_KEY' | 'ADMIN_TOKEN' | 'AI'> & {

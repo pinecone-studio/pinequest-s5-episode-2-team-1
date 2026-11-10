@@ -1,5 +1,5 @@
 // Dashboard (/dashboard)-ын тоо: өдөр бүр бүртгүүлсэн, орсон, даалгавар, тулаан, баавгай.
-// Нийтэд нээлттэй тул зөвхөн нэгтгэсэн тоо буцаана (нэр, id гаргахгүй).
+// Зөвхөн нэгтгэсэн тоо буцаана (нэр, id гаргахгүй); /dashboard/stats нь DASHBOARD_KEY шаардана.
 import type { DashboardPlusResponse, DashboardStatsResponse } from '../../../shared/types';
 import { GAME } from '../config/game';
 import { countsByDay, lastDays, ubDayStart } from '../domain/stats';
