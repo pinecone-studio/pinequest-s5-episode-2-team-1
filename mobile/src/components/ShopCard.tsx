@@ -10,7 +10,7 @@ import type { SwatchStatus } from './BgSwatch';
 /** PreviewStage-ийн баавгай (164dp өргөн, ~290dp өндөр) энэ хэмжээгээр жижгэрнэ */
 const SCALE = 0.38;
 
-/** Дэлгүүрийн 3 баганат карт: item-ийг өмссөн (эсвэл дэвсгэр дээр зогссон) жижиг баавгай + үнийн pill. */
+/** Дэлгүүрийн 3 баганат карт: item-ийг өмссөн жижиг баавгай (дэвсгэрийн картад зөвхөн дэвсгэр) + үнийн pill. */
 export function ShopCard({
   items,
   bg,
@@ -19,8 +19,8 @@ export function ShopCard({
   equipped,
   onPress,
 }: {
-  items: ItemId[];
-  /** дэвсгэрийн карт бол баавгайн ард зурна */
+  items?: ItemId[];
+  /** дэвсгэрийн карт: баавгайгүй, зөвхөн дэвсгэр (баавгай нь худалдан авах sheet-д харагдана) */
   bg?: BgDef;
   label: string;
   status: SwatchStatus;
@@ -31,9 +31,11 @@ export function ShopCard({
     <PressScale accessibilityRole="button" accessibilityLabel={`${label}, ${status.a11y ?? status.text}`} onPress={onPress} style={styles.item}>
       <View style={[styles.tile, bg ? { backgroundColor: bg.hex } : null]}>
         {bg ? <BgArt bg={bg} /> : null}
-        <View style={[styles.bear, { top: items.includes('warrior_helmet') ? 10 : 4, opacity: status.locked ? 0.55 : 1 }]}>
-          <LiveBear anim="happy" w={164} items={items} still />
-        </View>
+        {bg ? null : (
+          <View style={[styles.bear, { top: items?.includes('warrior_helmet') ? 10 : 4, opacity: status.locked ? 0.55 : 1 }]}>
+            <LiveBear anim="happy" w={164} items={items} still />
+          </View>
+        )}
         {equipped ? (
           <View style={styles.check}>
             <Svg width={12} height={12} viewBox="0 0 24 24" fill="none" stroke={colors.white} strokeWidth={3.4} strokeLinecap="round" strokeLinejoin="round">

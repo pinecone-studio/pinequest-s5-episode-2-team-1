@@ -59,7 +59,8 @@ export function BagItems() {
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: radius.md, backgroundColor: colors.white, minHeight: 72 },
+  // дэлгүүрийн картуудтай ижил: зөөлөн хүрээ, доод ирмэг зузаан
+  row: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, borderRadius: radius.md, borderWidth: 2, borderBottomWidth: 5, borderColor: 'rgba(25,21,46,0.12)', backgroundColor: colors.white, minHeight: 72 },
   icon: { width: 44, height: 44, borderRadius: 12, backgroundColor: '#FFF1D2', alignItems: 'center', justifyContent: 'center' },
   name: { fontFamily: fonts.bold, fontSize: 16, color: colors.ink },
   qty: { fontFamily: fonts.extrabold, fontSize: 15, color: '#9A5A22' },

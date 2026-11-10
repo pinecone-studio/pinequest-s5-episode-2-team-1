@@ -116,6 +116,7 @@ function RootNavigator() {
           <Stack.Screen name="pinecones" />
           <Stack.Screen name="plans" />
           <Stack.Screen name="plus-box" options={{ animation: 'slide_from_bottom' }} />
+          <Stack.Screen name="event/[id]" options={{ animation: 'slide_from_bottom' }} />
           <Stack.Screen name="pay" />
           <Stack.Screen name="chest" options={{ animation: 'fade', gestureEnabled: false }} />
           <Stack.Screen name="profile" />
