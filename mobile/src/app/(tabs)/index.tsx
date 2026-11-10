@@ -5,7 +5,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useAuth } from '@/auth/AuthContext';
 import { BearStage, STAGE_H } from '@/components/BearStage';
 import { BracketBar } from '@/components/BracketBar';
-import { Enter } from '@/components/pixel';
+import { Enter, Motion } from '@/components/pixel';
 import { PixelButton } from '@/components/PixelButton';
 import { TopBar } from '@/components/TopBar';
 import { Screen } from '@/components/ui';
@@ -35,6 +35,7 @@ export default function HomeScreen() {
   );
 
   if (!me || !bear) return null;
+  const boxes = me.plusBoxes ?? 0;
   function feed() {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     // Өнөөдрийн хичээл: өмнө хийсэн хичээлүүдээс санамсаргүй нэгийг 3 бодлогоор давтана
@@ -83,6 +84,21 @@ export default function HomeScreen() {
       <View style={styles.bottom}>
         <PixelButton icon="btn_calendar_30x30" label={S.homeMin.calendar} onPress={() => router.push('/calendar')} />
         <View style={{ flex: 1 }} />
+        {/* Нээгээгүй Plus бэлэг хайрцаг: нүүрэнд тод, тоотой, бага зэрэг хөдөлгөөнтэй (олдохгүй байсан) */}
+        {boxes > 0 ? (
+          <>
+            <Motion preset="wiggle">
+              <PixelButton
+                icon="map_chest_40x30"
+                label={S.plusBox.openButton(boxes)}
+                badge={boxes}
+                bg={colors.lemon}
+                onPress={() => router.push('/plus-box')}
+              />
+            </Motion>
+            <View style={{ flex: 1 }} />
+          </>
+        ) : null}
         <View ref={tourRef('feed')} collapsable={false}>
           <PixelButton icon="btn_honey_jar_30x30" label={S.homeMin.feed} onPress={feed} />
         </View>
