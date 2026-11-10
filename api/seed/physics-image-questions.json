@@ -83,5 +83,1756 @@
   "explanation": "Ус 50 мл-ээс 65 мл болсон: 65 − 50 = 15 мл = 15 см³.",
   "difficulty": 2,
   "image": "images/physics-7-cylinder-rock.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:18-23",
+  "topic": "pressure",
+  "prompt": "Ижил түвшинтэй устай дөрвөн савны ёроол дахь усны даралтыг харьцуулбал аль нь их вэ?",
+  "options": [
+   "Бүгд тэнцүү",
+   "Хамгийн өргөн сав",
+   "Хамгийн нарийн сав",
+   "Налуу сав"
+  ],
+  "correctIndex": 0,
+  "explanation": "Шингэний даралт зөвхөн гүнээс хамаарна: p = ρgh, h ижил.",
+  "difficulty": 1,
+  "image": "images/physics-8-vessels.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:18-23",
+  "topic": "pressure",
+  "prompt": "Зурагт үзүүлсэн усан сангийн гүн h = 6 м бол ёроол дахь усны даралт хэд вэ? (g = 10 Н/кг)",
+  "options": [
+   "60 кПа",
+   "6 кПа",
+   "600 кПа",
+   "150 кПа"
+  ],
+  "correctIndex": 0,
+  "explanation": "p = ρgh = 1000 · 10 · 6 = 60 000 Па.",
+  "difficulty": 2,
+  "image": "images/physics-8-pool.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:18-23",
+  "topic": "pressure",
+  "prompt": "Зурагт үзүүлсэн усан сангийн гүн 6 м, ёроолын талбай 25 м² бол ёроолд үйлчлэх дарах хүч хэд вэ?",
+  "options": [
+   "1.5 МН",
+   "2.7 МН",
+   "60 кН",
+   "150 кН"
+  ],
+  "correctIndex": 0,
+  "explanation": "F = pS = 60 000 Па · 25 м² = 1 500 000 Н.",
+  "difficulty": 3,
+  "image": "images/physics-8-pool.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:18-23",
+  "topic": "pressure",
+  "prompt": "Шингэнт шахуургын бүлүүрийн талбай S₁ = 4 см², S₂ = 120 см². Жижиг бүлүүр дээр 50 кг ачаа тавьсан бол том бүлүүр дээр хэдэн кг ачаа тавьж тэнцвэржүүлэх вэ?",
+  "options": [
+   "1500 кг",
+   "30 кг",
+   "600 кг",
+   "150 кг"
+  ],
+  "correctIndex": 0,
+  "explanation": "S₂/S₁ = 30 тул 50 · 30 = 1500 кг.",
+  "difficulty": 2,
+  "image": "images/physics-8-hydraulic.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:29-33",
+  "topic": "elastic_force",
+  "prompt": "Графикт үзүүлсэн пүршийг 3 см сунгахад ямар хүч шаардлагатай вэ?",
+  "options": [
+   "6 Н",
+   "3 Н",
+   "8 Н",
+   "12 Н"
+  ],
+  "correctIndex": 0,
+  "explanation": "k = 4 Н / 2 см = 2 Н/см тул 3 см-д 6 Н.",
+  "difficulty": 2,
+  "image": "images/physics-8-spring-graph.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:29-33",
+  "topic": "elastic_force",
+  "prompt": "Графикт үзүүлсэн пүршинд 5 Н хүчээр үйлчилбэл хэр сунах вэ?",
+  "options": [
+   "2.5 см",
+   "5 см",
+   "10 см",
+   "1.25 см"
+  ],
+  "correctIndex": 0,
+  "explanation": "Δx = F/k = 5 Н ÷ 2 Н/см = 2.5 см.",
+  "difficulty": 2,
+  "image": "images/physics-8-spring-graph.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:34-39",
+  "topic": "simple_machines",
+  "prompt": "Үл хөдлөх эргэвчээр ачааг жигд өргөж байна. А ба В байрлалд хүч хэмжигчийн заалт ямар байх вэ?",
+  "options": [
+   "Хоёулаа ачааны жинтэй тэнцүү",
+   "А нь их",
+   "В нь их",
+   "А нь ачааны жингийн хагас"
+  ],
+  "correctIndex": 0,
+  "explanation": "Үл хөдлөх эргэвч хүчний чиглэлийг л өөрчилнө.",
+  "difficulty": 1,
+  "image": "images/physics-8-pulley.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:40-44",
+  "topic": "simple_machines",
+  "prompt": "Зурагт үзүүлсэн хөшүүрэг тэнцвэртэй бол F хүч хэд вэ?",
+  "options": [
+   "25 Н",
+   "12.5 Н",
+   "20 Н",
+   "5 Н"
+  ],
+  "correctIndex": 0,
+  "explanation": "20 · 0.5 + 10 · 1.0 = F · 0.8 тул F = 25 Н.",
+  "difficulty": 3,
+  "image": "images/physics-8-lever-forces.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:40-44",
+  "topic": "simple_machines",
+  "prompt": "Гарын булчин тохойноос 4 см зайд бэхлэгдсэн. Шууны жин 15 Н (тохойноос 16 см), 50 Н ачаа 35 см зайд бол булчингийн хүч ойролцоогоор хэд вэ?",
+  "options": [
+   "≈ 500 Н",
+   "≈ 440 Н",
+   "≈ 65 Н",
+   "≈ 2000 Н"
+  ],
+  "correctIndex": 0,
+  "explanation": "F · 4 = 15 · 16 + 50 · 35 = 1990 тул F ≈ 497 Н.",
+  "difficulty": 3,
+  "image": "images/physics-8-forearm.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:46-52",
+  "topic": "mechanical_motion",
+  "prompt": "Хиймэл дагуул АВ ба CD хэсгийг ижил хугацаанд туулсан бол аль хэсэгт хурд нь их вэ?",
+  "options": [
+   "АВ хэсэгт",
+   "CD хэсэгт",
+   "Хоёуланд тэнцүү",
+   "Тодорхойлох боломжгүй"
+  ],
+  "correctIndex": 0,
+  "explanation": "Дагуул Дэлхийд ойр байх тусам хурдан хөдөлнө.",
+  "difficulty": 2,
+  "image": "images/physics-8-orbit.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:53-59",
+  "topic": "mechanical_motion",
+  "prompt": "Хурд-хугацааны диаграммаар биеийн эхний 3 цагт туулсан замыг ол.",
+  "options": [
+   "35 км",
+   "30 км",
+   "45 км",
+   "25 км"
+  ],
+  "correctIndex": 0,
+  "explanation": "2 ц · 10 км/ц + 1 ц · 15 км/ц = 35 км.",
+  "difficulty": 2,
+  "image": "images/physics-8-vt-steps.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:53-59",
+  "topic": "mechanical_motion",
+  "prompt": "Хурд-хугацааны диаграммаар биеийн эхний 5 цагт туулсан замыг ол.",
+  "options": [
+   "55 км",
+   "50 км",
+   "65 км",
+   "45 км"
+  ],
+  "correctIndex": 0,
+  "explanation": "20 + 30 + 1 · 5 = 55 км.",
+  "difficulty": 2,
+  "image": "images/physics-8-vt-steps.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:53-59",
+  "topic": "mechanical_motion",
+  "prompt": "Хурд-хугацааны диаграммаар 15 с-ийн дараа машины хурд хэд болсон бэ?",
+  "options": [
+   "30 м/с",
+   "15 м/с",
+   "20 м/с",
+   "40 м/с"
+  ],
+  "correctIndex": 0,
+  "explanation": "График 15 с-д 30 м/с хүрээд тогтмол болно.",
+  "difficulty": 1,
+  "image": "images/physics-8-vt-ramp.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:53-59",
+  "topic": "mechanical_motion",
+  "prompt": "Хурд-хугацааны диаграммаар машин эхний 15 с-д ямар зам туулсан бэ?",
+  "options": [
+   "225 м",
+   "450 м",
+   "30 м",
+   "150 м"
+  ],
+  "correctIndex": 0,
+  "explanation": "Гурвалжны талбай: ½ · 15 · 30 = 225 м.",
+  "difficulty": 2,
+  "image": "images/physics-8-vt-ramp.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:53-59",
+  "topic": "mechanical_motion",
+  "prompt": "Хурд-хугацааны диаграммаар машин нийт 35 с-д ямар зам туулсан бэ?",
+  "options": [
+   "825 м",
+   "1050 м",
+   "600 м",
+   "225 м"
+  ],
+  "correctIndex": 0,
+  "explanation": "225 + 20 · 30 = 825 м.",
+  "difficulty": 3,
+  "image": "images/physics-8-vt-ramp.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:53-59",
+  "topic": "mechanical_motion",
+  "prompt": "Дугуйчны зам-хугацааны диаграммаар 5–10 с-ийн хооронд дугуйчин юу хийж байсан бэ?",
+  "options": [
+   "Зогсож байсан",
+   "Жигд хөдөлсөн",
+   "Хурдсаж байсан",
+   "Буцаж явсан"
+  ],
+  "correctIndex": 0,
+  "explanation": "Энэ хугацаанд зам 20 м хэвээр байна.",
+  "difficulty": 1,
+  "image": "images/physics-8-st-bike.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:53-59",
+  "topic": "mechanical_motion",
+  "prompt": "Зам-хугацааны диаграммаар дугуйчин 10–15 с-д ямар хурдтай байсан бэ?",
+  "options": [
+   "8 м/с",
+   "4 м/с",
+   "12 м/с",
+   "6 м/с"
+  ],
+  "correctIndex": 0,
+  "explanation": "(60 − 20) м ÷ 5 с = 8 м/с.",
+  "difficulty": 2,
+  "image": "images/physics-8-st-bike.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:60-67",
+  "topic": "mechanical_motion",
+  "prompt": "Тэнцүү хугацааны дараах байрлалаар аль машин жигд хөдөлсөн бэ?",
+  "options": [
+   "А",
+   "Б",
+   "В",
+   "Аль нь ч биш"
+  ],
+  "correctIndex": 0,
+  "explanation": "А-гийн цэгүүдийн хоорондох зай тэнцүү.",
+  "difficulty": 1,
+  "image": "images/physics-8-dots.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:60-67",
+  "topic": "mechanical_motion",
+  "prompt": "Тэнцүү хугацааны дараах байрлалаар аль машин тасралтгүй хурдсаж байна вэ?",
+  "options": [
+   "Б",
+   "А",
+   "В",
+   "Бүгд"
+  ],
+  "correctIndex": 0,
+  "explanation": "Б-гийн цэгүүдийн хоорондох зай байнга ихэсч байна.",
+  "difficulty": 2,
+  "image": "images/physics-8-dots.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:60-67",
+  "topic": "mechanical_motion",
+  "prompt": "Дөрвөн машины хурд-хугацааны диаграммаар аль машины хурд жигд буурч байна вэ?",
+  "options": [
+   "B",
+   "A",
+   "C",
+   "D"
+  ],
+  "correctIndex": 0,
+  "explanation": "B-гийн хурд шулуун шугамаар буурна.",
+  "difficulty": 1,
+  "image": "images/physics-8-vt-four.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:60-67",
+  "topic": "mechanical_motion",
+  "prompt": "Диаграммаар A машины хурд секунд тутамд хэдээр ихсэж байна вэ?",
+  "options": [
+   "2.5 м/с",
+   "1.5 м/с",
+   "3 м/с",
+   "0.75 м/с"
+  ],
+  "correctIndex": 0,
+  "explanation": "(30 − 5) м/с ÷ 10 с = 2.5 м/с².",
+  "difficulty": 2,
+  "image": "images/physics-8-vt-four.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:60-67",
+  "topic": "mechanical_motion",
+  "prompt": "Диаграммаар аль машины хурд тогтмол бус хэмжээгээр өөрчлөгдсөн бэ?",
+  "options": [
+   "D",
+   "A",
+   "B",
+   "C"
+  ],
+  "correctIndex": 0,
+  "explanation": "D-гийн график хугарсан: налалт нь өөрчлөгдөөд дараа нь тогтмол болно.",
+  "difficulty": 2,
+  "image": "images/physics-8-vt-four.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:60-67",
+  "topic": "mechanical_motion",
+  "prompt": "Хурд-хугацааны диаграммаар эхний 20 с-д B машины хурдатгал хэд вэ?",
+  "options": [
+   "1.25 м/с²",
+   "2.5 м/с²",
+   "0.8 м/с²",
+   "2 м/с²"
+  ],
+  "correctIndex": 0,
+  "explanation": "(50 − 25) м/с ÷ 20 с = 1.25 м/с².",
+  "difficulty": 2,
+  "image": "images/physics-8-vt-ab.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:60-67",
+  "topic": "mechanical_motion",
+  "prompt": "Диаграммаар эхний 20 с-д A ба B машин тус бүр ямар зам туулсан бэ?",
+  "options": [
+   "A 800 м, B 750 м",
+   "A 800 м, B 1000 м",
+   "A 750 м, B 800 м",
+   "A 400 м, B 500 м"
+  ],
+  "correctIndex": 0,
+  "explanation": "A: 40 · 20 = 800 м; B: (25 + 50)/2 · 20 = 750 м.",
+  "difficulty": 3,
+  "image": "images/physics-8-vt-ab.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:60-67",
+  "topic": "mechanical_motion",
+  "prompt": "Хурд-хугацааны диаграммаар эхний 5 с-д бие ямар хурдатгалтай хөдөлсөн бэ?",
+  "options": [
+   "4 м/с²",
+   "5 м/с²",
+   "20 м/с²",
+   "2 м/с²"
+  ],
+  "correctIndex": 0,
+  "explanation": "20 м/с ÷ 5 с = 4 м/с².",
+  "difficulty": 2,
+  "image": "images/physics-8-vt-three.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:73-78",
+  "topic": "work_power_energy",
+  "prompt": "0.5 т масстай ачааг зурагт үзүүлсэн гурван замаар ижил 4 м өндөрт өргөжээ. Цамхаг тус бүрд ямар ажил хийсэн бэ?",
+  "options": [
+   "Бүгд тэнцүү, 20 кЖ",
+   "Налуу замаар 30 кЖ",
+   "Дунд замаар 35 кЖ",
+   "Эгц замаар л 20 кЖ"
+  ],
+  "correctIndex": 0,
+  "explanation": "Хүндийн хүчний эсрэг ажил A = mgh = 500 · 10 · 4 = 20 000 Ж, замаас хамаарахгүй.",
+  "difficulty": 3,
+  "image": "images/physics-8-crane.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:73-78",
+  "topic": "work_power_energy",
+  "prompt": "Зурагт үзүүлсэн өгөгдлөөр хүн ямар механик ажил хийсэн бэ?",
+  "options": [
+   "1 Ж",
+   "4 Ж",
+   "0.25 Ж",
+   "2.5 Ж"
+  ],
+  "correctIndex": 0,
+  "explanation": "A = F · s = 2 Н · 0.5 м = 1 Ж.",
+  "difficulty": 1,
+  "image": "images/physics-8-dynamometer.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:80-85",
+  "topic": "electrostatics",
+  "prompt": "а ба б зургийн зүүн талын бөмбөлөг ямар цэнэгтэй вэ?",
+  "options": [
+   "Хоёулаа эерэг",
+   "Хоёулаа сөрөг",
+   "а эерэг, б сөрөг",
+   "а сөрөг, б эерэг"
+  ],
+  "correctIndex": 0,
+  "explanation": "а-д сөрөгтэй таталцсан тул эерэг; б-д эерэгтэй түлхэлцсэн тул эерэг.",
+  "difficulty": 2,
+  "image": "images/physics-8-balls.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:80-85",
+  "topic": "electrostatics",
+  "prompt": "Хоёр электроскопын аль нь илүү цахилгаанжсан бэ?",
+  "options": [
+   "б",
+   "а",
+   "Тэнцүү",
+   "Аль нь ч цэнэггүй"
+  ],
+  "correctIndex": 0,
+  "explanation": "б-гийн дэлбээ илүү их дэрвийсэн.",
+  "difficulty": 1,
+  "image": "images/physics-8-electroscopes.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:93-99",
+  "topic": "circuits",
+  "prompt": "Зурагт А чийдэнгээр 2 А, В чийдэнгээр 1 А гүйдэл гүйж байна. Б ба Г чийдэнгээр гүйх гүйдэл хэд вэ?",
+  "options": [
+   "Б 2 А, Г 3 А",
+   "Б 1 А, Г 3 А",
+   "Б 2 А, Г 2 А",
+   "Б 3 А, Г 1 А"
+  ],
+  "correctIndex": 0,
+  "explanation": "Б нь А-тай цуваа (2 А); Г үндсэн хэлхээнд (2 + 1 = 3 А).",
+  "difficulty": 2,
+  "image": "images/physics-8-circuit-1.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:93-99",
+  "topic": "circuits",
+  "prompt": "Зурагт Г чийдэн ба голын хөндлөвчөөр урсах гүйдэл хэд вэ?",
+  "options": [
+   "Г 2 А, хөндлөвч 1 А",
+   "Г 3 А, хөндлөвч 0 А",
+   "Г 5 А, хөндлөвч 2 А",
+   "Г 1 А, хөндлөвч 1 А"
+  ],
+  "correctIndex": 0,
+  "explanation": "Дээд зангилаа: 2 А орж В-гээр 3 А гарах тул хөндлөвчөөр 1 А; доод: 3 − 1 = 2 А.",
+  "difficulty": 3,
+  "image": "images/physics-8-circuit-2.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:93-99",
+  "topic": "circuits",
+  "prompt": "Гүйдэл-хүчдэлийн диаграммаар 20 В хүчдэлд дамжуулагчаар гүйх гүйдэл хэд вэ?",
+  "options": [
+   "0.3 А",
+   "0.6 А",
+   "0.2 А",
+   "0.4 А"
+  ],
+  "correctIndex": 0,
+  "explanation": "Шулуун 40 В-д 0.6 А тул 20 В-д 0.3 А.",
+  "difficulty": 2,
+  "image": "images/physics-8-iu.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:145-150",
+  "topic": "pressure",
+  "prompt": "Мензуркт 810 г масстай биеийг хийхэд усны түвшин зурагт үзүүлснээр өөрчлөгдсөн бол биеийн нягт хэд вэ?",
+  "options": [
+   "2.7 г/см³",
+   "1.6 г/см³",
+   "8.1 г/см³",
+   "1.0 г/см³"
+  ],
+  "correctIndex": 0,
+  "explanation": "V = 800 − 500 = 300 см³; ρ = 810 ÷ 300 = 2.7 г/см³ (хөнгөн цагаан).",
+  "difficulty": 2,
+  "image": "images/physics-8-cylinder-stone.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:145-150",
+  "topic": "pressure",
+  "prompt": "Зурагт 3 Н ачаатай хөшүүргийг тэнцвэрт байлгахын тулд А цэгт ямар хүчээр үйлчлэх вэ?",
+  "options": [
+   "1 Н",
+   "3 Н",
+   "9 Н",
+   "2 Н"
+  ],
+  "correctIndex": 0,
+  "explanation": "Ачаа тулах цэгээс 1 хуваарь, А 3 хуваарь зайд: 3 · 1 = F · 3.",
+  "difficulty": 2,
+  "image": "images/physics-8-lever-3n.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:145-150",
+  "topic": "pressure",
+  "prompt": "Зурагт 5 кг ачаатай хөшүүргийг тэнцвэрт байлгахын тулд А цэгт ямар хүчээр үйлчлэх вэ? (g = 10 Н/кг)",
+  "options": [
+   "100 Н",
+   "25 Н",
+   "50 Н",
+   "10 Н"
+  ],
+  "correctIndex": 0,
+  "explanation": "50 Н ачаа 2 хуваарь, А 1 хуваарь зайд: 50 · 2 = F · 1.",
+  "difficulty": 2,
+  "image": "images/physics-8-lever-5kg.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-8:145-150",
+  "topic": "pressure",
+  "prompt": "Зурагт үзүүлсэн устай савнуудын ёроол дахь даралт хэд вэ? (g = 10 Н/кг)",
+  "options": [
+   "Бүгд 5 кПа",
+   "Бүгд 3 кПа",
+   "Бүгд 2 кПа",
+   "Өргөн саванд их"
+  ],
+  "correctIndex": 0,
+  "explanation": "h = 300 + 200 = 500 мм = 0.5 м; p = 1000 · 10 · 0.5 = 5000 Па.",
+  "difficulty": 3,
+  "image": "images/physics-8-vessels-mm.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:41-45",
+  "topic": "melting_boiling",
+  "prompt": "Графикт мөснөөс уур хүртэлх үйл явцыг үзүүлэв. ОБ хэсэгт ямар үзэгдэл явагдаж байна вэ?",
+  "options": [
+   "Хайлах",
+   "Буцлах",
+   "Царцах",
+   "Конденсацлах"
+  ],
+  "correctIndex": 0,
+  "explanation": "Температур тогтмол байхад мөс ус болно.",
+  "difficulty": 1,
+  "image": "images/physics-9-ice-steam.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:41-45",
+  "topic": "melting_boiling",
+  "prompt": "Мөснөөс уур хүртэлх графикийн ВГ хэсэгт ямар үзэгдэл явагдаж байна вэ?",
+  "options": [
+   "Буцалж уурших",
+   "Хайлах",
+   "Царцах",
+   "Ус халах"
+  ],
+  "correctIndex": 0,
+  "explanation": "Хоёр дахь хэвтээ хэсэгт ус уур болно.",
+  "difficulty": 1,
+  "image": "images/physics-9-ice-steam.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:41-45",
+  "topic": "melting_boiling",
+  "prompt": "Мөснөөс уур хүртэлх графикийн аль хэсэгт бодис зөвхөн шингэн төлөвт байх вэ?",
+  "options": [
+   "БВ",
+   "АО",
+   "ВГ",
+   "ГД"
+  ],
+  "correctIndex": 0,
+  "explanation": "Хайлж дууссанаас буцалж эхлэх хүртэл бодис ус байна.",
+  "difficulty": 2,
+  "image": "images/physics-9-ice-steam.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:46-51",
+  "topic": "heat_transfer",
+  "prompt": "Температур-хугацааны графикаас бодис ямар температурт хайлдаг вэ?",
+  "options": [
+   "80°C",
+   "87°C",
+   "55°C",
+   "75°C"
+  ],
+  "correctIndex": 0,
+  "explanation": "Халаахад 5–7 мин-д температур 80°C-д тогтмол байна.",
+  "difficulty": 1,
+  "image": "images/physics-9-melting.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:46-51",
+  "topic": "heat_transfer",
+  "prompt": "Температур-хугацааны графикаас бодис хэдэн минут хайлсан бэ?",
+  "options": [
+   "2 мин",
+   "5 мин",
+   "7 мин",
+   "10 мин"
+  ],
+  "correctIndex": 0,
+  "explanation": "5-аас 7 мин хүртэлх хэвтээ хэсэг.",
+  "difficulty": 2,
+  "image": "images/physics-9-melting.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:46-51",
+  "topic": "heat_transfer",
+  "prompt": "Температур-хугацааны графикаас шингэнийг хамгийн ихдээ хэдэн градус хүртэл халаасан бэ?",
+  "options": [
+   "87°C",
+   "80°C",
+   "100°C",
+   "84°C"
+  ],
+  "correctIndex": 0,
+  "explanation": "10 дахь минутад 87°C хүрсэн.",
+  "difficulty": 2,
+  "image": "images/physics-9-melting.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:46-51",
+  "topic": "heat_transfer",
+  "prompt": "Температур-хугацааны графикийн 13–18 минутын хэвтээ хэсэгт юу болж байна вэ?",
+  "options": [
+   "Шингэн хатуурч байна",
+   "Хайлж байна",
+   "Буцалж байна",
+   "Ууршиж байна"
+  ],
+  "correctIndex": 0,
+  "explanation": "Хөрөхөд 80°C-д тогтмол: царцах үе.",
+  "difficulty": 3,
+  "image": "images/physics-9-melting.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:46-51",
+  "topic": "heat_transfer",
+  "prompt": "Зурагт Эверестийн оройд ус хэдэн градуст буцалдаг вэ?",
+  "options": [
+   "70°C",
+   "100°C",
+   "85°C",
+   "93°C"
+  ],
+  "correctIndex": 0,
+  "explanation": "Даралт 0.34 атм тул 70°C-д буцална.",
+  "difficulty": 1,
+  "image": "images/physics-9-boiling-map.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:46-51",
+  "topic": "heat_transfer",
+  "prompt": "Зургаас далайн түвшнээс дээшлэх тусам усны буцлах температур яах вэ?",
+  "options": [
+   "Буурна",
+   "Ихсэнэ",
+   "Өөрчлөгдөхгүй",
+   "Эхлээд ихсэнэ"
+  ],
+  "correctIndex": 0,
+  "explanation": "Агаарын даралт буурахад буцлах температур буурна.",
+  "difficulty": 2,
+  "image": "images/physics-9-boiling-map.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:103-107",
+  "topic": "circuits",
+  "prompt": "а зурагт 3-р чийдэн дээр 3 В, 2-р чийдэн дээр 1 В хүчдэл унаж байв. 4-р чийдэн дээр унах хүчдэл хэд вэ?",
+  "options": [
+   "2 В",
+   "3 В",
+   "1 В",
+   "4 В"
+  ],
+  "correctIndex": 0,
+  "explanation": "2 ба 4 цуваа бөгөөд 3-тай зэрэгцээ: 3 − 1 = 2 В.",
+  "difficulty": 3,
+  "image": "images/physics-9-circuit-a.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:103-107",
+  "topic": "circuits",
+  "prompt": "б зурагт 1-р чийдэн дээр 2.5 В унаж байв. 2-р чийдэн дээр хэдэн вольт унах вэ? (үүсгэгч 5 В)",
+  "options": [
+   "5 В",
+   "2.5 В",
+   "0 В",
+   "7.5 В"
+  ],
+  "correctIndex": 0,
+  "explanation": "2-р чийдэн үүсгэгчид шууд зэрэгцээ залгагдсан.",
+  "difficulty": 3,
+  "image": "images/physics-9-circuit-b.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:103-107",
+  "topic": "circuits",
+  "prompt": "в зурагт аль чийдэнгүүд хоорондоо зэрэгцээ холбогдсон бэ?",
+  "options": [
+   "1 ба 2, 3 ба 4",
+   "1 ба 3, 2 ба 4",
+   "Бүгд цуваа",
+   "Бүгд зэрэгцээ"
+  ],
+  "correctIndex": 0,
+  "explanation": "1, 2 нь дээд ба дунд утасны хооронд; 3, 4 нь дунд ба доод утасны хооронд.",
+  "difficulty": 2,
+  "image": "images/physics-9-circuit-v.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:108-113",
+  "topic": "ohms_law",
+  "prompt": "Хэлхээний 10 Ом резистороор 300 мА гүйдэл гүйж байна. Резистор дээр унах хүчдэл хэд вэ?",
+  "options": [
+   "3 В",
+   "30 В",
+   "0.3 В",
+   "3000 В"
+  ],
+  "correctIndex": 0,
+  "explanation": "V = IR = 0.3 А · 10 Ом = 3 В.",
+  "difficulty": 1,
+  "image": "images/physics-9-circuit-10ohm.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:108-113",
+  "topic": "ohms_law",
+  "prompt": "Хэлхээний өгөгдлөөр резисторын эсэргүүцлийг ол.",
+  "options": [
+   "20 Ом",
+   "2 Ом",
+   "18 Ом",
+   "0.05 Ом"
+  ],
+  "correctIndex": 0,
+  "explanation": "R = V/I = 6 В ÷ 0.3 А = 20 Ом.",
+  "difficulty": 2,
+  "image": "images/physics-9-circuit-6v.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:108-113",
+  "topic": "ohms_law",
+  "prompt": "Графикаар A резистороор 0.3 А гүйдэл гүйхэд түүн дээр хэдэн вольт унах вэ?",
+  "options": [
+   "0.6 В",
+   "0.3 В",
+   "1.2 В",
+   "0.15 В"
+  ],
+  "correctIndex": 0,
+  "explanation": "A: 6 В-д 3 А тул R = 2 Ом; V = 0.3 · 2 = 0.6 В.",
+  "difficulty": 2,
+  "image": "images/physics-9-iu-two.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:108-113",
+  "topic": "ohms_law",
+  "prompt": "Графикаар A ба Б резисторын аль нь их эсэргүүцэлтэй вэ?",
+  "options": [
+   "Б (4 Ом)",
+   "A (2 Ом)",
+   "Тэнцүү",
+   "Тодорхойлох боломжгүй"
+  ],
+  "correctIndex": 0,
+  "explanation": "Ижил хүчдэлд Б-ээр бага гүйдэл гүйнэ: 6 В ÷ 1.5 А = 4 Ом.",
+  "difficulty": 2,
+  "image": "images/physics-9-iu-two.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:120-124",
+  "topic": "circuits",
+  "prompt": "Зурагт ижил Ч1, Ч2 чийдэн тус бүрээр ямар гүйдэл гүйх вэ?",
+  "options": [
+   "0.5 А",
+   "1 А",
+   "2 А",
+   "0.25 А"
+  ],
+  "correctIndex": 0,
+  "explanation": "Зэрэгцээ ижил чийдэнд 1 А тэнцүү хуваагдана.",
+  "difficulty": 2,
+  "image": "images/physics-9-two-lamps-3v.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:120-124",
+  "topic": "circuits",
+  "prompt": "Хэлхээнд A резистороор 3 А, B резистороор 2 А гүйж байна. C резистороор хэдэн ампер гүйх вэ?",
+  "options": [
+   "1 А",
+   "5 А",
+   "2 А",
+   "3 А"
+  ],
+  "correctIndex": 0,
+  "explanation": "B ба C зэрэгцээ: 3 − 2 = 1 А.",
+  "difficulty": 2,
+  "image": "images/physics-9-abc-18v.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:120-124",
+  "topic": "circuits",
+  "prompt": "Хэлхээнд 18 В үүсгэгч, A = 2 Ом-оор 3 А гүйж байна. C-ээр 1 А гүйдэг бол C-ийн эсэргүүцэл хэд вэ?",
+  "options": [
+   "12 Ом",
+   "18 Ом",
+   "6 Ом",
+   "2 Ом"
+  ],
+  "correctIndex": 0,
+  "explanation": "A дээр 6 В тул C дээр 18 − 6 = 12 В; R = 12 ÷ 1 = 12 Ом.",
+  "difficulty": 3,
+  "image": "images/physics-9-abc-18v.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:120-124",
+  "topic": "circuits",
+  "prompt": "12 В батарейтай чийдэнгээр 0.50 А гүйдэл гүйж байна. Чийдэнгийн эсэргүүцэл хэд вэ?",
+  "options": [
+   "24 Ом",
+   "6 Ом",
+   "12 Ом",
+   "0.04 Ом"
+  ],
+  "correctIndex": 0,
+  "explanation": "R = 12 В ÷ 0.5 А = 24 Ом.",
+  "difficulty": 1,
+  "image": "images/physics-9-lamp-12v.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:120-124",
+  "topic": "circuits",
+  "prompt": "Зурагт C контакт А цэгт байхад 4.0 Ом чийдэн ба R цуваа байна. AB утасны эсэргүүцлийг тооцохгүй бол хэлхээний нийт эсэргүүцэл хэд вэ?",
+  "options": [
+   "8 Ом",
+   "4 Ом",
+   "2 Ом",
+   "16 Ом"
+  ],
+  "correctIndex": 0,
+  "explanation": "Чийдэн ба R цуваа: 4 + 4 = 8 Ом.",
+  "difficulty": 2,
+  "image": "images/physics-9-slider.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:120-124",
+  "topic": "circuits",
+  "prompt": "Зурагт C контакт А цэгт байхад R резистор дээр унах хүчдэл хэд вэ? Чийдэн 4.0 Ом, AB утасны эсэргүүцлийг тооцохгүй.",
+  "options": [
+   "6 В",
+   "12 В",
+   "3 В",
+   "4 В"
+  ],
+  "correctIndex": 0,
+  "explanation": "I = 12 ÷ 8 = 1.5 А; V = 1.5 · 4 = 6 В.",
+  "difficulty": 3,
+  "image": "images/physics-9-slider.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:120-124",
+  "topic": "circuits",
+  "prompt": "А, В цэгийн хооронд 2.0 Ом утас хэлхээнд нэмэгдвэл нийт эсэргүүцэл хэд болох вэ? Чийдэн 4.0 Ом.",
+  "options": [
+   "10 Ом",
+   "8 Ом",
+   "6 Ом",
+   "2 Ом"
+  ],
+  "correctIndex": 0,
+  "explanation": "4 + 4 + 2 = 10 Ом.",
+  "difficulty": 3,
+  "image": "images/physics-9-slider.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:125-130",
+  "topic": "circuits",
+  "prompt": "Зэрэгцээ холбосон хоёр чийдэн тус бүр 12 В-д 150 Вт чадалтай. Батарейгаар ямар гүйдэл гүйх вэ?",
+  "options": [
+   "25 А",
+   "12.5 А",
+   "300 А",
+   "1.8 А"
+  ],
+  "correctIndex": 0,
+  "explanation": "P = 300 Вт; I = 300 ÷ 12 = 25 А.",
+  "difficulty": 2,
+  "image": "images/physics-9-two-lamps-par.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:131-136",
+  "topic": "circuits",
+  "prompt": "220 В хэлхээнд өгсөн нийт чадал хэд вэ?",
+  "options": [
+   "1520 Вт",
+   "1320 Вт",
+   "1460 Вт",
+   "320 Вт"
+  ],
+  "correctIndex": 0,
+  "explanation": "1200 + 200 + 60 + 60 = 1520 Вт.",
+  "difficulty": 2,
+  "image": "images/physics-9-household.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:131-136",
+  "topic": "circuits",
+  "prompt": "220 В хэлхээнд хөргөгчөөр гүйх гүйдэл ойролцоогоор хэд вэ?",
+  "options": [
+   "0.91 А",
+   "1.1 А",
+   "44 А",
+   "5.5 А"
+  ],
+  "correctIndex": 0,
+  "explanation": "I = P/V = 200 ÷ 220 ≈ 0.91 А.",
+  "difficulty": 2,
+  "image": "images/physics-9-household.png"
+ },
+ {
+  "tier": 2,
+  "subject": "physics",
+  "bookRef": "physics-9:172-176",
+  "topic": "lenses",
+  "prompt": "О биеийн бодит урвуу дүрс O₁ үүссэн бол ямар линз ашигласан бэ?",
+  "options": [
+   "Цуглуулагч (гүдгэр) линз",
+   "Сарниулагч (хонхор) линз",
+   "Хавтгай толь",
+   "Призм"
+  ],
+  "correctIndex": 0,
+  "explanation": "Бодит дүрсийг зөвхөн цуглуулагч линз үүсгэнэ.",
+  "difficulty": 1,
+  "image": "images/physics-9-lens-image.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-10:24-29",
+  "topic": "newton_laws",
+  "prompt": "Гөлгөр гадарга дээрх m₁ = 200 г, m₂ = 300 г биед F₁ = 0.6 Н, F₂ = 0.4 Н хүч эсрэг чиглэлд үйлчилнэ. Системийн хурдатгал хэд вэ?",
+  "options": [
+   "0.4 м/с²",
+   "2 м/с²",
+   "1 м/с²",
+   "0.2 м/с²"
+  ],
+  "correctIndex": 0,
+  "explanation": "a = (0.6 − 0.4) ÷ 0.5 = 0.4 м/с².",
+  "difficulty": 2,
+  "image": "images/physics-10-two-blocks.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-10:24-29",
+  "topic": "newton_laws",
+  "prompt": "Утсаар холбосон m₁ = 200 г, m₂ = 300 г биеийг F₁ = 0.6 Н, F₂ = 0.4 Н хүчээр эсрэг татав. Утасны татах хүч хэд вэ?",
+  "options": [
+   "0.52 Н",
+   "0.48 Н",
+   "0.2 Н",
+   "1.0 Н"
+  ],
+  "correctIndex": 0,
+  "explanation": "a = 0.4 м/с²; T = F₂ + m₂a = 0.4 + 0.12 = 0.52 Н.",
+  "difficulty": 3,
+  "image": "images/physics-10-two-blocks.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-10:24-29",
+  "topic": "newton_laws",
+  "prompt": "Ширээн дээрх m₁ = 2 кг, унжсан m₂ = 3 кг биеийг эргэвчээр холбов. Үрэлтгүй бол хурдатгал хэд вэ? (g = 10 м/с²)",
+  "options": [
+   "6 м/с²",
+   "10 м/с²",
+   "4 м/с²",
+   "15 м/с²"
+  ],
+  "correctIndex": 0,
+  "explanation": "a = m₂g ÷ (m₁ + m₂) = 30 ÷ 5 = 6 м/с².",
+  "difficulty": 2,
+  "image": "images/physics-10-table-pulley.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-10:24-29",
+  "topic": "newton_laws",
+  "prompt": "Ширээн дээрх 2 кг ба унжсан 3 кг биеийг холбосон утасны татах хүч хэд вэ? Үрэлтгүй, g = 10 м/с².",
+  "options": [
+   "12 Н",
+   "30 Н",
+   "18 Н",
+   "20 Н"
+  ],
+  "correctIndex": 0,
+  "explanation": "a = 6 м/с²; T = m₁a = 2 · 6 = 12 Н.",
+  "difficulty": 3,
+  "image": "images/physics-10-table-pulley.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-10:75-80",
+  "topic": "waves_sound",
+  "prompt": "Зурагт долгионы уртыг аль үсгээр тэмдэглэсэн бэ?",
+  "options": [
+   "A",
+   "B",
+   "C",
+   "D"
+  ],
+  "correctIndex": 0,
+  "explanation": "A нь хоёр зэргэлдээ оргилын хоорондох зай.",
+  "difficulty": 1,
+  "image": "images/physics-10-wave-abcd.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-10:75-80",
+  "topic": "waves_sound",
+  "prompt": "Зурагт долгионы далайцыг аль үсгээр тэмдэглэсэн бэ?",
+  "options": [
+   "B",
+   "A",
+   "C",
+   "D"
+  ],
+  "correctIndex": 0,
+  "explanation": "B нь тэнцвэрийн шугамаас хотгор хүртэлх зай; C нь оргилоос хотгор хүртэл.",
+  "difficulty": 2,
+  "image": "images/physics-10-wave-abcd.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-10:75-80",
+  "topic": "waves_sound",
+  "prompt": "Осциллоскопын A, B, C дууны аль нь хамгийн чанга вэ?",
+  "options": [
+   "B",
+   "A",
+   "C",
+   "Бүгд тэнцүү"
+  ],
+  "correctIndex": 0,
+  "explanation": "B-гийн далайц хамгийн их.",
+  "difficulty": 1,
+  "image": "images/physics-10-scopes.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-10:75-80",
+  "topic": "waves_sound",
+  "prompt": "Осциллоскопын A, B, C дууны аль нь хамгийн өндөр (нарийн) вэ?",
+  "options": [
+   "C",
+   "A",
+   "B",
+   "Бүгд тэнцүү"
+  ],
+  "correctIndex": 0,
+  "explanation": "C-д ижил хугацаанд хамгийн олон долгион: давтамж их.",
+  "difficulty": 1,
+  "image": "images/physics-10-scopes.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-10:75-80",
+  "topic": "waves_sound",
+  "prompt": "Осциллоскопын A ба B дуу ямар ялгаатай вэ?",
+  "options": [
+   "Давтамж ижил, B нь чанга",
+   "B нь өндөр дуу",
+   "A нь чанга",
+   "Ялгаагүй"
+  ],
+  "correctIndex": 0,
+  "explanation": "Долгионы тоо ижил, B-гийн далайц их.",
+  "difficulty": 2,
+  "image": "images/physics-10-scopes.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-10:75-80",
+  "topic": "waves_sound",
+  "prompt": "Зурагт үзүүлсэн A долгионы урт хэд вэ?",
+  "options": [
+   "2 м",
+   "1 м",
+   "4 м",
+   "0.5 м"
+  ],
+  "correctIndex": 0,
+  "explanation": "Хоёр оргилын хооронд 4 нүд = 2 м.",
+  "difficulty": 2,
+  "image": "images/physics-10-wave-a.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-10:75-80",
+  "topic": "waves_sound",
+  "prompt": "Дарцагны дэргэдүүр 1 с-д 2 бүтэн долгион өнгөрсөн бол A долгионы тархах хурд хэд вэ?",
+  "options": [
+   "4 м/с",
+   "2 м/с",
+   "1 м/с",
+   "8 м/с"
+  ],
+  "correctIndex": 0,
+  "explanation": "λ = 2 м, f = 2 Гц; v = λf = 4 м/с.",
+  "difficulty": 3,
+  "image": "images/physics-10-wave-a.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-10:75-80",
+  "topic": "waves_sound",
+  "prompt": "Усны гадарга дээрх B долгионы урт хэд вэ?",
+  "options": [
+   "4 м",
+   "2 м",
+   "1 м",
+   "8 м"
+  ],
+  "correctIndex": 0,
+  "explanation": "Хоёр оргилын хооронд 8 нүд = 4 м.",
+  "difficulty": 2,
+  "image": "images/physics-10-wave-b.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-10:75-80",
+  "topic": "waves_sound",
+  "prompt": "Усны гадарга дээрх B долгион ямар төрлийн долгион вэ?",
+  "options": [
+   "Хөндлөн",
+   "Тууш",
+   "Дууны",
+   "Цахилгаан соронзон"
+  ],
+  "correctIndex": 0,
+  "explanation": "Хэсгүүд тархах чиглэлд перпендикуляр хэлбэлзэнэ.",
+  "difficulty": 1,
+  "image": "images/physics-10-wave-b.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-10:58-61",
+  "topic": "thermodynamics",
+  "prompt": "Хар тугалгыг халаасан графикийн AB хэсэгт ямар процесс явагдаж байна вэ?",
+  "options": [
+   "Хайлах",
+   "Хатуу төлөвт халах",
+   "Уурших",
+   "Шингэн төлөвт халах"
+  ],
+  "correctIndex": 0,
+  "explanation": "327°C-д температур тогтмол: хайлалт.",
+  "difficulty": 1,
+  "image": "images/physics-10-lead.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-10:58-61",
+  "topic": "thermodynamics",
+  "prompt": "Хар тугалгын графикаар бие аль хугацаанд зөвхөн шингэн төлөвт байх вэ?",
+  "options": [
+   "20–30 мин",
+   "0–10 мин",
+   "10–20 мин",
+   "30–40 мин"
+  ],
+  "correctIndex": 0,
+  "explanation": "Хайлж дуусаад (20 мин) буцлах хүртэл (30 мин).",
+  "difficulty": 2,
+  "image": "images/physics-10-lead.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-10:58-61",
+  "topic": "thermodynamics",
+  "prompt": "Халуун ус ба савны температурын графикаар дулааны тэнцвэр ямар температурт тогтсон бэ?",
+  "options": [
+   "35°C",
+   "90°C",
+   "10°C",
+   "50°C"
+  ],
+  "correctIndex": 0,
+  "explanation": "5 минутаас хойш хоёр муруй 35°C-д нийлнэ.",
+  "difficulty": 2,
+  "image": "images/physics-10-cooling.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-10:139-145",
+  "topic": "thermodynamics",
+  "prompt": "U_AB = 6 В, гүйдэл 0.5 А бол зураг дээрх R эсэргүүцэл хэд вэ?",
+  "options": [
+   "6 Ом",
+   "12 Ом",
+   "3 Ом",
+   "8 Ом"
+  ],
+  "correctIndex": 0,
+  "explanation": "R_нийт = 6 ÷ 0.5 = 12 Ом; R = 12 − 2 − 4 = 6 Ом.",
+  "difficulty": 2,
+  "image": "images/physics-10-series-r.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-10:139-145",
+  "topic": "thermodynamics",
+  "prompt": "Хэлхээгээр 0.02 мА гүйдэл гүйж байна. Эсэргүүцлүүд кОм-оор өгөгдсөн бол нийт хүчдэл хэд вэ?",
+  "options": [
+   "22 В",
+   "220 В",
+   "0.28 В",
+   "55 кВ"
+  ],
+  "correctIndex": 0,
+  "explanation": "R = 1100 кОм; U = 0.02 мА · 1100 кОм = 22 В.",
+  "difficulty": 2,
+  "image": "images/physics-10-series-kohm.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-10:139-145",
+  "topic": "thermodynamics",
+  "prompt": "Графикаар 600 мВ хүчдэлд чийдэнгийн утасны эсэргүүцэл хэд вэ?",
+  "options": [
+   "30 Ом",
+   "12 Ом",
+   "3 Ом",
+   "300 Ом"
+  ],
+  "correctIndex": 0,
+  "explanation": "600 мВ-д 20 мА: R = 0.6 ÷ 0.02 = 30 Ом.",
+  "difficulty": 2,
+  "image": "images/physics-10-lamp-iv.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-10:139-145",
+  "topic": "thermodynamics",
+  "prompt": "Графикаар хүчдэл ихсэхэд чийдэнгийн утасны эсэргүүцэл яах вэ?",
+  "options": [
+   "Ихсэнэ",
+   "Буурна",
+   "Тогтмол",
+   "Тэг болно"
+  ],
+  "correctIndex": 0,
+  "explanation": "Муруй хэвтээ болж байна: утас халж эсэргүүцэл өснө.",
+  "difficulty": 3,
+  "image": "images/physics-10-lamp-iv.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-10:43-49",
+  "topic": "thermal_expansion",
+  "prompt": "V–T графикт үзүүлсэн изобар процессуудын аль нь хамгийн их даралттай вэ?",
+  "options": [
+   "P₁",
+   "P₂",
+   "P₃",
+   "Бүгд тэнцүү"
+  ],
+  "correctIndex": 0,
+  "explanation": "V = nRT/p: налалт бага байх тусам даралт их.",
+  "difficulty": 3,
+  "image": "images/physics-10-isobars.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-10:139-145",
+  "topic": "thermodynamics",
+  "prompt": "Ижил масстай хоёр биеийн температур-дулааны графикаар аль биеийн хайлах температур өндөр вэ?",
+  "options": [
+   "1-р бие",
+   "2-р бие",
+   "Тэнцүү",
+   "Тодорхойлох боломжгүй"
+  ],
+  "correctIndex": 0,
+  "explanation": "1-р биеийн хэвтээ хэсэг өндөрт байна.",
+  "difficulty": 1,
+  "image": "images/physics-10-two-bodies.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-10:139-145",
+  "topic": "thermodynamics",
+  "prompt": "Ижил масстай хоёр биеийн графикаар хатуу төлөвт аль биеийн хувийн дулаан багтаамж их вэ?",
+  "options": [
+   "2-р бие",
+   "1-р бие",
+   "Тэнцүү",
+   "Тодорхойлох боломжгүй"
+  ],
+  "correctIndex": 0,
+  "explanation": "Ижил дулаан авахад 2-р бие бага халж байна (налалт бага).",
+  "difficulty": 3,
+  "image": "images/physics-10-two-bodies.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-11:115-119",
+  "topic": "oscillations",
+  "prompt": "Шилжилт-хугацааны графикаас хэлбэлзлийн далайцыг ол.",
+  "options": [
+   "0.20 м",
+   "0.40 м",
+   "0.15 м",
+   "0.10 м"
+  ],
+  "correctIndex": 0,
+  "explanation": "Хамгийн их шилжилт 0.20 м.",
+  "difficulty": 1,
+  "image": "images/physics-11-xt-sine.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-11:115-119",
+  "topic": "oscillations",
+  "prompt": "Шилжилт-хугацааны графикаас хэлбэлзлийн давтамжийг ол.",
+  "options": [
+   "2.5 Гц",
+   "0.4 Гц",
+   "5 Гц",
+   "1.25 Гц"
+  ],
+  "correctIndex": 0,
+  "explanation": "T = 0.4 с тул f = 1/T = 2.5 Гц.",
+  "difficulty": 2,
+  "image": "images/physics-11-xt-sine.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-11:115-119",
+  "topic": "oscillations",
+  "prompt": "Шилжилт-хугацааны графикийн B цэгт биеийн хурд ба хурдатгал ямар байх вэ?",
+  "options": [
+   "Хурд 0, хурдатгал хамгийн их",
+   "Хурд хамгийн их, хурдатгал 0",
+   "Хоёулаа 0",
+   "Хоёулаа хамгийн их"
+  ],
+  "correctIndex": 0,
+  "explanation": "B нь хамгийн их шилжилтийн цэг: бие зогсож буцна.",
+  "difficulty": 3,
+  "image": "images/physics-11-xt-sine.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-11:115-119",
+  "topic": "oscillations",
+  "prompt": "Шилжилт-хугацааны графикийн C цэгт (t = 0.4 с) бие хаана байна вэ?",
+  "options": [
+   "Тэнцвэрийн байрлалд",
+   "Хамгийн их шилжилтэд",
+   "−0.20 м-т",
+   "0.15 м-т"
+  ],
+  "correctIndex": 0,
+  "explanation": "C цэгт шилжилт 0, хурд хамгийн их.",
+  "difficulty": 2,
+  "image": "images/physics-11-xt-sine.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-11:127-134",
+  "topic": "waves_sound",
+  "prompt": "Зурагт үзүүлсэн хоёр долгионы далайц нь 4 байх долгионы урт хэд вэ? (координатын нэгжээр)",
+  "options": [
+   "15",
+   "4",
+   "30",
+   "20"
+  ],
+  "correctIndex": 0,
+  "explanation": "Оргилууд 0, 15, 30-д байна.",
+  "difficulty": 2,
+  "image": "images/physics-11-two-waves.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-11:127-134",
+  "topic": "waves_sound",
+  "prompt": "Зурагт далайц нь 2 байх долгионы урт хэд вэ? (координатын нэгжээр)",
+  "options": [
+   "20",
+   "2",
+   "10",
+   "25"
+  ],
+  "correctIndex": 0,
+  "explanation": "Оргилууд 5 ба 25-д байна.",
+  "difficulty": 2,
+  "image": "images/physics-11-two-waves.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-11:120-126",
+  "topic": "oscillations",
+  "prompt": "2.0 кг биеийн хурд-хугацааны графикаас хурдны хамгийн их утгыг ол.",
+  "options": [
+   "≈ 0.36 м/с",
+   "≈ 0.72 м/с",
+   "≈ 0.18 м/с",
+   "≈ 1.3 м/с"
+  ],
+  "correctIndex": 0,
+  "explanation": "Муруйн оргил ойролцоогоор 0.36 м/с.",
+  "difficulty": 1,
+  "image": "images/physics-11-vt-cos.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-11:120-126",
+  "topic": "oscillations",
+  "prompt": "2.0 кг масстай хэлбэлзэгч биеийн хурд-хугацааны графикаас кинетик энергийн хамгийн их утгыг ол.",
+  "options": [
+   "≈ 0.13 Ж",
+   "≈ 0.36 Ж",
+   "≈ 0.26 Ж",
+   "≈ 0.07 Ж"
+  ],
+  "correctIndex": 0,
+  "explanation": "E = ½ · 2 · 0.36² ≈ 0.13 Ж.",
+  "difficulty": 3,
+  "image": "images/physics-11-vt-cos.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-11:103-109",
+  "topic": "electric_circuits",
+  "prompt": "+q цэнэг A цэгт байхад F хүч үйлчилнэ. D цэгт байхад ямар хүч үйлчлэх вэ?",
+  "options": [
+   "F/9",
+   "F/3",
+   "3F",
+   "F/4"
+  ],
+  "correctIndex": 0,
+  "explanation": "D нь 3R зайд: хүч зайн квадратад урвуу.",
+  "difficulty": 2,
+  "image": "images/physics-11-charges.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-11:103-109",
+  "topic": "electric_circuits",
+  "prompt": "+q цэнэг A цэгт байхад F хүч үйлчилнэ. C цэгт байхад ямар хүч үйлчлэх вэ?",
+  "options": [
+   "F/4",
+   "F/2",
+   "F",
+   "4F"
+  ],
+  "correctIndex": 0,
+  "explanation": "C нь 2R зайд.",
+  "difficulty": 2,
+  "image": "images/physics-11-charges.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-11:103-109",
+  "topic": "electric_circuits",
+  "prompt": "+q цэнэг A цэгт байхад F хүч үйлчилнэ. E цэгт байхад ямар хүч үйлчлэх вэ?",
+  "options": [
+   "F/8",
+   "F/4",
+   "F/2",
+   "F/16"
+  ],
+  "correctIndex": 0,
+  "explanation": "E хүртэлх зай 2√2 R тул r² = 8R².",
+  "difficulty": 3,
+  "image": "images/physics-11-charges.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-11:103-109",
+  "topic": "electric_circuits",
+  "prompt": "+q цэнэг A цэгт байхад F хүч үйлчилнэ. B цэгт байхад хүчний хэмжээ ямар байх вэ?",
+  "options": [
+   "F",
+   "F/2",
+   "2F",
+   "0"
+  ],
+  "correctIndex": 0,
+  "explanation": "B мөн R зайд байна.",
+  "difficulty": 1,
+  "image": "images/physics-11-charges.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-11:103-109",
+  "topic": "electric_circuits",
+  "prompt": "Соронзон оронд перпендикуляр хөдөлж буй электронд үйлчлэх хүч хаашаа чиглэх вэ?",
+  "options": [
+   "Тойргийн төв рүү",
+   "Хурдны дагуу",
+   "Хурдны эсрэг",
+   "Соронзон орны дагуу"
+  ],
+  "correctIndex": 0,
+  "explanation": "Лоренцын хүч хурдад перпендикуляр: төв рүү тэмүүлэх хүч.",
+  "difficulty": 2,
+  "image": "images/physics-11-electron.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-11:110-114",
+  "topic": "oscillations",
+  "prompt": "Металл утсаар гагнасан кубын ирмэг бүр R эсэргүүцэлтэй. A ба B эсрэг оройн хоорондох эсэргүүцэл хэд вэ?",
+  "options": [
+   "5R/6",
+   "R/2",
+   "3R/4",
+   "12R"
+  ],
+  "correctIndex": 0,
+  "explanation": "Тэгш хэмээр: R/3 + R/6 + R/3 = 5R/6.",
+  "difficulty": 3,
+  "image": "images/physics-11-cube.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-11:29-34",
+  "topic": "mechanical_energy",
+  "prompt": "h өндрөөс янз бүрийн чиглэлд ижил хурдтай шидсэн чулуунуудын аль нь газарт их хурдтай хүрэх вэ? Агаарын эсэргүүцэлгүй.",
+  "options": [
+   "Бүгд ижил хурдтай",
+   "Дээш шидсэн нь",
+   "Доош шидсэн нь",
+   "Хэвтээ шидсэн нь"
+  ],
+  "correctIndex": 0,
+  "explanation": "Механик энерги хадгалагдана: v² = v₀² + 2gh бүгдэд ижил.",
+  "difficulty": 2,
+  "image": "images/physics-11-throws.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-11:29-34",
+  "topic": "mechanical_energy",
+  "prompt": "Биеийг A цэгээс гурван замаар үрэлтгүй гулсуулав. B цэгт аль замаар ирэхэд хурд их байх вэ?",
+  "options": [
+   "Бүгдэд ижил",
+   "1-р замаар",
+   "2-р замаар",
+   "3-р замаар"
+  ],
+  "correctIndex": 0,
+  "explanation": "Хурд зөвхөн өндрийн зөрүүгээс хамаарна.",
+  "difficulty": 2,
+  "image": "images/physics-11-three-paths.png"
+ },
+ {
+  "tier": 3,
+  "subject": "physics",
+  "bookRef": "physics-11:29-34",
+  "topic": "mechanical_energy",
+  "prompt": "l урттай утсанд зүүсэн биеийг 90° хазайлгаж тавив. Доод B цэгт ирэх хурд хэд вэ?",
+  "options": [
+   "√(2gl)",
+   "√(gl)",
+   "2gl",
+   "gl/2"
+  ],
+  "correctIndex": 0,
+  "explanation": "mgl = mv²/2 тул v = √(2gl).",
+  "difficulty": 2,
+  "image": "images/physics-11-pendulum.png"
  }
 ]
