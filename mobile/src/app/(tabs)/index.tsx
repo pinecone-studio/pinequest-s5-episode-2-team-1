@@ -37,8 +37,12 @@ export default function HomeScreen() {
   if (!me || !bear) return null;
   function feed() {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Өнөөдрийн хичээл: өмнө хийсэн хичээлүүдээс санамсаргүй нэгийг 3 бодлогоор давтана
-    router.push(`/task/${pathSubject(subject, me?.grade)}?review=1`);
+    // Өнөөдрийн хичээл: өмнө хийсэн хичээлүүдээс санамсаргүй нэгийг 3 бодлогоор давтана. Энэ хичээлээр сурах
+    // замын даалгавар хийж амжаагүй бол (давтах зүйлгүй, сервер NO_REVIEW) замын одоогийн хичээлийг нээнэ.
+    const s = pathSubject(subject, me?.grade);
+    const path = me?.paths[s];
+    const started = !!path && (path.xp > 0 || path.level > 1);
+    router.push(started ? `/task/${s}?review=1` : `/task/${s}`);
   }
 
   return (
