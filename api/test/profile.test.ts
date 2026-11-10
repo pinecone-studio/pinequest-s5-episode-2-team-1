@@ -57,7 +57,8 @@ describe('асуулгад сонгосон хичээл (шинэ төхөөр�
     expect(onboardingSubject('{"heardFrom":"friends","subject":"physics","level":2}')).toBe('physics');
     expect(onboardingSubject('{}')).toBeNull(); // migration 0028-аас өмнөх хэрэглэгч
     expect(onboardingSubject(null)).toBeNull();
-    expect(onboardingSubject('{"subject":"chemistry"}')).toBeNull();
+    expect(onboardingSubject('{"subject":"biology"}')).toBeNull();
+    expect(onboardingSubject('{"subject":"chemistry"}')).toBe('chemistry');
     expect(onboardingSubject('эвдэрсэн')).toBeNull();
   });
 });

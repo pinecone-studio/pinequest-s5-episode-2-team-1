@@ -6,6 +6,7 @@ export const subjectNames: Record<Subject, string> = {
   math: 'Математик',
   mongolian: 'Монгол хэл',
   physics: 'Физик',
+  chemistry: 'Хими',
   social: 'Нийгэм судлал',
   english: 'Англи хэл',
 };
@@ -15,6 +16,7 @@ const subjectBy: Record<Subject, string> = {
   math: 'Математикаар',
   mongolian: 'Монгол хэлээр',
   physics: 'Физикээр',
+  chemistry: 'Химиэр',
   social: 'Нийгэм судлалаар',
   english: 'Англи хэлээр',
 };
@@ -24,6 +26,7 @@ export const subjectGlyphs: Record<Subject, string> = {
   math: '½',
   mongolian: 'Өө',
   physics: 'F=ma',
+  chemistry: 'H₂O',
   social: 'НС',
   english: 'Aa',
 };

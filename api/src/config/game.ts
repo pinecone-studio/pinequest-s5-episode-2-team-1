@@ -5,11 +5,11 @@ import { TUTOR } from './tutor';
 
 // Тоглоомын бүх тогтмол энд төвлөрнө. Логик эдгээрээс л уншина.
 
-export const SUBJECTS = ['math', 'mongolian', 'physics', 'social', 'english'] as const;
+export const SUBJECTS = ['math', 'mongolian', 'physics', 'chemistry', 'social', 'english'] as const;
 export type Subject = (typeof SUBJECTS)[number];
 
 /** Шинэ public урсгалууд зөвхөн эдгээрийг авна. */
-export const ACTIVE_SUBJECTS = ['math', 'mongolian', 'physics', 'social', 'english'] as const;
+export const ACTIVE_SUBJECTS = ['math', 'mongolian', 'physics', 'chemistry', 'social', 'english'] as const;
 /** Монгол хэлийг тулаанаас тусдаа нуусан. */
 export const DUEL_SUBJECTS = ['math'] as const;
 

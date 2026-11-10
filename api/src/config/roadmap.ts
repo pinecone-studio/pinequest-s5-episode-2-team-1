@@ -1,10 +1,11 @@
+import { chemistryRoadmapNodes } from './chemistryRoadmap';
 import type { Subject } from './game';
 import { englishRoadmapNodes } from './englishRoadmap';
 import { mathRoadmapNodes } from './mathRoadmap';
 import { physicsRoadmapNodes } from './physicsRoadmap';
 import { socialRoadmapNodes } from './socialRoadmap';
 
-/** Тогтмол roadmap-тай хичээлүүд (математик, физик, нийгэм судлал, англи хэл); бусад нь номын «Гарчиг»-аас. */
+/** Тогтмол roadmap-тай хичээлүүд (математик, физик, хими, нийгэм судлал, англи хэл); бусад нь номын «Гарчиг»-аас. */
 export const roadmapNodes = (subject: Subject, grade: number) =>
   subject === 'math'
     ? mathRoadmapNodes(grade)
@@ -14,4 +15,6 @@ export const roadmapNodes = (subject: Subject, grade: number) =>
         ? englishRoadmapNodes(grade)
         : subject === 'physics'
           ? physicsRoadmapNodes(grade)
-          : [];
+          : subject === 'chemistry'
+            ? chemistryRoadmapNodes(grade)
+            : [];

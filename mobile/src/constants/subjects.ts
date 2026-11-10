@@ -2,8 +2,8 @@ import { subjectInGrade } from '@shared/subjects';
 import type { Subject } from '@shared/types';
 
 /** Аппын идэвхтэй хичээлүүд. */
-export const ACTIVE_SUBJECTS: Subject[] = ['math', 'mongolian', 'physics', 'social', 'english'];
-export const PATH_SUBJECTS: Subject[] = ['math', 'physics', 'social', 'english'];
+export const ACTIVE_SUBJECTS: Subject[] = ['math', 'mongolian', 'physics', 'chemistry', 'social', 'english'];
+export const PATH_SUBJECTS: Subject[] = ['math', 'physics', 'chemistry', 'social', 'english'];
 export const DUEL_SUBJECTS: Subject[] = ['math'];
 
 /** Тухайн ангид ордог сурах замын хичээлүүд (физик, нийгэм судлал зөвхөн 7–11). */
