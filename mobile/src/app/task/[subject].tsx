@@ -43,7 +43,7 @@ export default function TaskScreen() {
     boss?: string;
     node?: string;
     stage?: string;
-    /** өнөөдрийн хичээл: өмнө хийсэн хичээлээс 3 бодлого */
+    /** өнөөдрийн хичээл: сонгосон хичээлийн ангийн 1 бодлого */
     review?: string;
   }>();
   const subject = activeSubject(rawSubject);

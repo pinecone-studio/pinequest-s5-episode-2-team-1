@@ -102,18 +102,18 @@ async function reviewScenario() {
   const u = await register('e2e_review', 7);
   const before = (await me(u.token)).paths.math;
   const t = await call<TaskDto>('POST', '/tasks/review', { token: u.token, body: { subject: 'math' } });
-  check(t.questions.length === 3, 'Сурах зам эхлээгүй ч ангийн 3 бодлого');
+  check(t.questions.length === 1, 'Сурах зам эхлээгүй ч ангийн 1 бодлого');
   const again = await call<TaskDto>('POST', '/tasks/review', { token: u.token, body: { subject: 'math' } });
   check(again.id === t.id, 'Дуусаагүй өнөөдрийн хичээл руу буцаж орно');
   let last: AnswerResponse | null = null;
-  for (const [i, q] of t.questions.entries()) {
+  for (const q of t.questions) {
     const ci = await correctIndex(q.id);
-    last = await call<AnswerResponse>('POST', `/tasks/${t.id}/answer`, { token: u.token, body: { questionId: q.id, choice: i === 0 ? ci : (ci + 1) % 4 } });
+    last = await call<AnswerResponse>('POST', `/tasks/${t.id}/answer`, { token: u.token, body: { questionId: q.id, choice: (ci + 1) % 4 } });
   }
   const after = (await me(u.token)).paths.math;
   check(
-    last?.result?.review === true && !last.recovery && after.level === before.level && JSON.stringify(after.stages) === JSON.stringify(before.stages),
-    '2 алдсан ч давтлага үүсэхгүй, сурах зам хөдлөхгүй',
+    last?.result?.review === true && last.result.total === 1 && !last.recovery && after.level === before.level && JSON.stringify(after.stages) === JSON.stringify(before.stages),
+    'Алдсан ч давтлага үүсэхгүй, сурах зам хөдлөхгүй, дүн 1-ээс',
     { before, after, recovery: last?.recovery },
   );
   const points = (await me(u.token)).points;
