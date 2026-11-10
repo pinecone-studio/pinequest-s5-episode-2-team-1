@@ -364,7 +364,9 @@ export async function completeTask(
   const correctCount = cc.n;
   // KUMA Plus: хичээлийн боргоцой PAID_POINTS_MULT дахин (хаалганы нэг удаагийн шагнал хэвээр).
   const plain = taskReward(correctCount, after.streak);
-  const base = { ...plain, points: Math.round(plain.points * pointsMult(user, now)) };
+  // multiplier нь дүнгийн дэлгэцийн «Боргоцой · ×1.5»: streak ба Plus-ын үржвэр хамт.
+  const mult = pointsMult(user, now);
+  const base = { ...plain, points: Math.round(plain.points * mult), multiplier: plain.multiplier * mult };
   const path = (await loadSubjectPaths(db, userId))[cc.subject];
   // Тухайн хичээлийн дараагийн boss-ыг ялбал тэр хичээлийн дараагийн бүлэг нээгдэнэ (bosses_beaten = boss нөхцөл
   // давхар тоолохоос сэргийлнэ).
