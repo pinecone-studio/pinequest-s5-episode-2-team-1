@@ -67,9 +67,10 @@ export default function PlansScreen() {
 
           <View style={styles.perks}>
             {S.plans.perks(PLUS_OUTFITS.length, PAID_POINTS_MULT).map((perk) => (
-              <Text key={perk} style={styles.perk}>
-                {perk}
-              </Text>
+              <View key={perk.title} style={styles.perk} accessible accessibilityLabel={`${perk.title}. ${perk.desc}`}>
+                <Text style={styles.perkTitle}>{perk.title}</Text>
+                <Text style={styles.perkDesc}>{perk.desc}</Text>
+              </View>
             ))}
           </View>
 
@@ -154,17 +155,10 @@ const styles = StyleSheet.create({
   },
 
   buy: { gap: 12 },
-  perks: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  perk: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: radius.pill,
-    overflow: 'hidden',
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    color: colors.white,
-    fontFamily: fonts.bold,
-    fontSize: 13,
-  },
+  perks: { gap: 8 },
+  perk: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: radius.sm, backgroundColor: 'rgba(255,255,255,0.10)', gap: 1 },
+  perkTitle: { fontFamily: fonts.extrabold, fontSize: 15, color: colors.lemon },
+  perkDesc: { fontFamily: fonts.semibold, fontSize: 13, lineHeight: 18, color: colors.lavender },
   priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' },
   amount: { fontFamily: fonts.extrabold, fontSize: 34, lineHeight: 38, letterSpacing: -1, color: colors.lemon },
   perMonth: { fontFamily: fonts.semibold, fontSize: 16, color: colors.lavender },

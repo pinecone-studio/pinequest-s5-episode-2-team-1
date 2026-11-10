@@ -17,7 +17,7 @@ export const SH = {
   ownedOfA11y: (owned: number, all: number) => `${all}-аас ${owned} нь таных`,
   notFound: 'Энэ эвент дууссан байна',
   toShop: 'Дэлгүүр рүү',
-  notePlus: 'KUMA Plus-ийн онцгой хувцас',
+  notePlus: 'Plus хэрэглэгч боргоцойгоор авна',
   noteTrending: 'Хамгийн их авдаг хувцаснууд',
   noteSeasonal: 'Энэ улирлын онцлох',
   noteAll: 'Бүх хувцас нэг дор',
