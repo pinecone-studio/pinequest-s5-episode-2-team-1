@@ -29,7 +29,7 @@ taskRoutes.post('/', async (c) => {
   return c.json<TaskDto>(await startTask(c.env, c.executionCtx, c.get('userId'), subject, gate ?? (boss === undefined ? undefined : UNIT_GATE[boss]), node, stage));
 });
 
-/** Өнөөдрийн хичээл: өмнө хийсэн хичээлүүдээс санамсаргүй нэгийг 3 бодлогоор давтана. */
+/** Өнөөдрийн хичээл: сонгосон хичээлийн ангийн бодлогоос санамсаргүй 1 (сурах замаас хамаарахгүй). */
 taskRoutes.post('/review', async (c) => {
   const { subject } = await readBody(c, z.object({ subject: z.enum(ACTIVE_SUBJECTS) }));
   return c.json<TaskDto>(await startReview(c.env, c.get('userId'), subject));

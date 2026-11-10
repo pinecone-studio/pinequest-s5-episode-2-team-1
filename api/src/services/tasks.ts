@@ -355,11 +355,12 @@ export async function completeTask(
     .prepare(
       `SELECT t.subject, t.kind, t.boss, t.path_lessons, t.node, t.stage,
          (SELECT COUNT(*) FROM task_questions WHERE task_id = t.id AND correct = 1) AS n,
-         (SELECT COUNT(*) FROM task_questions WHERE task_id = t.id AND choice >= 0 AND correct = 0) AS wrong
+         (SELECT COUNT(*) FROM task_questions WHERE task_id = t.id AND choice >= 0 AND correct = 0) AS wrong,
+         (SELECT COUNT(*) FROM task_questions WHERE task_id = t.id) AS total
        FROM tasks t WHERE t.id = ?`,
     )
     .bind(taskId)
-    .first<{ subject: Subject; kind: string; boss: number | null; path_lessons: number | null; node: number | null; stage: number | null; n: number; wrong: number }>();
+    .first<{ subject: Subject; kind: string; boss: number | null; path_lessons: number | null; node: number | null; stage: number | null; n: number; wrong: number; total: number }>();
   if (!cc) throw new ApiError(404, 'NOT_FOUND', 'Даалгавар олдсонгүй');
   const correctCount = cc.n;
   // KUMA Plus: хичээлийн боргоцой PAID_POINTS_MULT дахин (хаалганы нэг удаагийн шагнал хэвээр).
@@ -466,7 +467,8 @@ export async function completeTask(
   const me = await loadMe(db, userId, now);
   return {
     correctCount,
-    total: GAME.QUESTIONS_PER_TASK,
+    // Өнөөдрийн хичээл REVIEW_QUESTIONS бодлоготой
+    total: cc.kind === 'review' ? cc.total : GAME.QUESTIONS_PER_TASK,
     pointsGained: reward.points,
     xpGained: reward.xp,
     multiplier: reward.multiplier,

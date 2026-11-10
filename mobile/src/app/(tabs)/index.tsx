@@ -37,7 +37,7 @@ export default function HomeScreen() {
   if (!me || !bear) return null;
   function feed() {
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    // Өнөөдрийн хичээл: өмнө хийсэн хичээлүүдээс санамсаргүй нэгийг 3 бодлогоор давтана
+    // Өнөөдрийн хичээл: сонгосон хичээлийн ангийн бодлогоос санамсаргүй 1 (сурах замаас хамаарахгүй).
     router.push(`/task/${pathSubject(subject, me?.grade)}?review=1`);
   }
 
