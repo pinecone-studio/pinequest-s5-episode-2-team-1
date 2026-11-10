@@ -1,0 +1,750 @@
+[
+ {
+  "tier": 1,
+  "subject": "chemistry",
+  "bookRef": "chemistry-7:20-24",
+  "topic": "diffusion",
+  "prompt": "Зурагт шүүдэр буух үед ямар төлөвийн өөрчлөлт явагдаж байна вэ?",
+  "options": [
+   "Хийгээс шингэн болох (конденсац)",
+   "Шингэнээс хий болох (уурших)",
+   "Хатуугаас шингэн болох (хайлах)",
+   "Шингэнээс хатуу болох (царцах)"
+  ],
+  "correctIndex": 0,
+  "explanation": "Агаар дахь усны уур хүйтэн гадаргуу дээр ус болно.",
+  "difficulty": 1,
+  "image": "images/chemistry-7-dew.png"
+ },
+ {
+  "tier": 1,
+  "subject": "chemistry",
+  "bookRef": "chemistry-7:20-24",
+  "topic": "diffusion",
+  "prompt": "Зурагт ус буцлахад ямар төлөвийн өөрчлөлт явагдаж байна вэ?",
+  "options": [
+   "Шингэнээс хий болох",
+   "Хийгээс шингэн болох",
+   "Хатуугаас шингэн болох",
+   "Шингэнээс хатуу болох"
+  ],
+  "correctIndex": 0,
+  "explanation": "Буцлах үед ус уур болно.",
+  "difficulty": 1,
+  "image": "images/chemistry-7-kettle.png"
+ },
+ {
+  "tier": 1,
+  "subject": "chemistry",
+  "bookRef": "chemistry-7:20-24",
+  "topic": "diffusion",
+  "prompt": "Зурагт цонх цантах үед ямар төлөвийн өөрчлөлт явагдаж байна вэ?",
+  "options": [
+   "Хий төлөвөөс шууд хатуу болох",
+   "Шингэнээс хатуу болох",
+   "Хатуугаас хий болох",
+   "Хийгээс шингэн болох"
+  ],
+  "correctIndex": 0,
+  "explanation": "Өрөөний усны уур хүйтэн шилэн дээр шууд мөсөн талст болно.",
+  "difficulty": 2,
+  "image": "images/chemistry-7-frost.png"
+ },
+ {
+  "tier": 1,
+  "subject": "chemistry",
+  "bookRef": "chemistry-7:20-24",
+  "topic": "diffusion",
+  "prompt": "Зурагт хавар цас ус болох нь ямар үзэгдэл вэ?",
+  "options": [
+   "Хайлах",
+   "Уурших",
+   "Царцах",
+   "Конденсац"
+  ],
+  "correctIndex": 0,
+  "explanation": "Хатуу цас дулаан авч шингэн ус болно.",
+  "difficulty": 1,
+  "image": "images/chemistry-7-snowmelt.png"
+ },
+ {
+  "tier": 1,
+  "subject": "chemistry",
+  "bookRef": "chemistry-7:48-52",
+  "topic": "mixtures",
+  "prompt": "Зурагт давсны уусмалаас давсыг ямар аргаар ялгаж авч байна вэ?",
+  "options": [
+   "Ууршуулах",
+   "Шүүх",
+   "Соронзоор татах",
+   "Нэрэх"
+  ],
+  "correctIndex": 0,
+  "explanation": "Ус ууршиж давсны талст үлдэнэ.",
+  "difficulty": 1,
+  "image": "images/chemistry-7-evaporation.png"
+ },
+ {
+  "tier": 1,
+  "subject": "chemistry",
+  "bookRef": "chemistry-7:48-52",
+  "topic": "mixtures",
+  "prompt": "Зурагт үзүүлсэн а ба б бодис юу вэ?",
+  "options": [
+   "а — элемент, б — нэгдэл",
+   "а — нэгдэл, б — элемент",
+   "Хоёулаа холимог",
+   "Хоёулаа элемент"
+  ],
+  "correctIndex": 0,
+  "explanation": "а нь нэг төрлийн атомаас, б нь хоёр төрлийн атомаас тогтсон ижил молекулуудаас бүрдэнэ.",
+  "difficulty": 2,
+  "image": "images/chemistry-7-particles.png"
+ },
+ {
+  "tier": 1,
+  "subject": "chemistry",
+  "bookRef": "chemistry-7:70-74",
+  "topic": "everyday_reactions",
+  "prompt": "Төмөр хадаасны зэврэлтийг судалсан туршилтын аль хуруу шилэнд хадаас зэврэхгүй вэ?",
+  "options": [
+   "2 ба 3",
+   "1 ба 4",
+   "Зөвхөн 1",
+   "Бүгд зэврэнэ"
+  ],
+  "correctIndex": 0,
+  "explanation": "2-т ус байхгүй (CaCl₂ чийг шингээнэ), 3-т агаар байхгүй (буцалсан ус, тос).",
+  "difficulty": 2,
+  "image": "images/chemistry-7-nails.png"
+ },
+ {
+  "tier": 1,
+  "subject": "chemistry",
+  "bookRef": "chemistry-7:70-74",
+  "topic": "everyday_reactions",
+  "prompt": "Төмөр хадаасны зэврэлтийн туршилтаас зэврэхэд юу шаардлагатайг мэдэж болох вэ?",
+  "options": [
+   "Ус ба агаар хоёулаа",
+   "Зөвхөн ус",
+   "Зөвхөн агаар",
+   "Дулаан"
+  ],
+  "correctIndex": 0,
+  "explanation": "Ус эсвэл агаар дутвал хадаас зэврэхгүй байна.",
+  "difficulty": 2,
+  "image": "images/chemistry-7-nails.png"
+ },
+ {
+  "tier": 2,
+  "subject": "chemistry",
+  "bookRef": "chemistry-8:12-17",
+  "topic": "lab_techniques",
+  "prompt": "Хэмжээст цилиндрийн заалтыг уншихдаа нүдийг хаана байрлуулах вэ?",
+  "options": [
+   "Менискийн доод түвшинтэй ижил өндөрт",
+   "Менискээс дээш",
+   "Менискээс доош",
+   "Цилиндрийн ёроолд"
+  ],
+  "correctIndex": 0,
+  "explanation": "Ногоон тэмдэг: нүд менискийн доод түвшний шулуун дээр байна.",
+  "difficulty": 1,
+  "image": "images/chemistry-8-meniscus.png"
+ },
+ {
+  "tier": 2,
+  "subject": "chemistry",
+  "bookRef": "chemistry-8:31-36",
+  "topic": "salt_preparation",
+  "prompt": "Гурван хэмжээст цилиндрийн аль нь яг 20 см³ шингэн хэмжсэнийг харуулж байна вэ? (1, 2, 3)",
+  "options": [
+   "2-р",
+   "1-р",
+   "3-р",
+   "Гурвуулаа"
+  ],
+  "correctIndex": 0,
+  "explanation": "Менискийн доод түвшин яг 20-ын зураастай таарч байна.",
+  "difficulty": 2,
+  "image": "images/chemistry-8-cylinders-20.png"
+ },
+ {
+  "tier": 2,
+  "subject": "chemistry",
+  "bookRef": "chemistry-8:31-36",
+  "topic": "salt_preparation",
+  "prompt": "Зурагт үзүүлсэн шил савнуудаас элс ба усны холимгийг шүүхэд алийг нь хэрэглэх вэ?",
+  "options": [
+   "г",
+   "а",
+   "б",
+   "в"
+  ],
+  "correctIndex": 0,
+  "explanation": "г нь юүлүүр: шүүлтүүр цаас тавьж шүүнэ.",
+  "difficulty": 1,
+  "image": "images/chemistry-8-glassware.png"
+ },
+ {
+  "tier": 2,
+  "subject": "chemistry",
+  "bookRef": "chemistry-8:31-36",
+  "topic": "salt_preparation",
+  "prompt": "Зурагт үзүүлсэн шил савнуудаас яг 25 см³ шингэн хэмжихэд алийг нь хэрэглэх вэ?",
+  "options": [
+   "б",
+   "а",
+   "в",
+   "г"
+  ],
+  "correctIndex": 0,
+  "explanation": "б нь пипетк: тодорхой эзлэхүүнийг нарийн хэмжинэ.",
+  "difficulty": 2,
+  "image": "images/chemistry-8-glassware.png"
+ },
+ {
+  "tier": 2,
+  "subject": "chemistry",
+  "bookRef": "chemistry-8:31-36",
+  "topic": "salt_preparation",
+  "prompt": "Зурагт үзүүлсэн шил савнуудаас ойролцоогоор 25 см³ шингэн хэмжихэд алийг нь хэрэглэх вэ?",
+  "options": [
+   "в",
+   "а",
+   "б",
+   "г"
+  ],
+  "correctIndex": 0,
+  "explanation": "в нь хэмжээст цилиндр.",
+  "difficulty": 2,
+  "image": "images/chemistry-8-glassware.png"
+ },
+ {
+  "tier": 2,
+  "subject": "chemistry",
+  "bookRef": "chemistry-8:31-36",
+  "topic": "salt_preparation",
+  "prompt": "Магнийн гидроксидын уусмалд универсал индикатор хөх өнгө өгсөн нь юуг илтгэх вэ?",
+  "options": [
+   "Шүлтлэг орчин",
+   "Хүчиллэг орчин",
+   "Саармаг орчин",
+   "Давс үүссэн"
+  ],
+  "correctIndex": 0,
+  "explanation": "Хөх өнгө нь рН > 7 буюу шүлтлэг орчинг заана.",
+  "difficulty": 2,
+  "image": "images/chemistry-8-mg-steps.png"
+ },
+ {
+  "tier": 2,
+  "subject": "chemistry",
+  "bookRef": "chemistry-8:116-120",
+  "topic": "energy_changes",
+  "prompt": "Зурагт ургамлын үндсээр шингээж буй бодис юу вэ?",
+  "options": [
+   "Ус",
+   "Хүчилтөрөгч",
+   "Нүүрсхүчлийн хий",
+   "Гэрлийн энерги"
+  ],
+  "correctIndex": 0,
+  "explanation": "Ургамал хөрснөөс усыг үндсээр шингээнэ.",
+  "difficulty": 1,
+  "image": "images/chemistry-8-plant.png"
+ },
+ {
+  "tier": 2,
+  "subject": "chemistry",
+  "bookRef": "chemistry-8:116-120",
+  "topic": "energy_changes",
+  "prompt": "Фотосинтезийн үед навчнаас ялгарч буй хий (цэнхэр сум) юу вэ?",
+  "options": [
+   "Хүчилтөрөгч",
+   "Нүүрсхүчлийн хий",
+   "Азот",
+   "Устөрөгч"
+  ],
+  "correctIndex": 0,
+  "explanation": "Фотосинтезээр глюкоз ба хүчилтөрөгч үүснэ.",
+  "difficulty": 2,
+  "image": "images/chemistry-8-plant.png"
+ },
+ {
+  "tier": 2,
+  "subject": "chemistry",
+  "bookRef": "chemistry-8:148-153",
+  "topic": "chemicals_health",
+  "prompt": "Шохой ба давсны хүчлийн урвалын графикаар эхний 60 с-д хэдэн см³ хий ялгарсан бэ?",
+  "options": [
+   "20 см³",
+   "60 см³",
+   "10 см³",
+   "40 см³"
+  ],
+  "correctIndex": 0,
+  "explanation": "60 с-д график 20 см³-ийг заана.",
+  "difficulty": 1,
+  "image": "images/chemistry-8-gas-graph.png"
+ },
+ {
+  "tier": 2,
+  "subject": "chemistry",
+  "bookRef": "chemistry-8:148-153",
+  "topic": "chemicals_health",
+  "prompt": "Шохой ба давсны хүчлийн урвалын графикаар урвал ойролцоогоор хэзээ дууссан бэ?",
+  "options": [
+   "270 с орчимд",
+   "120 с-д",
+   "60 с-д",
+   "300 с-ээс хойш үргэлжилнэ"
+  ],
+  "correctIndex": 0,
+  "explanation": "270 с-ээс хойш хийн эзлэхүүн 66 см³-д тогтмол.",
+  "difficulty": 2,
+  "image": "images/chemistry-8-gas-graph.png"
+ },
+ {
+  "tier": 2,
+  "subject": "chemistry",
+  "bookRef": "chemistry-8:148-153",
+  "topic": "chemicals_health",
+  "prompt": "Шохой ба давсны хүчлийн урвалын графикаар хугацаа өнгөрөхөд урвалын хурд яах вэ?",
+  "options": [
+   "Буурна",
+   "Ихсэнэ",
+   "Тогтмол",
+   "Тэг болоод дахин өснө"
+  ],
+  "correctIndex": 0,
+  "explanation": "Муруй хэвтээ болж байна: хүчил зарцуулагдана.",
+  "difficulty": 2,
+  "image": "images/chemistry-8-gas-graph.png"
+ },
+ {
+  "tier": 2,
+  "subject": "chemistry",
+  "bookRef": "chemistry-8:148-153",
+  "topic": "chemicals_health",
+  "prompt": "Шохой ба давсны хүчлийн туршилтад ялгарсан хийн эзлэхүүнийг юугаар хэмжиж байна вэ?",
+  "options": [
+   "Тариур (шприц)",
+   "Термометр",
+   "Жин",
+   "Бюретк"
+  ],
+  "correctIndex": 0,
+  "explanation": "Хий тариурын бүлүүрийг түлхэж эзлэхүүнээ харуулна.",
+  "difficulty": 1,
+  "image": "images/chemistry-8-gas-apparatus.png"
+ },
+ {
+  "tier": 2,
+  "subject": "chemistry",
+  "bookRef": "chemistry-9:21-26",
+  "topic": "diffusion",
+  "prompt": "X бодисын температур-хугацааны графикаар X бодисын анхны төлөв юу вэ?",
+  "options": [
+   "Хий",
+   "Шингэн",
+   "Хатуу",
+   "Плазм"
+  ],
+  "correctIndex": 0,
+  "explanation": "120°C-аас хөрч 100°C-д конденсацлагдсан тул анх уур байна.",
+  "difficulty": 2,
+  "image": "images/chemistry-9-x-cooling.png"
+ },
+ {
+  "tier": 2,
+  "subject": "chemistry",
+  "bookRef": "chemistry-9:21-26",
+  "topic": "diffusion",
+  "prompt": "X бодисын графикийн 100°C дахь хэвтээ хэсэгт юу болж байна вэ?",
+  "options": [
+   "Конденсацлах",
+   "Хайлах",
+   "Буцлах",
+   "Сублимацлах"
+  ],
+  "correctIndex": 0,
+  "explanation": "Хөрөх үед хий шингэн болно.",
+  "difficulty": 2,
+  "image": "images/chemistry-9-x-cooling.png"
+ },
+ {
+  "tier": 2,
+  "subject": "chemistry",
+  "bookRef": "chemistry-9:21-26",
+  "topic": "diffusion",
+  "prompt": "X бодисын графикийн 0°C дахь хэвтээ хэсэгт юу болж байна вэ?",
+  "options": [
+   "Царцах (хатуурах)",
+   "Хайлах",
+   "Конденсацлах",
+   "Уурших"
+  ],
+  "correctIndex": 0,
+  "explanation": "Хөрөх үед шингэн хатуу болно.",
+  "difficulty": 2,
+  "image": "images/chemistry-9-x-cooling.png"
+ },
+ {
+  "tier": 2,
+  "subject": "chemistry",
+  "bookRef": "chemistry-9:61-66",
+  "topic": "periodic_table",
+  "prompt": "Зурагт үзүүлсэн хүчилтөрөгч ба хүхрийн аль нь атомын радиус их вэ?",
+  "options": [
+   "Хүхэр",
+   "Хүчилтөрөгч",
+   "Тэнцүү",
+   "Тодорхойлох боломжгүй"
+  ],
+  "correctIndex": 0,
+  "explanation": "Хүхэр 3 электрон давхаргатай, хүчилтөрөгч 2.",
+  "difficulty": 1,
+  "image": "images/chemistry-9-elements.png"
+ },
+ {
+  "tier": 2,
+  "subject": "chemistry",
+  "bookRef": "chemistry-9:61-66",
+  "topic": "periodic_table",
+  "prompt": "Зурагт үзүүлсэн хүчилтөрөгч, хүхэр, селений аль нь металл биш шинж хамгийн их вэ?",
+  "options": [
+   "Хүчилтөрөгч",
+   "Хүхэр",
+   "Селен",
+   "Бүгд тэнцүү"
+  ],
+  "correctIndex": 0,
+  "explanation": "Бүлгийн дагуу доошлох тусам металл биш шинж сулрана.",
+  "difficulty": 2,
+  "image": "images/chemistry-9-elements.png"
+ },
+ {
+  "tier": 2,
+  "subject": "chemistry",
+  "bookRef": "chemistry-9:94-98",
+  "topic": "separation_methods",
+  "prompt": "Цэвэр төмөр ба гангийн атомуудын зургийн аль нь хайлшийг илэрхийлж байна вэ?",
+  "options": [
+   "б",
+   "а",
+   "Хоёулаа",
+   "Аль нь ч биш"
+  ],
+  "correctIndex": 0,
+  "explanation": "б-д өөр хэмжээтэй атомууд холилдсон.",
+  "difficulty": 1,
+  "image": "images/chemistry-9-alloy.png"
+ },
+ {
+  "tier": 2,
+  "subject": "chemistry",
+  "bookRef": "chemistry-9:94-98",
+  "topic": "separation_methods",
+  "prompt": "Гангийн зурагт (б) өөр хэмжээтэй атомууд байгаа нь гангийн ямар шинжийг тайлбарлах вэ?",
+  "options": [
+   "Цэвэр төмрөөс хатуу",
+   "Цэвэр төмрөөс зөөлөн",
+   "Цахилгаан дамжуулдаггүй",
+   "Соронздоггүй"
+  ],
+  "correctIndex": 0,
+  "explanation": "Өөр атомууд давхаргуудыг гулсахад саад болно.",
+  "difficulty": 2,
+  "image": "images/chemistry-9-alloy.png"
+ },
+ {
+  "tier": 2,
+  "subject": "chemistry",
+  "bookRef": "chemistry-9:129-134",
+  "topic": "acids_bases_salts",
+  "prompt": "Зурагт дээвэр дээрх нарны зай хураагуур гэрлийн энергийг ямар энерги болгон хувиргадаг вэ?",
+  "options": [
+   "Цахилгааны",
+   "Химийн",
+   "Цөмийн",
+   "Дууны"
+  ],
+  "correctIndex": 0,
+  "explanation": "Хураасан цахилгаанаар чийдэн асна.",
+  "difficulty": 1,
+  "image": "images/chemistry-9-energy-chain.png"
+ },
+ {
+  "tier": 2,
+  "subject": "chemistry",
+  "bookRef": "chemistry-9:129-134",
+  "topic": "acids_bases_salts",
+  "prompt": "Зурагт шүдэнз асаахад химийн энерги ямар энерги болох вэ?",
+  "options": [
+   "Дулааны ба гэрлийн",
+   "Цахилгааны",
+   "Цөмийн",
+   "Дууны"
+  ],
+  "correctIndex": 0,
+  "explanation": "Шатах урвал дулаан, гэрэл ялгаруулна.",
+  "difficulty": 1,
+  "image": "images/chemistry-9-energy-chain.png"
+ },
+ {
+  "tier": 2,
+  "subject": "chemistry",
+  "bookRef": "chemistry-9:150-156",
+  "topic": "isomers_naming",
+  "prompt": "Зурагт үзүүлсэн б нэгдэл юу вэ?",
+  "options": [
+   "Этаны хүчил",
+   "Этанол",
+   "Этаналь",
+   "Метан"
+  ],
+  "correctIndex": 0,
+  "explanation": "CH₃−COOH: карбоксил бүлэгтэй.",
+  "difficulty": 2,
+  "image": "images/chemistry-9-formulas.png"
+ },
+ {
+  "tier": 2,
+  "subject": "chemistry",
+  "bookRef": "chemistry-9:150-156",
+  "topic": "isomers_naming",
+  "prompt": "Зурагт үзүүлсэн г нэгдэл ямар ангийн нүүрсустөрөгч вэ?",
+  "options": [
+   "Алкин",
+   "Алкан",
+   "Алкен",
+   "Арен"
+  ],
+  "correctIndex": 0,
+  "explanation": "C≡C гурвалсан холбоотой.",
+  "difficulty": 2,
+  "image": "images/chemistry-9-formulas.png"
+ },
+ {
+  "tier": 2,
+  "subject": "chemistry",
+  "bookRef": "chemistry-9:150-156",
+  "topic": "isomers_naming",
+  "prompt": "Зурагт үзүүлсэн а нэгдэл ямар функциональ бүлгүүд агуулах вэ?",
+  "options": [
+   "Амин ба карбоксил",
+   "Гидроксил ба карбонил",
+   "Зөвхөн карбоксил",
+   "Амин ба гидроксил"
+  ],
+  "correctIndex": 0,
+  "explanation": "−NH₂ ба −COOH: амин хүчил.",
+  "difficulty": 2,
+  "image": "images/chemistry-9-functional.png"
+ },
+ {
+  "tier": 2,
+  "subject": "chemistry",
+  "bookRef": "chemistry-9:150-156",
+  "topic": "isomers_naming",
+  "prompt": "Иштэй бөмбөлөг загварт (хар — C, улаан — O, цагаан — H) үзүүлсэн нэгдэл аль вэ?",
+  "options": [
+   "Этаны хүчил",
+   "Этанол",
+   "Бутен-1",
+   "Пропан"
+  ],
+  "correctIndex": 0,
+  "explanation": "2 нүүрстөрөгч, 2 хүчилтөрөгч, 4 устөрөгч: CH₃COOH.",
+  "difficulty": 2,
+  "image": "images/chemistry-9-acetic-model.png"
+ },
+ {
+  "tier": 3,
+  "subject": "chemistry",
+  "bookRef": "chemistry-10:20-24",
+  "topic": "purity_analysis",
+  "prompt": "Хроматограммаар M холимог хэдэн бодисоос тогтсон бэ?",
+  "options": [
+   "3",
+   "2",
+   "4",
+   "1"
+  ],
+  "correctIndex": 0,
+  "explanation": "M-ийн дагуу 3 толбо байна.",
+  "difficulty": 1,
+  "image": "images/chemistry-10-chromatogram-m.png"
+ },
+ {
+  "tier": 3,
+  "subject": "chemistry",
+  "bookRef": "chemistry-10:20-24",
+  "topic": "purity_analysis",
+  "prompt": "Хроматограммаар M холимогт A, B, C бодисын аль нь агуулагддаг вэ?",
+  "options": [
+   "A ба C",
+   "A ба B",
+   "B ба C",
+   "A, B, C бүгд"
+  ],
+  "correctIndex": 0,
+  "explanation": "A, C-ийн толбо M-ийн толботой ижил өндөрт байна.",
+  "difficulty": 2,
+  "image": "images/chemistry-10-chromatogram-m.png"
+ },
+ {
+  "tier": 3,
+  "subject": "chemistry",
+  "bookRef": "chemistry-10:38-42",
+  "topic": "ion_gas_tests",
+  "prompt": "CO₂ хийг шохойн усаар нэвтрүүлэхэд үүсэх цагаан тунадас юу вэ?",
+  "options": [
+   "CaCO₃",
+   "Ca(OH)₂",
+   "CaO",
+   "Ca(HCO₃)₂"
+  ],
+  "correctIndex": 0,
+  "explanation": "Шохойн ус CO₂-тэй урвалд орж CaCO₃ тунадас үүснэ.",
+  "difficulty": 2,
+  "image": "images/chemistry-10-co2-limewater.png"
+ },
+ {
+  "tier": 3,
+  "subject": "chemistry",
+  "bookRef": "chemistry-10:38-42",
+  "topic": "ion_gas_tests",
+  "prompt": "Хроматограммаар X бодис хэдэн бодисоос тогтсон бэ?",
+  "options": [
+   "2",
+   "1",
+   "3",
+   "4"
+  ],
+  "correctIndex": 0,
+  "explanation": "X-ийн дагуу 2 толбо байна.",
+  "difficulty": 1,
+  "image": "images/chemistry-10-chromatogram-xy.png"
+ },
+ {
+  "tier": 3,
+  "subject": "chemistry",
+  "bookRef": "chemistry-10:38-42",
+  "topic": "ion_gas_tests",
+  "prompt": "Хроматограммаар X, Y холимог R, S, T бодисын алийг агуулах вэ?",
+  "options": [
+   "X — R, Y — S ба T",
+   "X — S, Y — R",
+   "X — T, Y — R ба S",
+   "X — R ба S, Y — T"
+  ],
+  "correctIndex": 0,
+  "explanation": "Толбоны өндөр, өнгө таарч байна.",
+  "difficulty": 2,
+  "image": "images/chemistry-10-chromatogram-xy.png"
+ },
+ {
+  "tier": 3,
+  "subject": "chemistry",
+  "bookRef": "chemistry-11:31-38",
+  "topic": "intermolecular_forces",
+  "prompt": "Зурагт үзүүлсэн молекулд хэдэн σ, хэдэн π холбоо байна вэ?",
+  "options": [
+   "18 σ, 2 π",
+   "16 σ, 4 π",
+   "4 σ, 16 π",
+   "2 σ, 18 π"
+  ],
+  "correctIndex": 0,
+  "explanation": "12 C−H ба 6 C−C σ холбоо; хоёр C=C-д тус бүр 1 π.",
+  "difficulty": 3,
+  "image": "images/chemistry-11-molecule.png"
+ },
+ {
+  "tier": 3,
+  "subject": "chemistry",
+  "bookRef": "chemistry-11:31-38",
+  "topic": "intermolecular_forces",
+  "prompt": "Усны молекул дахь ковалент холбоо ба молекул хоорондын устөрөгчийн холбоог харьцуулбал аль нь зөв бэ?",
+  "options": [
+   "Ковалент хүчтэй, устөрөгчийн сул",
+   "Хоёулаа сул",
+   "Хоёулаа хүчтэй",
+   "Ковалент сул, устөрөгчийн хүчтэй"
+  ],
+  "correctIndex": 0,
+  "explanation": "Устөрөгчийн холбоо ковалент холбооноос хэд дахин сул.",
+  "difficulty": 2,
+  "image": "images/chemistry-11-water-hbond.png"
+ },
+ {
+  "tier": 3,
+  "subject": "chemistry",
+  "bookRef": "chemistry-11:74-80",
+  "topic": "reaction_rate",
+  "prompt": "Больцманы тархалтын муруйнуудаас аль нь хамгийн бага температурт харгалзах вэ?",
+  "options": [
+   "A",
+   "B",
+   "300 K",
+   "1000 K"
+  ],
+  "correctIndex": 0,
+  "explanation": "Бага температурт муруй нарийн, өндөр, зүүн тийш байна.",
+  "difficulty": 2,
+  "image": "images/chemistry-11-boltzmann-four.png"
+ },
+ {
+  "tier": 3,
+  "subject": "chemistry",
+  "bookRef": "chemistry-11:74-80",
+  "topic": "reaction_rate",
+  "prompt": "Температур өсөхөд Больцманы муруйн оргил хэрхэн шилжих вэ?",
+  "options": [
+   "Баруун тийш, доош",
+   "Зүүн тийш, дээш",
+   "Баруун тийш, дээш",
+   "Өөрчлөгдөхгүй"
+  ],
+  "correctIndex": 0,
+  "explanation": "Өндөр энергитэй молекул олширч муруй тэлнэ.",
+  "difficulty": 2,
+  "image": "images/chemistry-11-boltzmann-four.png"
+ },
+ {
+  "tier": 3,
+  "subject": "chemistry",
+  "bookRef": "chemistry-11:74-80",
+  "topic": "reaction_rate",
+  "prompt": "Цайр ба мөнгөний гальваны элементийн диаграммд мөнгө ба мөнгөний нитратыг аль дугаараар тэмдэглэсэн бэ?",
+  "options": [
+   "Ag — 4, AgNO₃ — 3",
+   "Ag — 2, AgNO₃ — 1",
+   "Ag — 4, AgNO₃ — 1",
+   "Ag — 2, AgNO₃ — 3"
+  ],
+  "correctIndex": 0,
+  "explanation": "1 нь цайрын давсны уусмал, 2 нь давсны гүүр.",
+  "difficulty": 2,
+  "image": "images/chemistry-11-galvanic.png"
+ },
+ {
+  "tier": 3,
+  "subject": "chemistry",
+  "bookRef": "chemistry-11:74-80",
+  "topic": "reaction_rate",
+  "prompt": "Температурыг өөрчлөхгүйгээр катализатор нэмбэл Больцманы муруйн E_ид-аас их энергитэй хэсгийн талбай яах вэ?",
+  "options": [
+   "Ихсэнэ",
+   "Буурна",
+   "Өөрчлөгдөхгүй",
+   "Тэг болно"
+  ],
+  "correctIndex": 0,
+  "explanation": "Муруй хэвээр, E_ид зүүн тийш шилжинэ.",
+  "difficulty": 3,
+  "image": "images/chemistry-11-boltzmann-one.png"
+ }
+]
