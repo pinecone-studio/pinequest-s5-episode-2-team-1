@@ -100,11 +100,9 @@ async function tasksScenario() {
 async function reviewScenario() {
   console.log('\n— Өнөөдрийн хичээл');
   const u = await register('e2e_review', 7);
-  await expectError(call('POST', '/tasks/review', { token: u.token, body: { subject: 'math' } }), 'NO_REVIEW', 'Хичээл хийгээгүй бол өнөөдрийн хичээл байхгүй');
-  await doTask(u.token, 'math', true);
   const before = (await me(u.token)).paths.math;
   const t = await call<TaskDto>('POST', '/tasks/review', { token: u.token, body: { subject: 'math' } });
-  check(t.questions.length === 3 && !!t.title, 'Өмнө хийсэн хичээлээс 3 бодлого, хичээлийн нэртэй', t.title);
+  check(t.questions.length === 3, 'Сурах зам эхлээгүй ч ангийн 3 бодлого');
   const again = await call<TaskDto>('POST', '/tasks/review', { token: u.token, body: { subject: 'math' } });
   check(again.id === t.id, 'Дуусаагүй өнөөдрийн хичээл руу буцаж орно');
   let last: AnswerResponse | null = null;
