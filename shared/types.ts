@@ -868,7 +868,7 @@ export interface PageTextResponse {
   at: number | null;
 }
 
-/** GET /dashboard/stats?days=30 — нийтэд нээлттэй dashboard (/dashboard). Зөвхөн нэгтгэсэн тоо; өдрүүд UB цагаар. */
+/** GET /dashboard/stats?days=30 (`X-Dashboard-Key` = DASHBOARD_KEY) — багийн dashboard (/dashboard). Нэгтгэсэн тоо; өдрүүд UB цагаар. */
 export interface DashboardStatsResponse {
   /** UB өдөр, 'YYYY-MM-DD' */
   today: string;
@@ -895,6 +895,19 @@ export interface DashboardStatsResponse {
     tutor: number;
   }>;
   grades: Array<{ grade: number; users: number; activeToday: number }>;
+}
+
+/** GET /dashboard/plus (`X-Dashboard-Key` = DASHBOARD_KEY): идэвхтэй төлбөртэй хэрэглэгчид, эрт дуусах нь эхэндээ. */
+export interface DashboardPlusResponse {
+  generatedAt: number;
+  users: Array<{
+    username: string;
+    displayName: string | null;
+    grade: number;
+    plan: 'plus' | 'max';
+    /** Багц дуусах мөч (ms) */
+    planUntil: number;
+  }>;
 }
 
 export interface BookOcrResponse {

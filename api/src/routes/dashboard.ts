@@ -1,21 +1,34 @@
-// Dashboard: GET /dashboard (хуудас) ба GET /dashboard/stats (тоо). Линктэй хүн бүр нэвтрэлтгүй харна: зөвхөн
-// нэгтгэсэн тоо (нэр, id байхгүй). Гадны script, font ачаалахгүй.
+// Dashboard: GET /dashboard (хуудас), GET /dashboard/stats (тоо), GET /dashboard/plus (Plus хэрэглэгчид). Зөвхөн
+// багийнханд: өгөгдөл бүхий хүсэлт бүр `X-Dashboard-Key` = DASHBOARD_KEY шаардана. Хуудас өөрөө өгөгдөлгүй, түлхүүр
+// асуух дэлгэцээр эхэлнэ. Гадны script, font ачаалахгүй.
 // Доорх HTML нь TS template literal тул client JS-д backtick, "${", backslash бичихгүй.
 import { Hono } from 'hono';
+import { createMiddleware } from 'hono/factory';
 import { z } from 'zod';
-import type { DashboardStatsResponse } from '../../../shared/types';
+import type { DashboardPlusResponse, DashboardStatsResponse } from '../../../shared/types';
 import type { AppEnv } from '../env';
+import { sha256Hex } from '../lib/auth';
 import { ApiError } from '../lib/errors';
-import { loadStats } from '../services/stats';
+import { loadPlusUsers, loadStats } from '../services/stats';
 
 export const dashboardRoutes = new Hono<AppEnv>();
 
-/** Нийтэд нээлттэй тул ижил хүсэлтийг isolate бүрт 60 сек хадгална: олон хүн зэрэг нээсэн ч D1 уншилт өсөхгүй. */
+/** Ижил хүсэлтийг isolate бүрт 60 сек хадгална: олон хүн зэрэг нээсэн ч D1 уншилт өсөхгүй (түлхүүр шалгасны дараа). */
 const STATS_TTL_MS = 60_000;
 const statsCache = new Map<number, { at: number; body: DashboardStatsResponse }>();
 
+/** Өгөгдөлтэй хүсэлт: `X-Dashboard-Key` = DASHBOARD_KEY. Түлхүүр тохируулаагүй бол хэнд ч нээгдэхгүй. */
+const requireKey = createMiddleware<AppEnv>(async (c, next) => {
+  const expected = c.env.DASHBOARD_KEY;
+  // Hash-ийг харьцуулна: мөрийн шууд харьцуулалт шиг хугацаагаараа түлхүүрийг задлахгүй.
+  const ok = !!expected && (await sha256Hex(c.req.header('x-dashboard-key') ?? '')) === (await sha256Hex(expected));
+  if (!ok) throw new ApiError(403, 'FORBIDDEN', 'Түлхүүр буруу');
+  c.header('Cache-Control', 'private, no-store');
+  await next();
+});
+
 /** ?days=7..90 (анхдагч 30), өдрүүд UB цагаар. */
-dashboardRoutes.get('/stats', async (c) => {
+dashboardRoutes.get('/stats', requireKey, async (c) => {
   const days = z.coerce.number().int().min(7).max(90).safeParse(c.req.query('days') ?? 30);
   if (!days.success) throw new ApiError(400, 'BAD_REQUEST', 'days=7..90');
   const now = Date.now();
@@ -24,9 +37,11 @@ dashboardRoutes.get('/stats', async (c) => {
     hit = { at: now, body: await loadStats(c.env.DB, days.data, now) };
     statsCache.set(days.data, hit);
   }
-  c.header('Cache-Control', 'public, max-age=60');
   return c.json<DashboardStatsResponse>(hit.body);
 });
+
+/** Идэвхтэй Plus (Max) хэрэглэгчид, эрт дуусах нь эхэндээ. */
+dashboardRoutes.get('/plus', requireKey, async (c) => c.json<DashboardPlusResponse>(await loadPlusUsers(c.env.DB)));
 
 dashboardRoutes.get('/', (c) => {
   c.header(
@@ -61,6 +76,7 @@ const DASHBOARD_HTML = /* html */ `<!doctype html>
   }
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
 main { max-width: 1120px; margin: 0 auto; padding: 24px 16px 48px; }
 h1 { font-size: 22px; margin: 0 0 4px; font-weight: 650; }
@@ -119,11 +135,28 @@ td { font-variant-numeric: tabular-nums; }
 .tip .r i { width: 12px; height: 2px; border-radius: 1px; display: inline-block; }
 .loading { opacity: 0.55; transition: opacity 0.15s; }
 .foot { color: var(--muted); font-size: 12px; margin-top: 16px; }
+.plus { margin-top: 12px; }
+.gate { max-width: 400px; margin: 12vh auto 0; }
+.gate-form { display: flex; gap: 8px; margin: 16px 0 8px; }
+.key { flex: 1; min-width: 0; border: 1px solid var(--border); border-radius: 8px; background: var(--page); color: var(--ink); padding: 8px 10px; font: inherit; font-size: 14px; }
+.badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 6px; background: var(--hover); color: var(--ink-2); margin-left: 6px; }
+.soon { color: var(--down); font-weight: 600; }
 @media (max-width: 520px) { .tile.hero .value { font-size: 44px; } .tile .value { font-size: 24px; } }
 </style>
 </head>
 <body>
 <main id="app">
+  <section class="card gate" id="gate" hidden>
+    <h1>KUMA · Самбар</h1>
+    <p class="sub">Зөвхөн багийнханд. Нууц түлхүүрээ оруулна уу.</p>
+    <form class="gate-form" id="gate-form">
+      <input class="key" id="gate-key" type="password" autocomplete="current-password" placeholder="Нууц түлхүүр" aria-label="Нууц түлхүүр" required>
+      <button class="btn" type="submit">Нээх</button>
+    </form>
+    <p class="error" id="gate-error" role="alert"></p>
+  </section>
+
+  <div id="board" hidden>
   <header>
     <div>
       <h1>KUMA · Самбар</h1>
@@ -136,6 +169,7 @@ td { font-variant-numeric: tabular-nums; }
         <button type="button" data-days="90">90 хоног</button>
       </div>
       <button class="btn" type="button" id="refresh">Шинэчлэх</button>
+      <button class="btn" type="button" id="lock">Гарах</button>
     </div>
   </header>
   <p class="error" id="error" role="alert"></p>
@@ -180,8 +214,19 @@ td { font-variant-numeric: tabular-nums; }
     </div>
   </section>
 
+  <section class="card plus" aria-labelledby="plus-title">
+    <div class="card-head"><div><h2 id="plus-title">Plus хэрэглэгчид</h2><p class="sub" id="plus-sub"></p></div></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Нэр</th><th>Username</th><th>Анги</th><th>Дуусах өдөр</th><th>Үлдсэн</th></tr></thead>
+        <tbody id="plus-body"></tbody>
+      </table>
+    </div>
+  </section>
+
   <p class="foot">«Шинэ» = тэр өдөр бүртгүүлсэн, «Буцаж ирсэн» = өмнөх өдрүүдэд бүртгүүлсэн. «Орсон»-ыг 2026-10-26-наас тэмдэглэж эхэлсэн.
     Даалгавар = тэр өдөр эхэлж дуусгасан, тулаан = дууссан тулаан. Хуудас 5 минут тутам өөрөө шинэчлэгдэнэ.</p>
+  </div>
 </main>
 <div class="tip" id="tip" hidden></div>
 
@@ -191,7 +236,11 @@ td { font-variant-numeric: tabular-nums; }
   var WEEKDAYS = ['Ням', 'Даваа', 'Мягмар', 'Лхагва', 'Пүрэв', 'Баасан', 'Бямба'];
   var NS = 'http://www.w3.org/2000/svg';
   var REFRESH_MS = 5 * 60 * 1000;
-  var state = { days: 30, data: null, fetchedAt: 0 };
+  var DAY_MS = 24 * 60 * 60 * 1000;
+  var UB_MS = 8 * 60 * 60 * 1000;
+  // Түлхүүрийг зөвхөн энэ табын sessionStorage-д хадгална (таб хаахад арилна).
+  var STORE = 'kuma-dashboard-key';
+  var state = { days: 30, data: null, plus: null, fetchedAt: 0, key: '' };
 
   function $(id) { return document.getElementById(id); }
   function fmt(n) { return Number(n).toLocaleString('en-US'); }
@@ -355,9 +404,63 @@ td { font-variant-numeric: tabular-nums; }
     el.textContent = (diff > 0 ? '▲ +' + diff : diff < 0 ? '▼ −' + Math.abs(diff) : '— 0') + ' өчигдрөөс';
   }
 
+  function loadKey() { try { return sessionStorage.getItem(STORE) || ''; } catch (e) { return ''; } }
+  function saveKey(k) { try { if (k) sessionStorage.setItem(STORE, k); else sessionStorage.removeItem(STORE); } catch (e) { /* хадгалахгүй ч ажиллана */ } }
+
+  /** Түлхүүр асуух дэлгэц: өгөгдлийг санах ойгоос арилгана. */
+  function lock(msg) {
+    state.key = '';
+    state.data = null;
+    state.plus = null;
+    saveKey('');
+    $('board').hidden = true;
+    $('gate').hidden = false;
+    $('gate-error').textContent = msg || '';
+    $('gate-key').value = '';
+    $('gate-key').focus();
+  }
+
+  function cell(tr, text, cls) {
+    var td = document.createElement('td');
+    td.textContent = text;
+    if (cls) td.className = cls;
+    tr.appendChild(td);
+    return td;
+  }
+
+  function renderPlus(p) {
+    var body = $('plus-body');
+    body.textContent = '';
+    p.users.forEach(function (u) {
+      var tr = document.createElement('tr');
+      var name = cell(tr, u.displayName || u.username);
+      if (u.plan === 'max') {
+        var b = document.createElement('span');
+        b.className = 'badge';
+        b.textContent = 'Max';
+        name.appendChild(b);
+      }
+      cell(tr, u.username);
+      cell(tr, u.grade + '-р анги');
+      cell(tr, new Date(u.planUntil + UB_MS).toISOString().slice(0, 10));
+      var left = Math.max(0, Math.ceil((u.planUntil - p.generatedAt) / DAY_MS));
+      cell(tr, left + ' хоног', left <= 3 ? 'soon' : '');
+      body.appendChild(tr);
+    });
+    if (p.users.length === 0) {
+      var tr = document.createElement('tr');
+      var td = cell(tr, 'Одоогоор Plus хэрэглэгч алга');
+      td.colSpan = 5;
+      td.className = 'muted';
+      body.appendChild(tr);
+    }
+    $('plus-sub').textContent = 'Идэвхтэй ' + p.users.length + ' · эрт дуусах нь дээрээ';
+  }
+
   function render() {
     var d = state.data;
     if (!d) return;
+    if (state.plus) renderPlus(state.plus);
     var rows = d.daily.map(function (r) { return Object.assign({ fresh: r.active - r.returning }, r); });
     var t = rows[rows.length - 1], y = rows[rows.length - 2];
     $('today').textContent = 'Өнөөдөр ' + d.today + ' (' + weekday(d.today) + ')';
@@ -384,13 +487,24 @@ td { font-variant-numeric: tabular-nums; }
     });
   }
 
+  function get(path) {
+    return fetch(path, { headers: { 'X-Dashboard-Key': state.key }, cache: 'no-store' });
+  }
+
   async function refresh() {
+    if (!state.key) return;
     $('app').classList.add('loading');
     try {
-      var res = await fetch('/dashboard/stats?days=' + state.days);
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      state.data = await res.json();
+      var res = await Promise.all([get('/dashboard/stats?days=' + state.days), get('/dashboard/plus')]);
+      if (res[0].status === 403 || res[1].status === 403) { lock('Түлхүүр буруу байна'); return; }
+      if (!res[0].ok) throw new Error('HTTP ' + res[0].status);
+      if (!res[1].ok) throw new Error('HTTP ' + res[1].status);
+      state.data = await res[0].json();
+      state.plus = await res[1].json();
       state.fetchedAt = Date.now();
+      saveKey(state.key);
+      $('gate').hidden = true;
+      $('board').hidden = false;
       $('error').textContent = '';
       render();
     } catch (e) {
@@ -401,6 +515,17 @@ td { font-variant-numeric: tabular-nums; }
   }
 
   $('refresh').addEventListener('click', refresh);
+  $('lock').addEventListener('click', function () { lock(''); });
+  $('gate-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var k = $('gate-key').value.trim();
+    if (!k) return;
+    state.key = k;
+    $('gate-error').textContent = '';
+    refresh().then(function () {
+      if (!state.data && state.key) $('gate-error').textContent = 'Ачаалж чадсангүй. Дахин оролдоно уу';
+    });
+  });
   document.querySelectorAll('.seg button').forEach(function (b) {
     b.addEventListener('click', function () { state.days = Number(b.getAttribute('data-days')); refresh(); });
   });
@@ -410,7 +535,8 @@ td { font-variant-numeric: tabular-nums; }
   document.addEventListener('visibilitychange', function () {
     if (!document.hidden && Date.now() - state.fetchedAt > REFRESH_MS) refresh();
   });
-  refresh();
+  state.key = loadKey();
+  if (state.key) refresh(); else lock('');
 })();
 </script>
 </body>
