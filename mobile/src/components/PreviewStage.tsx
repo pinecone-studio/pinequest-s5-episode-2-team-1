@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { type StyleProp, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import { BgArt } from '@/components/BgArt';
 import { LiveBear } from '@/components/LiveBear';
 import { ColorFade } from '@/components/pixel';
@@ -21,6 +21,7 @@ export function PreviewStage({
   alt,
   action,
   height = STAGE_H,
+  style,
 }: {
   bg: BgDef;
   items: ItemId[];
@@ -29,10 +30,12 @@ export function PreviewStage({
   alt: string;
   action?: ReactNode;
   height?: number;
+  /** жишээ нь профайлын дээд тууз: булангүй, дэлгэцийн өргөнөөр */
+  style?: StyleProp<ViewStyle>;
 }) {
   const s = height / STAGE_H;
   return (
-    <View style={[styles.stage, { height }]}>
+    <View style={[styles.stage, { height }, style]}>
       <ColorFade color={bg.hex} style={StyleSheet.absoluteFill} />
       <BgArt bg={bg} />
       {/* зураг, сансрын дугуй дээр гэрэл хэрэггүй; Код дээр баавгайг тоонуудаас ялгана */}

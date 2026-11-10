@@ -145,6 +145,8 @@ for (const n of ['map_world_sun', 'map_world_sun_foot', 'lair_sun', 'lair_sun_sc
 for (const n of ['map_world_snow', 'lair_snow', 'lair_snow_leopard', 'lair_snow_owl', 'lair_snow_yak']) M[n] = [2];
 for (const n of ['map_chest', 'map_chest_open', 'item_amber', 'item_honey', 'item_bell']) M[n] = [1, 4];
 // боргоцойн дэлгэц (app/pinecones.tsx): олох арга + багцын зураг (PixelLab, flat), арын банз (scripts/pinecone-bg.ts)
+// профайлын түгжээтэй тэмдгийн нүд: 16px эх, 32dp
+M.icon_lock = [2];
 for (const n of ['earn_correct', 'earn_chest', 'earn_duel', 'bundle_pouch', 'bundle_sack', 'bundle_basket', 'bundle_crate', 'bundle_chest']) M[n] = [2];
 for (const n of ['bg_planks', 'wood_boards', 'wood_edge', 'wall_bricks']) M[n] = [3];
 for (const n of ['map_world_0', 'map_world_1', 'map_world_2', 'map_flag', 'fx_magic', 'lair_0', 'lair_1', 'lair_1_left', 'lair_1_right', 'lair_2', 'bear_battle', 'fx_honey_shatter', 'fx_spark', 'fx_spark_magic', 'fx_slash']) M[n] = [2];
@@ -180,6 +182,8 @@ for (const n of ['home', 'tasks', 'path', 'shop', 'crew', 'bag', 'league', 'duel
   M[`nav2_${n}_on`] = [[30, 30]];
   M[`nav2_${n}_off`] = [[30, 30]];
 }
+// профайлын header: профайл засах (харандаа), тохиргоо (20px эх, nav icon шиг 30dp)
+for (const n of ['icon_pencil', 'icon_gear']) M[n] = [[30, 30]];
 // 24dp нь онбоардингийн давуу талын мөрөнд
 M.btn_calendar = [[30, 30], [24, 24]];
 // онбоардингийн сонголтын icon (PixelLab Pro, апп-ын icon-уудыг style болгосон 24px): 1× = 24dp, @2x/@3x бүхэл

@@ -73,7 +73,8 @@ export type ErrorCode =
   | 'FRIEND_LIMIT'
   | 'CLAN_NOT_FOUND'
   | 'CLAN_FULL'
-  | 'CLAN_MEMBER';
+  | 'CLAN_MEMBER'
+  | 'TOO_MANY_ATTEMPTS';
 
 export interface ApiErrorBody {
   error: { code: ErrorCode; message: string };

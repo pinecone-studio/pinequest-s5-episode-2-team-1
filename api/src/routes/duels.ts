@@ -4,7 +4,7 @@ import type { DuelResponse, LobbyResponse } from '../../../shared/types';
 import { DUEL_SUBJECTS, GAME } from '../config/game';
 import type { AppEnv } from '../env';
 import { ApiError, parseId, readBody } from '../lib/errors';
-import { requireAuth, userIdForToken } from '../lib/session';
+import { requireAuth, socketUserId } from '../lib/session';
 import {
   acceptChallenge,
   cancelChallenge,
@@ -82,10 +82,7 @@ duelRoutes.post('/:id/cancel', requireAuth, async (c) => {
  * Энд шалгаад DO руу X-User-Id-тай дамжуулна.
  */
 duelRoutes.get('/:id/ws', async (c) => {
-  if (c.req.header('upgrade')?.toLowerCase() !== 'websocket') throw new ApiError(400, 'BAD_REQUEST', 'WebSocket хүлээж байна');
-  const [scheme, token] = (c.req.header('sec-websocket-protocol') ?? '').split(',').map((s) => s.trim());
-  const userId = scheme === 'bearer' && token ? await userIdForToken(c.env.DB, token) : null;
-  if (!userId) throw new ApiError(401, 'UNAUTHORIZED', 'Нэвтрэх шаардлагатай');
+  const userId = await socketUserId(c);
 
   const duelId = parseId(c.req.param('id'));
   const duel = await isParticipant(c.env.DB, duelId, userId);
