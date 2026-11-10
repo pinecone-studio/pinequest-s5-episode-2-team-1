@@ -33,6 +33,11 @@ export const BACKGROUNDS: BgDef[] = [
   { id: 'sakura', name: 'Интоорын хөндий', hex: '#F2B8D0', image: require('../../../assets/images/backgrounds/sakura-valley.webp') },
   { id: 'mogoi_shunu', name: 'Могойн шөнө', hex: '#2A2560', dark: true, image: require('../../../assets/images/backgrounds/serpent-night.webp') },
   { id: 'unegen_jarga', name: 'Үнэгний жаргал', hex: '#E8753A', image: require('../../../assets/images/backgrounds/fox-sunset.webp') },
+  { id: 'shidet_khashaa', name: 'Шидэт хашаа', hex: '#2A2A5E', dark: true, image: require('../../../assets/images/backgrounds/castle-courtyard.webp') },
+  { id: 'sarny_nomyn_san', name: 'Сарны номын сан', hex: '#3A2A4E', dark: true, image: require('../../../assets/images/backgrounds/moon-library.webp') },
+  { id: 'arslan_tankhim', name: 'Арслангийн танхим', hex: '#8A1F14', dark: true, image: require('../../../assets/images/backgrounds/lion-common-room.webp') },
+  { id: 'odot_tsamkhag', name: 'Одот цамхаг', hex: '#2E2350', dark: true, image: require('../../../assets/images/backgrounds/star-tower.webp') },
+  { id: 'mogoi_tankhim', name: 'Могойн танхим', hex: '#0F1F1A', dark: true, image: require('../../../assets/images/backgrounds/serpent-hall.webp') },
   { id: 'sansar', name: 'Сансар', hex: '#FAFAF7', scene: 'space' },
   { id: 'kod', name: 'Код', hex: '#FAFAF7', scene: 'binary', halo: 'rgba(250,250,247,0.88)' },
 ];
