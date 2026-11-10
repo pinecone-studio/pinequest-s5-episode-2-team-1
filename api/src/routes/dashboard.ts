@@ -1,12 +1,14 @@
 // Dashboard: GET /dashboard (хуудас) ба GET /dashboard/stats (тоо). Линктэй хүн бүр нэвтрэлтгүй харна: зөвхөн
-// нэгтгэсэн тоо (нэр, id байхгүй). Гадны script, font ачаалахгүй.
+// нэгтгэсэн тоо (нэр, id байхгүй). Нэртэй цорын ганц хэсэг нь GET /dashboard/plus: зөвхөн DASHBOARD_KEY нууц
+// түлхүүртэй (багийнхан). Гадны script, font ачаалахгүй.
 // Доорх HTML нь TS template literal тул client JS-д backtick, "${", backslash бичихгүй.
 import { Hono } from 'hono';
 import { z } from 'zod';
-import type { DashboardStatsResponse } from '../../../shared/types';
+import type { DashboardPlusResponse, DashboardStatsResponse } from '../../../shared/types';
 import type { AppEnv } from '../env';
+import { sha256Hex } from '../lib/auth';
 import { ApiError } from '../lib/errors';
-import { loadStats } from '../services/stats';
+import { loadPlusUsers, loadStats } from '../services/stats';
 
 export const dashboardRoutes = new Hono<AppEnv>();
 
@@ -26,6 +28,16 @@ dashboardRoutes.get('/stats', async (c) => {
   }
   c.header('Cache-Control', 'public, max-age=60');
   return c.json<DashboardStatsResponse>(hit.body);
+});
+
+/** Plus хэрэглэгчид: `X-Dashboard-Key` = DASHBOARD_KEY. Түлхүүр тохируулаагүй бол хэнд ч нээгдэхгүй. */
+dashboardRoutes.get('/plus', async (c) => {
+  const expected = c.env.DASHBOARD_KEY;
+  // Hash-ийг харьцуулна: мөрийн шууд харьцуулалт шиг хугацаагаараа түлхүүрийг задлахгүй.
+  const ok = !!expected && (await sha256Hex(c.req.header('x-dashboard-key') ?? '')) === (await sha256Hex(expected));
+  if (!ok) throw new ApiError(403, 'FORBIDDEN', 'Түлхүүр буруу');
+  c.header('Cache-Control', 'no-store');
+  return c.json<DashboardPlusResponse>(await loadPlusUsers(c.env.DB));
 });
 
 dashboardRoutes.get('/', (c) => {
@@ -61,6 +73,7 @@ const DASHBOARD_HTML = /* html */ `<!doctype html>
   }
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { margin: 0; background: var(--page); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
 main { max-width: 1120px; margin: 0 auto; padding: 24px 16px 48px; }
 h1 { font-size: 22px; margin: 0 0 4px; font-weight: 650; }
@@ -119,6 +132,10 @@ td { font-variant-numeric: tabular-nums; }
 .tip .r i { width: 12px; height: 2px; border-radius: 1px; display: inline-block; }
 .loading { opacity: 0.55; transition: opacity 0.15s; }
 .foot { color: var(--muted); font-size: 12px; margin-top: 16px; }
+.plus { margin-top: 12px; }
+.key { border: 1px solid var(--border); border-radius: 8px; background: var(--page); color: var(--ink); padding: 7px 10px; font: inherit; font-size: 13px; width: 200px; max-width: 100%; }
+.badge { display: inline-block; font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 6px; background: var(--hover); color: var(--ink-2); margin-left: 6px; }
+.soon { color: var(--down); font-weight: 600; }
 @media (max-width: 520px) { .tile.hero .value { font-size: 44px; } .tile .value { font-size: 24px; } }
 </style>
 </head>
@@ -180,10 +197,107 @@ td { font-variant-numeric: tabular-nums; }
     </div>
   </section>
 
+  <section class="card plus" aria-labelledby="plus-title">
+    <div class="card-head">
+      <div><h2 id="plus-title">Plus хэрэглэгчид</h2><p class="sub" id="plus-sub">Зөвхөн багийнханд: нууц түлхүүрээ оруулна уу</p></div>
+      <form class="controls" id="plus-form">
+        <input class="key" id="plus-key" type="password" autocomplete="off" placeholder="Нууц түлхүүр" aria-label="Нууц түлхүүр">
+        <button class="btn" type="submit">Харах</button>
+      </form>
+      <button class="btn" type="button" id="plus-lock" hidden>Хаах</button>
+    </div>
+    <p class="error" id="plus-error" role="alert"></p>
+    <div class="table-wrap" id="plus-wrap" hidden>
+      <table>
+        <thead><tr><th>Нэр</th><th>Username</th><th>Анги</th><th>Дуусах өдөр</th><th>Үлдсэн</th></tr></thead>
+        <tbody id="plus-body"></tbody>
+      </table>
+    </div>
+  </section>
+
   <p class="foot">«Шинэ» = тэр өдөр бүртгүүлсэн, «Буцаж ирсэн» = өмнөх өдрүүдэд бүртгүүлсэн. «Орсон»-ыг 2026-10-26-наас тэмдэглэж эхэлсэн.
     Даалгавар = тэр өдөр эхэлж дуусгасан, тулаан = дууссан тулаан. Хуудас 5 минут тутам өөрөө шинэчлэгдэнэ.</p>
 </main>
 <div class="tip" id="tip" hidden></div>
+
+<script>
+// Plus хэрэглэгчид: түлхүүрийг зөвхөн энэ табын sessionStorage-д хадгална (таб хаахад арилна).
+(function () {
+  'use strict';
+  var STORE = 'kuma-dashboard-key';
+  var DAY_MS = 24 * 60 * 60 * 1000;
+  var UB_MS = 8 * 60 * 60 * 1000;
+  function $(id) { return document.getElementById(id); }
+  function load() { try { return sessionStorage.getItem(STORE) || ''; } catch (e) { return ''; } }
+  function save(k) { try { if (k) sessionStorage.setItem(STORE, k); else sessionStorage.removeItem(STORE); } catch (e) { /* хадгалахгүй ч ажиллана */ } }
+  function cell(tr, text, cls) {
+    var td = document.createElement('td');
+    td.textContent = text;
+    if (cls) td.className = cls;
+    tr.appendChild(td);
+    return td;
+  }
+  function locked(msg) {
+    $('plus-form').hidden = false;
+    $('plus-lock').hidden = true;
+    $('plus-wrap').hidden = true;
+    $('plus-body').textContent = '';
+    $('plus-sub').textContent = 'Зөвхөн багийнханд: нууц түлхүүрээ оруулна уу';
+    $('plus-error').textContent = msg || '';
+  }
+  function render(d) {
+    var body = $('plus-body');
+    body.textContent = '';
+    d.users.forEach(function (u) {
+      var tr = document.createElement('tr');
+      var name = cell(tr, u.displayName || u.username);
+      if (u.plan === 'max') {
+        var b = document.createElement('span');
+        b.className = 'badge';
+        b.textContent = 'Max';
+        name.appendChild(b);
+      }
+      cell(tr, u.username);
+      cell(tr, u.grade + '-р анги');
+      cell(tr, new Date(u.planUntil + UB_MS).toISOString().slice(0, 10));
+      var left = Math.max(0, Math.ceil((u.planUntil - d.generatedAt) / DAY_MS));
+      cell(tr, left + ' хоног', left <= 3 ? 'soon' : '');
+      body.appendChild(tr);
+    });
+    if (d.users.length === 0) {
+      var tr = document.createElement('tr');
+      var td = cell(tr, 'Одоогоор Plus хэрэглэгч алга');
+      td.colSpan = 5;
+      td.className = 'muted';
+      body.appendChild(tr);
+    }
+    $('plus-sub').textContent = 'Идэвхтэй ' + d.users.length + ' · эрт дуусах нь дээрээ';
+    $('plus-form').hidden = true;
+    $('plus-lock').hidden = false;
+    $('plus-wrap').hidden = false;
+    $('plus-error').textContent = '';
+  }
+  function fetchPlus(key) {
+    $('plus-error').textContent = '';
+    fetch('/dashboard/plus', { headers: { 'X-Dashboard-Key': key }, cache: 'no-store' })
+      .then(function (r) {
+        if (r.status === 403) { save(''); locked('Түлхүүр буруу байна'); return null; }
+        if (!r.ok) throw new Error(String(r.status));
+        return r.json();
+      })
+      .then(function (d) { if (d) { save(key); render(d); } })
+      .catch(function () { $('plus-error').textContent = 'Ачаалж чадсангүй. Дахин оролдоно уу'; });
+  }
+  $('plus-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var key = $('plus-key').value.trim();
+    if (key) fetchPlus(key);
+  });
+  $('plus-lock').addEventListener('click', function () { save(''); $('plus-key').value = ''; locked(''); });
+  var saved = load();
+  if (saved) fetchPlus(saved);
+})();
+</script>
 
 <script>
 (function () {

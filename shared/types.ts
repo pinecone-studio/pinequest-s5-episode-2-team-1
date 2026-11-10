@@ -897,6 +897,19 @@ export interface DashboardStatsResponse {
   grades: Array<{ grade: number; users: number; activeToday: number }>;
 }
 
+/** GET /dashboard/plus (`X-Dashboard-Key` = DASHBOARD_KEY): идэвхтэй төлбөртэй хэрэглэгчид, эрт дуусах нь эхэндээ. */
+export interface DashboardPlusResponse {
+  generatedAt: number;
+  users: Array<{
+    username: string;
+    displayName: string | null;
+    grade: number;
+    plan: 'plus' | 'max';
+    /** Багц дуусах мөч (ms) */
+    planUntil: number;
+  }>;
+}
+
 export interface BookOcrResponse {
   model: string;
   pages: Array<{ seq: number; sha256: string; text: string }>;

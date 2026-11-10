@@ -1,6 +1,6 @@
 // Dashboard (/dashboard)-ын тоо: өдөр бүр бүртгүүлсэн, орсон, даалгавар, тулаан, баавгай.
 // Нийтэд нээлттэй тул зөвхөн нэгтгэсэн тоо буцаана (нэр, id гаргахгүй).
-import type { DashboardStatsResponse } from '../../../shared/types';
+import type { DashboardPlusResponse, DashboardStatsResponse } from '../../../shared/types';
 import { GAME } from '../config/game';
 import { countsByDay, lastDays, ubDayStart } from '../domain/stats';
 import { addDays, ubDay } from '../domain/time';
@@ -81,5 +81,20 @@ export async function loadStats(db: D1Database, days: number, now = Date.now()):
       const g = byGrade.get(GAME.GRADE_MIN + i);
       return { grade: GAME.GRADE_MIN + i, users: g?.users ?? 0, activeToday: g?.active_today ?? 0 };
     }),
+  };
+}
+
+/** Идэвхтэй (хугацаа нь дуусаагүй) төлбөртэй хэрэглэгчид. Нэртэй тул зөвхөн DASHBOARD_KEY-тэй хүсэлтэд (routes/dashboard.ts). */
+export async function loadPlusUsers(db: D1Database, now = Date.now()): Promise<DashboardPlusResponse> {
+  const { results } = await db
+    .prepare(
+      `SELECT username, display_name, grade, plan, plan_until FROM users
+       WHERE plan IN ('plus', 'max') AND plan_until > ? ORDER BY plan_until, id`,
+    )
+    .bind(now)
+    .all<{ username: string; display_name: string | null; grade: number; plan: 'plus' | 'max'; plan_until: number }>();
+  return {
+    generatedAt: now,
+    users: results.map((u) => ({ username: u.username, displayName: u.display_name, grade: u.grade, plan: u.plan, planUntil: u.plan_until })),
   };
 }
